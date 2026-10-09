@@ -1,0 +1,764 @@
+@import "@fontsource/sora/300.css";
+@import "@fontsource/sora/400.css";
+@import "@fontsource/sora/600.css";
+@import "@fontsource/sora/700.css";
+@import "@fontsource/sora/800.css";
+@import "@fontsource/dm-sans/400.css";
+@import "@fontsource/dm-sans/500.css";
+@import "@fontsource/dm-sans/700.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Inline highlight modals must sit above r3f's Drei <Html> portal labels,
+   which get a random z-index up to ~16.7M. Use a class instead of a
+   Tailwind arbitrary value so the value is large enough to always win. */
+.z-modal-above-r3f { z-index: 2147483640; }
+.z-modal-confirm { z-index: 2147483647; }
+
+@layer base {
+  :root {
+    --color-brand: 59 91 253;
+    --color-brand-green: 22 163 74;
+    --color-surface: 255 255 255;
+    --color-surface-dim: 241 245 249;
+    --color-surface-bright: 255 255 255;
+    --color-surface-lowest: 255 255 255;
+    --color-surface-low: 248 250 252;
+    --color-surface-container: 241 245 249;
+    --color-surface-container-lowest: 255 255 255;
+    --color-surface-container-low: 248 250 252;
+    --color-surface-container-high: 226 232 240;
+    --color-surface-container-highest: 203 213 225;
+    --color-surface-overlay: 255 255 255;
+    --color-surface-variant: 241 245 249;
+    --color-on-surface: 15 23 42;
+    --color-on-surface-variant: 51 65 85;
+    --color-on-surface-muted: 100 116 139;
+    --color-background: 255 255 255;
+    --color-on-background: 15 23 42;
+    --color-primary: 37 99 235;
+    --color-primary-container: 219 234 254;
+    --color-on-primary: 255 255 255;
+    --color-on-primary-container: 30 58 138;
+    --color-secondary: 22 163 74;
+    --color-secondary-container: 220 252 231;
+    --color-on-secondary: 255 255 255;
+    --color-on-secondary-container: 20 83 45;
+    --color-tertiary: 124 58 237;
+    --color-tertiary-container: 237 233 254;
+    --color-on-tertiary: 255 255 255;
+    --color-on-tertiary-container: 76 29 149;
+    --color-error: 220 38 38;
+    --color-error-container: 254 226 226;
+    --color-on-error: 255 255 255;
+    --color-on-error-container: 127 29 29;
+    --color-primary-fixed: 219 234 254;
+    --color-primary-fixed-dim: 191 219 254;
+    --color-on-primary-fixed: 30 58 138;
+    --color-on-primary-fixed-variant: 29 78 216;
+    --color-secondary-fixed: 220 252 231;
+    --color-secondary-fixed-dim: 187 247 208;
+    --color-on-secondary-fixed: 20 83 45;
+    --color-on-secondary-fixed-variant: 21 128 61;
+    --color-tertiary-fixed: 237 233 254;
+    --color-tertiary-fixed-dim: 221 214 254;
+    --color-on-tertiary-fixed: 76 29 149;
+    --color-on-tertiary-fixed-variant: 109 40 217;
+    --color-accent-blue-neon: 37 99 235;
+    --color-accent-orange: 234 88 12;
+    --color-border-default: 226 232 240;
+    --color-outline: 148 163 184;
+    --color-outline-variant: 203 213 225;
+    --color-inverse-surface: 15 23 42;
+    --color-inverse-on-surface: 248 250 252;
+    --color-inverse-primary: 147 197 253;
+  }
+
+  .dark {
+    --color-brand: 73 105 237;
+    --color-brand-green: 34 197 94;
+    --color-surface: 21 27 35;
+    --color-surface-dim: 16 20 26;
+    --color-surface-bright: 53 57 64;
+    --color-surface-lowest: 10 14 20;
+    --color-surface-low: 24 28 34;
+    --color-surface-container: 28 32 38;
+    --color-surface-container-lowest: 14 19 25;
+    --color-surface-container-low: 24 28 34;
+    --color-surface-container-high: 38 42 49;
+    --color-surface-container-highest: 49 53 60;
+    --color-surface-overlay: 22 27 34;
+    --color-surface-variant: 49 53 60;
+    --color-on-surface: 223 226 235;
+    --color-on-surface-variant: 196 197 215;
+    --color-on-surface-muted: 145 152 161;
+    --color-background: 16 20 26;
+    --color-on-background: 223 226 235;
+    --color-primary: 184 195 255;
+    --color-primary-container: 73 105 237;
+    --color-on-primary: 0 35 136;
+    --color-on-primary-container: 255 252 255;
+    --color-secondary: 71 225 117;
+    --color-secondary-container: 0 188 85;
+    --color-on-secondary: 0 57 21;
+    --color-on-secondary-container: 0 67 26;
+    --color-tertiary: 211 187 255;
+    --color-tertiary-container: 136 86 229;
+    --color-on-tertiary: 63 0 141;
+    --color-on-tertiary-container: 255 251 255;
+    --color-error: 255 180 171;
+    --color-error-container: 147 0 10;
+    --color-on-error: 105 0 5;
+    --color-on-error-container: 255 218 214;
+    --color-primary-fixed: 221 225 255;
+    --color-primary-fixed-dim: 184 195 255;
+    --color-on-primary-fixed: 0 19 85;
+    --color-on-primary-fixed-variant: 0 53 189;
+    --color-secondary-fixed: 104 255 142;
+    --color-secondary-fixed-dim: 71 225 117;
+    --color-on-secondary-fixed: 0 33 9;
+    --color-on-secondary-fixed-variant: 0 83 33;
+    --color-tertiary-fixed: 235 221 255;
+    --color-tertiary-fixed-dim: 211 187 255;
+    --color-on-tertiary-fixed: 37 0 89;
+    --color-on-tertiary-fixed-variant: 88 28 180;
+    --color-accent-blue-neon: 33 139 255;
+    --color-accent-orange: 240 136 62;
+    --color-border-default: 61 68 77;
+    --color-outline: 142 144 160;
+    --color-outline-variant: 68 70 84;
+    --color-inverse-surface: 223 226 235;
+    --color-inverse-on-surface: 45 49 55;
+    --color-inverse-primary: 46 81 213;
+  }
+
+  html {
+    @apply bg-background thin-scrollbar;
+  }
+  body {
+    @apply bg-background text-on-background font-dm-sans antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-sora;
+  }
+  ::selection {
+    @apply bg-primary-fixed-dim text-slate-900;
+  }
+  .dark ::selection {
+    @apply bg-primary-container text-white;
+  }
+}
+
+@layer components {
+  .accent-bar {
+    @apply w-10 h-1 bg-gradient-to-r from-primary to-secondary;
+  }
+  .editorial-gradient-bar {
+    @apply w-12 h-1 bg-gradient-to-r from-primary to-secondary;
+  }
+  .double-slash::before {
+    content: "// ";
+    @apply text-on-surface-muted font-normal;
+  }
+  .glass-card {
+    @apply bg-surface/60 backdrop-blur-md border border-border-default;
+  }
+  .drop-cap::first-letter,
+  .drop-cap-container p:first-of-type::first-letter {
+    float: left;
+    font-size: 3rem;
+    line-height: 3rem;
+    padding-right: 0.5rem;
+    padding-top: 0.25rem;
+    @apply font-sora font-extrabold text-primary;
+  }
+  /* Contain the float so it doesn't push siblings rightward. */
+  .drop-cap-container {
+    overflow: hidden;
+  }
+  /* Drop-caps are for prose paragraphs : question blockquotes (e.g. the
+     interview-prep Q&A bank) keep their first letter inline. */
+  .drop-cap-container blockquote p:first-of-type::first-letter {
+    float: none;
+    font-size: inherit;
+    line-height: inherit;
+    padding: 0;
+    font-weight: inherit;
+    color: inherit;
+  }
+  /* ── Highlights ──────────────────────────────── */
+  /* ── Copy code button (injected into <pre> blocks) ── */
+  .copy-code-btn {
+    @apply absolute top-sm right-sm p-xs rounded-md text-on-surface-muted bg-surface/90 border border-border-default opacity-0 transition-opacity duration-150 cursor-pointer flex items-center justify-center;
+  }
+  pre:hover .copy-code-btn,
+  .copy-code-btn.copied {
+    @apply opacity-100;
+  }
+  .copy-code-btn:hover {
+    @apply text-on-surface bg-surface-container;
+  }
+  .highlight-yellow {
+    @apply bg-amber-400/30 rounded-sm cursor-pointer transition-colors;
+  }
+  .highlight-yellow:hover {
+    @apply bg-amber-400/50;
+  }
+  .highlight-green {
+    @apply bg-emerald-400/30 rounded-sm cursor-pointer transition-colors;
+  }
+  .highlight-green:hover {
+    @apply bg-emerald-400/50;
+  }
+  .highlight-blue {
+    @apply bg-sky-400/30 rounded-sm cursor-pointer transition-colors;
+  }
+  .highlight-blue:hover {
+    @apply bg-sky-400/50;
+  }
+  .highlight-pink {
+    @apply bg-pink-400/30 rounded-sm cursor-pointer transition-colors;
+  }
+  .highlight-pink:hover {
+    @apply bg-pink-400/50;
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-gradient {
+    background: linear-gradient(90deg, rgb(var(--color-primary)), rgb(var(--color-secondary)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+    @apply mt-xl mb-sm font-sora text-on-surface leading-tight;
+  }
+  .prose h1 { @apply text-2xl; }
+  .prose h2 { @apply text-xl; }
+  .prose h3 { @apply text-lg; }
+  .prose p {
+    @apply mb-md leading-relaxed;
+  }
+  .prose ul, .prose ol {
+    @apply mb-md pl-lg;
+  }
+  .prose ul { @apply list-disc; }
+  .prose ol { @apply list-decimal; }
+  .prose li {
+    @apply mb-xs leading-relaxed;
+  }
+  .prose li > ul, .prose li > ol {
+    @apply mt-xs mb-0;
+  }
+  .prose blockquote {
+    @apply border-l-2 border-brand/40 pl-md my-md text-on-surface-muted italic;
+  }
+  /* Questions in story/section bodies (e.g. the interview-prep Q&A bank) :
+     the .prose class isn't applied to plain prose strings, so question
+     blockquotes need their own treatment: a distinct font from the answers
+     (sora vs dm-sans), larger size, and heavier weight. */
+  .story-prose blockquote {
+    @apply border-l-2 border-brand/40 pl-md my-md font-sora text-[18px] font-semibold text-on-surface leading-relaxed;
+  }
+  .prose code {
+    @apply bg-surface-container-high border border-border-default px-xs py-0.5 rounded text-sm font-mono text-primary;
+  }
+  /* Inline code in story/section bodies : the .prose class isn't applied to
+     the wrapper for plain prose strings, so match the same treatment here. */
+  .story-prose code {
+    @apply bg-surface-container-high border border-border-default px-xs py-0.5 rounded text-sm font-mono text-primary;
+  }
+  .story-prose pre code {
+    @apply bg-transparent border-0 p-0 rounded-none;
+  }
+  /* Inline code inside bento cards and other body surfaces that aren't
+     .prose/.story-prose. Same treatment as the rules above. */
+  .bg-surface-container-low code,
+  .bg-surface-container code {
+    @apply bg-surface-container-high border border-border-default px-xs py-0.5 rounded text-sm font-mono text-primary;
+  }
+  .prose pre {
+    @apply bg-surface-container rounded-lg p-lg mb-md overflow-x-auto;
+  }
+  .prose pre code {
+    @apply bg-transparent p-0 text-sm;
+  }
+  /* highlight.js' github-dark theme ships
+       pre code.hljs { display: block; overflow-x: auto; padding: 1em }
+     The padding is zeroed by the rules above, but `overflow-x: auto` survives :
+     which makes the inner <code> the scroll container instead of the <pre>. With
+     no padding left on it, the horizontal scrollbar painted flush against the
+     last line of code, and padding the <pre> could never help because the <pre>
+     was not the element scrolling. Hand scrolling back to the padded <pre>. */
+  pre code.hljs,
+  .prose pre code.hljs,
+  .story-prose pre code.hljs {
+    overflow-x: visible;
+    /* A scroll container only honours its own end-edge padding when the inner
+       box is genuinely as wide as its longest line. Left as a plain block, the
+       <code> clips to the <pre>, the <pre> reports no overflow of its own, and
+       the text ends up hard against the right border at full scroll. Sizing it
+       to max-content lets the pad below show; min-width keeps blocks whose text
+       is shorter than the <pre> filling it as they did before. */
+    display: block;
+    width: max-content;
+    min-width: 100%;
+  }
+  /* Now that the <pre> is the scroller, its bottom padding is what clears the
+     horizontal scrollbar. A flat p-lg (24px) leaves barely 9px once a ~15px
+     overlay scrollbar is painted over it, so give the last line real room. */
+  pre.p-lg,
+  .prose pre,
+  .story-prose pre {
+    @apply pb-xl;
+  }
+  /* ── highlight.js Light Mode Syntax Overrides ─────── */
+  html:not(.dark) .hljs,
+  .light .hljs {
+    color: #24292e;
+  }
+  html:not(.dark) .hljs-doctag,
+  html:not(.dark) .hljs-keyword,
+  html:not(.dark) .hljs-meta .hljs-keyword,
+  html:not(.dark) .hljs-template-tag,
+  html:not(.dark) .hljs-template-variable,
+  html:not(.dark) .hljs-type,
+  html:not(.dark) .hljs-variable.language_,
+  .light .hljs-doctag,
+  .light .hljs-keyword,
+  .light .hljs-meta .hljs-keyword,
+  .light .hljs-template-tag,
+  .light .hljs-template-variable,
+  .light .hljs-type,
+  .light .hljs-variable.language_ {
+    color: #d73a49;
+  }
+  html:not(.dark) .hljs-title,
+  html:not(.dark) .hljs-title.class_,
+  html:not(.dark) .hljs-title.class_.inherited__,
+  html:not(.dark) .hljs-title.function_,
+  .light .hljs-title,
+  .light .hljs-title.class_,
+  .light .hljs-title.class_.inherited__,
+  .light .hljs-title.function_ {
+    color: #6f42c1;
+  }
+  html:not(.dark) .hljs-attr,
+  html:not(.dark) .hljs-attribute,
+  html:not(.dark) .hljs-literal,
+  html:not(.dark) .hljs-meta,
+  html:not(.dark) .hljs-number,
+  html:not(.dark) .hljs-operator,
+  html:not(.dark) .hljs-variable,
+  html:not(.dark) .hljs-selector-attr,
+  html:not(.dark) .hljs-selector-class,
+  html:not(.dark) .hljs-selector-id,
+  .light .hljs-attr,
+  .light .hljs-attribute,
+  .light .hljs-literal,
+  .light .hljs-meta,
+  .light .hljs-number,
+  .light .hljs-operator,
+  .light .hljs-variable,
+  .light .hljs-selector-attr,
+  .light .hljs-selector-class,
+  .light .hljs-selector-id {
+    color: #005cc5;
+  }
+  html:not(.dark) .hljs-regexp,
+  html:not(.dark) .hljs-string,
+  html:not(.dark) .hljs-meta .hljs-string,
+  .light .hljs-regexp,
+  .light .hljs-string,
+  .light .hljs-meta .hljs-string {
+    color: #032f62;
+  }
+  html:not(.dark) .hljs-built_in,
+  html:not(.dark) .hljs-symbol,
+  .light .hljs-built_in,
+  .light .hljs-symbol {
+    color: #e36209;
+  }
+  html:not(.dark) .hljs-comment,
+  html:not(.dark) .hljs-code,
+  html:not(.dark) .hljs-formula,
+  .light .hljs-comment,
+  .light .hljs-code,
+  .light .hljs-formula {
+    color: #6a737d;
+  }
+  html:not(.dark) .hljs-name,
+  html:not(.dark) .hljs-quote,
+  html:not(.dark) .hljs-selector-tag,
+  html:not(.dark) .hljs-selector-pseudo,
+  .light .hljs-name,
+  .light .hljs-quote,
+  .light .hljs-selector-tag,
+  .light .hljs-selector-pseudo {
+    color: #22863a;
+  }
+  html:not(.dark) .hljs-subst,
+  .light .hljs-subst {
+    color: #24292e;
+  }
+  html:not(.dark) .hljs-section,
+  .light .hljs-section {
+    color: #005cc5;
+    font-weight: bold;
+  }
+  html:not(.dark) .hljs-bullet,
+  .light .hljs-bullet {
+    color: #735c0f;
+  }
+  html:not(.dark) .hljs-emphasis,
+  .light .hljs-emphasis {
+    color: #24292e;
+    font-style: italic;
+  }
+  html:not(.dark) .hljs-strong,
+  .light .hljs-strong {
+    color: #24292e;
+    font-weight: bold;
+  }
+  html:not(.dark) .hljs-addition,
+  .light .hljs-addition {
+    color: #22863a;
+    background-color: #f0fff4;
+  }
+  html:not(.dark) .hljs-deletion,
+  .light .hljs-deletion {
+    color: #b31d28;
+    background-color: #ffeef0;
+  }
+  .prose .comment-code-block pre {
+    @apply bg-transparent p-lg m-0 rounded-none;
+  }
+  .prose .comment-code-block pre code {
+    @apply bg-transparent border-0 p-0 rounded-none;
+  }
+  .prose hr {
+    @apply border-border-default my-lg;
+  }
+  .prose table {
+    @apply w-full mb-md border-collapse;
+  }
+  .prose th, .prose td {
+    @apply border border-border-default px-md py-sm text-left text-sm;
+  }
+  .prose th {
+    @apply bg-surface-container font-sora font-semibold;
+  }
+  .prose strong {
+    @apply font-bold;
+  }
+  .prose a {
+    @apply text-brand underline hover:opacity-80;
+  }
+  /* Story prose carries the same links as `.prose` and needs the same
+     treatment : story bodies and the anchor links inside hints both land here. */
+  .story-prose a {
+    @apply text-brand underline hover:opacity-80;
+  }
+  .prose sup a {
+    @apply no-underline text-brand font-sora text-xs font-bold hover:text-secondary transition-colors;
+  }
+  .prose img {
+    @apply max-w-full rounded-lg my-md;
+  }
+}
+
+/* ── Collapsible reveal (Hint, Solution, Lab) ───────────────
+   The panel's height animates via `grid-template-rows: 0fr -> 1fr`, which the
+   browser interpolates, so no measured pixel height is needed and the content
+   can be any size. The easing is deliberately gentle and symmetric: a
+   front-loaded curve reaches most of its height early, which reads as a snap
+   on open even though it is technically animating. Defined once so Hint,
+   Solution and Lab cannot drift apart. */
+@layer components {
+  .reveal-grid {
+    display: grid;
+    transition: grid-template-rows 320ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .reveal-fade {
+    transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal-grid,
+    .reveal-fade {
+      transition: none;
+    }
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .thin-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--color-border-default)) transparent;
+  }
+  .thin-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .thin-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .thin-scrollbar::-webkit-scrollbar-thumb {
+    background: rgb(var(--color-border-default));
+    border-radius: 3px;
+  }
+  .thin-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--color-on-surface-muted));
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+/* ── Paged Media Geometry (Top-level at-rule for print) ─────────────── */
+@page {
+  size: A4;
+  margin-top: 28mm;
+  margin-bottom: 24mm;
+  margin-left: 20mm;
+  margin-right: 20mm;
+}
+
+@page :first {
+  margin-top: 20mm;
+}
+
+/* ── Print Lesson Table (Guaranteed Headers & Footers on Intermediate Pages) ── */
+.print-lesson-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+@media screen {
+  .print-lesson-thead,
+  .print-lesson-tfoot {
+    display: none !important;
+  }
+  .print-lesson-table,
+  .print-lesson-tbody,
+  .print-lesson-tbody tr,
+  .print-lesson-body-cell {
+    display: block !important;
+    width: 100% !important;
+  }
+}
+
+/* ── Print / PDF Generation Stylesheet ────────────────────────────── */
+@media print {
+  /* Reset root height constraints for clean pagination */
+  html,
+  body,
+  #root,
+  .min-h-screen {
+    min-height: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Hide UI chrome and non-printable interactive elements */
+  header:not(.chapter-header),
+  footer:not(.chapter-footer),
+  nav,
+  .print\:hidden,
+  .copy-code-btn,
+  .lab-block,
+  [data-block-type="lab"] {
+    display: none !important;
+  }
+  /* Document body print defaults */
+  html,
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 10.5pt !important;
+    line-height: 1.55 !important;
+  }
+
+  /* Single unified reading column matching screen preview */
+  main {
+    width: 100% !important;
+    max-width: 680px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  /* Print lesson table pagination rules */
+  .print-lesson-table {
+    display: table !important;
+    table-layout: fixed !important;
+    width: 100% !important;
+    max-width: 680px !important;
+    margin: 0 auto !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .print-lesson-thead {
+    display: table-header-group !important;
+  }
+
+  .print-lesson-tfoot {
+    display: table-footer-group !important;
+  }
+
+  .print-lesson-tbody {
+    display: table-row-group !important;
+  }
+
+  .print-lesson-header-cell {
+    padding: 0 !important;
+    height: 20mm !important;
+    vertical-align: top !important;
+    box-sizing: border-box !important;
+  }
+
+  .print-running-header {
+    height: 10mm !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-end !important;
+    padding-bottom: 2mm !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+    margin-bottom: 9.5mm !important;
+  }
+
+  .print-lesson-footer-cell {
+    padding: 0 !important;
+    height: 18mm !important;
+    vertical-align: bottom !important;
+    box-sizing: border-box !important;
+  }
+
+  .print-running-footer {
+    height: 8mm !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    padding-top: 2mm !important;
+    border-top: 1px solid #e2e8f0 !important;
+    margin-top: 9.5mm !important;
+  }
+  .print-lesson-body-cell {
+    padding: 0 !important;
+    vertical-align: top !important;
+    max-width: 680px !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+
+  section,
+  article,
+  header,
+  .story-prose,
+  .divide-y,
+  .comment-code-block {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+  /* Force light theme variables during print regardless of active screen mode */
+  :root,
+  .dark,
+  body {
+    --color-background: 255 255 255 !important;
+    --color-on-background: 15 23 42 !important;
+    --color-surface: 255 255 255 !important;
+    --color-surface-dim: 241 245 249 !important;
+    --color-surface-container: 241 245 249 !important;
+    --color-surface-container-low: 248 250 252 !important;
+    --color-surface-container-high: 226 232 240 !important;
+    --color-surface-lowest: 255 255 255 !important;
+    --color-on-surface: 15 23 42 !important;
+    --color-on-surface-variant: 51 65 85 !important;
+    --color-on-surface-muted: 100 116 139 !important;
+    --color-border-default: 226 232 240 !important;
+    --color-primary: 37 99 235 !important;
+    --color-secondary: 22 163 74 !important;
+  }
+
+  /* Page breaks */
+  .break-after-page,
+  .page-break-after {
+    break-after: page !important;
+    page-break-after: always !important;
+  }
+
+  .break-before-page,
+  .page-break-before {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+
+  /* Avoid orphan headers and splits inside atomic components */
+  .break-after-avoid,
+  h1, h2, h3, h4, h5, h6 {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+  /* In print, hide Mac window chrome dots */
+  .bg-error\/40,
+  .bg-accent-orange\/40,
+  .bg-secondary\/40 {
+    display: none !important;
+  }
+
+  pre,
+  table,
+  figure,
+  aside,
+  blockquote,
+  .comment-code-block,
+  .avoid-break,
+  .break-inside-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Code block wrapping and border for paper */
+  pre {
+    border: 1px solid #cbd5e1 !important;
+    background-color: #f8fafc !important;
+    white-space: pre-wrap !important;
+    word-break: break-all !important;
+    overflow-x: visible !important;
+  }
+
+  pre code.hljs {
+    white-space: pre-wrap !important;
+  }
+
+  /* Clean links */
+  a {
+    text-decoration: underline !important;
+    color: inherit !important;
+  }
+
+  a[href^="http"]::after {
+    content: "" !important;
+  }
+}
