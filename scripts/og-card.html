@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<!--
+  Source for public/og-image.png (1200x630 social card).
+
+  Rendered by scripts/generate-icons.sh via headless Chrome, which is the only
+  way to get the site's real webfonts (Sora, DM Sans) into the PNG. Palette is
+  copied from tailwind.config.js: background #10141a, on-background #dfe2eb,
+  on-surface-muted #9198a1, and the primary->secondary accent gradient.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      @font-face {
+        font-family: "Sora";
+        font-weight: 800;
+        src: url("../node_modules/@fontsource/sora/files/sora-latin-800-normal.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Sora";
+        font-weight: 600;
+        src: url("../node_modules/@fontsource/sora/files/sora-latin-600-normal.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "DM Sans";
+        font-weight: 400;
+        src: url("../node_modules/@fontsource/dm-sans/files/dm-sans-latin-400-normal.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "DM Sans";
+        font-weight: 500;
+        src: url("../node_modules/@fontsource/dm-sans/files/dm-sans-latin-500-normal.woff2") format("woff2");
+      }
+
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      html, body {
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        background: #10141a;
+        font-family: "DM Sans", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .card {
+        position: relative;
+        width: 1200px;
+        height: 630px;
+        display: flex;
+        align-items: center;
+        padding: 0 80px;
+        /* Brand glows: primary #b8c3ff top-left, secondary #47e175 bottom-right */
+        background:
+          radial-gradient(760px 460px at 8% 4%, rgba(184, 195, 255, 0.13), transparent 70%),
+          radial-gradient(620px 420px at 96% 100%, rgba(71, 225, 117, 0.11), transparent 72%),
+          #10141a;
+      }
+
+      .copy { flex: 1; min-width: 0; }
+
+      .accent {
+        width: 64px;
+        height: 5px;
+        border-radius: 3px;
+        background: linear-gradient(90deg, #b8c3ff, #47e175);
+        margin-bottom: 34px;
+      }
+
+      h1 {
+        font-family: "Sora", sans-serif;
+        font-weight: 800;
+        font-size: 84px;
+        line-height: 1.04;
+        letter-spacing: -0.03em;
+        color: #dfe2eb;
+      }
+
+      .sections {
+        margin-top: 30px;
+        font-size: 29px;
+        font-weight: 400;
+        color: #9198a1;
+        letter-spacing: 0.01em;
+      }
+
+      .sections .sep { color: #3d444d; padding: 0 12px; }
+
+      .domain {
+        margin-top: 46px;
+        font-family: "Sora", sans-serif;
+        font-weight: 600;
+        font-size: 21px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #b8c3ff;
+      }
+
+      .mark {
+        flex: 0 0 auto;
+        width: 400px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+      }
+
+      .mark img { height: 470px; display: block; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="copy">
+        <div class="accent"></div>
+        <h1>Soma<br />Project</h1>
+        <p class="sections">
+          Stories<span class="sep">·</span>Courses<span class="sep">·</span>Guides<span class="sep">·</span>Docs
+        </p>
+        <p class="domain">soma.vercel.app</p>
+      </div>
+      <div class="mark">
+        <img src="../public/icon-mono-dark.png" alt="" />
+      </div>
+    </div>
+  </body>
+</html>

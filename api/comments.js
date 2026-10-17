@@ -1,0 +1,156 @@
+const DB_URL = (process.env.TURSO_DB || "").replace("libsql://", "https://");
+const TOKEN = process.env.TURSO_TOKEN || "";
+
+async function query(sql, args) {
+  args = args || [];
+  const body = {
+    requests: [{
+      type: "execute",
+      stmt: {
+        sql: sql,
+        args: args.map(a => {
+          if (a === null || a === undefined) return { type: "null" };
+          if (typeof a === "number") return { type: "integer", value: String(a) };
+          return { type: "text", value: String(a) };
+        })
+      }
+    }]
+  };
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const r = await fetch(DB_URL + "/v2/pipeline", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    const data = await r.json();
+
+    if (!r.ok) {
+      console.error("Turso FAIL:", r.status, JSON.stringify(data).slice(0, 500));
+      return [];
+    }
+
+    const result = data.results && data.results[0] && data.results[0].response && data.results[0].response.result;
+    if (!result) {
+      console.error("Unexpected Turso format:", JSON.stringify(data).slice(0, 300));
+      return [];
+    }
+
+    const cols = (result.cols || []).map(function(c) { return c.name || c; });
+    const rows = result.rows || [];
+    return rows.map(function(row) {
+      const obj = {};
+      cols.forEach(function(c, i) {
+        const cell = row[i];
+        obj[c] = (cell && typeof cell === "object") ? (cell.type === "null" ? null : (cell.value !== undefined ? cell.value : null)) : (cell !== undefined ? cell : null);
+      });
+      return obj;
+    });
+  } catch (e) {
+    console.error("Query error:", e.message);
+    return [];
+  }
+}
+
+// Build threaded tree from flat rows
+function buildTree(rows) {
+  const map = {};
+  const roots = [];
+
+  for (const row of rows) {
+    map[row.id] = { ...row, replies: [] };
+  }
+
+  for (const row of rows) {
+    const node = map[row.id];
+    if (row.parent_id != null && map[row.parent_id]) {
+      map[row.parent_id].replies.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+
+  return roots;
+}
+
+// Run migration to add parent_id column if it doesn't exist
+let migrated = false;
+async function ensureSchema() {
+  if (migrated) return;
+  try {
+    await query("ALTER TABLE comments ADD COLUMN parent_id INTEGER");
+  } catch (e) {
+    // Column already exists : fine
+  }
+  try {
+    await query("ALTER TABLE comments ADD COLUMN is_ai INTEGER DEFAULT 0");
+  } catch (e) {
+    // Column already exists : fine
+  }
+  try {
+    await query("ALTER TABLE comments ADD COLUMN ai_model TEXT");
+  } catch (e) {
+    // Column already exists : fine
+  }
+  migrated = true;
+}
+
+export default async function handler(req, res) {
+  try {
+    await ensureSchema();
+
+    if (req.method === "GET") {
+      const story = req.query.story;
+      if (!story) return res.status(400).json({ error: "story required" });
+
+      // Fetch all comments for the story, newest first at top level
+      const rows = await query(
+        "SELECT * FROM comments WHERE story_slug = ? ORDER BY created_at DESC",
+        [story]
+      );
+
+      // Build tree: top-level sorted newest-first, replies sorted oldest-first within each parent
+      const tree = buildTree(rows);
+      for (const root of tree) {
+        root.replies.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      }
+
+      return res.json(tree);
+    }
+
+    if (req.method === "POST") {
+      const { storySlug, body, parentId, isAi, aiModel, highlightId, sectionIndex, paragraphIndex, startOffset, endOffset, selectedText } = req.body || {};
+      if (!storySlug || !body) return res.status(400).json({ error: "storySlug and body required" });
+
+      const now = new Date().toISOString();
+      const result = await query(
+        "INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
+        [storySlug, body, parentId || null, isAi ? 1 : 0, aiModel || null, highlightId || null, sectionIndex ?? null, paragraphIndex ?? null, startOffset ?? null, endOffset ?? null, selectedText || null, now]
+      );
+      return res.status(201).json(result[0] || { error: "Failed" });
+    }
+    if (req.method === "PUT") {
+      const { id, body } = req.body || {};
+      await query("UPDATE comments SET body = ?, updated_at = ? WHERE id = ?", [body, new Date().toISOString(), id]);
+      return res.json({ success: true });
+    }
+    if (req.method === "DELETE") {
+      const { id } = req.body || {};
+      // Also delete replies
+      await query("DELETE FROM comments WHERE parent_id = ?", [id]);
+      await query("DELETE FROM comments WHERE id = ?", [id]);
+      return res.json({ success: true });
+    }
+
+    return res.status(405).json({ error: "Method not allowed" });
+  } catch (e) {
+    console.error("Handler error:", e.message);
+    return res.status(500).json({ error: e.message });
+  }
+}
