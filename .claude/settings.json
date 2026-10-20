@@ -1,0 +1,8 @@
+{
+  "skills": {
+    "soma": {
+      "path": ".claude/skills/soma.md",
+      "description": "Create content for the Soma blog"
+    }
+  }
+}
