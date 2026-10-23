@@ -42,6 +42,12 @@ export const labSetup: DocContent = {
             "One track, one workspace per lesson:\n\n| Track | Folder | Course |\n|---|---|---|\n| **TypeScript Fast Track** | `fullstack/01-why-this-type-error` … `fullstack/05-typing-the-boundary` | TypeScript Fast Track: 5 Essential Mental Models |\n\nThe `typescript/` folder holds symlinks to the same five workspaces, so `typescript/01-why-this-type-error` and `fullstack/01-why-this-type-error` are the same drill. Run the whole track with `npm run test:typescript` from the repository root.",
           ],
         },
+        {
+          question: "I want to contribute content. Where do I start?",
+          answer: [
+            "Read [Content Types](/docs/content-types) first. It explains what each type is for (story, lesson, lab, guide, doc, course, series, test) with one canonical example of each, so you create the right thing instead of reshaping the wrong one.",
+          ],
+        },
       ],
     },
 

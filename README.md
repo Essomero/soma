@@ -204,6 +204,9 @@ son start server  # Runs at http://localhost:7860 to power oral tests
 ---
 
 ## Writing & Publishing Workflow
+
+New to the content model? Read [Content Types](https://soma.vercel.app/docs/content-types) first: one page explaining what each type is for, with a canonical example of each.
+
 1. **Private Scratchpad (`/learn`)**: Open **Learn** in the navigation. Draft rough notes, paste snippets, or outline ideas with live KaTeX math and Mermaid diagrams.
 2. **Margin Highlights & In-App AI**: Select any text to attach annotations, ask the inline AI model for clarifications, or store thoughts.
 3. **Oral Practice (`/tests`)**: Run diagnostic technical screens with Son reading questions and scoring spoken answers.
