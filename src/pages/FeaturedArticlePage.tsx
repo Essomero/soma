@@ -58,7 +58,7 @@ export default function FeaturedArticlePage() {
             <ShareButtons variant="column" />
           </div>
           <div className="hidden md:block">
-            <PrintButton compact label="Print / Save PDF" />
+            <PrintButton compact label="Print / Save PDF" className="w-full justify-center" />
             {isOwner && (
               <div className="mt-md">
                 <PublicToggleButton isPublic={isPublic} onToggle={toggle} />

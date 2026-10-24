@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Loader2, Trash2, Bot, PenLine, Eye, Send, X, Check, Copy, ChevronDown, Reply, Maximize2 } from "lucide-react";
 import SelectionToolbar from "@/components/ui/SelectionToolbar";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { mdBlock } from "@/lib/markdown";
 import { useTextSelection } from "@/lib/useTextSelection";
@@ -107,6 +108,7 @@ export default function InlineHighlights({
   const [inlineExpanded, setInlineExpanded] = useState(false);
   const [inlineDeleting, setInlineDeleting] = useState<number | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ kind: "highlight" } | { kind: "comment"; id: number } | null>(null);
 
   // Sync highlights to parent
   const prevKeyRef = useRef("");
@@ -269,7 +271,9 @@ export default function InlineHighlights({
       setActiveHighlight(null);
     } catch {}
     setDeleting(false);
+    setDeleteTarget(null);
   }, [activeHighlight, deleting]);
+
 
   // ── Selection AI (Explain / Summarize) ─────────────
   const handleAiAction = useCallback(async (action: "explain" | "summarize") => {
@@ -616,6 +620,16 @@ ${storyTitle ? `Title: ${storyTitle}\n` : ""}${articleExcerpt}
     setInlineDeleting(null);
   }, [inlineDeleting, activeHighlight]);
 
+  const confirmDelete = useCallback(() => {
+    if (!deleteTarget) return;
+    if (deleteTarget.kind === "highlight") {
+      void handleDeleteHighlight();
+    } else {
+      void handleDeleteInlineComment(deleteTarget.id);
+    }
+    setDeleteTarget(null);
+  }, [deleteTarget, handleDeleteHighlight, handleDeleteInlineComment]);
+
   // ── Shared comment tree renderer ──────────────────
   const handleCopyComment = useCallback((c: { id: number; body: string }) => {
     const text = c.body;
@@ -689,7 +703,7 @@ ${storyTitle ? `Title: ${storyTitle}\n` : ""}${articleExcerpt}
                   <button onClick={() => handleInlineAiReply(comment)} disabled={inlineAiLoading !== null || aiUnavailable}
                     className="p-xs rounded-md text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title={aiUnavailable ? "Add an AI provider key to enable" : "AI Reply"}>
                     {inlineAiLoading === comment.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bot className="w-3 h-3" />}</button>
-                  <button onClick={() => handleDeleteInlineComment(comment.id)} disabled={inlineDeleting !== null}
+                  <button onClick={() => setDeleteTarget({ kind: "comment", id: comment.id })} disabled={inlineDeleting !== null}
                     className="p-xs rounded-md text-on-surface-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-50" title="Delete comment">
                     {inlineDeleting === comment.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}</button>
                 </>)}
@@ -826,7 +840,7 @@ ${storyTitle ? `Title: ${storyTitle}\n` : ""}${articleExcerpt}
                   </div>
                 )}
                 <button onClick={() => setInlineExpanded(true)} className="p-xs rounded-md text-on-surface-muted hover:text-on-surface transition-colors" title="Expand"><Maximize2 className="w-3.5 h-3.5" /></button>
-                <button onClick={handleDeleteHighlight} disabled={deleting} className="p-xs rounded-md text-on-surface-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-50" title="Delete highlight">
+                <button onClick={() => setDeleteTarget({ kind: "highlight" })} disabled={deleting} className="p-xs rounded-md text-on-surface-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-50" title="Delete highlight">
                   {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}</button>
               </div>
             </div>
@@ -880,7 +894,7 @@ ${storyTitle ? `Title: ${storyTitle}\n` : ""}${articleExcerpt}
                     </div>
                   )}
                 </div>}
-                <button onClick={handleDeleteHighlight} disabled={deleting} className="p-xs rounded-md text-on-surface-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-50" title="Delete highlight">
+                <button onClick={() => setDeleteTarget({ kind: "highlight" })} disabled={deleting} className="p-xs rounded-md text-on-surface-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-50" title="Delete highlight">
                   {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}</button>
                 <button onClick={() => { setInlineExpanded(false); setActiveHighlight(null); }} className="p-xs rounded-md text-on-surface-muted hover:text-on-surface transition-colors" title="Close">
                   <X className="w-3.5 h-3.5" />
@@ -905,6 +919,15 @@ ${storyTitle ? `Title: ${storyTitle}\n` : ""}${articleExcerpt}
             </div>
           </div>
         </div>
+      )}
+      {deleteTarget && (
+        <ConfirmModal
+          title={deleteTarget.kind === "highlight" ? "Delete highlight" : "Delete comment"}
+          message={deleteTarget.kind === "highlight" ? "Delete this highlight and all its comments?" : "Delete this comment and its replies?"}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+          loading={deleting || inlineDeleting !== null}
+        />
       )}
     </>
   );

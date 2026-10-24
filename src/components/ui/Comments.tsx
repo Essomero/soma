@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { MessageSquare, Send, Edit3, Trash2, X, Check, Copy, Eye, PenLine, AlertTriangle, Bot, Loader2, ChevronDown, Reply, Brain } from "lucide-react";
+import { MessageSquare, Send, Edit3, Trash2, X, Check, Copy, Eye, PenLine, Bot, Loader2, ChevronDown, Reply, Brain } from "lucide-react";
 import { mdBlock } from "@/lib/markdown";
 import { useAuth } from "@/lib/AuthContext";
 import MarkdownHtml from "@/components/ui/MarkdownHtml";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { COMMENT_MAX_DEPTH } from "@/lib/highlights";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 interface Comment {
   id: number;
@@ -63,30 +64,6 @@ function fmtDate(raw: any) {
   }
 }
 
-function ConfirmModal({ message, onConfirm, onCancel, loading }: { message: string; onConfirm: () => void; onCancel: () => void; loading?: boolean }) {
-  return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-xl" onClick={loading ? undefined : onCancel}>
-      <div className="bg-surface border border-border-default rounded-xl p-xxl max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
-        <div className="flex items-start gap-md mb-xl">
-          <div className="w-10 h-10 rounded-full bg-error/10 border border-error/20 flex items-center justify-center flex-shrink-0">
-            <AlertTriangle className="w-5 h-5 text-error" />
-          </div>
-          <div>
-            <h3 className="font-sora text-lg text-on-surface mb-sm">Delete Comment</h3>
-            <p className="font-dm-sans text-sm text-on-surface-muted">{message}</p>
-          </div>
-        </div>
-        <div className="flex justify-end gap-sm">
-          <button onClick={onCancel} disabled={loading} className="px-xl py-md rounded-lg font-sora text-sm bg-surface-container border border-border-default text-on-surface-muted hover:bg-surface-container-high transition-colors disabled:opacity-50">Cancel</button>
-          <button onClick={onConfirm} disabled={loading} className="px-xl py-md rounded-lg font-sora text-sm bg-error text-on-primary hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-xs">
-            {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-            {loading ? "Deleting..." : "Delete"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function Comments({ storySlug, storyContext, refreshSignal = 0 }: CommentsProps) {
   const { isOwner } = useAuth();
@@ -805,7 +782,7 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
 
   return (
     <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant border-t border-border-default">
-      {deleteTarget && <ConfirmModal message="This action cannot be undone." onConfirm={handleDelete} onCancel={() => setDeleteTarget(null)} loading={deleting} />}
+      {deleteTarget && <ConfirmModal title="Delete Comment" message="This action cannot be undone." onConfirm={handleDelete} onCancel={() => setDeleteTarget(null)} loading={deleting} />}
 
       <div className="flex flex-col gap-md mb-xl">
         <h2 className="font-sora text-headline-md text-on-surface flex items-center gap-sm">
