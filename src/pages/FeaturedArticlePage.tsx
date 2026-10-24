@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Link } from "react-router-dom";
 import ImmersiveHero from "@/components/sections/ImmersiveHero";
 import SidebarAbout from "@/components/sections/SidebarAbout";
@@ -8,14 +9,29 @@ import PrintButton from "@/components/ui/PrintButton";
 import ArticleCard from "@/components/cards/ArticleCard";
 import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import AccentBar from "@/components/ui/AccentBar";
+import InlineHighlights from "@/components/ui/InlineHighlights";
+import Comments from "@/components/ui/Comments";
+import { PublicToggleButton, usePublicState } from "@/components/ui/PublicToggle";
+import { useAuth } from "@/lib/AuthContext";
 import {
   nvdaAuthor,
   nvdaBentoHighlights,
   nvdaPullQuotes,
   nvdaMoreStories,
 } from "@/content/registry";
+import { nvdaAccessibility } from "@/content/featured/nvda-accessibility";
+
+const STORY_SLUG = "nvda-accessibility";
 
 export default function FeaturedArticlePage() {
+  const { isOwner } = useAuth();
+  const articleRef = useRef<HTMLElement>(null);
+  const highlightClickRef = useRef<(id: number) => void>(() => {});
+  const { isPublic, toggle } = usePublicState(STORY_SLUG);
+  const storyText = [
+    nvdaAccessibility.description,
+    ...(nvdaAccessibility.sections || []).flatMap((s) => [s.heading, ...(s.paragraphs || []).filter((p): p is string => typeof p === "string")]),
+  ].join(" ");
   return (
     <div>
       {/* Immersive Hero */}
@@ -39,11 +55,16 @@ export default function FeaturedArticlePage() {
           </div>
           <div className="hidden md:block">
             <PrintButton compact label="Print / Save PDF" />
+            {isOwner && (
+              <div className="mt-md">
+                <PublicToggleButton isPublic={isPublic} onToggle={toggle} />
+              </div>
+            )}
           </div>
         </aside>
 
         {/* Main Body */}
-        <article className="md:col-span-8 space-y-xl">
+        <article ref={articleRef} data-section-index={0} data-paragraph-index={0} className="md:col-span-8 space-y-xl">
           <div className="font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md">
             <p className="drop-cap">
               A lot of what Derek Riemer needed to know to become a professional
@@ -124,6 +145,20 @@ export default function FeaturedArticlePage() {
           </div>
         </article>
       </section>
+
+      {/* Comments */}
+      <Comments storySlug={STORY_SLUG} storyContext={{ title: "Coding accessibility: Software by the blind, for the blind", body: storyText }} />
+
+      <InlineHighlights
+        slug={STORY_SLUG}
+        storyText={storyText}
+        storyTitle="Coding accessibility: Software by the blind, for the blind"
+        articleRef={articleRef}
+        isOwner={isOwner}
+        onHighlightsChange={() => {}}
+        highlightClickRef={highlightClickRef}
+        selectionAi
+      />
 
       {/* Newsletter CTA - Brand variant */}
       <NewsletterSignup variant="brand" />

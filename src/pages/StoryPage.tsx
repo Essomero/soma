@@ -220,10 +220,14 @@ export default function StoryPage() {
   const [inlineAiDraftTabs, setInlineAiDraftTabs] = useState<Map<number, "write" | "preview">>(new Map());
   const [inlineAiError, setInlineAiError] = useState<{id: number, message: string} | null>(null);
   const [inlineModels, setInlineModels] = useState<ModelInfo[]>(DEFAULT_MODELS);
+  const [inlineAiReady, setInlineAiReady] = useState(false);
   const [inlineAiModel, setInlineAiModel] = useState<string>("deepseek-flash");
   const [inlineAiProvider, setInlineAiProvider] = useState<string>("deepseek");
   const [inlineModelMenuOpen, setInlineModelMenuOpen] = useState(false);
   const inlineModelMenuRef = useRef<HTMLDivElement>(null);
+  // No provider keys configured yet: AI actions stay visible but disabled,
+  // so readers learn the feature exists instead of wondering where it went.
+  const aiUnavailable = !inlineAiReady || inlineModels.length === 0;
 
   // ── Explain state (AI explains selected text) ──────
   const [explainState, setExplainState] = useState<{
@@ -262,13 +266,15 @@ export default function StoryPage() {
     return () => window.removeEventListener("keydown", handler);
   }, [inlineExpanded, activeHighlight, deleteHighlightTarget, deleteCommentTarget]);
 
-  // Fetch available AI models
+  // Fetch available AI models. Until this resolves with a non-empty list,
+  // AI actions render disabled: no keys must never look like a working model.
   useEffect(() => {
     fetch("/api/models")
       .then(r => r.json())
       .then(data => {
+        setInlineModels(data.models ?? []);
+        setInlineAiReady(true);
         if (data.models?.length) {
-          setInlineModels(data.models);
           const current = data.models.find((m: ModelInfo) => m.id === inlineAiModel && m.provider === inlineAiProvider);
           if (!current) {
             setInlineAiModel(data.models[0].id);
@@ -276,7 +282,7 @@ export default function StoryPage() {
           }
         }
       })
-      .catch(() => {});
+      .catch(() => { setInlineModels([]); setInlineAiReady(true); });
   }, []);
 
   // Close model menu on click outside
@@ -1364,6 +1370,7 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
           models={inlineModels}
           aiModel={inlineAiModel}
           aiProvider={inlineAiProvider}
+          aiDisabled={aiUnavailable}
           onAiModelChange={(id, prov) => {
             setInlineAiModel(id);
             if (prov) setInlineAiProvider(prov);
@@ -1390,9 +1397,9 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
                     <button
                       type="button"
                       onClick={() => setInlineModelMenuOpen(!inlineModelMenuOpen)}
-                      disabled={inlineAiLoading !== null}
-                      className="flex items-center gap-xs text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30"
-                      title="AI model"
+                      disabled={inlineAiLoading !== null || aiUnavailable}
+                      className="flex items-center gap-xs text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      title={aiUnavailable ? "Add an AI provider key to enable" : "AI model"}
                     >
                       <Bot className="w-3.5 h-3.5" />
                       <ChevronDown className="w-3 h-3" />
@@ -1592,9 +1599,9 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
                                   <>
                                     <button
                                       onClick={() => handleInlineAiReply(comment)}
-                                      disabled={inlineAiLoading !== null}
-                                      className="p-xs rounded-md text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30"
-                                      title="AI Reply"
+                                      disabled={inlineAiLoading !== null || aiUnavailable}
+                                      className="p-xs rounded-md text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                      title={aiUnavailable ? "Add an AI provider key to enable" : "AI Reply"}
                                     >
                                       {inlineAiLoading === comment.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bot className="w-3 h-3" />}
                                     </button>
@@ -1876,8 +1883,8 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
                                 </button>
                                 {isOwner && (
                                   <>
-                                    <button onClick={() => handleInlineAiReply(comment)} disabled={inlineAiLoading !== null}
-                                      className="p-xs rounded-md text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30" title="AI Reply">
+                                    <button onClick={() => handleInlineAiReply(comment)} disabled={inlineAiLoading !== null || aiUnavailable}
+                                      className="p-xs rounded-md text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title={aiUnavailable ? "Add an AI provider key to enable" : "AI Reply"}>
                                       {inlineAiLoading === comment.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bot className="w-3 h-3" />}
                                     </button>
                                     <button onClick={() => handleDeleteInlineComment(comment.id)} disabled={inlineDeleting !== null}

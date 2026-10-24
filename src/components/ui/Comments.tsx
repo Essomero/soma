@@ -106,16 +106,19 @@ export default function Comments({ storySlug, storyContext }: CommentsProps) {
   const [aiDraftTabs, setAiDraftTabs] = useState<Map<number, "write" | "preview">>(new Map());
   const [aiError, setAiError] = useState<{id: number, message: string} | null>(null);
   const [models, setModels] = useState<ModelInfo[]>(DEFAULT_MODELS);
+  const [modelsReady, setModelsReady] = useState(false);
   const [aiModel, setAiModel] = useState<string>("deepseek-flash");
   const [aiProvider, setAiProvider] = useState<string>("deepseek");
 
-  // Fetch available models
+  // Fetch available models. Until this resolves with a non-empty list,
+  // AI actions render disabled: no keys must never look like a working model.
   useEffect(() => {
     fetch("/api/models")
       .then(r => r.json())
       .then(data => {
+        setModels(data.models ?? []);
+        setModelsReady(true);
         if (data.models?.length) {
-          setModels(data.models);
           // Keep current selection if still valid
           const current = data.models.find((m: ModelInfo) => m.id === aiModel && m.provider === aiProvider);
           if (!current) {
@@ -124,8 +127,9 @@ export default function Comments({ storySlug, storyContext }: CommentsProps) {
           }
         }
       })
-      .catch(() => {});
+      .catch(() => { setModels([]); setModelsReady(true); });
   }, []);
+  const aiUnavailable = !modelsReady || models.length === 0;
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const modelMenuRef = useRef<HTMLDivElement>(null);
   const modelBtnRef = useRef<HTMLButtonElement>(null);
@@ -677,14 +681,14 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
                     <Reply className="w-3.5 h-3.5" />
                   </button>
                   {isOwner && (
-                    <button
-                      onClick={() => handleAiReply(comment)}
-                      disabled={aiLoading !== null}
-                      className="text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30"
-                      title="AI Reply"
-                    >
-                      {aiLoading === comment.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />}
-                    </button>
+                  <button
+                    onClick={() => handleAiReply(comment)}
+                    disabled={aiLoading !== null || aiUnavailable}
+                    className="text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    title={aiUnavailable ? "Add an AI provider key to enable" : "AI Reply"}
+                  >
+                    {aiLoading === comment.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />}
+                  </button>
                   )}
                   <button onClick={() => setDeleteTarget(comment.id)} className="text-on-surface-muted hover:text-error transition-colors" title="Delete"><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
@@ -806,9 +810,9 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
               <button
                 type="button"
                 onClick={handleExplain}
-                disabled={explaining || aiLoading !== null}
-                className="flex items-center gap-xs bg-surface border border-border-default rounded-md px-sm py-sm font-sora text-xs text-on-surface hover:border-brand/50 hover:text-brand transition-colors disabled:opacity-30"
-                title="Explain article"
+                disabled={explaining || aiLoading !== null || aiUnavailable}
+                className="flex items-center gap-xs bg-surface border border-border-default rounded-md px-sm py-sm font-sora text-xs text-on-surface hover:border-brand/50 hover:text-brand transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                title={aiUnavailable ? "Add an AI provider key to enable" : "Explain article"}
               >
                 {explaining ? <Loader2 className="w-3 h-3 animate-spin" /> : <Brain className="w-3 h-3" />}
                 <span className="hidden sm:inline">Explain</span>
@@ -816,9 +820,9 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
               <button
                 type="button"
                 onClick={handleSummarize}
-                disabled={summarizing || aiLoading !== null}
-                className="flex items-center gap-xs bg-surface border border-border-default rounded-md px-sm py-sm font-sora text-xs text-on-surface hover:border-brand/50 hover:text-brand transition-colors disabled:opacity-30"
-                title="Summarize article"
+                disabled={summarizing || aiLoading !== null || aiUnavailable}
+                className="flex items-center gap-xs bg-surface border border-border-default rounded-md px-sm py-sm font-sora text-xs text-on-surface hover:border-brand/50 hover:text-brand transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                title={aiUnavailable ? "Add an AI provider key to enable" : "Summarize article"}
               >
                 {summarizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <PenLine className="w-3 h-3" />}
                 <span className="hidden sm:inline">Summarize</span>
@@ -831,8 +835,9 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
               ref={modelBtnRef}
               type="button"
               onClick={() => setModelMenuOpen(!modelMenuOpen)}
-              disabled={aiLoading !== null}
-              className="flex items-center gap-xs bg-surface border border-border-default rounded-md px-sm py-sm font-sora text-xs text-on-surface hover:border-brand/50 transition-colors disabled:opacity-30"
+              disabled={aiLoading !== null || aiUnavailable}
+              className="flex items-center gap-xs bg-surface border border-border-default rounded-md px-sm py-sm font-sora text-xs text-on-surface hover:border-brand/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              title={aiUnavailable ? "Add an AI provider key to enable" : "AI model"}
             >
               <span className="hidden sm:inline">{(models.find(m => m.id === aiModel && m.provider === aiProvider) || models.find(m => m.id === aiModel))?.label || aiModel}</span>
               <ChevronDown className="w-3 h-3 text-on-surface-muted" />

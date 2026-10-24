@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Minus, Terminal, UserCheck, AlertTriangle } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
@@ -10,6 +11,10 @@ import CodeBlock from "@/components/ui/CodeBlock";
 import PullQuote from "@/components/ui/PullQuote";
 import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import PrintButton from "@/components/ui/PrintButton";
+import InlineHighlights from "@/components/ui/InlineHighlights";
+import Comments from "@/components/ui/Comments";
+import { PublicToggleButton, usePublicState } from "@/components/ui/PublicToggle";
+import { useAuth } from "@/lib/AuthContext";
 import {
   antonAuthor,
   guideToc,
@@ -17,6 +22,9 @@ import {
   guideTipCards,
   guideCodeBlock,
 } from "@/content/registry";
+import { generativeAi } from "@/content/guides/generative-ai";
+
+const GUIDE_SLUG = "generative-ai";
 
 import type { LucideIcon } from "lucide-react";
 
@@ -29,9 +37,14 @@ const iconMap: Record<string, LucideIcon> = {
 };
 
 export default function GuidePage() {
+  const { isOwner } = useAuth();
+  const articleRef = useRef<HTMLElement>(null);
+  const highlightClickRef = useRef<(id: number) => void>(() => {});
+  const { isPublic, toggle } = usePublicState(GUIDE_SLUG);
+  const storyText = [generativeAi.intro, ...(generativeAi.body || [])].join(" ");
   return (
     <div className="pt-32 pb-giant">
-      <article className="max-w-readme mx-auto px-gutter md:px-margin-desktop">
+      <article ref={articleRef} data-section-index={0} data-paragraph-index={0} className="max-w-readme mx-auto px-gutter md:px-margin-desktop">
         {/* Hero Header */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-xl items-end mb-giant">
           <div className="lg:col-span-8">
@@ -98,6 +111,11 @@ export default function GuidePage() {
                 })}
               />
               <PrintButton compact label="Print / Save PDF" />
+              {isOwner && (
+                <div className="px-sm">
+                  <PublicToggleButton isPublic={isPublic} onToggle={toggle} />
+                </div>
+              )}
             </div>
           </aside>
 
@@ -256,6 +274,20 @@ export default function GuidePage() {
           </div>
         </div>
       </article>
+
+      {/* Comments */}
+      <Comments storySlug={GUIDE_SLUG} storyContext={{ title: generativeAi.title, body: storyText }} />
+
+      <InlineHighlights
+        slug={GUIDE_SLUG}
+        storyText={storyText}
+        storyTitle={generativeAi.title}
+        articleRef={articleRef}
+        isOwner={isOwner}
+        onHighlightsChange={() => {}}
+        highlightClickRef={highlightClickRef}
+        selectionAi
+      />
 
       {/* Newsletter CTA */}
       <NewsletterSignup variant="centered-light" />

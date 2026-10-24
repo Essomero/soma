@@ -22,6 +22,12 @@ interface SelectionToolbarProps {
   aiModel?: string;
   aiProvider?: string;
   onAiModelChange?: (modelId: string, provider?: string) => void;
+  /**
+   * When true the AI actions still render but are disabled with an
+   * explanatory tooltip. Missing keys hide nothing: the reader sees
+   * the feature exists and what would unlock it.
+   */
+  aiDisabled?: boolean;
 }
 
 const COLORS = [
@@ -44,6 +50,7 @@ export default function SelectionToolbar({
   aiModel,
   aiProvider,
   onAiModelChange,
+  aiDisabled = false,
 }: SelectionToolbarProps) {
   const [showColors, setShowColors] = useState(false);
   const [showModelMenu, setShowModelMenu] = useState(false);
@@ -147,8 +154,9 @@ export default function SelectionToolbar({
       {onExplain && (
         <button
           onClick={onExplain}
-          className="flex items-center gap-xs px-sm sm:px-md py-sm font-sora text-[11px] text-on-surface hover:bg-surface-container transition-colors border-r border-border-default"
-          title="Explain with AI"
+          disabled={aiDisabled}
+          className="flex items-center gap-xs px-sm sm:px-md py-sm font-sora text-[11px] text-on-surface hover:bg-surface-container transition-colors border-r border-border-default disabled:opacity-40 disabled:cursor-not-allowed"
+          title={aiDisabled ? "Add an AI provider key to enable" : "Explain with AI"}
         >
           <Brain className="w-3.5 h-3.5 text-amber-400" />
           <span className="hidden sm:inline">Explain</span>
@@ -158,8 +166,9 @@ export default function SelectionToolbar({
       {onSummarize && (
         <button
           onClick={onSummarize}
-          className="flex items-center gap-xs px-sm sm:px-md py-sm font-sora text-[11px] text-on-surface hover:bg-surface-container transition-colors border-r border-border-default"
-          title="Summarize with AI"
+          disabled={aiDisabled}
+          className="flex items-center gap-xs px-sm sm:px-md py-sm font-sora text-[11px] text-on-surface hover:bg-surface-container transition-colors border-r border-border-default disabled:opacity-40 disabled:cursor-not-allowed"
+          title={aiDisabled ? "Add an AI provider key to enable" : "Summarize with AI"}
         >
           <ListCollapse className="w-3.5 h-3.5 text-amber-400" />
           <span className="hidden sm:inline">Summarize</span>

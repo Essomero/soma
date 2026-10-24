@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { Stars } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
@@ -7,10 +8,22 @@ import PrintButton from "@/components/ui/PrintButton";
 import PullQuote from "@/components/ui/PullQuote";
 import StoryCard from "@/components/cards/StoryCard";
 import NewsletterSignup from "@/components/ui/NewsletterSignup";
+import InlineHighlights from "@/components/ui/InlineHighlights";
+import Comments from "@/components/ui/Comments";
+import { PublicToggleButton, usePublicState } from "@/components/ui/PublicToggle";
+import { useAuth } from "@/lib/AuthContext";
 import { ruthStory, ruthMoreStories } from "@/content/registry";
+import { ruthIkegah } from "@/content/stories/ruth-ikegah";
 import { md } from "@/lib/markdown";
 
+const STORY_SLUG = "ruth-ikegah";
+
 export default function DeveloperStoryPage() {
+  const { isOwner } = useAuth();
+  const articleRef = useRef<HTMLElement>(null);
+  const highlightClickRef = useRef<(id: number) => void>(() => {});
+  const { isPublic, toggle } = usePublicState(STORY_SLUG);
+  const storyText = [ruthIkegah.intro, ...(ruthIkegah.body || [])].join(" ");
   return (
     <div>
       {/* Hero Section */}
@@ -33,6 +46,11 @@ export default function DeveloperStoryPage() {
                 </>
               )}
             </div>
+            {isOwner && (
+              <div className="mb-xxl">
+                <PublicToggleButton isPublic={isPublic} onToggle={toggle} />
+              </div>
+            )}
           </div>
         </div>
 
@@ -62,7 +80,7 @@ export default function DeveloperStoryPage() {
           </aside>
 
           {/* Article Body */}
-          <article className="md:col-span-8 md:col-start-5 space-y-xl">
+          <article ref={articleRef} data-section-index={0} data-paragraph-index={0} className="md:col-span-8 md:col-start-5 space-y-xl">
             {/* Intro pullout */}
             <div className="p-xl bg-surface-container-low border-l-4 border-secondary">
               <p className="font-dm-sans text-xl md:text-2xl leading-relaxed text-on-surface">
@@ -185,6 +203,20 @@ export default function DeveloperStoryPage() {
           </article>
         </div>
       </section>
+
+      {/* Comments */}
+      <Comments storySlug={STORY_SLUG} storyContext={{ title: ruthStory.title, body: storyText }} />
+
+      <InlineHighlights
+        slug={STORY_SLUG}
+        storyText={storyText}
+        storyTitle={ruthStory.title}
+        articleRef={articleRef}
+        isOwner={isOwner}
+        onHighlightsChange={() => {}}
+        highlightClickRef={highlightClickRef}
+        selectionAi
+      />
 
       {/* More Stories */}
       <section className="bg-surface-container-low py-giant border-t border-border-default">
