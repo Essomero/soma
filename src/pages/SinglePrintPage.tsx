@@ -65,6 +65,18 @@ export default function SinglePrintPage({ type, base }: { type: SinglePrintType;
 
   const found = story ?? guide ?? doc ?? episode ?? null;
 
+  const title = story?.title ?? guide?.title ?? doc?.title ?? episode?.title ?? "";
+
+  useEffect(() => {
+    if (title) {
+      const prev = document.title;
+      document.title = `${title} : Soma Print Edition`;
+      return () => {
+        document.title = prev;
+      };
+    }
+  }, [title]);
+
   if (loading) {
     return (
       <div className="max-w-3xl mx-auto px-6 py-20 text-center">
@@ -74,7 +86,6 @@ export default function SinglePrintPage({ type, base }: { type: SinglePrintType;
   }
 
 
-  const title = story?.title ?? guide?.title ?? doc?.title ?? episode?.title ?? "";
   const description =
     story?.excerpt ?? guide?.excerpt ?? doc?.description ?? episode?.description ?? "";
   const authorName =
@@ -118,16 +129,6 @@ export default function SinglePrintPage({ type, base }: { type: SinglePrintType;
     }
     return 0;
   })();
-
-  useEffect(() => {
-    if (title) {
-      const prev = document.title;
-      document.title = `${title} : Soma Print Edition`;
-      return () => {
-        document.title = prev;
-      };
-    }
-  }, [title]);
 
   if (!found) {
     return (

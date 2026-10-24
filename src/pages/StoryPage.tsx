@@ -104,6 +104,24 @@ function StoryProgressButton({ slug }: { slug: string }) {
   );
 }
 
+function CollectionProgressButton({ collectionSlug, storySlugs, title, currentSlug }: { collectionSlug: string; storySlugs: string[]; title: string; currentSlug: string }) {
+  const { isCompleted, toggle } = useProgress(collectionSlug, storySlugs);
+  const done = isCompleted(currentSlug);
+  return (
+    <button
+      onClick={() => toggle(currentSlug)}
+      className={`inline-flex items-center gap-sm px-xl py-md rounded-lg font-sora text-sm transition-all ${
+        done
+          ? "bg-secondary/10 border border-secondary/40 text-secondary"
+          : "bg-surface-container-low border border-border-default text-on-surface-muted hover:border-primary/40 hover:text-primary"
+      }`}
+    >
+      {done ? <Check className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+      {done ? `${title} : Completed` : `Mark as read in ${title}`}
+    </button>
+  );
+}
+
 export default function StoryPage() {
   const { slug } = useParams<{ slug: string }>();
   const { data: story, loading: storyLoading } = useContentItem<StoryContent>("story", slug);
@@ -1301,21 +1319,14 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
                   if (type === "series") return series.find((s) => s.slug === collection.slug)?.episodes.map((e) => e.storySlug) ?? [];
                   return [];
                 })();
-                const { isCompleted, toggle } = useProgress(collection.slug, storySlugs);
-                const done = isCompleted(slug);
                 return (
-                  <button
+                  <CollectionProgressButton
                     key={collection.slug}
-                    onClick={() => toggle(slug)}
-                    className={`inline-flex items-center gap-sm px-xl py-md rounded-lg font-sora text-sm transition-all ${
-                      done
-                        ? "bg-secondary/10 border border-secondary/40 text-secondary"
-                        : "bg-surface-container-low border border-border-default text-on-surface-muted hover:border-primary/40 hover:text-primary"
-                    }`}
-                  >
-                    {done ? <Check className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
-                    {done ? `${collection.title} : Completed` : `Mark as read in ${collection.title}`}
-                  </button>
+                    collectionSlug={collection.slug}
+                    storySlugs={storySlugs}
+                    title={collection.title}
+                    currentSlug={slug}
+                  />
                 );
               })}
               {/* Standalone mark-as-read for non-course/book stories */}
