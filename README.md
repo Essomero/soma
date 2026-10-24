@@ -151,6 +151,26 @@ To enable the inline margin AI assistant and research chat, add one or more prov
 
 ---
 
+## Keeping Your Deployment Updated
+
+The Deploy button created a personal copy of Soma under your GitHub account. That copy is yours to keep. Your notes, highlights, and publishing toggles live in your Turso database, never in git, so pulling our updates never touches your writing.
+
+When `Essomero/soma` ships fixes, bring them into your copy:
+
+**Option A: one click (recommended).** Open your repo on GitHub. If it shows "This branch is behind", click **Sync fork**, then Update branch. If your Vercel project is connected to the repo, it redeploys on its own. Otherwise press Redeploy in the Vercel dashboard.
+
+**Option B: command line, inside your local clone.**
+```bash
+git remote add upstream https://github.com/Essomero/soma.git   # once
+git fetch upstream
+git merge upstream/main
+git push origin main
+```
+
+Your database, password, and AI keys live in Vercel project settings and your Turso account, not in the repo, so syncing code never wipes them. If you authored your own files under `src/content/`, keep them on a branch to make merges trivial. Everything you write in `/learn` is already safe in your database.
+
+---
+
 ## How AI Agents Generate and Publish Content
 
 Because Soma bundles agent skills, you can use any coding assistant to manage your publication:
