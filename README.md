@@ -117,12 +117,23 @@ Prefer to use a database you already own, or want it under your own Turso accoun
 
 ### Step 2: (Optional) Add AI Keys
 
-To enable the inline margin AI assistant and research chat, add one or more provider keys in your Vercel project settings:
+Without keys, reading, writing, and publishing work as is. Add any one key below and three features light up on your published pages:
 
-- `OPENROUTER_API_KEY` (unified router for Claude, GPT, Gemini, Llama)
-- `DEEPSEEK_API_KEY` (DeepSeek direct API)
-- `GROQ_API_KEY` (ultra-fast Llama inference)
-- `GEMINI_API_KEY` (Google Gemini)
+- **Margin AI:** select any paragraph on a story, guide, or doc and ask it to explain the passage or distill it to its point.
+- **Comment replies:** answer a reader's comment with one click, using the article as context.
+- **Test grading:** diagnostic tests (`/tests/:slug`) grade written answers and return scored feedback. Without a key the grade button stays quiet and tells you which env var to set.
+
+Add keys in Vercel under Project Settings > Environment Variables, then redeploy. Locally, copy `.env.example` to `.env.local` and fill the same names. You only need one; add more to unlock more models in the picker.
+
+| Env var | What you get | Where to get it |
+|---|---|---|
+| `OPENROUTER_API_KEY` | One key for Claude, GPT, Gemini, Llama, and Qwen through a single router | [openrouter.ai/keys](https://openrouter.ai/keys) |
+| `DEEPSEEK_API_KEY` | Direct DeepSeek models | [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys) |
+| `GEMINI_API_KEY` | Direct Google Gemini models | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+| `GROQ_API_KEY` | Fast Llama and Mixtral inference | [console.groq.com/keys](https://console.groq.com/keys) |
+| `CELEBRAS_API_KEY` | Fast Cerebras inference | [cloud.cerebras.ai](https://cloud.cerebras.ai/) |
+
+Two more vars exist for custom gateways if you already run them (`STRAITLY_API_KEY`, `META_API_KEY` / `MODEL_API_KEY`). You don't need them for the features above.
 
 ---
 
