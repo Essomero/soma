@@ -626,8 +626,8 @@ function chatDevPlugin(env: Record<string, string>) {
       });
       // Comments CRUD — handle locally so highlight_id works (not yet deployed)
       server.middlewares.use("/api/comments", async (req: any, res: any, next: any) => {
-        const TURSO_URL = (env.TURSO_DB || "").replace("libsql://", "https://");
-        const TURSO_TOKEN = env.TURSO_TOKEN || "";
+        const TURSO_URL = (env.TURSO_DATABASE_URL || env.TURSO_DB || "").replace("libsql://", "https://");
+        const TURSO_TOKEN = env.TURSO_AUTH_TOKEN || env.TURSO_TOKEN || "";
 
         async function turso(sql: string, args: any[]) {
           const body = { requests: [{ type: "execute", stmt: { sql, args: args.map((a: any) => {
@@ -707,8 +707,8 @@ function chatDevPlugin(env: Record<string, string>) {
 
       server.middlewares.use("/api/highlights", async (req: any, res: any, next: any) => {
         if (!["GET", "POST", "DELETE"].includes(req.method || "")) return next();
-        const TURSO_URL = (env.TURSO_DB || "").replace("libsql://", "https://");
-        const TURSO_TOKEN = env.TURSO_TOKEN || "";
+        const TURSO_URL = (env.TURSO_DATABASE_URL || env.TURSO_DB || "").replace("libsql://", "https://");
+        const TURSO_TOKEN = env.TURSO_AUTH_TOKEN || env.TURSO_TOKEN || "";
 
         // Ensure table exists on first request
         await fetch(TURSO_URL + "/v2/pipeline", {
@@ -830,8 +830,8 @@ function chatDevPlugin(env: Record<string, string>) {
 
       // Learn articles CRUD — local dev mirror of api/learn.js
       server.middlewares.use("/api/learn", async (req: any, res: any, next: any) => {
-        const TURSO_URL = (env.TURSO_DB || "").replace("libsql://", "https://");
-        const TURSO_TOKEN = env.TURSO_TOKEN || "";
+        const TURSO_URL = (env.TURSO_DATABASE_URL || env.TURSO_DB || "").replace("libsql://", "https://");
+        const TURSO_TOKEN = env.TURSO_AUTH_TOKEN || env.TURSO_TOKEN || "";
 
         async function turso(sql: string, args: any[]) {
           const body = { requests: [{ type: "execute", stmt: { sql, args: args.map((a: any) => {
@@ -915,8 +915,8 @@ function chatDevPlugin(env: Record<string, string>) {
 
       // Public-page toggles — mirrors api/public.js so the learn/public toggle works in dev
       server.middlewares.use("/api/public", async (req: any, res: any, next: any) => {
-        const TURSO_URL = (env.TURSO_DB || "").replace("libsql://", "https://");
-        const TURSO_TOKEN = env.TURSO_TOKEN || "";
+        const TURSO_URL = (env.TURSO_DATABASE_URL || env.TURSO_DB || "").replace("libsql://", "https://");
+        const TURSO_TOKEN = env.TURSO_AUTH_TOKEN || env.TURSO_TOKEN || "";
 
         async function turso(sql: string, args: any[]) {
           const body = { requests: [{ type: "execute", stmt: { sql, args: args.map((a: any) => {

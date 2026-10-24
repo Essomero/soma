@@ -60,7 +60,27 @@ for (const g of allGuides) {
   if (!g.slug || !g.title) fail(`guide missing slug/title`);
 }
 
-// 4. Static in-app hrefs must resolve (catches hardcoded links to pruned slugs).
+// 4. Env reads must prefer the official Turso names. A bare TURSO_DB /
+// TURSO_TOKEN read silently breaks for anyone who followed the docs.
+const envHits = [];
+function scanEnv(dir) {
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, e.name);
+    if (p.endsWith("validate-content.ts")) continue;
+    if (e.isDirectory()) { if (e.name !== "node_modules" && e.name !== "dist") scanEnv(p); continue; }
+    if (!/\.(ts|tsx|js|mjs)$/.test(p)) continue;
+    const text = readFileSync(p, "utf8");
+    for (const [i, line] of text.split("\n").entries()) {
+      // Only flag actual env reads (process.env.X / env.X), not local
+      // constants or comments that merely mention the legacy names.
+      if (/(process\.env|[^A-Z_]env)\.TURSO_DB\b/.test(line) && !/TURSO_DATABASE_URL/.test(line)) envHits.push(`${p}:${i + 1}: bare TURSO_DB read without TURSO_DATABASE_URL fallback`);
+      if (/(process\.env|[^A-Z_]env)\.TURSO_TOKEN\b/.test(line) && !/TURSO_AUTH_TOKEN/.test(line)) envHits.push(`${p}:${i + 1}: bare TURSO_TOKEN read without TURSO_AUTH_TOKEN fallback`);
+    }
+  }
+}
+scanEnv(new URL("../", import.meta.url).pathname);
+for (const h of envHits) fail(h);
+// 5. Static in-app hrefs must resolve (catches hardcoded links to pruned slugs).
 // Only matches route-shaped strings opened by a quote or paren, so external
 // URLs (https://...) and module import paths (./...) never match.
 const hrefHits = [];

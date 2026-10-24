@@ -1,13 +1,13 @@
 // One-time setup: create the public_pages table in Turso DB.
 // Run: node scripts/setup-public-pages.js
 //
-// Requires TURSO_DB and TURSO_TOKEN env vars (same as api/*.js).
+// Requires TURSO_DATABASE_URL and TURSO_AUTH_TOKEN env vars (same as api/*.js).
 
-const DB_URL = (process.env.TURSO_DB || "").replace("libsql://", "https://");
-const TOKEN = process.env.TURSO_TOKEN || "";
+const DB_URL = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").replace("libsql://", "https://");
+const TOKEN = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "";
 
 if (!DB_URL || !TOKEN) {
-  console.error("Set TURSO_DB and TURSO_TOKEN environment variables.");
+  console.error("Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN environment variables.");
   process.exit(1);
 }
 
