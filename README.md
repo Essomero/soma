@@ -99,7 +99,7 @@ Three moves: fork, import, deploy. Your notes — and every story, guide, course
 
 ### Step 0: Fork Soma
 
-[**Fork `Essomero/soma`**](https://github.com/Essomero/soma/fork) (accept the defaults). This is your copy: it stays linked for one-click updates later. No git needed. Agents stage into your database, not into the fork, so unfinished work never touches GitHub.
+[**Fork `Essomero/soma`**](https://github.com/Essomero/soma/fork) (accept the defaults). This is your copy: it stays linked for one-click updates later. No git needed. Agents publish into your database, not into the fork, so unfinished work never touches GitHub.
 
 ### Step 1: Import Your Fork Into Vercel
 
@@ -152,7 +152,7 @@ Your fork is public by design (GitHub forks of public repos cannot go private), 
 
 When we ship fixes, open your fork on GitHub. If it shows "This branch is behind", click **Sync fork**, then Update branch. That is the whole update: no terminal, no git commands. If your Vercel project is connected to the repo, it redeploys on its own. Otherwise press Redeploy in the Vercel dashboard.
 
-One habit keeps merges clean forever: published manuscripts get archived as new files under `src/content/` with new slugs — never edit the seed files in place. Everything you write in `/learn` or stage as private is already safe in your database either way.
+One habit keeps merges clean forever: published manuscripts get archived as new files under `src/content/` with new slugs — never edit the seed files in place. Everything you write in `/learn` or publish as private is already safe in your database either way.
 
 ---
 
