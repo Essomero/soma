@@ -46,7 +46,7 @@ export default function Header() {
             className="flex items-center gap-sm font-sora text-article-title font-bold text-on-surface tracking-tighter hover:text-primary transition-colors"
           >
             <img
-              src="/icon-mono-dark.png"
+              src="/icon-soma.png"
               alt=""
               width={32}
               height={32}
