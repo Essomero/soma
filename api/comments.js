@@ -79,14 +79,16 @@ function buildTree(rows) {
   return roots;
 }
 
-// Run migration to add parent_id column if it doesn't exist
+// Run migrations for columns added after the table first existed.
+// Inspects the live schema and adds only what's missing, so fresh
+// databases (full schema from CREATE TABLE) and old ones (partial
+// schema, columns added over time) converge silently with no
+// "duplicate column" noise in the logs.
 let migrated = false;
 async function ensureSchema() {
   if (migrated) return;
   // Fresh database (e.g. just provisioned via the Vercel integration):
-  // create the table first so the ALTERs and queries below never hit
-  // "no such table". Safe to run on every cold start; IF NOT EXISTS
-  // makes it a no-op once the table is there.
+  // create the table first so later statements never hit "no such table".
   await query(`CREATE TABLE IF NOT EXISTS comments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     story_slug TEXT NOT NULL,
@@ -103,20 +105,20 @@ async function ensureSchema() {
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT
   )`);
+  let existing = [];
   try {
-    await query("ALTER TABLE comments ADD COLUMN parent_id INTEGER");
-  } catch (e) {
-    // Column already exists : fine
-  }
-  try {
-    await query("ALTER TABLE comments ADD COLUMN is_ai INTEGER DEFAULT 0");
-  } catch (e) {
-    // Column already exists : fine
-  }
-  try {
-    await query("ALTER TABLE comments ADD COLUMN ai_model TEXT");
-  } catch (e) {
-    // Column already exists : fine
+    const info = await query("PRAGMA table_info(comments)");
+    existing = info.map((c) => c.name);
+  } catch {}
+  const wanted = [
+    ["parent_id", "INTEGER"],
+    ["is_ai", "INTEGER DEFAULT 0"],
+    ["ai_model", "TEXT"],
+  ];
+  for (const [name, ddl] of wanted) {
+    if (!existing.includes(name)) {
+      await query(`ALTER TABLE comments ADD COLUMN ${name} ${ddl}`);
+    }
   }
   migrated = true;
 }
