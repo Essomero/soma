@@ -3,9 +3,10 @@ import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
 import SidebarToc from "@/components/sections/SidebarToc";
 import ContentBlocks from "@/components/ui/ContentBlocks";
+import ShareButtons from "@/components/ui/ShareButtons";
 import PrintButton from "@/components/ui/PrintButton";
 import { allDocs } from "@/content/registry";
-import { md } from "@/lib/markdown";
+import { md, contentToMarkdown } from "@/lib/markdown";
 import type { TocItem } from "@/types";
 
 export default function DocPage() {
@@ -94,6 +95,20 @@ export default function DocPage() {
           <aside className="lg:col-span-3 order-2 lg:order-1">
             <div className="sticky top-24 space-y-xl">
               {tocItems.length > 0 && <SidebarToc items={tocItems} label="In this Doc" />}
+              <ShareButtons
+                variant="column"
+                markdownContent={contentToMarkdown({
+                  title: doc.title,
+                  intro: doc.description,
+                  sections: doc.sections.map((s) => ({
+                    heading: s.number !== "·" ? `${s.number} ${s.heading}` : s.heading,
+                    paragraphs: [
+                      ...(s.intro ? [s.intro] : []),
+                      ...s.items.flatMap((item) => [`Q: ${item.question}`, ...item.answer]),
+                    ],
+                  })),
+                })}
+              />
             </div>
           </aside>
 

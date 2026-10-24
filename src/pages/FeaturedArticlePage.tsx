@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import ImmersiveHero from "@/components/sections/ImmersiveHero";
 import SidebarAbout from "@/components/sections/SidebarAbout";
 import ShareButtons from "@/components/ui/ShareButtons";
+import { contentToMarkdown } from "@/lib/markdown";
 import BentoCard from "@/components/cards/BentoCard";
 import PullQuote from "@/components/ui/PullQuote";
 import PrintButton from "@/components/ui/PrintButton";
@@ -52,7 +53,7 @@ export default function FeaturedArticlePage() {
         <aside className="md:col-span-3 space-y-xl border-t border-border-default pt-xl md:pt-0">
           <SidebarAbout publicToggleSlug={isOwner ? STORY_SLUG : undefined} />
           <div className="hidden md:block">
-            <ShareButtons variant="column" />
+            <ShareButtons variant="column" markdownContent={contentToMarkdown({ title: whyIBuiltSoma.title, intro: whyIBuiltSoma.description, sections: whyIBuiltSoma.sections })} />
           </div>
           <div className="hidden md:block">
             <PrintButton stretch label="Print / Save PDF" />

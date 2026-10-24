@@ -15,7 +15,7 @@ import { PublicToggleButton, usePublicState } from "@/components/ui/PublicToggle
 import { useAuth } from "@/lib/AuthContext";
 import { benjaminStory, benjaminMoreStories } from "@/content/registry";
 import { benjaminMayanja } from "@/content/stories/benjamin-mayanja";
-import { md } from "@/lib/markdown";
+import { md, contentToMarkdown } from "@/lib/markdown";
 
 const STORY_SLUG = "benjamin-mayanja";
 
@@ -77,7 +77,7 @@ export default function DeveloperStoryPage() {
                   "Soma: AI-assisted deep research on technology, economics, philosophy, and beyond. A personal publishing platform for ideas that matter."
                 </p>
               </div>
-              <ShareButtons variant="small-circle" />
+              <ShareButtons variant="small-circle" markdownContent={contentToMarkdown({ title: benjaminStory.title, intro: benjaminMayanja.intro, body: benjaminMayanja.body })} />
               <PrintButton compact label="Print / Save PDF" />
             </div>
           </aside>

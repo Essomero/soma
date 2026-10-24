@@ -11,7 +11,7 @@ import ContentBlocks from "@/components/ui/ContentBlocks";
 import InlineHighlights from "@/components/ui/InlineHighlights";
 import { allFeatured } from "@/content/registry";
 import { type HighlightData } from "@/lib/highlights";
-import { md } from "@/lib/markdown";
+import { md, contentToMarkdown } from "@/lib/markdown";
 
 export default function GenericFeaturedPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -59,7 +59,7 @@ export default function GenericFeaturedPage() {
         <aside className="md:col-span-3 space-y-xl border-t border-border-default pt-xl md:border-t-0 md:pt-0">
           <SidebarAbout />
           <div className="hidden md:block">
-            <ShareButtons variant="column" />
+            <ShareButtons variant="column" markdownContent={contentToMarkdown({ title: article.title, intro: [article.tagline, article.description].filter(Boolean).join("\n\n"), sections: article.sections })} />
           </div>
         </aside>
 

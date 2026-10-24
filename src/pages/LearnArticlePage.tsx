@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Edit3, Trash2, Loader2, Link2Off } from "lucide-react";
+import { ArrowLeft, Edit3, Trash2, Loader2, Link2Off, Clipboard, Check } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
 import Comments from "@/components/ui/Comments";
@@ -111,6 +111,7 @@ export default function LearnArticlePage() {
   const [notFound, setNotFound] = useState(false);
 
   const [allHighlights, setAllHighlights] = useState<HighlightData[]>([]);
+  const [noteCopied, setNoteCopied] = useState(false);
   const [commentsRefresh, setCommentsRefresh] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -154,6 +155,24 @@ export default function LearnArticlePage() {
   }, []);
 
   const storyText = article ? article.content : "";
+
+  const handleCopyNote = useCallback(async () => {
+    if (!article?.content) return;
+    try {
+      await navigator.clipboard.writeText(`# ${article.title}\n\n${article.content}`);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = `# ${article.title}\n\n${article.content}`;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setNoteCopied(true);
+    setTimeout(() => setNoteCopied(false), 2000);
+  }, [article]);
 
   const confirmDeleteArticle = useCallback(async () => {
     if (!article || deleting) return;
@@ -242,6 +261,14 @@ export default function LearnArticlePage() {
             >
               <Edit3 className="w-3.5 h-3.5" /> Edit
             </Link>
+            <Tooltip label={noteCopied ? "Copied!" : "Copy note as Markdown"}>
+              <button
+                onClick={handleCopyNote}
+                className="inline-flex items-center gap-xs px-md py-sm rounded-md font-sora text-xs bg-surface border border-border-default text-on-surface-muted hover:text-secondary hover:border-secondary/50 transition-colors"
+              >
+                {noteCopied ? <Check className="w-3.5 h-3.5 text-secondary" /> : <Clipboard className="w-3.5 h-3.5" />} {noteCopied ? "Copied" : "Copy"}
+              </button>
+            </Tooltip>
             <button
               onClick={() => setDeleteTarget(true)}
               className="inline-flex items-center gap-xs px-md py-sm rounded-md font-sora text-xs bg-surface border border-border-default text-on-surface-muted hover:text-error hover:border-error/50 transition-colors"
