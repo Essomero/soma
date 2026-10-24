@@ -107,15 +107,15 @@ On the configure page, open **Environment Variables** and add one variable:
 |---|---|---|
 | `SITE_PASSWORD` | Any strong string you invent (e.g. `openssl rand -base64 32`) | Your private studio login. Toggle the lock icon to mark it Sensitive |
 
-Do this before pressing Deploy: deploying without it breaks login and forces a redeploy to fix. Do not add any `VITE_*` variables here: those are local-development only and baking them into Vercel would expose your database token in the shipped JavaScript.
+Do this before pressing Deploy: deploying without it breaks login and forces a redeploy to fix. Do not add any `VITE_*` variables: those are local-development only and baking them into Vercel would expose your database token in the shipped JavaScript.
 
-### Step 2: Add the Turso Integration, Then Deploy
-
-Vercel tells you what to do here: "Review the recommended integrations below, then deploy." Further down the same page, under Optional Integrations, click **Add** on the **Turso** card. Vercel provisions the database and injects its URL and token into your project on its own: `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`, no copying. The suggested resource name is random (e.g. `database-celeste-arrow`): it is only a label in the dashboards, so accept it or rename it, the app does not care.
+Further down the same page, under Optional Integrations, click **Add** on the **Turso** card. Vercel provisions the database and injects its URL and token into your project on its own: `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`, no copying. The suggested resource name is random (e.g. `database-celeste-arrow`): it is only a label in the dashboards, so accept it or rename it, the app does not care.
 
 Then press Deploy. Tables initialize automatically on the first API request: no migrations, no SQL to run by hand.
 
-### Step 3: (Optional) Add AI Keys
+Prefer to use a database you already own, or want it under your own Turso account? Skip the card and paste its URL and token as `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` yourself, instead. Either path lands in the same place.
+
+### Step 2: (Optional) Add AI Keys
 
 To enable the inline margin AI assistant and research chat, add one or more provider keys in your Vercel project settings:
 
@@ -182,7 +182,7 @@ npm run build   # Type-checks and builds the production bundle
 Soma has two local modes. Pick deliberately:
 
 - **`npm run dev` (no setup):** the frontend proxies `/api` to the production deployment. Use it to browse and write UI code with zero configuration. Warning: notes, highlights, and toggles you create go to the live production database. Never use this mode for testing data flows.
-- **`npm run dev:local` plus `npm run server` (your own database):** the frontend proxies `/api` to `http://localhost:3001`, served from your own Turso database. Use it for anything that writes data:
+- **`npm run dev:local` plus `npm run server` (your own database):** the frontend proxies `/api` to `http://localhost:3001`, served from your own Turso database. The API server reads `.env.local` on its own and warns at startup if the Turso vars are missing. Use it for anything that writes data:
 ```bash
 npm run server    # terminal 1: local edge API on :3001
 npm run dev:local # terminal 2: frontend on :5173 wired to :3001

@@ -26,6 +26,12 @@ interface StoryContext {
 interface CommentsProps {
   storySlug: string;
   storyContext?: StoryContext;
+  /**
+   * Bump to refetch the thread list, e.g. after the sibling
+   * InlineHighlights posts a highlight-attached comment. Keeps the
+   * section below in sync without a page refresh.
+   */
+  refreshSignal?: number;
 }
 
 interface ModelInfo {
@@ -82,7 +88,7 @@ function ConfirmModal({ message, onConfirm, onCancel, loading }: { message: stri
   );
 }
 
-export default function Comments({ storySlug, storyContext }: CommentsProps) {
+export default function Comments({ storySlug, storyContext, refreshSignal = 0 }: CommentsProps) {
   const { isOwner } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [body, setBody] = useState("");

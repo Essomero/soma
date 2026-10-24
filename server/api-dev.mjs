@@ -1,8 +1,27 @@
 // Local API dev server: runs the same handlers as Vercel, but locally
-// Usage: node server/api-dev.mjs
+// Usage: node server/api-dev.mjs (via `npm run server`)
 // Requires: TURSO_DATABASE_URL and TURSO_AUTH_TOKEN env vars (legacy TURSO_DB / TURSO_TOKEN also accepted)
 
 import { createServer } from "http";
+import { readFileSync, existsSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+
+// Vite loads .env files on its own, but plain `node` does not. Read them
+// here so `npm run server` works straight after `cp .env.example .env.local`
+// without exporting anything by hand. Real environment wins over files.
+const rootDir = join(dirname(fileURLToPath(import.meta.url)), "..");
+for (const file of [".env.local", ".env"]) {
+  const path = join(rootDir, file);
+  if (!existsSync(path)) continue;
+  for (const line of readFileSync(path, "utf8").split("\n")) {
+    const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
+    if (!m) continue;
+    let v = m[2].trim();
+    if (v.length >= 2 && ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'")))) v = v.slice(1, -1);
+    if (!(m[1] in process.env)) process.env[m[1]] = v;
+  }
+}
 
 const PORT = 3001;
 
@@ -64,6 +83,12 @@ const server = createServer(async (req, res) => {
 
   await handler(vercelReq, vercelRes);
 });
+
+const hasDb = !!(process.env.TURSO_DATABASE_URL || process.env.TURSO_DB);
+const hasToken = !!(process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN);
+if (!hasDb || !hasToken) {
+  console.error("Missing Turso credentials: set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN (see .env.example) or every /api/* request will fail.");
+}
 
 server.listen(PORT, () => {
   console.log(`API dev server running at http://localhost:${PORT}`);
