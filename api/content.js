@@ -35,12 +35,11 @@ const ROUTE_BASE = {
 
 const STATUSES = new Set(["draft", "published"]);
 
-// Runtime self-heal: a deployment whose store is empty (fresh database,
-// never seeded) fills itself from the build-time corpus snapshot on first
-// read. One redeploy picks this up; after that no CLI or rebuild is ever
-// needed. Seeded rows honor public_pages, so fresh stores land as drafts.
+// Runtime self-heal: the seed corpus is the always-present baseline. Any
+// seed slug missing from the store is inserted on first read (draft unless
+// public_pages says public). One redeploy picks this up; after that no CLI
+// or rebuild is ever needed.
 const CREATE_PUBLIC_PAGES = `CREATE TABLE IF NOT EXISTS public_pages (slug TEXT PRIMARY KEY, "public" INTEGER NOT NULL DEFAULT 0, set_at TEXT)`;
-const CREATE_SEED_META = `CREATE TABLE IF NOT EXISTS _seed_meta (key TEXT PRIMARY KEY, done_at TEXT)`;
 
 function toArg(a) {
   if (a === null || a === undefined) return { type: "null" };
@@ -94,48 +93,50 @@ async function loadCorpusRows() {
   }
 }
 
-// Returns true when it seeded (caller should re-run its query once).
-// INSERT OR IGNORE keeps concurrent first requests from duplicating rows.
-async function healIfEmptyStore() {
+// Baseline sync: the seed corpus is the always-present baseline. Any seed
+// slug missing from the store is inserted (draft unless public_pages says
+// otherwise). Runs once per cold start, before any GET below, so fresh,
+// pre-seed, and partially-seeded databases all converge with no CLI step
+// and no rebuild. INSERT OR IGNORE keeps concurrent requests from doubling.
+// Deliberately deleted seed rows come back as drafts on next cold start.
+let baselinePromise = null;
+function ensureSeedBaseline() {
+  if (!baselinePromise) baselinePromise = syncSeedBaseline().catch(() => {});
+  return baselinePromise;
+}
+
+async function syncSeedBaseline() {
   const check = await pipeline([
     { type: "execute", stmt: { sql: CREATE_TABLE } },
     { type: "execute", stmt: { sql: CREATE_PUBLIC_PAGES } },
-    { type: "execute", stmt: { sql: CREATE_SEED_META } },
-    { type: "execute", stmt: { sql: "SELECT done_at FROM _seed_meta WHERE key = 'corpus'", args: [] } },
-    { type: "execute", stmt: { sql: "SELECT COUNT(*) AS n FROM content_items", args: [] } },
+    { type: "execute", stmt: { sql: "SELECT slug FROM content_items", args: [] } },
   ]);
-  if (!check) return false;
-  const flagged = rowsOf(check, 3).length > 0;
-  const countRow = rowsOf(check, 4)[0];
-  const count = countRow ? Number(countRow.n) || 0 : 0;
-  if (flagged || count > 0) return false;
-
+  if (!check) return;
+  const have = new Set(rowsOf(check, 2).map((r) => r.slug));
   const corpus = await loadCorpusRows();
-  if (!corpus.length) return false;
-
+  if (!corpus.length) {
+    console.warn("content baseline: no bundled corpus snapshot, skipping");
+    return;
+  }
+  const missing = corpus.filter((e) => e && typeof e.slug === "string" && !have.has(e.slug));
+  if (!missing.length) return;
   const vis = await pipeline([
     { type: "execute", stmt: { sql: 'SELECT slug FROM public_pages WHERE "public" = 1', args: [] } },
   ]);
   const publicSlugs = new Set(rowsOf(vis || { results: [] }, 0).map((r) => r.slug));
   const now = new Date().toISOString();
   const inserts = [];
-  for (const e of corpus) {
-    if (!e || typeof e.slug !== "string") continue;
+  for (const e of missing) {
     const published = publicSlugs.has(e.slug);
     inserts.push(
       { type: "execute", stmt: { sql: `INSERT OR IGNORE INTO content_items (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, args: [e.slug, e.type || "story", published ? "published" : "draft", e.title || "", e.excerpt || "", JSON.stringify(e.body || {}), JSON.stringify(e.meta || {}), Number(e.position) || 0, now].map(toArg) } },
       { type: "execute", stmt: { sql: `INSERT OR IGNORE INTO public_pages (slug, "public", set_at) VALUES (?, ?, ?)`, args: [e.slug, published ? 1 : 0, now].map(toArg) } },
     );
   }
-  if (!inserts.length) return false;
-  // Chunked so no single pipeline call grows without bound; the flag lands
-  // only after every chunk applies, so a partial failure heals forward.
   for (let i = 0; i < inserts.length; i += 40) {
-    const ok = await pipeline(inserts.slice(i, i + 40));
-    if (!ok) return false;
+    await pipeline(inserts.slice(i, i + 40));
   }
-  await pipeline([{ type: "execute", stmt: { sql: "INSERT OR IGNORE INTO _seed_meta (key, done_at) VALUES ('corpus', ?)", args: [toArg(now)] } }]);
-  return true;
+  console.log(`content baseline: seeded ${missing.length} missing rows`);
 }
 
 async function query(sql, args) {
@@ -227,14 +228,16 @@ function mapRow(r) {
 
 export default async function handler(req, res) {
   try {
+    // Baseline first: missing seed rows are backfilled before any read,
+    // so partially-seeded and pre-seed databases converge with no action.
+    // Once per cold start; later GETs reuse the settled promise.
+    if (req.method === "GET") await ensureSeedBaseline();
+
     // GET ?slug= : single item. Unauthenticated callers see it only when published.
     // When ?type= is also given, the row must match it (slugs are unique per
     // type, not globally).
     if (req.method === "GET" && req.query.slug) {
-      let rows = await query("SELECT * FROM content_items WHERE slug = ?", [req.query.slug]);
-      if (!rows[0] && await healIfEmptyStore()) {
-        rows = await query("SELECT * FROM content_items WHERE slug = ?", [req.query.slug]);
-      }
+      const rows = await query("SELECT * FROM content_items WHERE slug = ?", [req.query.slug]);
       const row = rows[0];
       if (!row) return res.status(404).json({ error: "Not found" });
       if (req.query.type && row.type !== req.query.type) {
@@ -257,38 +260,23 @@ export default async function handler(req, res) {
       const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
       if (q) {
         const like = "%" + q.replace(/[\\%_]/g, (c) => "\\" + c) + "%";
-        let rows = await query(
+        const rows = await query(
           `SELECT * FROM content_items WHERE type = ?${statusFilter}
            AND (title LIKE ? ESCAPE '\\' OR excerpt LIKE ? ESCAPE '\\' OR body_json LIKE ? ESCAPE '\\')
            ORDER BY position ASC`,
           [req.query.type, like, like, like]);
-        if (!rows.length && await healIfEmptyStore()) {
-          rows = await query(
-            `SELECT * FROM content_items WHERE type = ?${statusFilter}
-             AND (title LIKE ? ESCAPE '\\' OR excerpt LIKE ? ESCAPE '\\' OR body_json LIKE ? ESCAPE '\\')
-             ORDER BY position ASC`,
-            [req.query.type, like, like, like]);
-        }
         return res.json(rows.map(mapRow));
       }
-      let rows = await query(
+      const rows = await query(
         `SELECT * FROM content_items WHERE type = ?${statusFilter} ORDER BY position ASC`
         , [req.query.type]);
-      if (!rows.length && await healIfEmptyStore()) {
-        rows = await query(
-          `SELECT * FROM content_items WHERE type = ?${statusFilter} ORDER BY position ASC`
-          , [req.query.type]);
-      }
       return res.json(rows.map(mapRow));
     }
 
     // GET (no params) : full store for the owner (migration/audit tooling).
     if (req.method === "GET") {
       if (!requireAuth(req, res)) return;
-      let rows = await query("SELECT * FROM content_items ORDER BY type ASC, position ASC", []);
-      if (!rows.length && await healIfEmptyStore()) {
-        rows = await query("SELECT * FROM content_items ORDER BY type ASC, position ASC", []);
-      }
+      const rows = await query("SELECT * FROM content_items ORDER BY type ASC, position ASC", []);
       return res.json(rows.map(mapRow));
     }
 

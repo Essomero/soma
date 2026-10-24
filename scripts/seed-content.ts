@@ -24,13 +24,15 @@ async function main() {
   }
   await db.execute(CREATE_CONTENT_ITEMS);
 
-  // Build-time mode: fill fresh databases only. Manual runs always refresh.
+  // Build-time mode backfills only what's missing (fast path for populated
+  // stores); manual runs refresh every row. Status is never touched.
+  let present = new Set<string>();
   if (ifEmpty) {
-    const count = await db.execute("SELECT COUNT(*) AS n FROM content_items");
-    if (Number(count.rows[0]?.n) > 0) {
-      console.log("seed: content_items already populated, skipping");
-      return;
+    const existing = await db.execute("SELECT slug, status FROM content_items");
+    for (const row of existing.rows) {
+      if (typeof row.slug === "string") present.add(row.slug);
     }
+    if (present.size === 0) console.log("seed: empty store, importing full corpus");
   }
 
   // public_pages is the current visibility source of truth : honor it.
@@ -38,8 +40,7 @@ async function main() {
   try {
     const r = await db.execute('SELECT slug FROM public_pages WHERE "public" = 1');
     for (const row of r.rows) {
-      const slug = row.slug;
-      if (typeof slug === "string") publicSlugs.add(slug);
+      if (typeof row.slug === "string") publicSlugs.add(row.slug);
     }
   } catch {
     console.log("no public_pages table yet : all seed rows land as draft");
@@ -57,7 +58,8 @@ async function main() {
     let published = 0;
     const drafts: string[] = [];
     for (const e of entries) {
-      const status = publicSlugs.has(e.slug) ? "published" : "draft";
+      // Build-time mode inserts only what's missing; manual runs refresh all.
+      if (ifEmpty && present.has(e.slug)) continue;
       const now = new Date().toISOString();
       await db.execute({
         sql: `INSERT INTO content_items (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
@@ -76,6 +78,11 @@ async function main() {
     report.push({ type, published, draft: drafts.length, drafts });
   }
 
+  if (ifEmpty) {
+    const inserted = report.reduce((n, r) => n + r.published + r.draft, 0);
+    console.log(`seed: store already complete (${present.size} rows present, ${inserted} inserted)`);
+    return;
+  }
   console.log("seed complete:");
   for (const r of report) {
     console.log(`  ${r.type}: ${r.published} published, ${r.draft} draft${r.drafts.length ? " (" + r.drafts.join(", ") + ")" : ""}`);

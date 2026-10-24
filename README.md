@@ -121,7 +121,7 @@ Prefer to use a database you already own, or want it under your own Turso accoun
 
 ### Step 1.5: Content seeds itself — no action needed
 
-Your database starts empty. The first production build imports the public demo corpus (the essays, guides, and course in this repo) as private drafts — and if a deployment ever comes up empty (older database, fresh provision), the API heals itself from a bundled snapshot on first read. Either way nothing goes public on its own. Flip rows to `published` one by one (per slug: `UPDATE content_items SET status='published' WHERE slug='...'`) or all at once (`UPDATE content_items SET status='published'`). Your own writing stays drafts until you say otherwise.
+Your database starts empty. The first production build imports the public demo corpus (the essays, guides, and course in this repo) as private drafts — and the seed corpus is the always-present baseline: if any demo piece is missing from the store (older database, fresh provision, partial state), the API backfills it on first read. Either way nothing goes public on its own. Flip rows to `published` one by one (per slug: `UPDATE content_items SET status='published' WHERE slug='...'`) or all at once (`UPDATE content_items SET status='published'`). Your own writing stays drafts until you say otherwise.
 
 `npm run seed` remains for manual refresh/repair (needs Turso credentials in `.env.local`).
 
