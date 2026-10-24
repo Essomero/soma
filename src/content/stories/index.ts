@@ -11,9 +11,11 @@ import { prophet3OnChildren } from "./prophet-3-on-children";
 import { prophet4OnWork } from "./prophet-4-on-work";
 import { prophet5OnReasonAndPassion } from "./prophet-5-on-reason-and-passion";
 import { prophet6OnSorrow } from "./prophet-6-on-sorrow";
+import { musicUniversalLanguage } from "./music-universal-language";
 
 const rawStories = [
   benjaminMayanja,
+  musicUniversalLanguage,
   fs1WhyThisTypeError,
   fs2Generics,
   fs3DiscriminatedUnions,
