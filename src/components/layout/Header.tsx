@@ -65,10 +65,10 @@ export default function Header() {
                   key={link.label}
                   to={link.href}
                   className={cn(
-                    "font-sora text-metadata-tag uppercase tracking-widest transition-colors duration-200 pb-1 border-b-2",
+                    "font-sora text-metadata-tag uppercase tracking-widest transition-colors duration-200 underline underline-offset-8 decoration-2",
                     isActive
-                      ? "text-primary border-secondary-container"
-                      : "text-on-surface-variant hover:text-primary border-transparent"
+                      ? "text-primary decoration-secondary-container"
+                      : "text-on-surface-variant hover:text-primary decoration-transparent"
                   )}
                 >
                   {link.label}
