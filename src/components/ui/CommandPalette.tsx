@@ -15,7 +15,7 @@ const quickActions = [
 
 const topMatches = [
   { icon: BookOpen, label: "Why Does This Type Error?", sub: "Story // TypeScript", href: "/stories/fs-1-why-this-type-error", color: "text-primary" },
-  { icon: User, label: "Putting the African open source community on the map", sub: "Developer Story", href: "/stories/ruth-ikegah", color: "text-secondary" },
+  { icon: User, label: "Think on paper, but digital: why I built Soma", sub: "Developer Story", href: "/stories/benjamin-mayanja", color: "text-secondary" },
   { icon: BookOpen, label: "Harness the power of generative AI", sub: "Technical Guide // AI & ML", href: "/guides/generative-ai", color: "text-tertiary" },
 ];
 

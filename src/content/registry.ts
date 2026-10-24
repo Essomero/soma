@@ -21,6 +21,6 @@ export {
 } from "./navigation";
 
 // Legacy exports for custom page layouts
-export { ruthStory, ruthMoreStories } from "./stories/ruth-ikegah";
+export { benjaminStory, benjaminMoreStories } from "./stories/benjamin-mayanja";
 export { nvdaAuthor, nvdaBentoHighlights, nvdaPullQuotes, nvdaMoreStories } from "./featured/nvda-accessibility";
 export { antonAuthor, guideToc, guideSections, guideTipCards, guideCodeBlock } from "./guides/generative-ai";

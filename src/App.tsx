@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import HomePage from "@/pages/HomePage";
 import FeaturedArticlePage from "@/pages/FeaturedArticlePage";
@@ -84,8 +84,12 @@ const router = createBrowserRouter([
         element: <StoriesIndexPage />,
       },
       {
-        path: "stories/ruth-ikegah",
+        path: "stories/benjamin-mayanja",
         element: <DeveloperStoryPage />,
+      },
+      {
+        path: "stories/ruth-ikegah",
+        element: <Navigate to="/stories/benjamin-mayanja" replace />,
       },
       {
         path: "stories/:slug",

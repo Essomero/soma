@@ -14,7 +14,7 @@ export const nvdaPullQuotes: PullQuoteData[] = [
 ];
 
 export const nvdaMoreStories: ArticleCardData[] = [
-  { id: "ruth-ikegah", category: "COMMUNITY", title: "Putting the African open source community on the map", excerpt: "Ruth's mission to show the world that Africans are creators of open source, not just consumers.", image: "https://images.unsplash.com/photo-1573164574472-797cdf4a583a?w=600&h=400&fit=crop", imageAlt: "Ruth Ikegah", href: "/stories/ruth-ikegah" },
+  { id: "benjamin-mayanja", category: "COMMUNITY", title: "Think on paper, but digital: why I built Soma", excerpt: "Why Benjamin built Soma: learn in private on your own infrastructure, and make public what you wish.", image: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=600&h=400&fit=crop", imageAlt: "Benjamin Mayanja", href: "/stories/benjamin-mayanja" },
   { id: "fs-1-why-this-type-error", category: "ENGINEERING", title: "Why Does This Type Error?", excerpt: "The backpack rule: why TypeScript checks shapes instead of names.", image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&h=400&fit=crop", imageAlt: "TypeScript code editor", href: "/stories/fs-1-why-this-type-error" },
   { id: "fs-2-generics", category: "ENGINEERING", title: "Generics as Relationships", excerpt: "Connecting input types to output types without cluttering signatures.", image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&h=400&fit=crop", imageAlt: "Laptop with code", href: "/stories/fs-2-generics" },
 ];

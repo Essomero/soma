@@ -25,7 +25,7 @@ export const contentTypes: DocContent = {
         {
           question: "How do I choose in under ten seconds?",
           answer: [
-            "Ask what changes for the reader:\n\n| If the reader should... | Use | Example |\n|---|---|---|\n| Feel one idea deeply | Story | `/stories/ruth-ikegah` |\n| Follow steps to build something | Guide | `/guides/generative-ai` |\n| Look something up fast | Doc | `/docs/lab-setup` |\n| Prove they can do it | Test | `/tests/sql-query-optimization` |\n| Learn a skill across sittings | Course | `/courses/typescript-interview-fast-track` |\n| Read a long arc in order | Book or Series | `/books/the-alchemist`, `/series/the-craft-of-software` |\n| Listen instead of read | Podcast | `/podcast/bridging-code-and-community` |\n\nFeatured is not a topic, it is a stage: any story strong enough to carry the front page. Topics are not content at all, they are the shelves content sits on.",
+            "Ask what changes for the reader:\n\n| If the reader should... | Use | Example |\n|---|---|---|\n| Feel one idea deeply | Story | `/stories/benjamin-mayanja` |\n| Follow steps to build something | Guide | `/guides/generative-ai` |\n| Look something up fast | Doc | `/docs/lab-setup` |\n| Prove they can do it | Test | `/tests/sql-query-optimization` |\n| Learn a skill across sittings | Course | `/courses/typescript-interview-fast-track` |\n| Read a long arc in order | Book or Series | `/books/the-alchemist`, `/series/the-craft-of-software` |\n| Listen instead of read | Podcast | `/podcast/bridging-code-and-community` |\n\nFeatured is not a topic, it is a stage: any story strong enough to carry the front page. Topics are not content at all, they are the shelves content sits on.",
           ],
         },
       ],

@@ -36,24 +36,23 @@ async function main() {
   const episodes: Episode[] = [
     {
       slug: "bridging-code-and-community",
-      title: "Bridging code and community",
-      description: "Navigating open source in a regulated environment, the crucial role of non-code contributions to open source success, and lessons from scaling projects like Kubernetes.",
-      summary: "The influence of open source extends well beyond code. In this episode, we dive into the less-explored areas of the open source community, spotlighting their profound and wide-ranging impact.",
-      date: "SEP 02",
-      duration: "42 MIN",
-      durationSeconds: 2520,
-      audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+      title: "Think on paper, but digital",
+      description: "Why I built Soma: the trade every publishing tool forces, owning your notes on sovereign infrastructure, and learning you can prove out loud.",
+      summary: "Soma founder Benjamin Mayanja walks through the idea behind the platform: a private notebook and a public press in one place, running on your own database.",
+      date: "OCT 24",
+      duration: "18 MIN",
+      durationSeconds: 1080,
+      audioUrl: "",
       image: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=1200&h=1200&fit=crop",
-      number: "Episode 32",
+      number: "Episode 1",
       guests: [
-        { name: "Kyler Middleton", role: "DevOps Specialist, Veradigm" },
-        { name: "Klint Finley", role: "Senior Editor, Soma" },
+        { name: "Benjamin Mayanja", role: "Founder, Soma" },
       ],
     },
   ];
 
   const rssItems = episodes.map((ep) => {
-    const pubDate = "Mon, 02 Sep 2024 09:00:00 GMT"; // Fixed for now
+    const pubDate = "Sat, 24 Oct 2026 09:00:00 GMT"; // Episode 1: founder intro
     const guid = `${baseUrl}/podcast/${ep.slug}`;
     const audioUrl = ep.audioUrl || "";
     const audioLength = audioUrl ? "7000000" : "0"; // Approximate
@@ -70,11 +69,11 @@ async function main() {
       <guid isPermaLink="true">${esc(guid)}</guid>
       <description>${esc(summary)}</description>
       <itunes:summary>${esc(summary)}</itunes:summary>
-      <itunes:author>Soma Podcast</itunes:author>
+      <itunes:author>Benjamin Mayanja</itunes:author>
       <itunes:duration>${ep.durationSeconds || 0}</itunes:duration>
       ${guestList ? `<itunes:keywords>${esc(guestList)}</itunes:keywords>` : ""}
       <itunes:image href="${esc(ep.image)}" />
-      <enclosure url="${esc(audioUrl)}" length="${audioLength}" type="${audioType}" />
+      ${audioUrl ? `<enclosure url="${esc(audioUrl)}" length="${audioLength}" type="${audioType}" />` : ""}
       <pubDate>${pubDate}</pubDate>
       <itunes:episodeType>full</itunes:episodeType>
     </item>`;
@@ -90,7 +89,7 @@ async function main() {
     <link>${baseUrl}/podcast</link>
     <description>Deep dives into technology, economics, and philosophy. Stories from the people behind the code.</description>
     <language>en-us</language>
-    <itunes:author>Soma</itunes:author>
+    <itunes:author>Benjamin Mayanja</itunes:author>
     <itunes:summary>Deep dives into technology, economics, and philosophy.</itunes:summary>
     <itunes:image href="${baseUrl}/favicon.ico" />
     <itunes:category text="Technology" />

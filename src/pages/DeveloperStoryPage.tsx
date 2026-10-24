@@ -13,11 +13,11 @@ import type { HighlightData } from "@/lib/highlights";
 import Comments from "@/components/ui/Comments";
 import { PublicToggleButton, usePublicState } from "@/components/ui/PublicToggle";
 import { useAuth } from "@/lib/AuthContext";
-import { ruthStory, ruthMoreStories } from "@/content/registry";
-import { ruthIkegah } from "@/content/stories/ruth-ikegah";
+import { benjaminStory, benjaminMoreStories } from "@/content/registry";
+import { benjaminMayanja } from "@/content/stories/benjamin-mayanja";
 import { md } from "@/lib/markdown";
 
-const STORY_SLUG = "ruth-ikegah";
+const STORY_SLUG = "benjamin-mayanja";
 
 export default function DeveloperStoryPage() {
   const { isOwner } = useAuth();
@@ -26,7 +26,7 @@ export default function DeveloperStoryPage() {
   const [pageHighlights, setPageHighlights] = useState<HighlightData[]>([]);
   const [commentsRefresh, setCommentsRefresh] = useState(0);
   const { isPublic, toggle } = usePublicState(STORY_SLUG);
-  const storyText = [ruthIkegah.intro, ...(ruthIkegah.body || [])].join(" ");
+  const storyText = [benjaminMayanja.intro, ...(benjaminMayanja.body || [])].join(" ");
   return (
     <div>
       {/* Hero Section */}
@@ -35,16 +35,16 @@ export default function DeveloperStoryPage() {
           <div className="md:col-span-8">
             <AccentBar variant="small" className="mb-md" />
             <h1 className="font-sora text-headline-md mb-md leading-tight text-on-surface">
-              {ruthStory.title}
+              {benjaminStory.title}
             </h1>
-            <p className="font-sora text-article-title text-on-surface-variant mb-xl" dangerouslySetInnerHTML={{ __html: md(ruthStory.description) }} />
+            <p className="font-sora text-article-title text-on-surface-variant mb-xl" dangerouslySetInnerHTML={{ __html: md(benjaminStory.description) }} />
             <div className="flex items-center gap-sm font-sora text-metadata-tag text-primary uppercase tracking-widest mb-xxl">
-              <span>{ruthStory.author.name}</span>
-              {ruthStory.author.handle && (
+              <span>{benjaminStory.author.name}</span>
+              {benjaminStory.author.handle && (
                 <>
                   <span className="text-on-surface-muted">//</span>
                   <span className="text-on-surface-muted">
-                    {ruthStory.author.handle}
+                    {benjaminStory.author.handle}
                   </span>
                 </>
               )}
@@ -59,10 +59,10 @@ export default function DeveloperStoryPage() {
 
         {/* Profile Bar */}
         <ProfileOverview
-          location={ruthStory.location}
-          social={ruthStory.social}
-          website={ruthStory.website}
-          organizations={ruthStory.organizations}
+          location={benjaminStory.location}
+          social={benjaminStory.social}
+          website={benjaminStory.website}
+          organizations={benjaminStory.organizations}
         />
       </section>
 
@@ -87,99 +87,96 @@ export default function DeveloperStoryPage() {
             {/* Intro pullout */}
             <div className="p-xl bg-surface-container-low border-l-4 border-secondary">
               <p className="font-dm-sans text-xl md:text-2xl leading-relaxed text-on-surface">
-                Hey! I'm Ruth Ikegah and I'm an open source program manager,
-                technical writer, GitHub Star, and public speaker. Currently, I'm
-                working as an Open Source Consultant at Bitgeria and serve as the
-                Community Lead for CHAOSS Africa.
+                Hey, I am Benjamin Mayanja. I build Soma, an AI-native learning
+                and publishing platform that treats reading like thinking on
+                paper: private by default, public when you choose, and running
+                entirely on infrastructure you own.
               </p>
             </div>
 
             <div className="space-y-lg font-dm-sans text-body-base leading-loose text-on-surface">
               <p>
-                I think it's important to change the perception that Africans are
-                merely consumers; we are creators as well. By helping people
-                across Africa build projects and showcase their work globally, I
-                hope to change this narrative and demonstrate that Africa is also
-                a hub for innovation and creativity, especially within the open
-                source community.
+                Every publishing tool I tried forced the same trade. Blogging
+                platforms like Ghost and Substack push you to perform for an
+                audience before you have understood the topic yourself.
+                Note-taking apps like Notion and Obsidian keep your thinking
+                trapped in proprietary clouds or fragile sync setups with
+                clumsy export pipelines. You either publish too early or you
+                never ship at all.
               </p>
               <p>
-                Right now, Africa's rate of participation and overall volume of
-                open source projects is relatively low in comparison to other
-                regions of the world. This level of engagement is frustrating
-                because I've seen the motivation and passion of Africans when
-                they go abroad, and I want to help them realize that they can
-                create those kinds of projects right here in Africa too.
+                So I stopped shopping for tools and started building one. Soma
+                (Luganda: to read, study, learn) is a single place where the
+                private notebook, the editorial reading experience, and the
+                publish button live together. You draft in the open the way you
+                would on paper, then flip one toggle and the same page is on
+                the public web. Nothing to migrate, nothing to reformat.
               </p>
             </div>
 
             {/* Featured Image */}
             <figure className="my-xxl">
               <img
-                alt="Ruth Ikegah working on her laptop in a garden office"
+                alt="Notebook and pen beside a laptop, the paper-first workflow Soma is built around"
                 className="w-full h-auto aspect-[1.67] object-cover rounded-lg border border-border-default"
-                src="https://images.unsplash.com/photo-1732210038531-9cefab37885a?w=1200&h=675&fit=crop"
+                src="https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&h=675&fit=crop"
               />
               <figcaption className="mt-sm font-sora text-xs text-on-surface-muted italic">
-                Ruth Ikegah exploring new ways to empower her community through
-                code.
+                The paper-first workflow Soma is built around: draft in
+                private, publish when ready.
               </figcaption>
             </figure>
 
             <h2 className="font-sora text-article-title pt-lg text-on-surface">
-              Discovering the power of community
+              Owning the loop
             </h2>
             <div className="space-y-lg font-dm-sans text-body-base leading-loose text-on-surface">
               <p>
-                Had you asked me during college if I could envision myself working
-                in the tech industry, my answer would have been a resounding NO. I
-                wasn't particularly enthusiastic about computers. I didn't dislike
-                them, but they just weren't my thing. I was looking for ways to
-                empower my community, and I didn't think that was possible from
-                behind a computer screen.
+                Owning the loop mattered more than any feature. Your notes,
+                highlights, and publishing toggles live in your own Turso
+                database, an edge SQLite you control, behind one password you
+                invent. Fork the repo, import it into Vercel, add the password,
+                click Add on the Turso card, deploy. There is no Soma cloud
+                holding your writing hostage, which means pulling my updates
+                later never touches your words.
               </p>
             </div>
 
             {/* Pull Quote */}
             <PullQuote
               variant="border-y"
-              quote="I was looking for ways to empower my community, and I didn't think that was possible from behind a computer screen."
-              attribution="Ruth Ikegah"
+              quote="Think in private on your own infrastructure, and make public what you wish."
+              attribution="Benjamin Mayanja"
             />
 
             <div className="space-y-lg font-dm-sans text-body-base leading-loose text-on-surface">
               <p>
-                My friend Peace Ojemeh suggested that I learn Python and explained
-                how it can be used to analyze microbiological data. I began
-                teaching myself by seeking out online resources, watching YouTube
-                videos, and following tech creators on Twitter. My plan was to
-                learn the basics of programming and then find something that I
-                could build using my knowledge from university.
+                Learning here is not passive reading. Select any paragraph to
+                ask a margin AI to explain, challenge, or simplify it. Run
+                hands-on drills in the companion Soma Labs repo instead of
+                copying code into a void. Then prove you actually know it: the
+                Son voice agent reads diagnostic test questions aloud and
+                scores your spoken answers in real time, all from your own
+                machine.
               </p>
               <p>
-                Things really took off when I found open source and realized that
-                the power of community was being utilized to build world-changing
-                digital solutions.
+                Agents are first-class citizens too. Soma ships the same skills
+                I write with, so any coding assistant can draft a course, a
+                guide, or a story as typed TypeScript under src/content/, run
+                the build, and open a pull request. Publishing becomes a git
+                push, and the site redeploys on its own.
               </p>
             </div>
 
             <h2 className="font-sora text-article-title pt-lg text-on-surface">
-              Paving the way for inclusivity through CHAOSS
+              Learning you can prove
             </h2>
             <div className="space-y-lg font-dm-sans text-body-base leading-loose text-on-surface">
               <p>
-                Working with the GNOME Project helped me build connections within
-                open source, which led me to the Community Health Analytics Open
-                Source Software (CHAOSS) project. CHAOSS is a Linux Foundation
-                project focused on raising awareness of open source community
-                health on a global scale.
-              </p>
-              <p>
-                Leading a community can be challenging and complex. With CHAOSS,
-                my role involves overseeing community management and maintaining
-                documentation, among other things. The project has more than 1,000
-                members, including drive-by contributors, so my job is to ensure
-                everyone feels welcome and included.
+                That is the whole bet: think in private on your own
+                infrastructure, and make public what you wish. If one reader
+                prints a course, runs every lab, and passes an oral screen
+                without ever touching someone else's server, Soma did its job.
               </p>
             </div>
 
@@ -187,19 +184,18 @@ export default function DeveloperStoryPage() {
             <div className="p-xl bg-surface-container border border-border-default rounded-xl relative overflow-hidden group hover:border-primary transition-all duration-300">
               <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-primary to-secondary" />
               <h3 className="font-sora text-xl mb-md text-on-surface">
-                Advancing African open source through authenticity
+                Think on paper, but digital
               </h3>
               <p className="font-dm-sans text-body-base text-on-surface-variant leading-relaxed">
-                Being authentic is super important when you're trying to make a
-                difference. When I started, I wasn't looking to be famous or
-                anything:I just wanted to help people. When you're genuine and you
-                give value to others, it's way easier for people to connect with
-                you.
+                Soma combines the tactile focus of paper with sovereign edge
+                infrastructure, in-app AI interaction, oral audio Q and A, and
+                autonomous agent publishing. Learn anything at your pace, in
+                your own infrastructure, and make public what you wish.
               </p>
               <div className="mt-lg flex items-center gap-md">
                 <Stars className="w-5 h-5 text-secondary" />
                 <span className="font-sora text-metadata-tag text-on-surface uppercase tracking-widest">
-                  GitHub Star // Community Leader
+                  Founder // Soma
                 </span>
               </div>
             </div>
@@ -208,12 +204,12 @@ export default function DeveloperStoryPage() {
       </section>
 
       {/* Comments */}
-      <Comments storySlug={STORY_SLUG} storyContext={{ title: ruthStory.title, body: storyText }} refreshSignal={commentsRefresh} />
+      <Comments storySlug={STORY_SLUG} storyContext={{ title: benjaminStory.title, body: storyText }} refreshSignal={commentsRefresh} />
 
       <InlineHighlights
         slug={STORY_SLUG}
         storyText={storyText}
-        storyTitle={ruthStory.title}
+        storyTitle={benjaminStory.title}
         articleRef={articleRef}
         isOwner={isOwner}
         onHighlightsChange={(hs) => { setPageHighlights(hs); setCommentsRefresh((n: number) => n + 1); }}
@@ -244,7 +240,7 @@ export default function DeveloperStoryPage() {
             </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-lg">
-            {ruthMoreStories.map((story) => (
+            {benjaminMoreStories.map((story) => (
               <StoryCard key={story.id} article={story} />
             ))}
           </div>

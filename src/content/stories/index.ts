@@ -1,5 +1,5 @@
 import type { StoryContent, ArticleCardData } from "@/types";
-import { ruthIkegah } from "./ruth-ikegah";
+import { benjaminMayanja } from "./benjamin-mayanja";
 import { fs1WhyThisTypeError } from "./fs-1-why-this-type-error";
 import { fs2Generics } from "./fs-2-generics";
 import { fs3DiscriminatedUnions } from "./fs-3-discriminated-unions";
@@ -13,7 +13,7 @@ import { alchemist5 } from "./alchemist-5-desert";
 import { alchemist6 } from "./alchemist-6-epilogue";
 
 const rawStories = [
-  ruthIkegah,
+  benjaminMayanja,
   fs1WhyThisTypeError,
   fs2Generics,
   fs3DiscriminatedUnions,
