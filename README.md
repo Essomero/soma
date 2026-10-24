@@ -142,7 +142,7 @@ Because Soma bundles agent skills, you can use any coding assistant to manage yo
 
 ```bash
 # Example with Claude Code / Cursor / Windsurf / Cline
-"Add a new 4-lesson guide on WebRTC peer connection fundamentals under src/content/guides/"
+"Add a new 4-lesson guide on WebRTC peer connection fundamentals"
 ```
 
 1. The agent reads `.claude/skills/soma/SKILL.md` (or `.agents/skills/soma/SKILL.md`).
