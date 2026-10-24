@@ -130,7 +130,7 @@ Tables initialize automatically on the first API request after deploy. No migrat
 
 Forking gives you your own linked copy in one click, no git needed. It matters later: a fork gets a **Sync fork** button for one-click updates, while a plain copy does not. And since AI agents publish by adding files to your repo, your fork doubles as their workspace.
 
-1. Open [github.com/Essomero/soma](https://github.com/Essomero/soma) and press **Fork** (accept the defaults).
+1. [**Fork `Essomero/soma`**](https://github.com/Essomero/soma/fork) (accept the defaults).
 2. In Vercel, Add New → Project → **Import** your `soma` fork.
 3. Add the three env vars from Step 2 and press Deploy.
 
