@@ -152,27 +152,29 @@ export default function SelectionToolbar({
       )}
 
       {onExplain && (
+        <span title={aiDisabled ? "Add an AI provider key to enable" : "Explain with AI"} className="inline-flex">
         <button
           onClick={onExplain}
           disabled={aiDisabled}
           className="flex items-center gap-xs px-sm sm:px-md py-sm font-sora text-[11px] text-on-surface hover:bg-surface-container transition-colors border-r border-border-default disabled:opacity-40 disabled:cursor-not-allowed"
-          title={aiDisabled ? "Add an AI provider key to enable" : "Explain with AI"}
         >
           <Brain className="w-3.5 h-3.5 text-amber-400" />
           <span className="hidden sm:inline">Explain</span>
         </button>
+        </span>
       )}
 
       {onSummarize && (
+        <span title={aiDisabled ? "Add an AI provider key to enable" : "Summarize with AI"} className="inline-flex">
         <button
           onClick={onSummarize}
           disabled={aiDisabled}
           className="flex items-center gap-xs px-sm sm:px-md py-sm font-sora text-[11px] text-on-surface hover:bg-surface-container transition-colors border-r border-border-default disabled:opacity-40 disabled:cursor-not-allowed"
-          title={aiDisabled ? "Add an AI provider key to enable" : "Summarize with AI"}
         >
           <ListCollapse className="w-3.5 h-3.5 text-amber-400" />
           <span className="hidden sm:inline">Summarize</span>
         </button>
+        </span>
       )}
 
       <button

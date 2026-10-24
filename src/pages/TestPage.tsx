@@ -1642,12 +1642,12 @@ export default function TestPage() {
               <div className="flex flex-wrap items-center gap-md">
                 {/* Model Dropdown */}
                 <div className="relative flex-1 min-w-[220px]" ref={modelMenuRef}>
+                  <span title={aiUnavailable ? "Add an AI provider key in Vercel project settings to enable" : "Choose evaluation model"} className="flex w-full">
                   <button
                     ref={modelBtnRef}
                     type="button"
                     onClick={() => setModelMenuOpen((v) => !v)}
                     disabled={aiUnavailable}
-                    title={aiUnavailable ? "Add an AI provider key in Vercel project settings to enable" : "Choose evaluation model"}
                     className="w-full flex items-center justify-between px-md py-sm bg-surface border border-border-default rounded-lg font-sora text-xs text-on-surface hover:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="truncate">
@@ -1659,6 +1659,7 @@ export default function TestPage() {
                       }`}
                     />
                   </button>
+                  </span>
 
                   {modelMenuOpen && (
                     <div className="absolute bottom-full mb-1 left-0 bg-surface border border-border-default rounded-lg shadow-2xl z-50 py-xs min-w-[260px] max-h-[380px] overflow-y-auto">

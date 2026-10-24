@@ -700,9 +700,11 @@ ${storyTitle ? `Title: ${storyTitle}\n` : ""}${articleExcerpt}
                 <button onClick={() => { setInlineReplyToId(inlineReplyToId === comment.id ? null : comment.id); setInlineReplyBody(""); }}
                   className={`p-xs rounded-md transition-colors ${inlineReplyToId === comment.id ? "text-brand" : "text-on-surface-muted hover:text-brand"}`} title="Reply"><Reply className="w-3 h-3" /></button>
                 {isOwner && (<>
+                <span title={aiUnavailable ? "Add an AI provider key to enable" : "AI Reply"} className="inline-flex">
                   <button onClick={() => handleInlineAiReply(comment)} disabled={inlineAiLoading !== null || aiUnavailable}
-                    className="p-xs rounded-md text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title={aiUnavailable ? "Add an AI provider key to enable" : "AI Reply"}>
+                    className="p-xs rounded-md text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
                     {inlineAiLoading === comment.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bot className="w-3 h-3" />}</button>
+                </span>
                   <button onClick={() => setDeleteTarget({ kind: "comment", id: comment.id })} disabled={inlineDeleting !== null}
                     className="p-xs rounded-md text-on-surface-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-50" title="Delete comment">
                     {inlineDeleting === comment.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}</button>
@@ -814,8 +816,10 @@ ${storyTitle ? `Title: ${storyTitle}\n` : ""}${articleExcerpt}
               <div className="flex items-center gap-sm">
                 {isOwner && (
                   <div className="relative" ref={inlineModelMenuRef}>
+                    <span title={aiUnavailable ? "Add an AI provider key to enable" : "AI model"} className="inline-flex">
                     <button type="button" onClick={() => setInlineModelMenuOpen(!inlineModelMenuOpen)} disabled={inlineAiLoading !== null || aiUnavailable}
-                      className="flex items-center gap-xs text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title={aiUnavailable ? "Add an AI provider key to enable" : "AI model"}><Bot className="w-3.5 h-3.5" /><ChevronDown className="w-3 h-3" /></button>
+                      className="flex items-center gap-xs text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30 disabled:cursor-not-allowed"><Bot className="w-3.5 h-3.5" /><ChevronDown className="w-3 h-3" /></button>
+                    </span>
                     {inlineModelMenuOpen && (
                       <div className="absolute right-0 top-full mt-1 bg-surface border border-border-default rounded-lg shadow-xl z-50 py-xs min-w-[200px] max-h-[300px] overflow-y-auto thin-scrollbar">
                         {(() => {
@@ -870,8 +874,10 @@ ${storyTitle ? `Title: ${storyTitle}\n` : ""}${articleExcerpt}
               <span className="font-sora text-xs text-on-surface-muted uppercase tracking-widest">{headerLabel}</span>
               <div className="flex items-center gap-sm">
                 {isOwner && <div className="relative" ref={inlineModelMenuRef}>
-                  <button type="button" onClick={() => setInlineModelMenuOpen(!inlineModelMenuOpen)} disabled={inlineAiLoading !== null}
-                    className="flex items-center gap-xs text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30" title="AI model"><Bot className="w-3.5 h-3.5" /><ChevronDown className="w-3 h-3" /></button>
+                  <span title={aiUnavailable ? "Add an AI provider key to enable" : "AI model"} className="inline-flex">
+                  <button type="button" onClick={() => setInlineModelMenuOpen(!inlineModelMenuOpen)} disabled={inlineAiLoading !== null || aiUnavailable}
+                    className="flex items-center gap-xs text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30 disabled:cursor-not-allowed"><Bot className="w-3.5 h-3.5" /><ChevronDown className="w-3 h-3" /></button>
+                  </span>
                   {inlineModelMenuOpen && (
                     <div className="absolute right-0 top-full mt-1 bg-surface border border-border-default rounded-lg shadow-xl z-50 py-xs min-w-[200px] max-h-[300px] overflow-y-auto thin-scrollbar">
                       {(() => {
