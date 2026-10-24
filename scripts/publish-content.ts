@@ -65,7 +65,7 @@ function refsOf(type: string, body: Fields): string[] {
 
 async function main() {
   const rawArgs = process.argv.slice(2);
-  let status = "draft";
+  let status = "";
   let typeOverride = "";
   let featured = false;
   const files: string[] = [];
@@ -78,7 +78,9 @@ async function main() {
     else files.push(a);
   }
   if (!files.length) throw new Error("usage: npm run publish -- [--status draft|published] [--type story] [--featured] <file...>");
-  if (!STATUSES.has(status)) throw new Error(`status must be draft|published, got ${status}`);
+  if (status && !STATUSES.has(status)) throw new Error(`status must be draft|published, got ${status}`);
+  // Omitted --status preserves the row's current status (new rows land as
+  // draft): re-publishing an edit never flips visibility by accident.
 
   const db = await getDb();
   await db.execute(CREATE_CONTENT_ITEMS);
@@ -133,13 +135,13 @@ async function main() {
     const desc = b.body.excerpt ?? b.body.description;
     const excerpt = typeof desc === "string" ? desc : "";
     const posRow = await db.execute({ sql: "SELECT COALESCE(MAX(position), -1) AS m FROM content_items WHERE type = ?", args: [b.type] });
-    const existing = await db.execute({ sql: "SELECT position FROM content_items WHERE slug = ?", args: [b.slug] });
+    const existing = await db.execute({ sql: "SELECT position, status FROM content_items WHERE slug = ?", args: [b.slug] });
     const rawMax = posRow.rows[0]?.m;
+    const existingStatus = existing.rows.length && typeof existing.rows[0]?.status === "string" ? existing.rows[0].status : "";
+    const effectiveStatus = status || existingStatus || "draft";
     const position = existing.rows.length
       ? (typeof existing.rows[0]?.position === "number" ? (existing.rows[0]?.position as number) : 0)
       : (typeof rawMax === "number" ? rawMax + 1 : 0);
-    const meta = featured ? { featured: true } : {};
-    const now = new Date().toISOString();
     if (featured) {
       await db.execute({ sql: "UPDATE content_items SET meta_json = '{}' WHERE type = ?", args: [b.type] });
     }
@@ -149,14 +151,14 @@ async function main() {
             ON CONFLICT(slug) DO UPDATE SET type = excluded.type, status = excluded.status,
               title = excluded.title, excerpt = excluded.excerpt, body_json = excluded.body_json,
               meta_json = excluded.meta_json, position = excluded.position, updated_at = excluded.updated_at`,
-      args: [b.slug, b.type, status, title, excerpt, JSON.stringify(b.body), JSON.stringify(meta), position, now],
+      args: [b.slug, b.type, effectiveStatus, title, excerpt, JSON.stringify(b.body), JSON.stringify(meta), position, now],
     });
     await db.execute({
       sql: `INSERT INTO public_pages (slug, "public", set_at) VALUES (?, ?, ?)
             ON CONFLICT(slug) DO UPDATE SET "public" = excluded."public", set_at = excluded.set_at`,
-      args: [b.slug, status === "published" ? 1 : 0, now],
+      args: [b.slug, effectiveStatus === "published" ? 1 : 0, now],
     });
-    console.log(`${status === "published" ? "PUBLISHED" : "draft"} ${b.type} ${b.slug} <- ${b.file}`);
+    console.log(`${effectiveStatus === "published" ? "PUBLISHED" : "draft"} ${b.type} ${b.slug} <- ${b.file}`);
   }
 }
 

@@ -171,7 +171,9 @@ export default async function handler(req, res) {
       return res.json(rows.map(mapRow));
     }
 
-    // POST : create or replace one item (publish script + future tooling).
+    // POST : create or replace one item (publish script + studio dialog).
+    // Editing content never flips visibility by accident: an omitted status
+    // keeps the row's current status (new rows default to draft).
     if (req.method === "POST") {
       if (!requireAuth(req, res)) return;
       const { slug, type, status, title, excerpt, body, meta, position } = req.body || {};
@@ -180,6 +182,8 @@ export default async function handler(req, res) {
       }
       if (!ROUTE_BASE[type]) return res.status(400).json({ error: "unknown type: " + type });
       if (status && !STATUSES.has(status)) return res.status(400).json({ error: "status must be draft|published" });
+      const existing = await query("SELECT status FROM content_items WHERE slug = ?", [slug]);
+      const effectiveStatus = status || (existing.length && existing[0].status) || "draft";
       const now = new Date().toISOString();
       const rows = await query(
         `INSERT INTO content_items (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
@@ -188,7 +192,7 @@ export default async function handler(req, res) {
            title = excluded.title, excerpt = excluded.excerpt, body_json = excluded.body_json,
            meta_json = excluded.meta_json, position = excluded.position, updated_at = excluded.updated_at
          RETURNING *`,
-        [slug, type, status || "draft",
+        [slug, type, effectiveStatus,
           title || body.title || "", excerpt || body.excerpt || body.description || "",
           JSON.stringify(body), JSON.stringify(meta || {}),
           Number.isFinite(Number(position)) ? Number(position) : 0, now]
