@@ -91,7 +91,7 @@ Soma is designed from the ground up to collaborate with AI coding agents. The re
 
 ## Quick Start (Deploy in Minutes)
 
-Order matters: create the free Turso database first (Step 0), because the Deploy button asks for its credentials.
+Do the steps in order: the database (Step 0) is provisioned during Vercel import in Step 1, and its credentials land in your project on their own.
 
 ### Step 0: Database (One Click, No Setup)
 
