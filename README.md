@@ -2,6 +2,8 @@
 
 > Think on paper but digital. Learn anything at your pace, in your own infrastructure, and make public what you wish.
 
+New here? Start at [Step 0: free Turso database](#step-0-create-a-free-turso-database) below (2 minutes, no installs needed), then come back and click Deploy.
+
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FEssomero%2Fsoma&env=TURSO_DB,TURSO_TOKEN,SITE_PASSWORD&envDescription=Turso+database+credentials+and+your+site+owner+password&project-name=soma)
 
 ---
@@ -89,31 +91,54 @@ Soma is designed from the ground up to collaborate with AI coding agents. The re
 
 ---
 
-## Quick Start (Deploy in 60 Seconds)
+## Quick Start (Deploy in Minutes)
+
+Order matters: create the free Turso database first (Step 0), because the Deploy button asks for its credentials.
+
+### Step 0: Create a Free Turso Database
+
+Turso hosts your edge SQLite database. The free tier covers personal use. Two paths, same result:
+
+**Path A: Browser dashboard (no installs, any OS).**
+1. Sign up at [turso.tech](https://turso.tech) (GitHub login works).
+2. Open Databases and create one named `soma-db`. Pick the region closest to you; the default is fine.
+3. Open the database, copy its URL (starts with `libsql://`). That is your `TURSO_DB`.
+4. Open the Tokens tab, create a token, and copy it. That is your `TURSO_TOKEN`.
+
+**Path B: Command line.**
+```bash
+# macOS:
+brew install tursodatabase/tap/turso
+# Linux / Windows (WSL):
+curl -sSfL https://get.tur.so/install.sh | bash
+
+turso auth signup
+turso db create soma-db --group <nearest-region>   # omit --group to accept the default
+turso db show soma-db --url       # copy to TURSO_DB
+turso db tokens create soma-db   # copy to TURSO_TOKEN
+```
+
+Verify it answers before you deploy:
+```bash
+turso db shell soma-db "select 1;"
+# expect: a single row with the value 1
+```
+
+Tables initialize automatically on the first API request after deploy. No migrations, no SQL to run by hand.
 
 ### Step 1: Click the Deploy Button
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FEssomero%2Fsoma&env=TURSO_DB,TURSO_TOKEN,SITE_PASSWORD&envDescription=Turso+database+credentials+and+your+site+owner+password&project-name=soma)
 
-### Step 2: Configure Your 3 Required Environment Variables
+### Step 2: Fill In Your 3 Required Environment Variables
 
-You only need three variables to get full functionality:
+Paste the values from Step 0:
 
-| Variable | Description | Where to get it |
+| Variable | Value | Notes |
 |---|---|---|
-| `TURSO_DB` | Your libSQL database URL (e.g. `libsql://your-db.turso.io`) | [Turso Dashboard](https://turso.tech) |
-| `TURSO_TOKEN` | Auth token for your database | [Turso Dashboard](https://turso.tech) |
-| `SITE_PASSWORD` | Master password to log into your private studio | Any secure string you choose |
-
-> **Need a Turso database?** It takes 30 seconds via the Turso CLI:
-> ```bash
-> brew install tursodatabase/tap/turso
-> turso auth signup
-> turso db create soma-db
-> turso db show soma-db --url       # copy to TURSO_DB
-> turso db tokens create soma-db   # copy to TURSO_TOKEN
-> ```
-> Tables initialize automatically on the first request with zero manual migrations.
+| `TURSO_DB` | URL from Step 0 (e.g. `libsql://soma-db-....turso.io`) | Paste exactly, including the `libsql://` prefix |
+| `TURSO_TOKEN` | Token from Step 0 | Mark Sensitive in Vercel afterwards (Project Settings, Environment Variables) |
+| `SITE_PASSWORD` | Any strong string you invent (e.g. `openssl rand -base64 32`) | Your private studio login. Mark Sensitive too |
 
 ### Step 3: (Optional) Add AI Keys
 
