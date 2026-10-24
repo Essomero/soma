@@ -13,7 +13,6 @@ import InlineHighlights from "@/components/ui/InlineHighlights";
 import StaticHighlightPaint from "@/components/ui/StaticHighlightPaint";
 import type { HighlightData } from "@/lib/highlights";
 import Comments from "@/components/ui/Comments";
-import { PublicToggleButton, usePublicState } from "@/components/ui/PublicToggle";
 import { useAuth } from "@/lib/AuthContext";
 import {
   nvdaAuthor,
@@ -31,7 +30,6 @@ export default function FeaturedArticlePage() {
   const highlightClickRef = useRef<(id: number) => void>(() => {});
   const [pageHighlights, setPageHighlights] = useState<HighlightData[]>([]);
   const [commentsRefresh, setCommentsRefresh] = useState(0);
-  const { isPublic, toggle } = usePublicState(STORY_SLUG);
   const storyText = [
     nvdaAccessibility.description,
     ...(nvdaAccessibility.sections || []).flatMap((s) => [s.heading, ...(s.paragraphs || []).filter((p): p is string => typeof p === "string")]),
@@ -53,17 +51,12 @@ export default function FeaturedArticlePage() {
       <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant grid grid-cols-1 md:grid-cols-12 gap-giant">
         {/* Sidebar */}
         <aside className="md:col-span-3 space-y-xl border-t border-border-default pt-xl md:border-t-0 md:pt-0">
-          <SidebarAbout />
+          <SidebarAbout publicToggleSlug={isOwner ? STORY_SLUG : undefined} />
           <div className="hidden md:block">
             <ShareButtons variant="column" />
           </div>
           <div className="hidden md:block">
-            <PrintButton compact label="Print / Save PDF" className="w-full justify-center" />
-            {isOwner && (
-              <div className="mt-md">
-                <PublicToggleButton isPublic={isPublic} onToggle={toggle} />
-              </div>
-            )}
+            <PrintButton stretch label="Print / Save PDF" />
           </div>
         </aside>
 

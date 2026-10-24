@@ -7,6 +7,8 @@ interface PrintButtonProps {
   label?: string;
   title?: string;
   compact?: boolean;
+  /** Full-width sidebar style: same height, type, and radius as the column share buttons. Takes precedence over `compact`. */
+  stretch?: boolean;
   className?: string;
 }
 
@@ -14,17 +16,29 @@ interface PrintButtonProps {
 // a full collection or a single piece : so `print:hidden` is baked in here,
 // not left to each call site.
 const baseClass =
-  "print:hidden inline-flex items-center gap-sm rounded-lg font-sora font-semibold bg-surface-container-low border border-border-default text-on-surface hover:border-primary/50 hover:text-primary transition-all shadow-sm";
+  "print:hidden inline-flex items-center gap-sm font-sora bg-surface-container-low border border-border-default text-on-surface hover:border-primary/50 hover:text-primary transition-all shadow-sm";
 
 export default function PrintButton({
   to,
   label = "Download PDF",
   title = "Open a print-friendly version (Print / Save as PDF)",
   compact = false,
+  stretch = false,
   className = "",
 }: PrintButtonProps) {
-  const sizeClass = compact ? "px-md py-sm text-xs" : "px-xl py-md text-sm";
-  const cls = `${baseClass} ${sizeClass} ${className}`.trim();
+  // `stretch` mirrors the column share buttons exactly: py-sm (8px) +
+  // text-metadata-tag (14px / 1.4 = 19.6px) + 2px border = 37.6px tall.
+  // The 16px printer icon fits inside the 19.6px line box, so heights match.
+  // Shape/weight live here (not in className) because `rounded` vs
+  // `rounded-lg` conflicts resolve by stylesheet order, not class order.
+  const shapeClass = stretch ? "rounded font-medium" : "rounded-lg font-semibold";
+  const sizeClass = stretch
+    ? "px-md py-sm text-metadata-tag"
+    : compact
+      ? "px-md py-sm text-xs"
+      : "px-xl py-md text-sm";
+  const widthClass = stretch ? "w-full justify-center" : "";
+  const cls = `${baseClass} ${shapeClass} ${sizeClass} ${widthClass} ${className}`.trim();
 
   if (to) {
     return (
