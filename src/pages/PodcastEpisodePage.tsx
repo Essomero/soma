@@ -1,34 +1,36 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams, Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { Star, User, PenLine, ChevronLeft, ChevronRight, Printer } from "lucide-react";
+import { Star, User, PenLine, ChevronLeft, ChevronRight, Printer, Loader2 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import AudioPlayer from "@/components/ui/AudioPlayer";
 import ShareButtons from "@/components/ui/ShareButtons";
 import PrintButton from "@/components/ui/PrintButton";
 import Comments from "@/components/ui/Comments";
 import { contentToMarkdown, md } from "@/lib/markdown";
-import { allEpisodes } from "@/content/registry";
+import { useContentItem, useContentList } from "@/lib/content";
+import type { PodcastEpisodeFull } from "@/types";
 
 export default function PodcastEpisodePage() {
   const { slug } = useParams<{ slug: string }>();
   const { isOwner } = useAuth();
   const transcriptRef = useRef<HTMLDivElement>(null);
 
-  const episode = allEpisodes.find((ep) => ep.slug === slug);
-  if (!episode) return <Navigate to="/podcast" replace />;
+  const { data: episode, loading } = useContentItem<PodcastEpisodeFull>("podcast", slug);
+  const { data: episodes } = useContentList<PodcastEpisodeFull>("podcast");
+  const allEpisodes = episodes ?? [];
 
   // ── Prev / Next ──────────────────────────────────────
   const sortedByDate = allEpisodes.filter((ep) => ep.slug); // only full episodes
-  const idx = sortedByDate.indexOf(episode);
+  const idx = episode ? sortedByDate.findIndex((ep) => ep.slug === episode.slug) : -1;
   const prev = idx > 0 ? sortedByDate[idx - 1] : null;
-  const next = idx < sortedByDate.length - 1 ? sortedByDate[idx + 1] : null;
+  const next = idx >= 0 && idx < sortedByDate.length - 1 ? sortedByDate[idx + 1] : null;
 
   // ── Transcript sync ─────────────────────────────────
   const [activeIdx, setActiveIdx] = useState(0);
   const [seekReq, setSeekReq] = useState<{ time: number; req: number } | null>(null);
+  const synced = episode?.transcript?.some((l) => l.start != null) ?? false;
   const turnRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const synced = episode.transcript?.some((l) => l.start != null) ?? false;
 
   const toSeconds = (s: string) => {
     const p = s.split(":").map(Number);
@@ -38,9 +40,8 @@ export default function PodcastEpisodePage() {
   const seekToTime = useCallback((time: number) => {
     setSeekReq((r) => ({ time, req: (r?.req ?? 0) + 1 }));
   }, []);
-
   const handleTimeUpdate = useCallback((t: number) => {
-    const tr = episode.transcript;
+    const tr = episode?.transcript;
     if (!tr || tr.length === 0) return;
     let idx = 0;
     for (let i = 0; i < tr.length; i++) {
@@ -55,9 +56,19 @@ export default function PodcastEpisodePage() {
   }, [activeIdx]);
 
   // Body text for comments context
-  const bodyText = episode.transcript
+  const bodyText = episode?.transcript
     ? episode.transcript.map((l) => `${l.speaker}: ${l.text}`).join("\n")
-    : episode.summary || "";
+    : episode?.summary || "";
+
+  if (loading) {
+    return (
+      <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant text-center">
+        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      </div>
+    );
+  }
+
+  if (!episode) return <Navigate to="/podcast" replace />;
 
   return (
     <div>

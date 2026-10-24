@@ -1,12 +1,21 @@
 import { md } from "@/lib/markdown";
 import { Link } from "react-router-dom";
-import { BookOpen, ArrowRight } from "lucide-react";
+import { BookOpen, ArrowRight, Loader2 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
-import { allCourses } from "@/content/registry";
 import LoadMore from "@/components/ui/LoadMore";
+import { useContentList } from "@/lib/content";
+import type { CourseContent } from "@/types";
 
 export default function CoursesIndexPage() {
-  const active = allCourses
+  const { data: courses, loading } = useContentList<CourseContent>("course");
+  if (loading) {
+    return (
+      <div className="pt-32 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">
+        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      </div>
+    );
+  }
+  const active = (courses ?? [])
     .filter((c) => !c.archived)
     .sort((a, b) => new Date(b.added || b.date).getTime() - new Date(a.added || a.date).getTime());
 

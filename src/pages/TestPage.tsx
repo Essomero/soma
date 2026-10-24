@@ -33,7 +33,7 @@ import Tooltip from "@/components/ui/Tooltip";
 import MarkdownHtml from "@/components/ui/MarkdownHtml";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { mdBlock } from "@/lib/markdown";
-import { allTests } from "@/content/registry";
+import { useContentItem } from "@/lib/content";
 import {
   buildEvaluationPrompts,
   evaluateTestWithLLM,
@@ -76,6 +76,7 @@ import type {
   TestQuestion,
   OpenTestQuestion,
   MultipleChoiceTestQuestion,
+  TestContent,
 } from "@/types";
 
 interface ModelInfo {
@@ -110,7 +111,7 @@ function balanceMarkdownFences(text: string): string {
 
 export default function TestPage() {
   const { slug } = useParams<{ slug: string }>();
-  const test = allTests.find((t) => t.slug === slug);
+  const { data: test, loading: testLoading } = useContentItem<TestContent>("test", slug);
   const lenis = useLenis();
 
   // Core test state
@@ -721,6 +722,14 @@ export default function TestPage() {
     const balanced = balanceMarkdownFences(evaluationText);
     return mdBlock(balanced);
   }, [evaluationText]);
+
+  if (testLoading) {
+    return (
+      <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant text-center">
+        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      </div>
+    );
+  }
 
   if (!test) {
     return (

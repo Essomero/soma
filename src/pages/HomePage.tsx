@@ -1,23 +1,66 @@
 import { md } from "@/lib/markdown";
-import { Mic, ArrowRight } from "lucide-react";
+import { Mic, ArrowRight, Loader2 } from "lucide-react";
 import ReadMENav from "@/components/layout/ReadMENav";
 import HeroSection from "@/components/sections/HeroSection";
 import ArticleCard from "@/components/cards/ArticleCard";
 import PodcastCard from "@/components/cards/PodcastCard";
 import Button from "@/components/ui/Button";
 import Tag from "@/components/ui/Tag";
-import {
-  featuredHero,
-  featuredStories,
-  secondaryGuide,
-  secondaryStories,
-  latestUpdates,
-  featuredGuide,
-  podcastEpisodes,
-} from "@/content/registry";
+import { useContentList, toCard } from "@/lib/content";
+import type { StoryContent, GuideContent, FeaturedContent, PodcastEpisodeFull } from "@/types";
 import { Link } from "react-router-dom";
 
 export default function HomePage() {
+  const storiesQ = useContentList<StoryContent>("story");
+  const guidesQ = useContentList<GuideContent>("guide");
+  const featuredQ = useContentList<FeaturedContent>("featured");
+  const podcastQ = useContentList<PodcastEpisodeFull>("podcast");
+  if (storiesQ.loading || guidesQ.loading || featuredQ.loading || podcastQ.loading) {
+    return (
+      <div className="mx-auto max-w-readme px-6 py-12 text-center">
+        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      </div>
+    );
+  }
+  const stories = storiesQ.data ?? [];
+  const guides = guidesQ.data ?? [];
+  const featured = featuredQ.data ?? [];
+  const podcastEpisodes = podcastQ.data ?? [];
+
+  // Homepage derivations (were precomputed in src/content/homepage.ts).
+  const defaultFeatured = featured[0];
+  const featuredHero = {
+    id: defaultFeatured ? defaultFeatured.slug : "why-i-built-soma",
+    tag: "Featured Article",
+    title: defaultFeatured ? defaultFeatured.title : "Think on paper, but digital: why I built Soma",
+    description: defaultFeatured ? (typeof defaultFeatured.description === "string" ? defaultFeatured.description : "") : "Most tools force a trade: publish before you understand, or understand in a silo nobody can see.",
+    image: defaultFeatured ? (typeof defaultFeatured.image === "string" ? defaultFeatured.image : "") : "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&h=675&fit=crop",
+    imageAlt: defaultFeatured ? (typeof defaultFeatured.imageAlt === "string" ? defaultFeatured.imageAlt : "") : "Benjamin Mayanja",
+    cta: { label: "Read story", href: defaultFeatured ? `/featured/${defaultFeatured.slug}` : "/featured/why-i-built-soma" },
+  };
+  const featuredStories = stories.map(toCard).slice(0, 3);
+  const firstGuide = guides[0];
+  const secondaryGuide = firstGuide ? toCard(firstGuide) : toCard(stories[0] ?? {
+    slug: "ship-soma",
+    title: "Ship Soma on your own infrastructure in minutes",
+    category: "Guide",
+    excerpt: "Three moves: fork the repo, import it into Vercel, add one password, click Add on the Turso card, deploy.",
+    image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=675&fit=crop",
+    imageAlt: "Server racks in a data center",
+    author: { name: "Benjamin Mayanja" },
+    date: "2026-10-23",
+  } as StoryContent);
+  const secondaryStories = stories.slice(1, 4).map(toCard);
+  const latestUpdates = stories.slice(0, 5).map((s) => ({
+    date: new Date(s.date || Date.now()).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase(),
+    title: s.title,
+    href: s.href || `/stories/${s.slug}`,
+  }));
+  const featuredGuide = {
+    title: firstGuide ? firstGuide.title : "Ship Soma on your own infrastructure in minutes",
+    href: firstGuide ? `/guides/${firstGuide.slug}` : "/guides/ship-soma",
+    image: firstGuide && typeof firstGuide.image === "string" ? firstGuide.image : "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=675&fit=crop",
+  };
   return (
     <div className="mx-auto max-w-readme px-6 py-12">
       {/* ReadME Nav */}

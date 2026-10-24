@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Printer } from "lucide-react";
-import { allStories, allGuides, allDocs, allEpisodes } from "@/content/registry";
+import { useContentItem } from "@/lib/content";
 import { getReadingTime } from "@/lib/readingTime";
 import { md } from "@/lib/markdown";
 import ContentBlocks from "@/components/ui/ContentBlocks";
@@ -51,21 +51,28 @@ export default function SinglePrintPage({ type, base }: { type: SinglePrintType;
   const { slug } = useParams<{ slug: string }>();
   const typeLabel = TYPE_LABEL[type];
   const backHref = slug ? `/${base}/${slug}` : `/${base}`;
+  const apiType = type === "episode" ? "podcast" : type;
 
+  const { data: item, loading } = useContentItem<StoryContent | GuideContent | DocContent | PodcastEpisodeFull>(apiType, slug);
   const story: StoryContent | undefined =
-    type === "story" && slug
-      ? allStories.find((s) => s.slug === slug || s.href === `/stories/${slug}`)
-      : undefined;
+    type === "story" && item ? (item as StoryContent) : undefined;
   const guide: GuideContent | undefined =
-    type === "guide" && slug
-      ? allGuides.find((g) => g.slug === slug || g.href === `/guides/${slug}`)
-      : undefined;
+    type === "guide" && item ? (item as GuideContent) : undefined;
   const doc: DocContent | undefined =
-    type === "doc" && slug ? allDocs.find((d) => d.slug === slug) : undefined;
+    type === "doc" && item ? (item as DocContent) : undefined;
   const episode: PodcastEpisodeFull | undefined =
-    type === "episode" && slug ? allEpisodes.find((ep) => ep.slug === slug) : undefined;
+    type === "episode" && item ? (item as PodcastEpisodeFull) : undefined;
 
   const found = story ?? guide ?? doc ?? episode ?? null;
+
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto px-6 py-20 text-center">
+        <p className="text-on-surface-muted">Loading print edition…</p>
+      </div>
+    );
+  }
+
 
   const title = story?.title ?? guide?.title ?? doc?.title ?? episode?.title ?? "";
   const description =

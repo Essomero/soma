@@ -1,11 +1,20 @@
 import { Link } from "react-router-dom";
-import { FileText, ArrowRight } from "lucide-react";
+import { FileText, ArrowRight, Loader2 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import LoadMore from "@/components/ui/LoadMore";
-import { allDocs } from "@/content/registry";
+import { useContentList } from "@/lib/content";
+import type { DocContent } from "@/types";
 
 export default function DocsIndexPage() {
-  const active = allDocs.filter((d) => !d.archived);
+  const { data: docs, loading } = useContentList<DocContent>("doc");
+  if (loading) {
+    return (
+      <div className="pt-32 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">
+        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      </div>
+    );
+  }
+  const active = (docs ?? []).filter((d) => !d.archived);
 
   return (
     <div>

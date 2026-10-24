@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import ArticleCard from "@/components/cards/ArticleCard";
 import LoadMore from "@/components/ui/LoadMore";
-import { allStories, allTopics } from "@/content/registry";
+import { allTopics } from "@/content/registry";
+import { useContentList } from "@/lib/content";
+import type { StoryContent } from "@/types";
 import { useAllReadSlugs } from "@/lib/useProgress";
 import { md } from "@/lib/markdown";
 
@@ -12,7 +14,7 @@ const trendingItems = [
   { label: "02 // POPULAR", title: "Generics as Relationships", href: "/stories/fs-2-generics" },
 ];
 
-function wordCount(s: typeof allStories[0]): number {
+function wordCount(s: StoryContent): number {
   return [
     s.intro || "",
     ...(s.body || []),
@@ -22,10 +24,18 @@ function wordCount(s: typeof allStories[0]): number {
 
 export default function StoriesIndexPage() {
   const readSlugs = useAllReadSlugs();
-  const active = allStories.filter((s) => !s.archived && s.listed !== false);
+  const { data: stories, loading } = useContentList<StoryContent>("story");
+  if (loading) {
+    return (
+      <div className="pt-32 pb-xxl max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">
+        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      </div>
+    );
+  }
+  const active = (stories ?? []).filter((s) => !s.archived && s.listed !== false);
 
   // Sort: unread first, then newest first
-  const sortUnreadFirst = (a: typeof active[0], b: typeof active[0]) => {
+  const sortUnreadFirst = (a: StoryContent, b: StoryContent) => {
     const aUnread = readSlugs.has(a.slug) ? 1 : 0;
     const bUnread = readSlugs.has(b.slug) ? 1 : 0;
     if (aUnread !== bUnread) return aUnread - bUnread;

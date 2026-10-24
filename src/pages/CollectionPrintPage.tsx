@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Printer, BookOpen } from "lucide-react";
-import { allCourses, allSeries, allBooks, allStories } from "@/content/registry";
+import { useContentItem, useContentList } from "@/lib/content";
 import { getTotalReadingTime } from "@/lib/readingTime";
 import { md } from "@/lib/markdown";
 import ContentBlocks from "@/components/ui/ContentBlocks";
@@ -32,13 +32,16 @@ interface NormalizedCollection {
 
 export default function CollectionPrintPage({ type }: { type: "course" | "series" | "book" }) {
   const { slug } = useParams<{ slug: string }>();
+  const { data: item, loading } = useContentItem<CourseContent | SeriesContent | BookContent>(type, slug);
+  const { data: stories } = useContentList<StoryContent>("story");
+  const allStories = stories ?? [];
 
   // Resolve collection based on type and slug
   const collection: NormalizedCollection | null = (() => {
-    if (!slug) return null;
+    if (!slug || !item) return null;
 
     if (type === "course") {
-      const course = allCourses.find((c: CourseContent) => c.slug === slug);
+      const course = item as CourseContent;
       if (!course) return null;
       return {
         typeLabel: "COURSE",
@@ -57,7 +60,7 @@ export default function CollectionPrintPage({ type }: { type: "course" | "series
     }
 
     if (type === "series") {
-      const series = allSeries.find((s: SeriesContent) => s.slug === slug);
+      const series = item as SeriesContent;
       if (!series) return null;
       return {
         typeLabel: "SERIES",
@@ -76,7 +79,7 @@ export default function CollectionPrintPage({ type }: { type: "course" | "series
     }
 
     if (type === "book") {
-      const book = allBooks.find((b: BookContent) => b.slug === slug);
+      const book = item as BookContent;
       if (!book) return null;
       return {
         typeLabel: "BOOK",
@@ -116,6 +119,14 @@ export default function CollectionPrintPage({ type }: { type: "course" | "series
       };
     }
   }, [collection]);
+
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto px-6 py-20 text-center">
+        <p className="text-on-surface-muted">Loading print edition…</p>
+      </div>
+    );
+  }
 
   if (!collection) {
     return (

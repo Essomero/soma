@@ -1,6 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import { useState, useRef } from "react";
-import { Minus, Terminal, UserCheck, AlertTriangle, Lightbulb, Shield, Zap } from "lucide-react";
+import { Minus, Terminal, UserCheck, AlertTriangle, Lightbulb, Shield, Zap, Loader2 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
 import PullQuote from "@/components/ui/PullQuote";
@@ -14,7 +14,8 @@ import Comments from "@/components/ui/Comments";
 import ContentBlocks from "@/components/ui/ContentBlocks";
 import InlineHighlights from "@/components/ui/InlineHighlights";
 import PrintButton from "@/components/ui/PrintButton";
-import { allGuides } from "@/content/registry";
+import { useContentItem, useContentList } from "@/lib/content";
+import type { GuideContent } from "@/types";
 import { useAuth } from "@/lib/AuthContext";
 import { md, mdBlock, contentToMarkdown } from "@/lib/markdown";
 import { type HighlightData } from "@/lib/highlights";
@@ -30,26 +31,14 @@ const tipIcons: Record<string, LucideIcon> = {
 
 export default function GuideContentPage() {
   const { slug } = useParams<{ slug: string }>();
-  const guide = allGuides.find((g) => g.href === `/guides/${slug}`);
-  const content = guide ?? null;
-
-  if (!guide) {
-    return (
-      <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant text-center">
-        <h1 className="font-sora text-headline-md text-on-surface mb-md">Guide Not Found</h1>
-        <p className="text-on-surface-muted mb-xl">The guide you're looking for doesn't exist yet.</p>
-        <Link to="/guides" className="text-primary hover:underline font-bold">
-          ← Browse all guides
-        </Link>
-      </div>
-    );
-  }
-
+  const { data: guide, loading } = useContentItem<GuideContent>("guide", slug);
+  const { data: guides } = useContentList<GuideContent>("guide");
   const { isOwner } = useAuth();
-  const otherGuides = allGuides.filter((g) => g.id !== guide.id).slice(0, 3);
   const articleRef = useRef<HTMLElement>(null);
   const [highlights, setHighlights] = useState<HighlightData[]>([]);
   const highlightClickRef = useRef<(id: number) => void>(() => {});
+  const content = guide ?? null;
+  const otherGuides = (guides ?? []).filter((g) => g.id !== guide?.id).slice(0, 3);
   const storyText = [content?.intro || "", ...(content?.body || [])].join(" ");
 
   // Extract TOC from ## headings only, preserving their numbers
@@ -67,6 +56,26 @@ export default function GuideContentPage() {
       return { number: num, title, href: `#${anchor}` };
     })
     .filter(Boolean) as { number: string; title: string; href: string }[];
+
+  if (loading) {
+    return (
+      <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant text-center">
+        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      </div>
+    );
+  }
+
+  if (!guide) {
+    return (
+      <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant text-center">
+        <h1 className="font-sora text-headline-md text-on-surface mb-md">Guide Not Found</h1>
+        <p className="text-on-surface-muted mb-xl">The guide you're looking for doesn't exist yet.</p>
+        <Link to="/guides" className="text-primary hover:underline font-bold">
+          ← Browse all guides
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="pt-32 pb-giant">

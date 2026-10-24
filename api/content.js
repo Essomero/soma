@@ -112,6 +112,9 @@ function mapRow(r) {
     title: r.title,
     excerpt: r.excerpt,
     meta,
+    // Registry parity: index.ts injected isFeatured on position 0. The seed
+    // stores that decision in meta; the API surfaces it as a flat field.
+    isFeatured: meta.featured === true,
     position: Number(r.position) || 0,
     updatedAt: r.updated_at,
     id: r.slug,
@@ -122,10 +125,15 @@ function mapRow(r) {
 export default async function handler(req, res) {
   try {
     // GET ?slug= : single item. Unauthenticated callers see it only when published.
+    // When ?type= is also given, the row must match it (slugs are unique per
+    // type, not globally).
     if (req.method === "GET" && req.query.slug) {
       const rows = await query("SELECT * FROM content_items WHERE slug = ?", [req.query.slug]);
       const row = rows[0];
       if (!row) return res.status(404).json({ error: "Not found" });
+      if (req.query.type && row.type !== req.query.type) {
+        return res.status(404).json({ error: "Not found" });
+      }
       if (row.status !== "published" && !isAuthed(req)) {
         return res.status(404).json({ error: "Not found" });
       }
@@ -133,11 +141,23 @@ export default async function handler(req, res) {
     }
 
     // GET ?type= : ordered list. Unauthenticated callers see published only.
+    // With ?q= : substring search over title/excerpt/body, same visibility
+    // rules, so anonymous search can never surface drafts.
     if (req.method === "GET" && req.query.type) {
       const authed = isAuthed(req);
       const statusFilter = authed && req.query.status && STATUSES.has(req.query.status)
         ? " AND status = '" + req.query.status + "'"
         : (authed ? "" : " AND status = 'published'");
+      const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+      if (q) {
+        const like = "%" + q.replace(/[\\%_]/g, (c) => "\\" + c) + "%";
+        const rows = await query(
+          `SELECT * FROM content_items WHERE type = ?${statusFilter}
+           AND (title LIKE ? ESCAPE '\\' OR excerpt LIKE ? ESCAPE '\\' OR body_json LIKE ? ESCAPE '\\')
+           ORDER BY position ASC`,
+          [req.query.type, like, like, like]);
+        return res.json(rows.map(mapRow));
+      }
       const rows = await query(
         `SELECT * FROM content_items WHERE type = ?${statusFilter} ORDER BY position ASC`
         , [req.query.type]);

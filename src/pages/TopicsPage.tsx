@@ -19,7 +19,9 @@ import {
 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import LoadMore from "@/components/ui/LoadMore";
-import { allTopics, allStories } from "@/content/registry";
+import { allTopics } from "@/content/registry";
+import { useContentList } from "@/lib/content";
+import type { StoryContent } from "@/types";
 import type { TopicData } from "@/types";
 import type { LucideIcon } from "lucide-react";
 import { md } from "@/lib/markdown";
@@ -45,8 +47,9 @@ export default function TopicsPage() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
 
+  const { data: stories } = useContentList<StoryContent>("story");
   const storyCount = (topicSlug: string) =>
-    allStories.filter((s) => s.topics?.includes(topicSlug)).length;
+    (stories ?? []).filter((s) => s.topics?.includes(topicSlug)).length;
 
   const techCount = storyCount("technology");
   const careerCount = storyCount("career");

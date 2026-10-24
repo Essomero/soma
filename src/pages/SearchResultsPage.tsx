@@ -3,10 +3,11 @@ import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   Search, BookOpen, Mic, Star, ArrowRight, SearchX,
-  Bookmark, User, StickyNote,
+  Bookmark, User, StickyNote, Loader2,
 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
-import { allStories, allGuides } from "@/content/registry";
+import { fetchContentList } from "@/lib/content";
+import type { StoryContent, GuideContent } from "@/types";
 import { fetchLearnList, deriveExcerpt } from "@/lib/learn";
 import { type LearnArticle } from "@/types";
 
@@ -24,20 +25,29 @@ export default function SearchResultsPage() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
   const [activeFilter, setActiveFilter] = useState("All Results");
-
-  // Search across all content
-  const storyResults = allStories.filter(
-    (s) =>
-      s.title.toLowerCase().includes(query.toLowerCase()) ||
-      s.excerpt.toLowerCase().includes(query.toLowerCase()) ||
-      s.category.toLowerCase().includes(query.toLowerCase())
-  );
-  const guideResults = allGuides.filter(
-    (g) =>
-      g.title.toLowerCase().includes(query.toLowerCase()) ||
-      g.excerpt.toLowerCase().includes(query.toLowerCase()) ||
-      g.category.toLowerCase().includes(query.toLowerCase())
-  );
+  // Stories + guides come from the server search endpoint, which enforces
+  // published-or-owner visibility : drafts never reach the client.
+  const [storyResults, setStoryResults] = useState<StoryContent[]>([]);
+  const [guideResults, setGuideResults] = useState<GuideContent[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) {
+      setStoryResults([]);
+      setGuideResults([]);
+      return;
+    }
+    let live = true;
+    setSearchLoading(true);
+    Promise.all([
+      fetchContentList<StoryContent>("story", q),
+      fetchContentList<GuideContent>("guide", q),
+    ]).then(
+      ([stories, guides]) => live && (setStoryResults(stories), setGuideResults(guides), setSearchLoading(false)),
+      () => live && (setStoryResults([]), setGuideResults([]), setSearchLoading(false)),
+    );
+    return () => { live = false; };
+  }, [query]);
 
   // Learn notes come from Turso at runtime : fetch once on mount
   const [learnArticles, setLearnArticles] = useState<LearnArticle[]>([]);

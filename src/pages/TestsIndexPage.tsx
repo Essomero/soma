@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Clock, FileText, ArrowRight, Sparkles, CheckCircle2, BookOpen, Mic } from "lucide-react";
+import { Clock, FileText, ArrowRight, Sparkles, CheckCircle2, BookOpen, Mic, Loader2 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
-import { allTests } from "@/content/registry";
+import { useContentList } from "@/lib/content";
+import type { TestContent } from "@/types";
 import { getStoredAnswers, getStoredEvaluation } from "@/lib/testEvaluation";
 
 export default function TestsIndexPage() {
@@ -11,8 +12,8 @@ export default function TestsIndexPage() {
   const [testStatuses, setTestStatuses] = useState<
     Record<string, { answeredCount: number; hasEvaluation: boolean; evaluationModel?: string }>
   >({});
-
-  const activeTests = allTests.filter((t) => !t.archived);
+  const { data: tests, loading } = useContentList<TestContent>("test");
+  const activeTests = (tests ?? []).filter((t) => !t.archived);
 
   // Extract categories and add "Oral Exams" filter tab
   const rawCategories = Array.from(new Set(activeTests.map((t) => t.category)));
@@ -43,6 +44,14 @@ export default function TestsIndexPage() {
     }
     setTestStatuses(statuses);
   }, []);
+
+  if (loading) {
+    return (
+      <div className="pt-32 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">
+        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      </div>
+    );
+  }
 
   return (
     <div>

@@ -1,9 +1,10 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowRight, Clock, BookOpen, Check, ExternalLink, Sparkles, Printer } from "lucide-react";
+import { ArrowRight, Clock, BookOpen, Check, ExternalLink, Sparkles, Printer, Loader2 } from "lucide-react";
 import Tooltip from "@/components/ui/Tooltip";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
-import { allCourses, allStories, allTests } from "@/content/registry";
+import { useContentItem, useContentList } from "@/lib/content";
+import type { CourseContent, StoryContent, TestContent } from "@/types";
 import { useProgress } from "@/lib/useProgress";
 import { getTotalReadingTime } from "@/lib/readingTime";
 import { PublicToggleInline, useCollectionPublicState } from "@/components/ui/PublicToggle";
@@ -11,12 +12,24 @@ import { md } from "@/lib/markdown";
 
 export default function CourseDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const course = allCourses.find((c) => c.slug === (slug ?? ""));
+  const { data: course, loading } = useContentItem<CourseContent>("course", slug);
+  const { data: stories } = useContentList<StoryContent>("story");
+  const { data: tests } = useContentList<TestContent>("test");
+  const allStories = stories ?? [];
+  const allTests = tests ?? [];
   const lessonSlugs = course ? course.lessons.map((l) => l.storySlug) : [];
   const { isCompleted, toggle, progress } = useProgress(slug ?? "", lessonSlugs);
   const totalMinutes = course
     ? getTotalReadingTime(course.lessons.map((l) => l.storySlug), allStories)
     : 0;
+
+  if (loading) {
+    return (
+      <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant text-center">
+        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      </div>
+    );
+  }
 
   if (!course) {
     return (

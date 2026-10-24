@@ -1,21 +1,33 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowRight, Clock, BookOpen, Check, Printer } from "lucide-react";
+import { ArrowRight, Clock, BookOpen, Check, Printer, Loader2 } from "lucide-react";
 import Tooltip from "@/components/ui/Tooltip";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
-import { allBooks, allStories } from "@/content/registry";
+import { useContentItem, useContentList } from "@/lib/content";
+import type { BookContent, StoryContent } from "@/types";
 import { useProgress } from "@/lib/useProgress";
 import { getTotalReadingTime } from "@/lib/readingTime";
 import { md } from "@/lib/markdown";
 
 export default function BookDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const book = allBooks.find((b) => b.slug === (slug ?? ""));
+  const { data: book, loading } = useContentItem<BookContent>("book", slug);
+  const { data: stories } = useContentList<StoryContent>("story");
+  const allStories = stories ?? [];
   const chapterSlugs = book ? book.chapters.map((ch) => ch.storySlug) : [];
   const { isCompleted, toggle, progress } = useProgress(slug ?? "", chapterSlugs);
   const totalMinutes = book
     ? getTotalReadingTime(book.chapters.map((ch) => ch.storySlug), allStories)
     : 0;
+
+  if (loading) {
+    return (
+      <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant text-center">
+        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      </div>
+    );
+  }
+
 
   if (!book) {
     return (

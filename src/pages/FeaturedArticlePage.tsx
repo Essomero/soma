@@ -14,15 +14,24 @@ import StaticHighlightPaint from "@/components/ui/StaticHighlightPaint";
 import type { HighlightData } from "@/lib/highlights";
 import Comments from "@/components/ui/Comments";
 import { useAuth } from "@/lib/AuthContext";
-import {
-  somaAuthor,
-  somaBentoHighlights,
-  somaPullQuotes,
-  somaMoreStories,
-} from "@/content/registry";
-import { whyIBuiltSoma } from "@/content/featured/why-i-built-soma";
+import { useContentItem, useContentList, toCard } from "@/lib/content";
+import type { FeaturedContent, StoryContent, Author, BentoCardData, PullQuoteData } from "@/types";
 
 const STORY_SLUG = "why-i-built-soma";
+
+// Bespoke layout config for this static page (not prose content).
+const somaAuthor: Author = { name: "Benjamin Mayanja", handle: "@Essomero" };
+
+const somaBentoHighlights: BentoCardData[] = [
+  { label: "SOVEREIGN BY DEFAULT", title: "Your Words Live in Your Database", description: "Notes, highlights, and publishing toggles sit in your own Turso edge SQLite behind one password you invent. There is no Soma cloud holding your writing hostage." },
+  { label: "LEARN OUT LOUD", title: "Reading You Can Prove", description: "Margin AI explains any paragraph, Soma Labs turns lessons into runnable drills, and the Son voice agent scores your spoken answers in real time." },
+  { label: "AGENTS THAT PUBLISH", title: "Publishing Is a Git Push", description: "Soma ships the same skills its author writes with, so any coding assistant can draft typed content, run the build, and open a pull request." },
+];
+
+const somaPullQuotes: PullQuoteData[] = [
+  { quote: "Think in private on your own infrastructure, and make public what you wish.", attribution: "BENJAMIN MAYANJA" },
+  { quote: "You either publish too early or you never ship at all. Soma ends that trade." },
+];
 
 export default function FeaturedArticlePage() {
   const { isOwner } = useAuth();
@@ -30,11 +39,17 @@ export default function FeaturedArticlePage() {
   const highlightClickRef = useRef<(id: number) => void>(() => {});
   const [pageHighlights, setPageHighlights] = useState<HighlightData[]>([]);
   const [commentsRefresh, setCommentsRefresh] = useState(0);
+  const { data: row } = useContentItem<FeaturedContent>("featured", STORY_SLUG);
+  const { data: storyRows } = useContentList<StoryContent>("story");
+  const sections = Array.isArray(row?.sections) ? row.sections : [];
+  const rowTitle = typeof row?.title === "string" ? row.title : "";
+  const rowDescription = typeof row?.description === "string" ? row.description : "";
   const storyText = [
-    whyIBuiltSoma.description,
-    ...(whyIBuiltSoma.sections || []).flatMap((s) => [s.heading, ...(s.paragraphs || []).filter((p): p is string => typeof p === "string")]),
+    rowDescription,
+    ...sections.flatMap((s) => [s.heading, ...(s.paragraphs || []).filter((p): p is string => typeof p === "string")]),
   ].join(" ");
-  const featuredMarkdown = contentToMarkdown({ title: whyIBuiltSoma.title, intro: whyIBuiltSoma.description, sections: whyIBuiltSoma.sections });
+  const featuredMarkdown = contentToMarkdown({ title: rowTitle, intro: rowDescription, sections });
+  const somaMoreStories = (storyRows ?? []).slice(0, 3).map(toCard);
   return (
     <div>
       {/* Immersive Hero */}

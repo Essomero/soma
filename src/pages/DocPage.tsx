@@ -5,15 +5,25 @@ import SidebarToc from "@/components/sections/SidebarToc";
 import ContentBlocks from "@/components/ui/ContentBlocks";
 import ShareButtons from "@/components/ui/ShareButtons";
 import PrintButton from "@/components/ui/PrintButton";
-import { allDocs } from "@/content/registry";
+import { Loader2 } from "lucide-react";
+import { useContentItem } from "@/lib/content";
+import type { DocContent, TocItem } from "@/types";
 import { md, contentToMarkdown } from "@/lib/markdown";
-import type { TocItem } from "@/types";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function DocPage() {
   const { slug } = useParams<{ slug: string }>();
-  const doc = allDocs.find((d) => d.slug === slug);
+  const { data: doc, loading } = useContentItem<DocContent>("doc", slug);
   const { isOwner } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant text-center">
+        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      </div>
+    );
+  }
+
 
   if (!doc) {
     return (

@@ -1,22 +1,32 @@
 import { Link } from "react-router-dom";
-import { Play, ArrowRight, Podcast, Radio, Rss, Share2 } from "lucide-react";
+import { Play, ArrowRight, Podcast, Radio, Rss, Share2, Loader2 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
-import { allEpisodes, podcastTopics } from "@/content/registry";
+import { podcastTopics } from "@/content/registry";
+import { useContentList } from "@/lib/content";
+import type { PodcastEpisodeFull } from "@/types";
 import { md } from "@/lib/markdown";
 
-const featured = allEpisodes[0];
-
-const featuredEpisode = {
-  title: featured?.title || "Bridging code and community",
-  episode: `Featured Episode // ${featured?.number || featured?.episode || ""}`,
-  quote:
-    "The community isn't just people using the software, it's people who care about where the software goes and why it exists.",
-  image: featured?.image || "",
-  imageAlt: featured?.imageAlt || "Podcast cover art",
-  href: featured?.href || "/podcast",
-};
-
 export default function PodcastPage() {
+  const { data: episodes, loading } = useContentList<PodcastEpisodeFull>("podcast");
+  if (loading) {
+    return (
+      <div className="mt-16 py-giant text-center">
+        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      </div>
+    );
+  }
+  const allEpisodes = episodes ?? [];
+  const featured = allEpisodes[0];
+
+  const featuredEpisode = {
+    title: featured?.title || "Bridging code and community",
+    episode: `Featured Episode // ${featured?.number || featured?.episode || ""}`,
+    quote:
+      "The community isn't just people using the software, it's people who care about where the software goes and why it exists.",
+    image: featured?.image || "",
+    imageAlt: featured?.imageAlt || "Podcast cover art",
+    href: featured?.href || "/podcast",
+  };
   return (
     <div>
       <main className="mt-16">

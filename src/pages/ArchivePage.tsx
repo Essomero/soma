@@ -1,15 +1,24 @@
 import { md } from "@/lib/markdown";
 import { Link } from "react-router-dom";
-import { Archive } from "lucide-react";
+import { Archive, Loader2 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import ArticleCard from "@/components/cards/ArticleCard";
 import LoadMore from "@/components/ui/LoadMore";
-import { allStories } from "@/content/registry";
+import { useContentList } from "@/lib/content";
+import type { StoryContent } from "@/types";
 import { useAllReadSlugs } from "@/lib/useProgress";
 
 export default function ArchivePage() {
   const readSlugs = useAllReadSlugs();
-  const archived = allStories
+  const { data: stories, loading } = useContentList<StoryContent>("story");
+  if (loading) {
+    return (
+      <div className="pt-32 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">
+        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      </div>
+    );
+  }
+  const archived = (stories ?? [])
     .filter((s) => s.archived)
     .sort((a, b) => { const au = readSlugs.has(a.slug) ? 1 : 0; const bu = readSlugs.has(b.slug) ? 1 : 0; if (au !== bu) return au - bu; return new Date(b.added || b.date).getTime() - new Date(a.added || a.date).getTime(); });
 

@@ -13,7 +13,8 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import StoryJumpButtons from "@/components/ui/StoryJumpButtons";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import PrintButton from "@/components/ui/PrintButton";
-import { allStories, allCourses, allBooks, allSeries, allTests } from "@/content/registry";
+import { useContentItem, useContentList } from "@/lib/content";
+import type { StoryContent, CourseContent, BookContent, SeriesContent, TestContent } from "@/types";
 import { ArrowLeft, ArrowRight, ExternalLink, Check, Copy, Bookmark, Loader2, Trash2, Bot, PenLine, Eye, Send, X, ChevronDown, Reply, Maximize2, Sparkles } from "lucide-react";
 import { mdBlock, contentToMarkdown, md } from "@/lib/markdown";
 import MarkdownHtml from "@/components/ui/MarkdownHtml";
@@ -105,7 +106,12 @@ function StoryProgressButton({ slug }: { slug: string }) {
 
 export default function StoryPage() {
   const { slug } = useParams<{ slug: string }>();
-  const story = allStories.find((s) => s.href === `/stories/${slug}`);
+  const { data: story, loading: storyLoading } = useContentItem<StoryContent>("story", slug);
+  const courses = useContentList<CourseContent>("course").data ?? [];
+  const books = useContentList<BookContent>("book").data ?? [];
+  const series = useContentList<SeriesContent>("series").data ?? [];
+  const tests = useContentList<TestContent>("test").data ?? [];
+  const stories = useContentList<StoryContent>("story").data ?? [];
   const location = useLocation();
 
   // Section anchor ids + the number→id map hints link against. Resolved before
@@ -118,16 +124,16 @@ export default function StoryPage() {
   // Lesson references in hints become a "read next" row pointing at the
   // lesson's story page, labelled the way the reader's own course names it.
   const lessonIndex = useMemo(() => {
-    const own = allCourses.filter((c) => c.lessons.some((l) => l.storySlug === slug));
-    return buildLessonIndex([...own, ...allCourses]);
-  }, [slug]);
+    const own = courses.filter((c) => c.lessons.some((l) => l.storySlug === slug));
+    return buildLessonIndex([...own, ...courses]);
+  }, [slug, courses]);
   const lessonLinks = useMemo(
     () => ({ prefix: story ? storyCodePrefix(story.slug) : null, index: lessonIndex }),
     [story, lessonIndex],
   );
 
   // Lesson diagnostic test (if this story has an associated test)
-  const lessonTest = useMemo(() => allTests.find((t) => t.storySlug === slug), [slug]);
+  const lessonTest = useMemo(() => tests.find((t) => t.storySlug === slug), [slug, tests]);
 
   // Reading time
   const storyText = [story?.intro || "", ...(story?.body || []), ...(story?.sections?.flatMap((s) => s.paragraphs.filter((p): p is string => typeof p === "string")) || [])].join(" ");
@@ -922,19 +928,19 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
   type NavEntry = { collection: { title: string; slug: string }; type: string; prev: { title: string; storySlug: string } | null; next: { title: string; storySlug: string } | null };
   const collectionNav: NavEntry[] = slug
     ? [
-        ...allCourses
+        ...courses
           .filter((c) => c.lessons.some((l) => l.storySlug === slug))
           .map((c) => {
             const idx = c.lessons.findIndex((l) => l.storySlug === slug);
             return { collection: c, type: "course", prev: idx > 0 ? c.lessons[idx - 1] : null, next: idx < c.lessons.length - 1 ? c.lessons[idx + 1] : null };
           }),
-        ...allBooks
+        ...books
           .filter((b) => b.chapters.some((ch) => ch.storySlug === slug))
           .map((b) => {
             const idx = b.chapters.findIndex((ch) => ch.storySlug === slug);
             return { collection: b, type: "book", prev: idx > 0 ? b.chapters[idx - 1] : null, next: idx < b.chapters.length - 1 ? b.chapters[idx + 1] : null };
           }),
-        ...allSeries
+        ...series
           .filter((s) => s.episodes.some((e) => e.storySlug === slug))
           .map((s) => {
             const idx = s.episodes.findIndex((e) => e.storySlug === slug);
@@ -942,6 +948,14 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
           }),
       ]
     : [];
+
+  if (storyLoading) {
+    return (
+      <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant text-center">
+        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      </div>
+    );
+  }
 
   if (!story) {
     return (
@@ -960,7 +974,7 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
   const hasBento = !!(story.bentoHighlights && story.bentoHighlights.length > 0);
   const hasMultiPullQuotes = !!(story.pullQuotes && story.pullQuotes.length > 0);
 
-  const otherStories = allStories.filter((s) => s.id !== story.id).slice(0, 3);
+  const otherStories = stories.filter((s) => s.id !== story.id).slice(0, 3);
   const storyMarkdown = contentToMarkdown({
     title: story.title,
     intro: story.intro,
@@ -1015,13 +1029,13 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
           <aside className="md:col-span-3 space-y-xl border-t border-border-default pt-xl md:border-t-0 md:pt-0">
             <SidebarAbout
               publicToggleSlug={
-                allBooks.some((b) => b.chapters.some((ch) => ch.storySlug === slug))
+                books.some((b) => b.chapters.some((ch) => ch.storySlug === slug))
                   ? undefined // books: no public toggle (copyrighted)
                   : slug
               }
               publicToggleCollection={
-                allSeries.find((s) => s.episodes.some((e) => e.storySlug === slug))?.slug
-                || allCourses.find((c) => c.lessons.some((l) => l.storySlug === slug))?.slug
+                series.find((s) => s.episodes.some((e) => e.storySlug === slug))?.slug
+                || courses.find((c) => c.lessons.some((l) => l.storySlug === slug))?.slug
                 || undefined
               }
               markdownContent={storyMarkdown}
@@ -1282,9 +1296,9 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
             <div className="flex flex-wrap items-center gap-md">
               {collectionNav.map(({ collection, type }) => {
                 const storySlugs: string[] = (() => {
-                  if (type === "course") return allCourses.find((c) => c.slug === collection.slug)?.lessons.map((l) => l.storySlug) ?? [];
-                  if (type === "book") return allBooks.find((b) => b.slug === collection.slug)?.chapters.map((ch) => ch.storySlug) ?? [];
-                  if (type === "series") return allSeries.find((s) => s.slug === collection.slug)?.episodes.map((e) => e.storySlug) ?? [];
+                  if (type === "course") return courses.find((c) => c.slug === collection.slug)?.lessons.map((l) => l.storySlug) ?? [];
+                  if (type === "book") return books.find((b) => b.slug === collection.slug)?.chapters.map((ch) => ch.storySlug) ?? [];
+                  if (type === "series") return series.find((s) => s.slug === collection.slug)?.episodes.map((e) => e.storySlug) ?? [];
                   return [];
                 })();
                 const { isCompleted, toggle } = useProgress(collection.slug, storySlugs);

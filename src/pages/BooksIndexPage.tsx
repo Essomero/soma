@@ -1,12 +1,21 @@
 import { md } from "@/lib/markdown";
 import { Link } from "react-router-dom";
-import { BookOpen, ArrowRight } from "lucide-react";
+import { BookOpen, ArrowRight, Loader2 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import LoadMore from "@/components/ui/LoadMore";
-import { allBooks } from "@/content/registry";
+import { useContentList } from "@/lib/content";
+import type { BookContent } from "@/types";
 
 export default function BooksIndexPage() {
-  const active = allBooks
+  const { data: books, loading } = useContentList<BookContent>("book");
+  if (loading) {
+    return (
+      <div className="pt-32 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">
+        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      </div>
+    );
+  }
+  const active = (books ?? [])
     .filter((b) => !b.archived)
     .sort((a, b) => new Date(b.added || b.date).getTime() - new Date(a.added || a.date).getTime());
 

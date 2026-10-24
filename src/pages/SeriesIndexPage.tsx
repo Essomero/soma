@@ -1,12 +1,21 @@
 import { md } from "@/lib/markdown";
 import { Link } from "react-router-dom";
-import { Layers, ArrowRight } from "lucide-react";
+import { Layers, ArrowRight, Loader2 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
-import { allSeries } from "@/content/registry";
 import LoadMore from "@/components/ui/LoadMore";
+import { useContentList } from "@/lib/content";
+import type { SeriesContent } from "@/types";
 
 export default function SeriesIndexPage() {
-  const active = allSeries
+  const { data: series, loading } = useContentList<SeriesContent>("series");
+  if (loading) {
+    return (
+      <div className="pt-32 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">
+        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      </div>
+    );
+  }
+  const active = (series ?? [])
     .filter((s) => !s.archived)
     .sort((a, b) => new Date(b.added || b.date).getTime() - new Date(a.added || a.date).getTime());
 

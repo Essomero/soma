@@ -2,11 +2,14 @@ import { md } from "@/lib/markdown";
 import { useParams, Link } from "react-router-dom";
 import AccentBar from "@/components/ui/AccentBar";
 import ArticleCard from "@/components/cards/ArticleCard";
-import { allTopics, allStories } from "@/content/registry";
+import { allTopics } from "@/content/registry";
+import { useContentList } from "@/lib/content";
+import type { StoryContent } from "@/types";
 
 export default function TopicDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const topic = allTopics.find((t) => t.slug === (slug ?? ""));
+  const { data: stories } = useContentList<StoryContent>("story");
 
   if (!topic) {
     return (
@@ -20,7 +23,7 @@ export default function TopicDetailPage() {
     );
   }
 
-  const matchingStories = allStories.filter(
+  const matchingStories = (stories ?? []).filter(
     (s) => s.topics?.includes(slug ?? "")
   );
 

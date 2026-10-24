@@ -16,16 +16,39 @@ import type { HighlightData } from "@/lib/highlights";
 import Comments from "@/components/ui/Comments";
 import { PublicToggleButton, usePublicState } from "@/components/ui/PublicToggle";
 import { useAuth } from "@/lib/AuthContext";
-import {
-  guideAuthor,
-  guideToc,
-  guideSections,
-  guideTipCards,
-  guideCodeBlock,
-} from "@/content/registry";
-import { shipSoma } from "@/content/guides/ship-soma";
+import { useContentItem } from "@/lib/content";
+import type { GuideContent, Author, TocItem, TipCardData } from "@/types";
 
 const GUIDE_SLUG = "ship-soma";
+
+// Bespoke layout config for this static page (not prose content).
+const guideAuthor: Author = {
+  name: "Benjamin Mayanja", title: "Founder, Soma",
+  bio: "Benjamin builds Soma, a personal learning and publishing platform that runs entirely on infrastructure you own. He writes about sovereign software, TypeScript, and learning you can prove.",
+};
+
+const guideToc: TocItem[] = [
+  { number: "01", title: "Fork your copy, import it into Vercel", href: "#section-1" },
+  { number: "02", title: "One password plus the Turso card", href: "#section-2" },
+  { number: "03", title: "Deploy, then stay updated forever", href: "#section-3" },
+  { number: "04", title: "Optional: add AI keys and publish with agents", href: "#section-4" },
+];
+
+const guideTipCards: TipCardData[] = [
+  { icon: "AlertTriangle", bgClass: "bg-error-container/20", iconColorClass: "text-error", title: "Set the password before you deploy", description: "Deploying without SITE_PASSWORD breaks login and forces a redeploy to fix. Add it on the Vercel configure page first." },
+  { icon: "Terminal", bgClass: "bg-secondary/20", iconColorClass: "text-secondary", title: "Keep VITE_ vars local", description: "Local-only keys stay in .env.local. Baking them into Vercel would ship your database token inside public JavaScript." },
+  { icon: "Minus", bgClass: "bg-primary-container/20", iconColorClass: "text-primary", title: "One toggle publishes", description: "Notes are private by default. Flip the lock/globe toggle and the same page is public. There is no migration step." },
+  { icon: "UserCheck", bgClass: "bg-tertiary-container/20", iconColorClass: "text-tertiary", title: "New work means new slugs", description: "Agents publish by adding new files under src/content/ with new slugs. Writing in your database is already safe from updates." },
+];
+
+const guideCodeBlock = {
+  filename: ".env.local",
+  lines: [
+    { number: "01", content: "SITE_PASSWORD=your-secure-site-password" },
+    { number: "02", content: "TURSO_DATABASE_URL=libsql://your-db.turso.io" },
+    { number: "03", content: "TURSO_AUTH_TOKEN=your-turso-token" },
+  ],
+};
 
 import type { LucideIcon } from "lucide-react";
 
@@ -44,7 +67,11 @@ export default function GuidePage() {
   const [pageHighlights, setPageHighlights] = useState<HighlightData[]>([]);
   const [commentsRefresh, setCommentsRefresh] = useState(0);
   const { isPublic, toggle } = usePublicState(GUIDE_SLUG);
-  const storyText = [shipSoma.intro, ...(shipSoma.body || [])].join(" ");
+  const { data: guideRow } = useContentItem<GuideContent>("guide", GUIDE_SLUG);
+  const guideTitle = typeof guideRow?.title === "string" ? guideRow.title : "";
+  const guideIntro = typeof guideRow?.intro === "string" ? guideRow.intro : "";
+  const guideBody = Array.isArray(guideRow?.body) ? (guideRow.body as string[]) : [];
+  const storyText = [guideIntro, ...guideBody].join(" ");
   return (
     <div className="pt-32 pb-giant">
       <article ref={articleRef} data-section-index={0} data-paragraph-index={0} className="max-w-readme mx-auto px-gutter md:px-margin-desktop">
@@ -278,12 +305,12 @@ export default function GuidePage() {
       </article>
 
       {/* Comments */}
-      <Comments storySlug={GUIDE_SLUG} storyContext={{ title: shipSoma.title, body: storyText }} refreshSignal={commentsRefresh} />
+      <Comments storySlug={GUIDE_SLUG} storyContext={{ title: guideTitle, body: storyText }} refreshSignal={commentsRefresh} />
 
       <InlineHighlights
         slug={GUIDE_SLUG}
         storyText={storyText}
-        storyTitle={shipSoma.title}
+        storyTitle={guideTitle}
         articleRef={articleRef}
         isOwner={isOwner}
         onHighlightsChange={(hs) => { setPageHighlights(hs); setCommentsRefresh((n: number) => n + 1); }}

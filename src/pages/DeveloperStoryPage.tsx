@@ -13,11 +13,24 @@ import type { HighlightData } from "@/lib/highlights";
 import Comments from "@/components/ui/Comments";
 import { PublicToggleButton, usePublicState } from "@/components/ui/PublicToggle";
 import { useAuth } from "@/lib/AuthContext";
-import { benjaminStory, benjaminMoreStories } from "@/content/registry";
-import { benjaminMayanja } from "@/content/stories/benjamin-mayanja";
+import { useContentItem, useContentList, toCard } from "@/lib/content";
+import type { StoryContent } from "@/types";
 import { md, contentToMarkdown } from "@/lib/markdown";
 
 const STORY_SLUG = "benjamin-mayanja";
+
+// Author-profile config for this bespoke page (not prose content).
+const benjaminStory = {
+  id: "benjamin-mayanja",
+  title: "Think on paper, but digital: why I built Soma",
+  description:
+    "Most tools force a trade: publish before you understand, or understand in a silo nobody can see. I built Soma so learning and publishing live in the same place, on infrastructure you own.",
+  author: { name: "Benjamin Mayanja", handle: "@Essomero" },
+  location: "Kampala, Uganda",
+  social: "@Essomero",
+  website: "github.com/Essomero",
+  organizations: ["Soma"],
+};
 
 export default function DeveloperStoryPage() {
   const { isOwner } = useAuth();
@@ -26,7 +39,12 @@ export default function DeveloperStoryPage() {
   const [pageHighlights, setPageHighlights] = useState<HighlightData[]>([]);
   const [commentsRefresh, setCommentsRefresh] = useState(0);
   const { isPublic, toggle } = usePublicState(STORY_SLUG);
-  const storyText = [benjaminMayanja.intro, ...(benjaminMayanja.body || [])].join(" ");
+  const { data: storyRow } = useContentItem<StoryContent>("story", STORY_SLUG);
+  const { data: storyRows } = useContentList<StoryContent>("story");
+  const intro = typeof storyRow?.intro === "string" ? storyRow.intro : "";
+  const body = Array.isArray(storyRow?.body) ? (storyRow.body as string[]) : [];
+  const storyText = [intro, ...body].join(" ");
+  const moreStories = (storyRows ?? []).filter((s) => s.slug !== STORY_SLUG).slice(0, 3).map(toCard);
   return (
     <div>
       {/* Hero Section */}
@@ -77,7 +95,7 @@ export default function DeveloperStoryPage() {
                   "Soma: AI-assisted deep research on technology, economics, philosophy, and beyond. A personal publishing platform for ideas that matter."
                 </p>
               </div>
-              <ShareButtons variant="small-circle" markdownContent={contentToMarkdown({ title: benjaminStory.title, intro: benjaminMayanja.intro, body: benjaminMayanja.body })} />
+              <ShareButtons variant="small-circle" markdownContent={contentToMarkdown({ title: benjaminStory.title, intro, body })} />
               <PrintButton compact label="Print / Save PDF" />
             </div>
           </aside>
@@ -240,7 +258,7 @@ export default function DeveloperStoryPage() {
             </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-lg">
-            {benjaminMoreStories.map((story) => (
+            {moreStories.map((story) => (
               <StoryCard key={story.id} article={story} />
             ))}
           </div>

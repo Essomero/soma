@@ -1,9 +1,10 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowRight, Clock, Layers, Check, Printer } from "lucide-react";
+import { ArrowRight, Clock, Layers, Check, Printer, Loader2 } from "lucide-react";
 import Tooltip from "@/components/ui/Tooltip";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
-import { allSeries, allStories } from "@/content/registry";
+import { useContentItem, useContentList } from "@/lib/content";
+import type { SeriesContent, StoryContent } from "@/types";
 import { useProgress } from "@/lib/useProgress";
 import { getTotalReadingTime } from "@/lib/readingTime";
 import { PublicToggleInline, useCollectionPublicState } from "@/components/ui/PublicToggle";
@@ -11,12 +12,23 @@ import { md } from "@/lib/markdown";
 
 export default function SeriesDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const series = allSeries.find((s) => s.slug === (slug ?? ""));
+  const { data: series, loading } = useContentItem<SeriesContent>("series", slug);
+  const { data: stories } = useContentList<StoryContent>("story");
+  const allStories = stories ?? [];
   const episodeSlugs = series ? series.episodes.map((e) => e.storySlug) : [];
   const { isCompleted, toggle, progress } = useProgress(slug ?? "", episodeSlugs);
   const totalMinutes = series
     ? getTotalReadingTime(series.episodes.map((e) => e.storySlug), allStories)
     : 0;
+
+  if (loading) {
+    return (
+      <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant text-center">
+        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      </div>
+    );
+  }
+
 
   if (!series) {
     return (

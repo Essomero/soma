@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react";
 import { useParams, Link } from "react-router-dom";
 import { useState, useRef } from "react";
 import ImmersiveHero from "@/components/sections/ImmersiveHero";
@@ -9,17 +10,28 @@ import ArticleCard from "@/components/cards/ArticleCard";
 import AccentBar from "@/components/ui/AccentBar";
 import ContentBlocks from "@/components/ui/ContentBlocks";
 import InlineHighlights from "@/components/ui/InlineHighlights";
-import { allFeatured } from "@/content/registry";
+import { useContentItem, useContentList } from "@/lib/content";
+import type { FeaturedContent } from "@/types";
 import { type HighlightData } from "@/lib/highlights";
 import { md, contentToMarkdown } from "@/lib/markdown";
 
 export default function GenericFeaturedPage() {
   const { slug } = useParams<{ slug: string }>();
-  const article = allFeatured.find((f) => f.slug === slug);
+  const { data: article, loading } = useContentItem<FeaturedContent>("featured", slug);
+  const { data: featured } = useContentList<FeaturedContent>("featured");
   const articleRef = useRef<HTMLElement>(null);
   const [highlights, setHighlights] = useState<HighlightData[]>([]);
   const highlightClickRef = useRef<(id: number) => void>(() => {});
   const storyText = [article?.description || "", article?.tagline || "", ...(article?.sections?.flatMap(s => s.paragraphs.filter((p): p is string => typeof p === "string")) || [])].join(" ");
+
+  if (loading) {
+    return (
+      <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant text-center">
+        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      </div>
+    );
+  }
+
 
   if (!article) {
     return (
@@ -154,7 +166,7 @@ export default function GenericFeaturedPage() {
           </Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-lg">
-          {allFeatured
+          {(featured ?? [])
             .filter((f) => f.slug !== slug)
             .map((f) => (
               <ArticleCard

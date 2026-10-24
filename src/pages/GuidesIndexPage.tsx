@@ -1,14 +1,23 @@
 import { md } from "@/lib/markdown";
 import { Link } from "react-router-dom";
-import { ArrowRight, Search, ChevronDown } from "lucide-react";
+import { ArrowRight, Loader2, Search, ChevronDown } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
-import { allGuides } from "@/content/registry";
-
-const featuredGuide = allGuides.find((g) => g.isFeatured);
-const sidebarGuides = allGuides.filter((g) => !g.isFeatured).slice(0, 2);
-const gridGuides = allGuides.filter((g) => !g.isFeatured).slice(2);
+import { useContentList } from "@/lib/content";
+import type { GuideContent } from "@/types";
 
 export default function GuidesIndexPage() {
+  const { data: guides, loading } = useContentList<GuideContent>("guide");
+  if (loading) {
+    return (
+      <div className="pt-24 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">
+        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      </div>
+    );
+  }
+  const allGuides = guides ?? [];
+  const featuredGuide = allGuides.find((g) => g.isFeatured);
+  const sidebarGuides = allGuides.filter((g) => !g.isFeatured).slice(0, 2);
+  const gridGuides = allGuides.filter((g) => !g.isFeatured).slice(2);
   return (
     <div>
       <main className="pt-24 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop">
