@@ -616,10 +616,9 @@ npx tsx -e "import('./scripts/content-db.ts').then(async ({getDb}) => { const db
 
 ### Step 3: Preview the draft locally
 ```bash
-npm run server    # terminal 1: local edge API on :3001
-npm run dev:local # terminal 2: frontend on :5173 wired to :3001
+npm run dev
 ```
-Open `http://localhost:5173/stories/{slug}` (or `/guides/...`, `/featured/...`). You are the owner locally, so drafts render. Iterate by re-running `npm run publish`.
+Plain `npm run dev` serves the API inline (owner view, drafts included), so one terminal is enough. Open `http://localhost:5173/stories/{slug}` (or `/guides/...`, `/featured/...`). Iterate by re-running `npm run publish`. (`npm run server` + `npm run dev:local` remains as the two-terminal alternative.)
 
 ### Step 3b: No-CLI path (owner in the browser)
 The owner never needs a terminal. Open **Learn** in the nav → **Content drafts** section → **New from manuscript**, paste the manuscript as JSON (same fields as the TypeScript schemas), pick the type, and save. It lands as a private draft row — same store, same preview, same toggle. The CLI stays available for batch/agent work, but it is never required.

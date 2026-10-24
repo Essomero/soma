@@ -968,6 +968,51 @@ function chatDevPlugin(env: Record<string, string>) {
           return send(500, { error: e.message });
         }
       });
+      // Local API fallback: serve the remaining /api/* routes from api/*.js
+      // with the same owner bypass as `npm run server`, so plain `npm run dev`
+      // works with zero extra processes. Routes handled above (chat, models,
+      // comments, highlights, learn, public) never reach this.
+      for (const k of ["TURSO_DATABASE_URL", "TURSO_DB", "TURSO_AUTH_TOKEN", "TURSO_TOKEN", "SITE_PASSWORD"]) {
+        if (!process.env[k] && env[k]) process.env[k] = env[k];
+      }
+      const localHandlerCache: Record<string, any> = {};
+      async function loadLocalHandler(name: string) {
+      // Dynamic import is required here, not stylistic: api/*.js capture
+      // process.env at module load, and env is populated above at server
+      // start, after static imports would already have evaluated.
+        if (!localHandlerCache[name]) {
+          if (name === "content") localHandlerCache[name] = (await import("./api/content.js")).default;
+          else if (name === "progress") localHandlerCache[name] = (await import("./api/progress.js")).default;
+          else if (name === "ratings") localHandlerCache[name] = (await import("./api/ratings.js")).default;
+          else localHandlerCache[name] = (await import("./api/tests.js")).default;
+        }
+        return localHandlerCache[name];
+      }
+      server.middlewares.use(async (req: any, res: any, next: any) => {
+        const m = /^\/api\/([a-z-]+)/.exec(req.url || "");
+        const name = m ? m[1] : "";
+        if (!["content", "progress", "ratings", "tests"].includes(name)) return next();
+        try {
+          const handler = await loadLocalHandler(name);
+          const u = new URL(req.url || "", "http://localhost");
+          let body: any = {};
+          if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method || "")) {
+            try { body = JSON.parse(req._body || "{}"); } catch { body = {}; }
+          }
+          const vercelReq = { method: req.method, query: Object.fromEntries(u.searchParams), body, headers: { cookie: req.headers?.cookie || "" }, localBypass: true };
+          const vercelRes = {
+            status(code: number) { res.statusCode = code; return this; },
+            json(data: any) { res.setHeader("Content-Type", "application/json"); res.end(JSON.stringify(data)); return this; },
+            setHeader(n: string, v: string) { res.setHeader(n, v); },
+            end(data?: any) { res.end(data); return this; },
+          };
+          await handler(vercelReq, vercelRes);
+        } catch (e: any) {
+          console.error(`[api-local] ${name} handler error:`, e.message);
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: e.message || "Internal server error" }));
+        }
+      });
     },
   };
 }
