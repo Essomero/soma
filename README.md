@@ -119,18 +119,11 @@ Then press Deploy. Tables initialize automatically on the first API request: no 
 
 Prefer to use a database you already own, or want it under your own Turso account? Skip the card and paste its URL and token as `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` yourself, instead. Either path lands in the same place.
 
-### Step 1.5: (Fresh forks) Load the demo content
+### Step 1.5: Content seeds itself on first deploy
 
-Your database starts empty, so your new site starts blank. Load the public demo corpus (the same essays, guides, and course in this repo) as private drafts, then flip what you want public:
+Your database starts empty. The first production build detects the empty content store and imports the public demo corpus (the essays, guides, and course in this repo) as private drafts — nothing goes public. Flip rows to `published` one by one (per slug: `UPDATE content_items SET status='published' WHERE slug='...'`) or all at once (`UPDATE content_items SET status='published'`). Your own writing stays drafts until you say otherwise.
 
-```bash
-git clone <your-fork-url> && cd soma
-cp .env.example .env.local  # fill in your Turso URL + token
-npm install
-npm run seed    # imports every seed file as a draft row — nothing goes public
-```
-
-Then flip rows to `published` one by one (per slug: `UPDATE content_items SET status='published' WHERE slug='...'`) or all at once (`UPDATE content_items SET status='published'`). Your own writing stays drafts until you say otherwise.
+Re-running the seed later refreshes demo bodies without touching visibility: `npm run seed` (needs Turso credentials in `.env.local`).
 
 ### Step 2: (Optional) Add AI Keys
 

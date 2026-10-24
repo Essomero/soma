@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "vite",
     "dev:local": "LOCAL_API=1 vite",
-    "build": "npx tsx scripts/validate-content.ts && tsc -b && vite build",
+    "build": "npx tsx scripts/seed-content.ts --if-empty && npx tsx scripts/validate-content.ts && tsc -b && vite build",
     "rss": "npx tsx scripts/generate-rss.ts",
     "preview": "vite preview",
     "server": "node server/api-dev.mjs",

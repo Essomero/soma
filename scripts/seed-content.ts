@@ -35,9 +35,18 @@ function stripComputed(item: SeedFields): SeedFields {
 }
 
 async function main() {
+  const ifEmpty = process.argv.includes("--if-empty");
   const db = await getDb();
   await db.execute(CREATE_CONTENT_ITEMS);
 
+  // Build-time mode: fill fresh databases only. Manual runs always refresh.
+  if (ifEmpty) {
+    const count = await db.execute("SELECT COUNT(*) AS n FROM content_items");
+    if (Number(count.rows[0]?.n) > 0) {
+      console.log("seed: content_items already populated, skipping");
+      return;
+    }
+  }
   // public_pages is the current visibility source of truth : honor it.
   const publicSlugs = new Set<string>();
   try {
