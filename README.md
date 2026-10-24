@@ -2,7 +2,7 @@
 
 > Think on paper but digital. Learn anything at your pace, in your own infrastructure, and make public what you wish.
 
-New here? Do [Step 0: free Turso database](#step-0-create-a-free-turso-database) below (2 minutes, no installs), then [**fork the repo**](https://github.com/Essomero/soma/fork) and import your fork in Vercel. Importing uses your fork as-is: no new repo is created.
+New here? Do [Step 0: free Turso database](#step-0-create-a-free-turso-database) below (2 minutes, no installs), then [**fork the repo**](https://github.com/Essomero/soma/fork) and [import your fork in Vercel](https://vercel.com/new). Importing uses your fork as-is: no new repo is created.
 
 ---
 
