@@ -219,15 +219,10 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
         body: JSON.stringify({ storySlug, body: text.trim(), parentId: parentId ?? null }),
       });
       if (r.ok) {
-        let created: any = null;
-        try { created = await r.json(); insertCreated(created); } catch {}
+        try { insertCreated(await r.json()); } catch {}
         setBody("");
         setReplyBody("");
         setReplyToId(null);
-        await fetchComments();
-        // Refetch can return a stale read that drops the new row; re-insert
-        // is a no-op when the row is already listed.
-        insertCreated(created);
       }
     } catch {}
     setLoading(false);
@@ -475,8 +470,6 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
           insertCreated(created);
           setSummaryDraft("");
           setSummarizing(false);
-          await fetchComments();
-          insertCreated(created);
         } else {
           setAiError({ id: -1, message: (created && created.error) || "Couldn't save — try again." });
         }
@@ -587,8 +580,6 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
           insertCreated(created);
           setExplainDraft("");
           setExplaining(false);
-          await fetchComments();
-          insertCreated(created);
         } else {
           setAiError({ id: -2, message: (created && created.error) || "Couldn't save — try again." });
         }
@@ -627,8 +618,6 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
             next.delete(commentId);
             return next;
           });
-          await fetchComments();
-          insertCreated(created);
         } else {
           setAiError({ id: commentId, message: (created && created.error) || "Couldn't save — try again." });
         }
