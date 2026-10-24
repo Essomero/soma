@@ -7,7 +7,6 @@ import ShareButtons from "@/components/ui/ShareButtons";
 import PrintButton from "@/components/ui/PrintButton";
 import PullQuote from "@/components/ui/PullQuote";
 import StoryCard from "@/components/cards/StoryCard";
-import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import InlineHighlights from "@/components/ui/InlineHighlights";
 import StaticHighlightPaint from "@/components/ui/StaticHighlightPaint";
 import type { HighlightData } from "@/lib/highlights";
@@ -251,9 +250,6 @@ export default function DeveloperStoryPage() {
           </div>
         </div>
       </section>
-
-      {/* Newsletter */}
-      <NewsletterSignup variant="subtle" />
     </div>
   );
 }

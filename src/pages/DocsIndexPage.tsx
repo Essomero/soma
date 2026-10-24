@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { FileText, ArrowRight } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
-import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import LoadMore from "@/components/ui/LoadMore";
 import { allDocs } from "@/content/registry";
 
@@ -67,8 +66,6 @@ export default function DocsIndexPage() {
           </LoadMore>
         )}
       </main>
-
-      <NewsletterSignup variant="subtle" />
     </div>
   );
 }

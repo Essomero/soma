@@ -2,7 +2,6 @@ import { md } from "@/lib/markdown";
 import { Link } from "react-router-dom";
 import { ArrowRight, Search, ChevronDown } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
-import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import { allGuides } from "@/content/registry";
 
 const featuredGuide = allGuides.find((g) => g.isFeatured);
@@ -165,33 +164,6 @@ export default function GuidesIndexPage() {
             <button className="bg-surface border border-border-default px-xl py-md font-sora text-metadata-tag uppercase tracking-widest hover:bg-surface-container-highest transition-colors active:scale-95 duration-200 text-on-surface">
               View More Guides
             </button>
-          </div>
-        </section>
-
-        {/* Newsletter CTA */}
-        <section className="mt-giant bg-surface-lowest border border-border-default p-xxl relative overflow-hidden">
-          <div className="absolute right-0 top-0 w-1/3 h-full opacity-20 pointer-events-none">
-            <div className="w-full h-full bg-gradient-to-l from-primary-container to-transparent" />
-          </div>
-          <div className="max-w-2xl relative z-10">
-            <AccentBar variant="small" className="mb-sm" />
-            <h2 className="font-sora text-article-title mb-sm text-on-surface">Stay ahead of the curve</h2>
-            <p className="text-on-surface-variant mb-lg">
-              Get the latest deep dives delivered straight to your inbox.
-            </p>
-            <form className="flex flex-col sm:flex-row gap-md">
-              <input
-                className="flex-grow bg-background border border-border-default px-md py-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all rounded-lg text-on-surface placeholder-on-surface-muted"
-                placeholder="you@company.com"
-                type="email"
-              />
-              <button
-                className="bg-primary text-on-primary px-lg py-sm font-sora text-metadata-tag uppercase font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all"
-                type="submit"
-              >
-                Subscribe
-              </button>
-            </form>
           </div>
         </section>
       </main>

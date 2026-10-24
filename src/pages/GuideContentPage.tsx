@@ -11,7 +11,6 @@ import SidebarToc from "@/components/sections/SidebarToc";
 import AuthorBio from "@/components/sections/AuthorBio";
 import ShareButtons from "@/components/ui/ShareButtons";
 import Comments from "@/components/ui/Comments";
-import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import ContentBlocks from "@/components/ui/ContentBlocks";
 import InlineHighlights from "@/components/ui/InlineHighlights";
 import PrintButton from "@/components/ui/PrintButton";
@@ -274,8 +273,6 @@ export default function GuideContentPage() {
           </div>
         </div>
       </section>
-
-      <NewsletterSignup variant="subtle" />
 
       {slug && (
         <InlineHighlights

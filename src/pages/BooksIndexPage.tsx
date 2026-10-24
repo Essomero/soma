@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { BookOpen, ArrowRight } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import LoadMore from "@/components/ui/LoadMore";
-import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import { allBooks } from "@/content/registry";
 
 export default function BooksIndexPage() {
@@ -64,7 +63,6 @@ export default function BooksIndexPage() {
           </LoadMore>
         )}
       </main>
-      <NewsletterSignup variant="subtle" />
     </div>
   );
 }

@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { Play, ArrowRight, Podcast, Radio, Rss, Share2 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
-import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import { allEpisodes, podcastTopics } from "@/content/registry";
 import { md } from "@/lib/markdown";
 
@@ -121,30 +120,9 @@ export default function PodcastPage() {
           </div>
         </section>
 
-        {/* Newsletter + Platform Links */}
+        {/* Platform Links */}
         <section className="bg-surface-container py-giant border-y border-border-default">
-          <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop grid grid-cols-1 lg:grid-cols-2 gap-xxl items-center">
-            <div className="space-y-md">
-              <h2 className="font-sora text-headline-md text-on-surface">
-                Get the metadata in your inbox.
-              </h2>
-              <p className="font-dm-sans text-body-base text-on-surface-muted max-w-lg">
-                Receive show notes and deep-dive articles directly in your inbox. No spam, just substance.
-              </p>
-              <form className="flex flex-col sm:flex-row gap-md mt-lg max-w-md">
-                <input
-                  className="flex-grow bg-surface border border-border-default rounded px-md py-sm focus:outline-none focus:border-accent-blue-neon text-on-surface placeholder:text-on-surface-muted transition-colors"
-                  placeholder="Email address"
-                  type="email"
-                />
-                <button
-                  className="bg-on-surface text-background font-sora text-metadata-tag uppercase tracking-widest py-sm px-xl rounded hover:opacity-90 transition-opacity"
-                  type="submit"
-                >
-                  Subscribe
-                </button>
-              </form>
-            </div>
+          <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop grid grid-cols-1 gap-xxl items-center">
             <div className="grid grid-cols-2 gap-md">
               <div className="p-lg border border-border-default rounded-lg bg-surface flex flex-col items-center text-center space-y-sm hover:bg-surface-container-high transition-colors cursor-pointer">
                 <Podcast className="w-8 h-8 text-primary" />

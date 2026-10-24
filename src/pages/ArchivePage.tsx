@@ -4,7 +4,6 @@ import { Archive } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import ArticleCard from "@/components/cards/ArticleCard";
 import LoadMore from "@/components/ui/LoadMore";
-import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import { allStories } from "@/content/registry";
 import { useAllReadSlugs } from "@/lib/useProgress";
 
@@ -86,8 +85,6 @@ export default function ArchivePage() {
           </div>
         )}
       </main>
-
-      <NewsletterSignup variant="subtle" />
     </div>
   );
 }

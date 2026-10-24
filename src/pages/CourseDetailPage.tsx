@@ -2,7 +2,6 @@ import { useParams, Link } from "react-router-dom";
 import { ArrowRight, Clock, BookOpen, Check, ExternalLink, Sparkles, Printer } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
-import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import { allCourses, allStories, allTests } from "@/content/registry";
 import { useProgress } from "@/lib/useProgress";
 import { getTotalReadingTime } from "@/lib/readingTime";
@@ -198,7 +197,6 @@ export default function CourseDetailPage() {
         </div>
       </section>
 
-      <NewsletterSignup variant="subtle" />
     </div>
   );
 }

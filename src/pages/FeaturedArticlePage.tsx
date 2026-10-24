@@ -7,7 +7,6 @@ import BentoCard from "@/components/cards/BentoCard";
 import PullQuote from "@/components/ui/PullQuote";
 import PrintButton from "@/components/ui/PrintButton";
 import ArticleCard from "@/components/cards/ArticleCard";
-import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import AccentBar from "@/components/ui/AccentBar";
 import InlineHighlights from "@/components/ui/InlineHighlights";
 import StaticHighlightPaint from "@/components/ui/StaticHighlightPaint";
@@ -161,9 +160,6 @@ export default function FeaturedArticlePage() {
         highlights={pageHighlights}
         onOpen={(id) => highlightClickRef.current(id)}
       />
-
-      {/* Newsletter CTA - Brand variant */}
-      <NewsletterSignup variant="brand" />
 
       {/* More Stories */}
       <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant">

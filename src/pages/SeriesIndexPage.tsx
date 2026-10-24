@@ -2,7 +2,6 @@ import { md } from "@/lib/markdown";
 import { Link } from "react-router-dom";
 import { Layers, ArrowRight } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
-import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import { allSeries } from "@/content/registry";
 import LoadMore from "@/components/ui/LoadMore";
 
@@ -71,7 +70,6 @@ export default function SeriesIndexPage() {
         )}
       </main>
 
-      <NewsletterSignup variant="subtle" />
     </div>
   );
 }

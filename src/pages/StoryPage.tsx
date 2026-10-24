@@ -5,7 +5,6 @@ import Tag from "@/components/ui/Tag";
 import PullQuote from "@/components/ui/PullQuote";
 import BentoCard from "@/components/cards/BentoCard";
 import ArticleCard from "@/components/cards/ArticleCard";
-import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import SidebarAbout from "@/components/sections/SidebarAbout";
 import ContentBlocks from "@/components/ui/ContentBlocks";
 import SelectionToolbar from "@/components/ui/SelectionToolbar";
@@ -1360,8 +1359,6 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
           </div>
         </div>
       </section>
-
-      <NewsletterSignup variant="subtle" />
 
       {/* Floating Selection Toolbar : owner only */}
       {isOwner && (

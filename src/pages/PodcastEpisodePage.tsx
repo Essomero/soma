@@ -246,24 +246,6 @@ export default function PodcastEpisodePage() {
             </section>
           )}
 
-          {/* Newsletter */}
-          <section className="bg-surface-container border border-border-default rounded-xl p-lg">
-            <h3 className="font-sora text-xl text-on-surface mb-md">Get the newsletter</h3>
-            <p className="font-dm-sans text-sm text-on-surface-muted mb-lg">
-              Sharpen your thinking with deep dives into technology, economics, and philosophy. Delivered when there's something worth reading.
-            </p>
-            <form className="space-y-md" onSubmit={(e) => e.preventDefault()}>
-              <input
-                className="w-full bg-background border border-border-default rounded-lg px-md py-2 text-sm focus:ring-primary focus:border-primary text-on-surface placeholder-on-surface-muted"
-                placeholder="Email address"
-                type="email"
-              />
-              <button className="w-full bg-primary text-on-primary font-sora text-metadata-tag uppercase py-2 rounded-lg hover:opacity-90 transition-opacity">
-                Subscribe
-              </button>
-            </form>
-          </section>
-
           {/* Suggest a topic */}
           <section className="text-center p-lg border-2 border-dashed border-border-default rounded-xl">
             <Star className="w-9 h-9 text-primary mx-auto mb-md" />

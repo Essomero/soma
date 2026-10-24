@@ -3,7 +3,6 @@ import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
 import SidebarToc from "@/components/sections/SidebarToc";
 import ContentBlocks from "@/components/ui/ContentBlocks";
-import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import PrintButton from "@/components/ui/PrintButton";
 import { allDocs } from "@/content/registry";
 import { md } from "@/lib/markdown";
@@ -148,8 +147,6 @@ export default function DocPage() {
           </div>
         </div>
       </article>
-
-      <NewsletterSignup variant="subtle" />
     </div>
   );
 }

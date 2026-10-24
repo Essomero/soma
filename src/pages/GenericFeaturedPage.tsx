@@ -6,7 +6,6 @@ import ShareButtons from "@/components/ui/ShareButtons";
 import BentoCard from "@/components/cards/BentoCard";
 import PullQuote from "@/components/ui/PullQuote";
 import ArticleCard from "@/components/cards/ArticleCard";
-import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import AccentBar from "@/components/ui/AccentBar";
 import ContentBlocks from "@/components/ui/ContentBlocks";
 import InlineHighlights from "@/components/ui/InlineHighlights";
@@ -137,9 +136,6 @@ export default function GenericFeaturedPage() {
             )}
         </article>
       </section>
-
-      {/* Newsletter CTA */}
-      <NewsletterSignup variant="brand" />
 
       {/* More Featured Articles */}
       <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant">

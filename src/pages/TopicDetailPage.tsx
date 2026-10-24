@@ -2,7 +2,6 @@ import { md } from "@/lib/markdown";
 import { useParams, Link } from "react-router-dom";
 import AccentBar from "@/components/ui/AccentBar";
 import ArticleCard from "@/components/cards/ArticleCard";
-import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import { allTopics, allStories } from "@/content/registry";
 
 export default function TopicDetailPage() {
@@ -93,8 +92,6 @@ export default function TopicDetailPage() {
           </div>
         </section>
       </main>
-
-      <NewsletterSignup variant="subtle" />
     </div>
   );
 }

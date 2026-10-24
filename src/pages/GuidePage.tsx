@@ -9,7 +9,6 @@ import { contentToMarkdown } from "@/lib/markdown";
 import TipCard from "@/components/ui/TipCard";
 import CodeBlock from "@/components/ui/CodeBlock";
 import PullQuote from "@/components/ui/PullQuote";
-import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import PrintButton from "@/components/ui/PrintButton";
 import InlineHighlights from "@/components/ui/InlineHighlights";
 import StaticHighlightPaint from "@/components/ui/StaticHighlightPaint";
@@ -298,8 +297,6 @@ export default function GuidePage() {
         onOpen={(id) => highlightClickRef.current(id)}
       />
 
-      {/* Newsletter CTA */}
-      <NewsletterSignup variant="centered-light" />
     </div>
   );
 }

@@ -240,36 +240,6 @@ export default function TopicsPage() {
             </LoadMore>
           </div>
         </section>
-
-        {/* Newsletter CTA */}
-        <section className="py-giant bg-background">
-          <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop">
-            <div className="bg-surface-container p-giant rounded-xl border border-border-default flex flex-col md:flex-row items-center justify-between gap-xl overflow-hidden relative">
-              <div className="absolute -right-20 top-0 opacity-10 pointer-events-none">
-                <span className="text-[300px] font-thin">✉</span>
-              </div>
-              <div className="relative z-10 max-w-xl">
-                <h2 className="font-sora text-headline-md mb-md text-on-surface">
-                  Stay Informed
-                </h2>
-                <p className="font-dm-sans text-body-base text-on-surface-muted">
-                  Get the latest stories, guides, and podcast episodes delivered
-                  directly to your inbox every month.
-                </p>
-              </div>
-              <div className="relative z-10 w-full md:w-auto flex flex-col sm:flex-row gap-md">
-                <input
-                  className="bg-surface border border-border-default px-lg py-lg rounded-lg min-w-[300px] focus:ring-0 focus:border-primary text-on-surface placeholder-on-surface-muted"
-                  placeholder="email@address.com"
-                  type="email"
-                />
-                <button className="bg-primary text-on-primary px-xl py-lg rounded-lg font-sora text-metadata-tag uppercase tracking-widest hover:opacity-90 transition-opacity">
-                  Subscribe
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
     </div>
   );

@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { Clock, FileText, ArrowRight, Sparkles, CheckCircle2, BookOpen, Mic } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
-import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import { allTests } from "@/content/registry";
 import { getStoredAnswers, getStoredEvaluation } from "@/lib/testEvaluation";
 
@@ -214,7 +213,6 @@ export default function TestsIndexPage() {
         )}
       </main>
 
-      <NewsletterSignup variant="subtle" />
     </div>
   );
 }

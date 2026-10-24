@@ -4,7 +4,6 @@ import ReadMENav from "@/components/layout/ReadMENav";
 import HeroSection from "@/components/sections/HeroSection";
 import ArticleCard from "@/components/cards/ArticleCard";
 import PodcastCard from "@/components/cards/PodcastCard";
-import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import Button from "@/components/ui/Button";
 import Tag from "@/components/ui/Tag";
 import {
@@ -191,9 +190,6 @@ export default function HomePage() {
           </article>
         </div>
       </section>
-
-      {/* Newsletter */}
-      <NewsletterSignup variant="centered" />
     </div>
   );
 }

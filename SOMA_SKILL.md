@@ -742,7 +742,6 @@ When building new pages, use these existing composable components:
 - **`Tag`** — Category badge (`variant="primary"|"secondary"|"accent"|"brand"`)
 - **`Button`** — CTA button (`variant="primary"|"outline"|"ghost"|"brand"|"white"`, `size="sm"|"md"|"lg"`, optional `href` renders as Link)
 - **`PullQuote`** — Styled blockquote (`variant="gradient-bar"|"border-left"|"border-y"`)
-- **`NewsletterSignup`** — Email CTA (`variant="centered"|"brand"|"subtle"|"centered-light"`)
 - **`CodeBlock`** — Terminal-style code display
 - **`TipCard`** — Icon + heading + description (takes LucideIcon)
 - **`ShareButtons`** — Social sharing (`variant="column"|"row"|"small-circle"`)

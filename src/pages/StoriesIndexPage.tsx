@@ -3,7 +3,6 @@ import { ArrowRight } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import ArticleCard from "@/components/cards/ArticleCard";
 import LoadMore from "@/components/ui/LoadMore";
-import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import { allStories, allTopics } from "@/content/registry";
 import { useAllReadSlugs } from "@/lib/useProgress";
 import { md } from "@/lib/markdown";
@@ -247,8 +246,6 @@ export default function StoriesIndexPage() {
           </section>
         )}
       </main>
-
-      <NewsletterSignup variant="subtle" />
     </div>
   );
 }
