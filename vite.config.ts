@@ -591,6 +591,42 @@ function chatDevPlugin(env: Record<string, string>) {
           return data.results?.[0]?.response?.result;
         }
 
+        // GET — list comments for a story as a threaded tree (same shape as /api/comments).
+        // Without this, GET falls through to the proxy below and reloads show nothing.
+        if (req.method === "GET") {
+          try {
+            const u = new URL(req.url || "", "http://localhost");
+            const story = u.searchParams.get("story");
+            if (!story) { res.writeHead(400, { "Content-Type": "application/json" }); return res.end(JSON.stringify({ error: "story required" })); }
+            const result = await turso("SELECT * FROM comments WHERE story_slug = ? ORDER BY created_at DESC", [story]);
+            const cols = (result?.cols || []).map((c: any) => c.name || c);
+            const rows = (result?.rows || []).map((r: any[]) => {
+              const o: Record<string, any> = {};
+              cols.forEach((c: string, i: number) => {
+                const cell = r[i];
+                o[c] = cell && typeof cell === "object" ? (cell.type === "null" ? null : cell.value) : cell;
+              });
+              return o;
+            });
+            const map: Record<string, any> = {};
+            const roots: any[] = [];
+            for (const r of rows) map[r.id] = { ...r, replies: [] };
+            for (const r of rows) {
+              const node = map[r.id];
+              if (r.parent_id != null && map[r.parent_id]) map[r.parent_id].replies.push(node);
+              else roots.push(node);
+            }
+            for (const root of roots) root.replies.sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(roots));
+          } catch (e: any) {
+            console.error("[comments-dev GET]", e.message);
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: e.message }));
+          }
+          return;
+        }
+
         // POST — create comment
         if (req.method === "POST") {
           try {
@@ -603,9 +639,17 @@ function chatDevPlugin(env: Record<string, string>) {
               highlightId ?? null, sectionIndex ?? null, paragraphIndex ?? null,
               startOffset ?? null, endOffset ?? null, selectedText ?? null, now,
             ];
-            const result = await turso("INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", args);
+            const result = await turso("INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *", args);
+            const cols = (result?.cols || []).map((c: any) => c.name || c);
+            const cells: any[] = result?.rows?.[0] || [];
+            const row: Record<string, any> = {};
+            cols.forEach((c: string, i: number) => {
+              const cell = cells[i];
+              row[c] = cell && typeof cell === "object" ? (cell.type === "null" ? null : cell.value) : cell;
+            });
+            if (row.id == null) { res.writeHead(500, { "Content-Type": "application/json" }); return res.end(JSON.stringify({ error: "Insert failed" })); }
             res.writeHead(201, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ id: result?.last_insert_rowid ?? Date.now(), storySlug, body: text, parentId: parentId ?? null, createdAt: now }));
+            res.end(JSON.stringify(row));
           } catch (e: any) {
             console.error("[comments-dev POST]", e.message);
             res.writeHead(500, { "Content-Type": "application/json" });
