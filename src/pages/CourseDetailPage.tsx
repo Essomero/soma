@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { ArrowRight, Clock, BookOpen, Check, ExternalLink, Sparkles, Printer } from "lucide-react";
+import Tooltip from "@/components/ui/Tooltip";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
 import { allCourses, allStories, allTests } from "@/content/registry";
@@ -79,16 +80,17 @@ export default function CourseDetailPage() {
               <BookOpen className="w-6 h-6 text-primary" />
               Lessons
             </h2>
+            <Tooltip label="Download entire course as a PDF or printable book">
             <Link
               to={`/courses/${course.slug}/print`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-sm px-xl py-md rounded-lg font-sora text-sm font-semibold bg-surface-container-low border border-border-default text-on-surface hover:border-primary/50 hover:text-primary transition-all shadow-sm print:hidden"
-              title="Download entire course as a PDF or printable book"
             >
               <Printer className="w-4 h-4 text-primary" />
               <span>Download PDF</span>
             </Link>
+            </Tooltip>
           </div>
           {/* General Course Assessment Card (Opens in external tab) */}
           {(() => {
@@ -139,6 +141,7 @@ export default function CourseDetailPage() {
                   className="block group p-xl bg-surface-container-low border border-border-default rounded-xl hover:border-primary/50 hover:-translate-y-0.5 transition-all"
                 >
                   <div className="flex items-start gap-lg">
+                    <Tooltip label={isCompleted(lesson.storySlug) ? "Mark as unread" : "Mark as completed"}>
                     <button
                       onClick={(e) => { e.preventDefault(); toggle(lesson.storySlug); }}
                       className={`flex-shrink-0 w-10 h-10 rounded-full border flex items-center justify-center font-sora text-sm font-bold transition-all ${
@@ -146,10 +149,10 @@ export default function CourseDetailPage() {
                           ? "bg-secondary/20 border-secondary text-secondary"
                           : "bg-primary/10 border-primary/20 text-primary hover:bg-primary/20"
                       }`}
-                      title={isCompleted(lesson.storySlug) ? "Mark as unread" : "Mark as completed"}
                     >
                       {isCompleted(lesson.storySlug) ? <Check className="w-4 h-4" /> : i + 1}
                     </button>
+                    </Tooltip>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-sm mb-sm">
                         <span className="font-sora text-metadata-tag text-on-surface-muted uppercase">

@@ -11,6 +11,7 @@ import ChartBlock from "@/components/ui/ChartBlock";
 import Scene3DBlock from "@/components/ui/Scene3DBlock";
 import LabBlock from "@/components/ui/LabBlock";
 import type { HighlightData } from "@/lib/highlights";
+import Tooltip from "@/components/ui/Tooltip";
 import { PracticeHintBlock, PracticeSolutionBlock, parsePracticeBlock } from "@/components/ui/PracticeBlocks";
 import type { LessonLinks } from "@/lib/storyLinks";
 import { useTheme } from "@/lib/ThemeContext";
@@ -148,14 +149,15 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
   return (
     <>
       <figure className="my-xxl">
-        <div
-          ref={ref}
-          onClick={() => setExpanded(true)}
-          className="flex justify-center p-xl bg-surface-container-low rounded-lg border border-border-default overflow-x-auto cursor-zoom-in hover:border-primary/50 transition-colors"
-          title="Click to expand"
-        >
-          <div className="w-full flex justify-center" />
-        </div>
+        <Tooltip label="Click to expand">
+          <div
+            ref={ref}
+            onClick={() => setExpanded(true)}
+            className="flex justify-center p-xl bg-surface-container-low rounded-lg border border-border-default overflow-x-auto cursor-zoom-in hover:border-primary/50 transition-colors"
+          >
+            <div className="w-full flex justify-center" />
+          </div>
+        </Tooltip>
         {caption && (
           <figcaption className="mt-md font-dm-sans text-sm text-on-surface-muted italic text-center">
             {caption}
@@ -213,13 +215,14 @@ function ImageBlock({ src, alt, caption }: { src: string; alt: string; caption?:
   return (
     <>
       <figure className="my-xxl">
-        <img
-          src={src}
-          alt={alt}
-          onClick={() => setExpanded(true)}
-          className="w-full h-auto rounded-lg border border-border-default cursor-zoom-in hover:border-primary/50 transition-colors"
-          title="Click to zoom"
-        />
+        <Tooltip label="Click to zoom">
+          <img
+            src={src}
+            alt={alt}
+            onClick={() => setExpanded(true)}
+            className="w-full h-auto rounded-lg border border-border-default cursor-zoom-in hover:border-primary/50 transition-colors"
+          />
+        </Tooltip>
         {caption && (
           <figcaption className="mt-md font-dm-sans text-sm text-on-surface-muted italic text-center">
             {caption}

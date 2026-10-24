@@ -1,4 +1,5 @@
 import { Play, Pause, RotateCcw, Volume2, AlertCircle, Loader2 } from "lucide-react";
+import Tooltip from "@/components/ui/Tooltip";
 
 interface OralQuestionAudioProps {
   examinerName?: string;
@@ -116,15 +117,16 @@ export default function OralQuestionAudio({
           </div>
 
           {/* Replay Button */}
+          <Tooltip label="Replay question prompt">
           <button
             type="button"
             onClick={onReplay}
             disabled={isSynthesizing}
-            title="Replay question prompt"
             className="p-2 rounded-lg bg-surface border border-border-default/50 text-on-surface hover:text-primary transition-colors disabled:opacity-40"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
+          </Tooltip>
 
           {/* Play/Pause Button */}
           <button

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Share2, MessageCircle, Linkedin, Facebook, AtSign, Clipboard, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PublicToggleButton, usePublicState } from "@/components/ui/PublicToggle";
+import Tooltip from "@/components/ui/Tooltip";
 
 interface ShareButtonsProps {
   variant: "column" | "row" | "small-circle";
@@ -199,14 +200,15 @@ export default function ShareButtons({
         <MessageCircle className="w-5 h-5" />
       </a>
       {markdownContent && (
-        <button
-          onClick={handleCopyMarkdown}
-          className="text-on-surface-muted hover:text-secondary transition-colors"
-          aria-label="Copy as Markdown"
-          title={copied ? "Copied!" : "Copy as Markdown"}
-        >
-          {copied ? <Check className="w-5 h-5 text-secondary" /> : <Clipboard className="w-5 h-5" />}
-        </button>
+        <Tooltip label={copied ? "Copied!" : "Copy as Markdown"}>
+          <button
+            onClick={handleCopyMarkdown}
+            className="text-on-surface-muted hover:text-secondary transition-colors"
+            aria-label="Copy as Markdown"
+          >
+            {copied ? <Check className="w-5 h-5 text-secondary" /> : <Clipboard className="w-5 h-5" />}
+          </button>
+        </Tooltip>
       )}
       {publicToggleSlug && (
         <PublicToggleButton isPublic={isPublic} onToggle={toggle} className="text-on-surface-muted hover:text-primary transition-colors" />

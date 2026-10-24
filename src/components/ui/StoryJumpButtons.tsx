@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useLenis } from "lenis/react";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Tooltip from "@/components/ui/Tooltip";
 
 export default function StoryJumpButtons() {
   const [atTop, setAtTop] = useState(true);
@@ -72,55 +73,51 @@ export default function StoryJumpButtons() {
       role="group"
       aria-label="Story jump navigation"
     >
-      <button
-        type="button"
-        onClick={scrollToTop}
-        disabled={atTop}
-        aria-label="Jump to top"
-        title="Jump to top"
-        className={cn(
-          "group relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full transition-all duration-150",
-          atTop
-            ? "text-on-surface-muted/30 cursor-not-allowed"
-            : "text-on-surface-muted hover:text-primary hover:bg-surface-container active:scale-95 cursor-pointer"
-        )}
-      >
-        <ArrowUp
+      <Tooltip label="Jump to top">
+        <button
+          type="button"
+          onClick={scrollToTop}
+          disabled={atTop}
+          aria-label="Jump to top"
           className={cn(
-            "w-4 h-4 sm:w-4.5 sm:h-4.5 transition-transform",
-            !atTop && "group-hover:-translate-y-0.5"
+            "group relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full transition-all duration-150",
+            atTop
+              ? "text-on-surface-muted/30 cursor-not-allowed"
+              : "text-on-surface-muted hover:text-primary hover:bg-surface-container active:scale-95 cursor-pointer"
           )}
-        />
-        <span className="pointer-events-none absolute right-full mr-2 hidden md:group-hover:flex items-center px-2 py-1 rounded bg-surface-container-high border border-border-default text-[11px] font-sora text-on-surface whitespace-nowrap shadow-md">
-          Jump to top
-        </span>
-      </button>
+        >
+          <ArrowUp
+            className={cn(
+              "w-4 h-4 sm:w-4.5 sm:h-4.5 transition-transform",
+              !atTop && "group-hover:-translate-y-0.5"
+            )}
+          />
+        </button>
+      </Tooltip>
 
       <div className="w-5 h-px bg-border-default/60" />
 
-      <button
-        type="button"
-        onClick={scrollToBottom}
-        disabled={atBottom}
-        aria-label="Jump to bottom"
-        title="Jump to bottom"
-        className={cn(
-          "group relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full transition-all duration-150",
-          atBottom
-            ? "text-on-surface-muted/30 cursor-not-allowed"
-            : "text-on-surface-muted hover:text-primary hover:bg-surface-container active:scale-95 cursor-pointer"
-        )}
-      >
-        <ArrowDown
+      <Tooltip label="Jump to bottom">
+        <button
+          type="button"
+          onClick={scrollToBottom}
+          disabled={atBottom}
+          aria-label="Jump to bottom"
           className={cn(
-            "w-4 h-4 sm:w-4.5 sm:h-4.5 transition-transform",
-            !atBottom && "group-hover:translate-y-0.5"
+            "group relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full transition-all duration-150",
+            atBottom
+              ? "text-on-surface-muted/30 cursor-not-allowed"
+              : "text-on-surface-muted hover:text-primary hover:bg-surface-container active:scale-95 cursor-pointer"
           )}
-        />
-        <span className="pointer-events-none absolute right-full mr-2 hidden md:group-hover:flex items-center px-2 py-1 rounded bg-surface-container-high border border-border-default text-[11px] font-sora text-on-surface whitespace-nowrap shadow-md">
-          Jump to bottom
-        </span>
-      </button>
+        >
+          <ArrowDown
+            className={cn(
+              "w-4 h-4 sm:w-4.5 sm:h-4.5 transition-transform",
+              !atBottom && "group-hover:translate-y-0.5"
+            )}
+          />
+        </button>
+      </Tooltip>
     </div>
   );
 }

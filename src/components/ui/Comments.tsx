@@ -4,6 +4,7 @@ import { mdBlock } from "@/lib/markdown";
 import { useAuth } from "@/lib/AuthContext";
 import MarkdownHtml from "@/components/ui/MarkdownHtml";
 import { SectionHeader } from "@/components/ui/SectionHeader";
+import Tooltip from "@/components/ui/Tooltip";
 import { COMMENT_MAX_DEPTH } from "@/lib/highlights";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 
@@ -646,28 +647,32 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
                   {fmtDate(comment.created_at)}{comment.updated_at && comment.updated_at !== comment.created_at ? " (edited)" : ""}
                 </span>
                 <div className="flex items-center gap-sm">
+                  <Tooltip label={copiedId === comment.id ? "Copied" : "Copy"}>
                   <button
                     onClick={() => handleCopy(comment)}
                     className={`transition-colors ${copiedId === comment.id ? "text-primary" : "text-on-surface-muted hover:text-primary"}`}
-                    title={copiedId === comment.id ? "Copied" : "Copy"}
                   >
                     {copiedId === comment.id ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
+                  </Tooltip>
                   {comment.is_ai != 1 && (
-                    <button onClick={() => { setEditingId(comment.id); setEditBody(comment.body); }} className="text-on-surface-muted hover:text-primary transition-colors" title="Edit"><Edit3 className="w-3.5 h-3.5" /></button>
+                    <Tooltip label="Edit">
+                    <button onClick={() => { setEditingId(comment.id); setEditBody(comment.body); }} className="text-on-surface-muted hover:text-primary transition-colors"><Edit3 className="w-3.5 h-3.5" /></button>
+                    </Tooltip>
                   )}
+                  <Tooltip label="Reply">
                   <button
                     onClick={() => {
                       setReplyToId(replyToId === comment.id ? null : comment.id);
                       setReplyBody("");
                     }}
                     className={`transition-colors ${replyToId === comment.id ? "text-brand" : "text-on-surface-muted hover:text-brand"}`}
-                    title="Reply"
                   >
                     <Reply className="w-3.5 h-3.5" />
                   </button>
+                  </Tooltip>
                   {isOwner && (
-                  <span title={aiUnavailable ? "Add an AI provider key to enable" : "AI Reply"} className="inline-flex">
+                  <Tooltip label={aiUnavailable ? "Add an AI provider key to enable" : "AI Reply"}>
                   <button
                     onClick={() => handleAiReply(comment)}
                     disabled={aiLoading !== null || aiUnavailable}
@@ -675,9 +680,11 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
                   >
                     {aiLoading === comment.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />}
                   </button>
-                  </span>
+                  </Tooltip>
                   )}
-                  <button onClick={() => setDeleteTarget(comment.id)} className="text-on-surface-muted hover:text-error transition-colors" title="Delete"><Trash2 className="w-3.5 h-3.5" /></button>
+                  <Tooltip label="Delete">
+                  <button onClick={() => setDeleteTarget(comment.id)} className="text-on-surface-muted hover:text-error transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                  </Tooltip>
                 </div>
               </div>
 
@@ -794,7 +801,7 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
         <div className="flex items-center gap-sm flex-wrap">
           {storyContext && (
             <>
-              <span title={aiUnavailable ? "Add an AI provider key to enable" : "Explain article"} className="inline-flex">
+              <Tooltip label={aiUnavailable ? "Add an AI provider key to enable" : "Explain article"} align="start">
               <button
                 type="button"
                 onClick={handleExplain}
@@ -804,8 +811,8 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
                 {explaining ? <Loader2 className="w-3 h-3 animate-spin" /> : <Brain className="w-3 h-3" />}
                 <span className="hidden sm:inline">Explain</span>
               </button>
-              </span>
-              <span title={aiUnavailable ? "Add an AI provider key to enable" : "Summarize article"} className="inline-flex">
+              </Tooltip>
+              <Tooltip label={aiUnavailable ? "Add an AI provider key to enable" : "Summarize article"} align="start">
               <button
                 type="button"
                 onClick={handleSummarize}
@@ -815,12 +822,12 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
                 {summarizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <PenLine className="w-3 h-3" />}
                 <span className="hidden sm:inline">Summarize</span>
               </button>
-              </span>
+              </Tooltip>
             </>
           )}
           <Bot className="w-4 h-4 text-brand" />
           <div className="relative" ref={modelMenuRef}>
-            <span title={aiUnavailable ? "Add an AI provider key to enable" : "AI model"} className="inline-flex">
+            <Tooltip label={aiUnavailable ? "Add an AI provider key to enable" : "AI model"} align="start">
             <button
               ref={modelBtnRef}
               type="button"
@@ -831,7 +838,7 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
               <span className="hidden sm:inline">{aiUnavailable ? "No AI models available" : ((models.find(m => m.id === aiModel && m.provider === aiProvider) || models.find(m => m.id === aiModel))?.label || aiModel)}</span>
               <ChevronDown className="w-3 h-3 text-on-surface-muted" />
             </button>
-            </span>
+            </Tooltip>
             {modelMenuOpen && (
               <div className={`absolute top-full mt-1 bg-surface border border-border-default rounded-lg shadow-xl z-50 py-xs min-w-[200px] sm:min-w-[260px] max-h-[400px] overflow-y-auto ${
                 dropdownAlign === "right" ? "right-0" : dropdownAlign === "center" ? "left-1/2 -translate-x-1/2" : "left-0"

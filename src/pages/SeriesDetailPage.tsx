@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { ArrowRight, Clock, Layers, Check, Printer } from "lucide-react";
+import Tooltip from "@/components/ui/Tooltip";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
 import { allSeries, allStories } from "@/content/registry";
@@ -79,16 +80,17 @@ export default function SeriesDetailPage() {
               <Layers className="w-6 h-6 text-primary" />
               Episodes
             </h2>
-            <Link
-              to={`/series/${series.slug}/print`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-sm px-xl py-md rounded-lg font-sora text-sm font-semibold bg-surface-container-low border border-border-default text-on-surface hover:border-primary/50 hover:text-primary transition-all shadow-sm print:hidden"
-              title="Download entire series as a PDF or printable book"
-            >
-              <Printer className="w-4 h-4 text-primary" />
-              <span>Download PDF</span>
-            </Link>
+            <Tooltip label="Download entire series as a PDF or printable book">
+              <Link
+                to={`/series/${series.slug}/print`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-sm px-xl py-md rounded-lg font-sora text-sm font-semibold bg-surface-container-low border border-border-default text-on-surface hover:border-primary/50 hover:text-primary transition-all shadow-sm print:hidden"
+              >
+                <Printer className="w-4 h-4 text-primary" />
+                <span>Download PDF</span>
+              </Link>
+            </Tooltip>
           </div>
           <div className="space-y-md">
             {series.episodes.map((episode, i) => {
@@ -100,17 +102,18 @@ export default function SeriesDetailPage() {
                   className="block group p-xl bg-surface-container-low border border-border-default rounded-xl hover:border-primary/50 hover:-translate-y-0.5 transition-all"
                 >
                   <div className="flex items-start gap-lg">
-                    <button
-                      onClick={(e) => { e.preventDefault(); toggle(episode.storySlug); }}
-                      className={`flex-shrink-0 w-10 h-10 rounded-full border flex items-center justify-center font-sora text-sm font-bold transition-all ${
-                        isCompleted(episode.storySlug)
-                          ? "bg-secondary/20 border-secondary text-secondary"
-                          : "bg-primary/10 border-primary/20 text-primary hover:bg-primary/20"
-                      }`}
-                      title={isCompleted(episode.storySlug) ? "Mark as unread" : "Mark as completed"}
-                    >
-                      {isCompleted(episode.storySlug) ? <Check className="w-4 h-4" /> : i + 1}
-                    </button>
+                    <Tooltip label={isCompleted(episode.storySlug) ? "Mark as unread" : "Mark as completed"}>
+                      <button
+                        onClick={(e) => { e.preventDefault(); toggle(episode.storySlug); }}
+                        className={`flex-shrink-0 w-10 h-10 rounded-full border flex items-center justify-center font-sora text-sm font-bold transition-all ${
+                          isCompleted(episode.storySlug)
+                            ? "bg-secondary/20 border-secondary text-secondary"
+                            : "bg-primary/10 border-primary/20 text-primary hover:bg-primary/20"
+                        }`}
+                      >
+                        {isCompleted(episode.storySlug) ? <Check className="w-4 h-4" /> : i + 1}
+                      </button>
+                    </Tooltip>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-sm mb-sm">
                         <span className="font-sora text-metadata-tag text-on-surface-muted uppercase">

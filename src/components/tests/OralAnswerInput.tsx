@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Mic, MicOff, AlertCircle, Copy, Check, RotateCcw, Sparkles } from "lucide-react";
 import type { TestQuestionOption } from "@/types";
+import Tooltip from "@/components/ui/Tooltip";
 
 interface OralAnswerInputProps {
   value: string;
@@ -61,11 +62,11 @@ export default function OralAnswerInput({
                 }`}
               />
             )}
+            <Tooltip label={isMicListening ? "Mute microphone" : "Click to speak your answer"}>
             <button
               type="button"
               onClick={onToggleMic}
               disabled={disabled}
-              title={isMicListening ? "Mute microphone" : "Click to speak your answer"}
               className={`relative flex items-center justify-center w-11 h-11 rounded-full font-sora font-semibold transition-all duration-200 shadow-md ${
                 isMicListening
                   ? "bg-primary text-[#0e1319] ring-2 ring-primary ring-offset-2 ring-offset-[#0e1319]"
@@ -78,6 +79,7 @@ export default function OralAnswerInput({
                 <MicOff className="w-5 h-5 text-on-surface-variant" />
               )}
             </button>
+            </Tooltip>
           </div>
 
           <div>
@@ -105,26 +107,28 @@ export default function OralAnswerInput({
         <div className="flex items-center gap-sm">
           {value && (
             <>
+              <Tooltip label="Copy transcribed answer">
               <button
                 type="button"
                 onClick={handleCopy}
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface border border-border-default/50 text-xs text-on-surface-variant hover:text-on-surface transition-colors"
-                title="Copy transcribed answer"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-brand-green" /> : <Copy className="w-3.5 h-3.5" />}
                 <span className="font-sora text-[11px]">{copied ? "Copied" : "Copy"}</span>
               </button>
+              </Tooltip>
 
+              <Tooltip label="Clear answer">
               <button
                 type="button"
                 onClick={handleClear}
                 disabled={disabled}
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface border border-border-default/50 text-xs text-on-surface-variant hover:text-error transition-colors disabled:opacity-40"
-                title="Clear answer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span className="font-sora text-[11px]">Clear</span>
               </button>
+              </Tooltip>
             </>
           )}
         </div>

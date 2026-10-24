@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Printer } from "lucide-react";
+import Tooltip from "@/components/ui/Tooltip";
 
 interface PrintButtonProps {
   /** Print-route href (e.g. `/stories/fs-1-why-this-type-error/print`). Opens in a new tab. */
@@ -42,17 +43,21 @@ export default function PrintButton({
 
   if (to) {
     return (
-      <Link to={to} target="_blank" rel="noopener noreferrer" className={cls} title={title}>
-        <Printer className="w-4 h-4 text-primary" />
-        <span>{label}</span>
-      </Link>
+      <Tooltip label={title}>
+        <Link to={to} target="_blank" rel="noopener noreferrer" className={cls}>
+          <Printer className="w-4 h-4 text-primary" />
+          <span>{label}</span>
+        </Link>
+      </Tooltip>
     );
   }
 
   return (
-    <button type="button" onClick={() => window.print()} className={cls} title={title}>
-      <Printer className="w-4 h-4 text-primary" />
-      <span>{label}</span>
-    </button>
+    <Tooltip label={title}>
+      <button type="button" onClick={() => window.print()} className={cls}>
+        <Printer className="w-4 h-4 text-primary" />
+        <span>{label}</span>
+      </button>
+    </Tooltip>
   );
 }

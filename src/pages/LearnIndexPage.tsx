@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Plus, Trash2, Loader2, Edit3, StickyNote } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import Tooltip from "@/components/ui/Tooltip";
 import { useAuth } from "@/lib/AuthContext";
 import { fetchLearnList, deleteLearn, deriveExcerpt } from "@/lib/learn";
 import { type LearnArticle } from "@/types";
@@ -119,20 +120,22 @@ export default function LearnIndexPage() {
               </Link>
               {isOwner && (
                 <div className="flex items-center gap-xs px-lg pb-lg">
-                  <Link
-                    to={`/learn/${a.slug}/edit`}
-                    className="inline-flex items-center gap-xs px-md py-xs rounded-md font-sora text-[10px] uppercase tracking-widest text-on-surface-muted hover:text-primary hover:bg-surface-container transition-colors"
-                    title="Edit note"
-                  >
-                    <Edit3 className="w-3 h-3" /> Edit
-                  </Link>
-                  <button
-                    onClick={() => setDeleteTarget(a)}
-                    className="inline-flex items-center gap-xs px-md py-xs rounded-md font-sora text-[10px] uppercase tracking-widest text-on-surface-muted hover:text-error hover:bg-error/10 transition-colors"
-                    title="Delete note"
-                  >
-                    <Trash2 className="w-3 h-3" /> Delete
-                  </button>
+                  <Tooltip label="Edit note">
+                    <Link
+                      to={`/learn/${a.slug}/edit`}
+                      className="inline-flex items-center gap-xs px-md py-xs rounded-md font-sora text-[10px] uppercase tracking-widest text-on-surface-muted hover:text-primary hover:bg-surface-container transition-colors"
+                    >
+                      <Edit3 className="w-3 h-3" /> Edit
+                    </Link>
+                  </Tooltip>
+                  <Tooltip label="Delete note">
+                    <button
+                      onClick={() => setDeleteTarget(a)}
+                      className="inline-flex items-center gap-xs px-md py-xs rounded-md font-sora text-[10px] uppercase tracking-widest text-on-surface-muted hover:text-error hover:bg-error/10 transition-colors"
+                    >
+                      <Trash2 className="w-3 h-3" /> Delete
+                    </button>
+                  </Tooltip>
                 </div>
               )}
             </article>

@@ -7,6 +7,7 @@ import Comments from "@/components/ui/Comments";
 import ContentBlocks from "@/components/ui/ContentBlocks";
 import InlineHighlights from "@/components/ui/InlineHighlights";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import Tooltip from "@/components/ui/Tooltip";
 import MarkdownHtml from "@/components/ui/MarkdownHtml";
 import { PublicToggleButton, usePublicState } from "@/components/ui/PublicToggle";
 import { useAuth } from "@/lib/AuthContext";
@@ -52,14 +53,15 @@ function OrphanNoteCard({
           <span className="font-sora text-[10px] text-amber-400 uppercase tracking-widest">Unmapped note</span>
         </div>
         {isOwner && (
-          <button
-            onClick={() => onDelete(highlight.id)}
-            disabled={deleting}
-            className="p-xs rounded-md text-on-surface-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-50"
-            title="Delete note"
-          >
-            {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-          </button>
+          <Tooltip label="Delete note">
+            <button
+              onClick={() => onDelete(highlight.id)}
+              disabled={deleting}
+              className="p-xs rounded-md text-on-surface-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-50"
+            >
+              {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+            </button>
+          </Tooltip>
         )}
       </div>
 

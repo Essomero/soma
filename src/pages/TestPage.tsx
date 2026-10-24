@@ -29,6 +29,7 @@ import {
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
 import Button from "@/components/ui/Button";
+import Tooltip from "@/components/ui/Tooltip";
 import MarkdownHtml from "@/components/ui/MarkdownHtml";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { mdBlock } from "@/lib/markdown";
@@ -771,12 +772,9 @@ export default function TestPage() {
                 const isClickable = isReached && (!isOralMode || idx === furthestQuestionIndex);
 
                 return (
-                  <button
+                  <Tooltip
                     key={q.id}
-                    type="button"
-                    onClick={() => isClickable && handleJumpToQuestion(idx)}
-                    disabled={!isClickable}
-                    title={
+                    label={
                       isOralMode && idx < furthestQuestionIndex
                         ? `Question ${idx + 1} (Oral mode is forward-only)`
                         : isCurrent
@@ -789,20 +787,26 @@ export default function TestPage() {
                         ? `Question ${idx + 1}`
                         : `Question ${idx + 1} (Locked until reached)`
                     }
-                    className={`w-6 h-6 rounded-md font-sora text-[11px] font-bold flex items-center justify-center transition-all shrink-0 ${
-                      isCurrent
-                        ? "bg-primary text-[#0e1319] ring-2 ring-primary ring-offset-2 ring-offset-background"
-                        : isFrontier
-                        ? "bg-accent-orange/20 text-accent-orange border border-accent-orange/80 animate-pulse ring-1 ring-accent-orange/60"
-                        : isAnswered
-                        ? "bg-brand-green/20 text-brand-green border border-brand-green/40"
-                        : isReached && !isOralMode
-                        ? "bg-surface-container border border-border-default/60 text-on-surface-muted hover:text-on-surface"
-                        : "bg-surface-container/40 border border-border-default/30 text-on-surface-muted/40 cursor-not-allowed"
-                    }`}
                   >
-                    {idx + 1}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => isClickable && handleJumpToQuestion(idx)}
+                      disabled={!isClickable}
+                      className={`w-6 h-6 rounded-md font-sora text-[11px] font-bold flex items-center justify-center transition-all shrink-0 ${
+                        isCurrent
+                          ? "bg-primary text-[#0e1319] ring-2 ring-primary ring-offset-2 ring-offset-background"
+                          : isFrontier
+                          ? "bg-accent-orange/20 text-accent-orange border border-accent-orange/80 animate-pulse ring-1 ring-accent-orange/60"
+                          : isAnswered
+                          ? "bg-brand-green/20 text-brand-green border border-brand-green/40"
+                          : isReached && !isOralMode
+                          ? "bg-surface-container border border-border-default/60 text-on-surface-muted hover:text-on-surface"
+                          : "bg-surface-container/40 border border-border-default/30 text-on-surface-muted/40 cursor-not-allowed"
+                      }`}
+                    >
+                      {idx + 1}
+                    </button>
+                  </Tooltip>
                 );
               })}
             </div>
@@ -812,13 +816,12 @@ export default function TestPage() {
               {/* Question Countdown Timer */}
               {isOralMode && sonStatus.available && oral.isListeningPhase ? (
                 <div className="flex items-center gap-sm">
-                  <div
-                    className="flex items-center gap-1.5 px-3 py-1 rounded-full font-mono text-xs font-bold bg-primary/20 text-primary border border-primary/40 animate-pulse"
-                    title="Examiner is reading prompt. Answering timer will start when reading finishes."
-                  >
-                    <Volume2 className="w-3.5 h-3.5" />
-                    <span>Examiner Speaking... (Listening)</span>
-                  </div>
+                  <Tooltip label="Examiner is reading prompt. Answering timer will start when reading finishes.">
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full font-mono text-xs font-bold bg-primary/20 text-primary border border-primary/40 animate-pulse">
+                      <Volume2 className="w-3.5 h-3.5" />
+                      <span>Examiner Speaking... (Listening)</span>
+                    </div>
+                  </Tooltip>
                   <button
                     type="button"
                     onClick={oral.startAnswering}
@@ -828,26 +831,29 @@ export default function TestPage() {
                   </button>
                 </div>
               ) : (
-                <div
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full font-mono text-xs font-bold border transition-colors ${
-                    timeLeft <= 0
-                      ? "bg-surface-container border-border-default text-on-surface-muted"
-                      : timeLeft <= 10
-                      ? "bg-error/20 text-error border-error animate-pulse"
-                      : timeLeft <= 20
-                      ? "bg-accent-orange/20 text-accent-orange border-accent-orange"
-                      : "bg-surface-container border-border-default text-on-surface"
-                  }`}
-                  title={timeLeft <= 0 ? "Time expired for this question" : `Allotted response time: ${complexityLimit.formattedTime}`}
+                <Tooltip
+                  label={timeLeft <= 0 ? "Time expired for this question" : `Allotted response time: ${complexityLimit.formattedTime}`}
                 >
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>{timeLeft <= 0 ? "0s (Expired)" : `${timeLeft}s`}</span>
-                  {timeLeft > 0 && (
-                    <span className="text-[10px] opacity-60 hidden sm:inline">
-                      ({complexityLimit.formattedTime})
-                    </span>
-                  )}
-                </div>
+                  <div
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full font-mono text-xs font-bold border transition-colors ${
+                      timeLeft <= 0
+                        ? "bg-surface-container border-border-default text-on-surface-muted"
+                        : timeLeft <= 10
+                        ? "bg-error/20 text-error border-error animate-pulse"
+                        : timeLeft <= 20
+                        ? "bg-accent-orange/20 text-accent-orange border-accent-orange"
+                        : "bg-surface-container border-border-default text-on-surface"
+                    }`}
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{timeLeft <= 0 ? "0s (Expired)" : `${timeLeft}s`}</span>
+                    {timeLeft > 0 && (
+                      <span className="text-[10px] opacity-60 hidden sm:inline">
+                        ({complexityLimit.formattedTime})
+                      </span>
+                    )}
+                  </div>
+                </Tooltip>
               )}
 
               {/* Source Materials Button */}
@@ -1642,7 +1648,7 @@ export default function TestPage() {
               <div className="flex flex-wrap items-center gap-md">
                 {/* Model Dropdown */}
                 <div className="relative flex-1 min-w-[220px]" ref={modelMenuRef}>
-                  <span title={aiUnavailable ? "Add an AI provider key in Vercel project settings to enable" : "Choose evaluation model"} className="flex w-full">
+                  <Tooltip label={aiUnavailable ? "Add an AI provider key in Vercel project settings to enable" : "Choose evaluation model"} className="flex w-full">
                   <button
                     ref={modelBtnRef}
                     type="button"
@@ -1659,7 +1665,7 @@ export default function TestPage() {
                       }`}
                     />
                   </button>
-                  </span>
+                  </Tooltip>
 
                   {modelMenuOpen && (
                     <div className="absolute bottom-full mb-1 left-0 bg-surface border border-border-default rounded-lg shadow-2xl z-50 py-xs min-w-[260px] max-h-[380px] overflow-y-auto">
@@ -1860,7 +1866,7 @@ export default function TestPage() {
                 <span>{copiedPrompt ? "Prompt Copied!" : "Copy External Prompt"}</span>
               </Button>
 
-              <span title={aiUnavailable ? "Add an AI provider key in Vercel project settings to enable" : "Submit answers for AI grading"}>
+              <Tooltip label={aiUnavailable ? "Add an AI provider key in Vercel project settings to enable" : "Submit answers for AI grading"} align="end">
               <Button
                 variant="primary"
                 onClick={() => executeEvaluation(answers)}
@@ -1879,7 +1885,7 @@ export default function TestPage() {
                   </>
                 )}
               </Button>
-              </span>
+              </Tooltip>
             </div>
           </div>
         )}

@@ -8,6 +8,7 @@ import ArticleCard from "@/components/cards/ArticleCard";
 import SidebarAbout from "@/components/sections/SidebarAbout";
 import ContentBlocks from "@/components/ui/ContentBlocks";
 import SelectionToolbar from "@/components/ui/SelectionToolbar";
+import Tooltip from "@/components/ui/Tooltip";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import StoryJumpButtons from "@/components/ui/StoryJumpButtons";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -1036,14 +1037,15 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
                       )}
                       <div className="grid grid-cols-2 gap-sm">
                         {prev ? (
+                          <Tooltip label={`Previous: ${prev.title}`} className="w-full">
                           <Link
                             to={`/stories/${prev.storySlug}`}
-                            title={`Previous: ${prev.title}`}
                             className="w-full flex items-center justify-center gap-xs border border-border-default rounded py-sm font-sora text-metadata-tag hover:border-primary transition-all text-on-surface-variant hover:text-on-surface group"
                           >
                             <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
                             <span>PREV</span>
                           </Link>
+                          </Tooltip>
                         ) : (
                           <div
                             className="w-full flex items-center justify-center gap-xs border border-border-default/30 rounded py-sm font-sora text-metadata-tag text-on-surface-muted/30 cursor-not-allowed select-none"
@@ -1053,14 +1055,15 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
                           </div>
                         )}
                         {next ? (
+                          <Tooltip label={`Next: ${next.title}`} className="w-full">
                           <Link
                             to={`/stories/${next.storySlug}`}
-                            title={`Next: ${next.title}`}
                             className="w-full flex items-center justify-center gap-xs border border-border-default rounded py-sm font-sora text-metadata-tag hover:border-primary transition-all text-on-surface-variant hover:text-on-surface group"
                           >
                             <span>NEXT</span>
                             <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
                           </Link>
+                          </Tooltip>
                         ) : (
                           <div
                             className="w-full flex items-center justify-center gap-xs border border-border-default/30 rounded py-sm font-sora text-metadata-tag text-on-surface-muted/30 cursor-not-allowed select-none"
@@ -1398,7 +1401,7 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
               <div className="flex items-center gap-sm">
                 {isOwner && (
                   <div className="relative" ref={inlineModelMenuRef}>
-                    <span title={aiUnavailable ? "Add an AI provider key to enable" : "AI model"} className="inline-flex">
+                    <Tooltip label={aiUnavailable ? "Add an AI provider key to enable" : "AI model"}>
                     <button
                       type="button"
                       onClick={() => setInlineModelMenuOpen(!inlineModelMenuOpen)}
@@ -1408,7 +1411,7 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
                       <Bot className="w-3.5 h-3.5" />
                       <ChevronDown className="w-3 h-3" />
                     </button>
-                    </span>
+                    </Tooltip>
                     {inlineModelMenuOpen && (
                       <div className="absolute right-0 top-full mt-1 bg-surface border border-border-default rounded-lg shadow-xl z-50 py-xs min-w-[200px] max-h-[300px] overflow-y-auto thin-scrollbar">
                         {(() => {
@@ -1518,21 +1521,23 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
                     )}
                   </div>
                 )}
+                <Tooltip label="Expand">
                 <button
                   onClick={() => setInlineExpanded(true)}
                   className="p-xs rounded-md text-on-surface-muted hover:text-on-surface transition-colors"
-                  title="Expand"
                 >
                   <Maximize2 className="w-3.5 h-3.5" />
                 </button>
+                </Tooltip>
+                <Tooltip label="Delete highlight">
                 <button
                   onClick={handleDeleteHighlight}
                   disabled={deleting}
                   className="p-xs rounded-md text-on-surface-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-50"
-                  title="Delete highlight"
                 >
                   {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                 </button>
+                </Tooltip>
               </div>
             </div>
 
@@ -1572,37 +1577,40 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
                               <div className="flex items-center gap-xs">
                                 <span className="font-sora text-[10px] text-amber-400 uppercase tracking-widest">Draft</span>
                                 {comment.body.trim() && (
+                                  <Tooltip label={copiedId === comment.id ? "Copied" : "Copy"}>
                                   <button
                                     onClick={() => handleCopyComment(comment)}
                                     className={`p-xs rounded-md transition-colors ${copiedId === comment.id ? "text-brand" : "text-on-surface-muted hover:text-brand"}`}
-                                    title={copiedId === comment.id ? "Copied" : "Copy"}
                                   >
                                     {copiedId === comment.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                                   </button>
+                                  </Tooltip>
                                 )}
                               </div>
                             ) : (
                               <div className="flex items-center gap-xs">
+                                <Tooltip label={copiedId === comment.id ? "Copied" : "Copy"}>
                                 <button
                                   onClick={() => handleCopyComment(comment)}
                                   className={`p-xs rounded-md transition-colors ${copiedId === comment.id ? "text-brand" : "text-on-surface-muted hover:text-brand"}`}
-                                  title={copiedId === comment.id ? "Copied" : "Copy"}
                                 >
                                   {copiedId === comment.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                                 </button>
+                                </Tooltip>
+                                <Tooltip label="Reply">
                                 <button
                                   onClick={() => {
                                     setInlineReplyToId(inlineReplyToId === comment.id ? null : comment.id);
                                     setInlineReplyBody("");
                                   }}
                                   className={`p-xs rounded-md transition-colors ${inlineReplyToId === comment.id ? "text-brand" : "text-on-surface-muted hover:text-brand"}`}
-                                  title="Reply"
                                 >
                                   <Reply className="w-3 h-3" />
                                 </button>
+                                </Tooltip>
                                 {isOwner && (
                                   <>
-                                    <span title={aiUnavailable ? "Add an AI provider key to enable" : "AI Reply"} className="inline-flex">
+                                    <Tooltip label={aiUnavailable ? "Add an AI provider key to enable" : "AI Reply"}>
                                     <button
                                       onClick={() => handleInlineAiReply(comment)}
                                       disabled={inlineAiLoading !== null || aiUnavailable}
@@ -1610,15 +1618,16 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
                                     >
                                       {inlineAiLoading === comment.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bot className="w-3 h-3" />}
                                     </button>
-                                    </span>
+                                    </Tooltip>
+                                    <Tooltip label="Delete comment">
                                     <button
                                       onClick={() => handleDeleteInlineComment(comment.id)}
                                       disabled={inlineDeleting !== null}
                                       className="p-xs rounded-md text-on-surface-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-50"
-                                      title="Delete comment"
                                     >
                                       {inlineDeleting === comment.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                                     </button>
+                                    </Tooltip>
                                   </>
                                 )}
                               </div>
@@ -1790,11 +1799,13 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
               <div className="flex items-center gap-sm">
                 {isOwner && (
                   <div className="relative" ref={inlineModelMenuRef}>
-                    <button type="button" onClick={() => setInlineModelMenuOpen(!inlineModelMenuOpen)} disabled={inlineAiLoading !== null}
-                      className="flex items-center gap-xs text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30" title="AI model">
+                    <Tooltip label={aiUnavailable ? "Add an AI provider key to enable" : "AI model"}>
+                    <button type="button" onClick={() => setInlineModelMenuOpen(!inlineModelMenuOpen)} disabled={inlineAiLoading !== null || aiUnavailable}
+                      className="flex items-center gap-xs text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
                       <Bot className="w-3.5 h-3.5" />
                       <ChevronDown className="w-3 h-3" />
                     </button>
+                    </Tooltip>
                     {inlineModelMenuOpen && (
                       <div className="absolute right-0 top-full mt-1 bg-surface border border-border-default rounded-lg shadow-xl z-50 py-xs min-w-[200px] max-h-[300px] overflow-y-auto thin-scrollbar">
                         {(() => {
@@ -1818,13 +1829,17 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
                     )}
                   </div>
                 )}
+                <Tooltip label="Delete highlight">
                 <button onClick={handleDeleteHighlight} disabled={deleting}
-                  className="p-xs rounded-md text-on-surface-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-50" title="Delete highlight">
+                  className="p-xs rounded-md text-on-surface-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-50">
                   {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                 </button>
-                <button onClick={() => { setInlineExpanded(false); setActiveHighlight(null); }} className="p-xs rounded-md text-on-surface-muted hover:text-on-surface transition-colors" title="Close">
+                </Tooltip>
+                <Tooltip label="Close">
+                <button onClick={() => { setInlineExpanded(false); setActiveHighlight(null); }} className="p-xs rounded-md text-on-surface-muted hover:text-on-surface transition-colors">
                   <X className="w-3.5 h-3.5" />
                 </button>
+                </Tooltip>
               </div>
             </div>
 
@@ -1864,41 +1879,47 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
                               <div className="flex items-center gap-xs">
                                 <span className="font-sora text-[10px] text-amber-400 uppercase tracking-widest">Draft</span>
                                 {comment.body.trim() && (
+                                  <Tooltip label={copiedId === comment.id ? "Copied" : "Copy"}>
                                   <button
                                     onClick={() => handleCopyComment(comment)}
                                     className={`p-xs rounded-md transition-colors ${copiedId === comment.id ? "text-brand" : "text-on-surface-muted hover:text-brand"}`}
-                                    title={copiedId === comment.id ? "Copied" : "Copy"}
                                   >
                                     {copiedId === comment.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                                   </button>
+                                  </Tooltip>
                                 )}
                               </div>
                             ) : (
                               <div className="flex items-center gap-xs">
+                                <Tooltip label={copiedId === comment.id ? "Copied" : "Copy"}>
                                 <button
                                   onClick={() => handleCopyComment(comment)}
                                   className={`p-xs rounded-md transition-colors ${copiedId === comment.id ? "text-brand" : "text-on-surface-muted hover:text-brand"}`}
-                                  title={copiedId === comment.id ? "Copied" : "Copy"}
                                 >
                                   {copiedId === comment.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                                 </button>
+                                </Tooltip>
+                                <Tooltip label="Reply">
                                 <button
                                   onClick={() => { setInlineReplyToId(inlineReplyToId === comment.id ? null : comment.id); setInlineReplyBody(""); }}
-                                  className={`p-xs rounded-md transition-colors ${inlineReplyToId === comment.id ? "text-brand" : "text-on-surface-muted hover:text-brand"}`} title="Reply">
+                                  className={`p-xs rounded-md transition-colors ${inlineReplyToId === comment.id ? "text-brand" : "text-on-surface-muted hover:text-brand"}`}>
                                   <Reply className="w-3 h-3" />
                                 </button>
+                                </Tooltip>
                                 {isOwner && (
                                   <>
-                                    <span title={aiUnavailable ? "Add an AI provider key to enable" : "AI Reply"} className="inline-flex">
+                                    <Tooltip label={aiUnavailable ? "Add an AI provider key to enable" : "AI Reply"}>
                                     <button onClick={() => handleInlineAiReply(comment)} disabled={inlineAiLoading !== null || aiUnavailable}
                                       className="p-xs rounded-md text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
                                       {inlineAiLoading === comment.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bot className="w-3 h-3" />}
                                     </button>
-                                    </span>
+                                    </Tooltip>
+                                    <Tooltip label="Delete comment">
                                     <button onClick={() => handleDeleteInlineComment(comment.id)} disabled={inlineDeleting !== null}
-                                      className="p-xs rounded-md text-on-surface-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-50" title="Delete comment">
+                                      className="p-xs rounded-md text-on-surface-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-50">
                                       {inlineDeleting === comment.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                                     </button>
+                                    </Tooltip>
                                   </>
                                 )}
                               </div>

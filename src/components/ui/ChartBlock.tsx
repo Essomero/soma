@@ -1,6 +1,7 @@
 import { useEffect, useState, Suspense, useMemo } from "react";
 import { X } from "lucide-react";
 import type { ContentBlock } from "@/types";
+import Tooltip from "@/components/ui/Tooltip";
 import { useScrollLock } from "@/lib/useScrollLock";
 
 // Recharts is heavy (~300KB). Lazy-load it so a page that doesn't use charts
@@ -605,24 +606,25 @@ function ChartLoaded({
 
   return (
     <figure className="my-xxl">
-      <div
-        className="rounded-lg border border-border-default bg-surface-container-low p-md cursor-zoom-in hover:border-primary/50 transition-colors"
-        onClick={() => setZoomed(true)}
-        title="Click to expand"
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            setZoomed(true);
-          }
-        }}
-      >
-        {block.title && (
-          <p className="font-sora text-sm text-on-surface-muted text-center mb-sm">{block.title}</p>
-        )}
-        {chartSurface}
-      </div>
+      <Tooltip label="Click to expand">
+        <div
+          className="rounded-lg border border-border-default bg-surface-container-low p-md cursor-zoom-in hover:border-primary/50 transition-colors"
+          onClick={() => setZoomed(true)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setZoomed(true);
+            }
+          }}
+        >
+          {block.title && (
+            <p className="font-sora text-sm text-on-surface-muted text-center mb-sm">{block.title}</p>
+          )}
+          {chartSurface}
+        </div>
+      </Tooltip>
       {figcaption}
 
       {zoomed && (

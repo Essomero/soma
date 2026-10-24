@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, Suspense, useMemo } from "react";
 import type { SceneObject, SceneLight } from "@/types";
 import { useScrollLock } from "@/lib/useScrollLock";
+import Tooltip from "@/components/ui/Tooltip";
 
 // Three.js + R3F are heavy (~600KB gzipped combined). Lazy-load so pages
 // without 3D scenes don't pay the cost. Suspense fallback matches the
@@ -99,6 +100,7 @@ function SceneLoaded({
   return (
     <figure className="my-xxl">
       {!zoomed && (
+        <Tooltip label="Click to expand · drag to rotate">
         <div
           className="rounded-lg border border-border-default bg-surface-container-low p-md cursor-zoom-in hover:border-primary/50 transition-colors select-none"
           onPointerDown={(e) => {
@@ -117,7 +119,6 @@ function SceneLoaded({
           onPointerCancel={() => {
             dragStartRef.current = null;
           }}
-          title="Click to expand · drag to rotate"
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
@@ -136,6 +137,7 @@ function SceneLoaded({
             </mods.Canvas>
           </div>
         </div>
+        </Tooltip>
       )}
 
       {zoomed && (

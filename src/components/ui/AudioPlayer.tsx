@@ -3,6 +3,7 @@ import {
   Play, Pause, SkipBack, SkipForward, Download,
   Volume2, VolumeX, Gauge,
 } from "lucide-react";
+import Tooltip from "@/components/ui/Tooltip";
 import { cn } from "@/lib/utils";
 
 interface AudioPlayerProps {
@@ -180,10 +181,10 @@ export default function AudioPlayer({
       <div className="flex flex-col md:flex-row items-center gap-md md:gap-xl max-w-readme mx-auto">
         {/* Play + Skip */}
         <div className="flex items-center gap-md">
+        <Tooltip label={isPlaying ? "Pause" : "Play"}>
           <button
             onClick={togglePlay}
             className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-on-primary hover:scale-105 transition-transform active:scale-95 shrink-0"
-            title={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? (
               <Pause className="w-7 h-7 fill-current" />
@@ -191,13 +192,18 @@ export default function AudioPlayer({
               <Play className="w-7 h-7 fill-current ml-0.5" />
             )}
           </button>
+        </Tooltip>
           <div className="flex items-center gap-xs text-on-surface-muted">
-            <button onClick={() => skip(-SKIP_SECONDS)} title="Back 15s">
-              <SkipBack className="w-5 h-5 hover:text-on-surface transition-colors" />
-            </button>
-            <button onClick={() => skip(SKIP_SECONDS)} title="Forward 15s">
-              <SkipForward className="w-5 h-5 hover:text-on-surface transition-colors" />
-            </button>
+            <Tooltip label="Back 15s">
+              <button onClick={() => skip(-SKIP_SECONDS)}>
+                <SkipBack className="w-5 h-5 hover:text-on-surface transition-colors" />
+              </button>
+            </Tooltip>
+            <Tooltip label="Forward 15s">
+              <button onClick={() => skip(SKIP_SECONDS)}>
+                <SkipForward className="w-5 h-5 hover:text-on-surface transition-colors" />
+              </button>
+            </Tooltip>
           </div>
         </div>
 
@@ -225,14 +231,15 @@ export default function AudioPlayer({
         <div className="flex items-center gap-lg">
           {/* Speed selector */}
           <div className="relative">
-            <button
-              onClick={() => setShowSpeed(!showSpeed)}
-              className="flex items-center gap-xs font-sora text-xs text-on-surface-muted hover:text-on-surface transition-colors"
-              title="Playback speed"
-            >
-              <Gauge className="w-4 h-4" />
-              {speed}x
-            </button>
+            <Tooltip label="Playback speed">
+              <button
+                onClick={() => setShowSpeed(!showSpeed)}
+                className="flex items-center gap-xs font-sora text-xs text-on-surface-muted hover:text-on-surface transition-colors"
+              >
+                <Gauge className="w-4 h-4" />
+                {speed}x
+              </button>
+            </Tooltip>
             {showSpeed && (
               <div className="absolute bottom-full mb-sm left-1/2 -translate-x-1/2 bg-surface border border-border-default rounded-lg py-xs shadow-xl z-50">
                 {SPEEDS.map((s) => (
@@ -253,35 +260,39 @@ export default function AudioPlayer({
 
           {/* Volume */}
           <div className="flex items-center gap-xs">
-            <button onClick={toggleMute} title={isMuted ? "Unmute" : "Mute"}>
-              {isMuted || volume === 0 ? (
-                <VolumeX className="w-4 h-4 text-on-surface-muted hover:text-on-surface transition-colors" />
-              ) : (
-                <Volume2 className="w-4 h-4 text-on-surface-muted hover:text-on-surface transition-colors" />
-              )}
-            </button>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              value={isMuted ? 0 : volume}
-              onChange={(e) => changeVolume(parseFloat(e.target.value))}
-              className="w-16 h-1 accent-primary cursor-pointer hidden sm:block"
-              title="Volume"
-            />
+            <Tooltip label={isMuted ? "Unmute" : "Mute"}>
+              <button onClick={toggleMute}>
+                {isMuted || volume === 0 ? (
+                  <VolumeX className="w-4 h-4 text-on-surface-muted hover:text-on-surface transition-colors" />
+                ) : (
+                  <Volume2 className="w-4 h-4 text-on-surface-muted hover:text-on-surface transition-colors" />
+                )}
+              </button>
+            </Tooltip>
+            <Tooltip label="Volume">
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={isMuted ? 0 : volume}
+                onChange={(e) => changeVolume(parseFloat(e.target.value))}
+                className="w-16 h-1 accent-primary cursor-pointer hidden sm:block"
+              />
+            </Tooltip>
           </div>
 
           {/* Download */}
-          <a
-            href={audioUrl}
-            download={title ? `${title}.mp3` : "episode.mp3"}
-            className="flex items-center gap-xs font-sora text-metadata-tag uppercase text-on-surface-variant hover:text-primary transition-colors"
-            title="Download episode"
-          >
-            <Download className="w-4 h-4" />
-            <span className="hidden sm:inline">Download</span>
-          </a>
+          <Tooltip label="Download episode">
+            <a
+              href={audioUrl}
+              download={title ? `${title}.mp3` : "episode.mp3"}
+              className="flex items-center gap-xs font-sora text-metadata-tag uppercase text-on-surface-variant hover:text-primary transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Download</span>
+            </a>
+          </Tooltip>
         </div>
       </div>
     </div>

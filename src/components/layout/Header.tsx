@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useSearch } from "@/lib/SearchContext";
 import { useTheme } from "@/lib/ThemeContext";
 import { innerNavLinks, siteTitle } from "@/content/registry";
+import Tooltip from "@/components/ui/Tooltip";
 import NavHamburger from "./NavHamburger";
 
 // Only these stay visible inline : everything else lives behind the hamburger
@@ -80,26 +81,28 @@ export default function Header() {
 
         {/* Right: Theme toggle + Search + Sign Out */}
         <div className="flex items-center gap-sm md:gap-md">
-          <button
-            onClick={toggleTheme}
-            className="p-2 text-on-surface-variant hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-colors"
-            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          >
-            {theme === "dark" ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-slate-700" />}
-          </button>
+          <Tooltip label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} position="bottom">
+            <button
+              onClick={toggleTheme}
+              className="p-2 text-on-surface-variant hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-colors"
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-slate-700" />}
+            </button>
+          </Tooltip>
           <button onClick={() => setOpen(true)} className="p-2 text-on-surface-variant hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-colors" aria-label="Search (Cmd+K)">
             <Search className="w-5 h-5" />
           </button>
           {authed && (
-            <button
-              onClick={() => { document.cookie = "soma_auth=; Path=/; Max-Age=0"; window.location.reload(); }}
-              className="p-2 text-on-surface-variant hover:text-error rounded-lg hover:bg-surface-container-low transition-colors"
-              aria-label="Sign out"
-              title="Sign out"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+            <Tooltip label="Sign out" position="bottom">
+              <button
+                onClick={() => { document.cookie = "soma_auth=; Path=/; Max-Age=0"; window.location.reload(); }}
+                className="p-2 text-on-surface-variant hover:text-error rounded-lg hover:bg-surface-container-low transition-colors"
+                aria-label="Sign out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </Tooltip>
           )}
         </div>
       </nav>

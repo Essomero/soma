@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Terminal, ChevronDown, Check, Copy, FileCode, Play, Folder } from "lucide-react";
 import hljs from "highlight.js";
 import type { LabBlock as LabBlockType, LabFile } from "@/types";
+import Tooltip from "@/components/ui/Tooltip";
 
 interface LabBlockProps {
   block: LabBlockType;
@@ -23,11 +24,11 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
   };
 
   return (
+    <Tooltip label={label || "Copy to clipboard"}>
     <button
       type="button"
       onClick={handleCopy}
       className="inline-flex items-center gap-xs px-2 py-1 rounded text-xs font-mono text-on-surface-muted hover:text-on-surface bg-surface-container hover:bg-surface-container-high transition-colors"
-      title={label || "Copy to clipboard"}
     >
       {copied ? (
         <>
@@ -41,6 +42,7 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
         </>
       )}
     </button>
+    </Tooltip>
   );
 }
 

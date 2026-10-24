@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Globe, Lock } from "lucide-react";
+import Tooltip from "@/components/ui/Tooltip";
 
 // ── API helpers ────────────────────────────────────────
 async function apiGet(slug: string): Promise<boolean> {
@@ -121,18 +122,19 @@ export function PublicToggleButton({ isPublic, onToggle, className, label }: Pub
     : (label ? `${label} : private` : "Private : click to make public");
 
   return (
-    <button
-      onClick={onToggle}
-      className={className}
-      aria-label={title}
-      title={title}
-    >
-      {isPublic ? (
-        <Globe className="w-5 h-5 text-secondary" />
-      ) : (
-        <Lock className="w-5 h-5 text-accent-orange" />
-      )}
-    </button>
+    <Tooltip label={title}>
+      <button
+        onClick={onToggle}
+        className={className}
+        aria-label={title}
+      >
+        {isPublic ? (
+          <Globe className="w-5 h-5 text-secondary" />
+        ) : (
+          <Lock className="w-5 h-5 text-accent-orange" />
+        )}
+      </button>
+    </Tooltip>
   );
 }
 

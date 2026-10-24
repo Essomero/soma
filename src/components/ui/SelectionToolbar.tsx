@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Highlighter, MessageSquare, X, Brain, ListCollapse, Bot, ChevronDown } from "lucide-react";
+import Tooltip from "@/components/ui/Tooltip";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 
 interface ModelInfo {
@@ -129,30 +130,31 @@ export default function SelectionToolbar({
       className="fixed z-40 flex items-center gap-0 bg-surface border border-border-default rounded-xl shadow-2xl"
       style={{ left: clampedX, top: toolbarY, maxWidth: `calc(100vw - 8px)` }}
     >
+      <Tooltip label="Highlight" position="bottom">
       <button
         onClick={() => setShowColors(!showColors)}
         className="flex items-center gap-xs px-sm sm:px-md py-sm font-sora text-[11px] text-on-surface hover:bg-surface-container transition-colors border-r border-border-default"
-        title="Highlight"
       >
         <Highlighter className="w-3.5 h-3.5 text-amber-400" />
         <span className="hidden sm:inline">Highlight</span>
       </button>
+      </Tooltip>
 
       {showColors && (
         <div className="flex items-center gap-0 border-r border-border-default">
           {COLORS.map((c) => (
+            <Tooltip key={c.value} label={c.label} position="bottom">
             <button
-              key={c.value}
               onClick={() => handleHighlight(c.value)}
               className={`w-7 h-7 sm:w-8 sm:h-8 mx-0.5 sm:mx-1 rounded-md border-2 ${c.class} hover:scale-110 transition-transform`}
-              title={c.label}
             />
+            </Tooltip>
           ))}
         </div>
       )}
 
       {onExplain && (
-        <span title={aiDisabled ? "Add an AI provider key to enable" : "Explain with AI"} className="inline-flex">
+        <Tooltip label={aiDisabled ? "Add an AI provider key to enable" : "Explain with AI"} position="bottom">
         <button
           onClick={onExplain}
           disabled={aiDisabled}
@@ -161,11 +163,11 @@ export default function SelectionToolbar({
           <Brain className="w-3.5 h-3.5 text-amber-400" />
           <span className="hidden sm:inline">Explain</span>
         </button>
-        </span>
+        </Tooltip>
       )}
 
       {onSummarize && (
-        <span title={aiDisabled ? "Add an AI provider key to enable" : "Summarize with AI"} className="inline-flex">
+        <Tooltip label={aiDisabled ? "Add an AI provider key to enable" : "Summarize with AI"} position="bottom">
         <button
           onClick={onSummarize}
           disabled={aiDisabled}
@@ -174,29 +176,31 @@ export default function SelectionToolbar({
           <ListCollapse className="w-3.5 h-3.5 text-amber-400" />
           <span className="hidden sm:inline">Summarize</span>
         </button>
-        </span>
+        </Tooltip>
       )}
 
+      <Tooltip label="Comment" position="bottom">
       <button
         onClick={onComment}
         className="flex items-center gap-xs px-sm sm:px-md py-sm font-sora text-[11px] text-on-surface hover:bg-surface-container transition-colors"
-        title="Comment"
       >
         <MessageSquare className="w-3.5 h-3.5 text-primary" />
         <span className="hidden sm:inline">Comment</span>
       </button>
+      </Tooltip>
 
       {hasAiActions && models && models.length > 0 && onAiModelChange && (
         <div className="relative flex items-center border-l border-border-default" ref={modelMenuRef}>
+          <Tooltip label={currentModel?.label || "AI model"} position="bottom">
           <button
             ref={modelBtnRef}
             onClick={() => setShowModelMenu(!showModelMenu)}
             className="flex items-center gap-xs px-sm py-sm text-on-surface-muted hover:text-on-surface transition-colors"
-            title={currentModel?.label || "AI model"}
           >
             <Bot className="w-3.5 h-3.5" />
             <ChevronDown className="w-2.5 h-2.5" />
           </button>
+          </Tooltip>
           {showModelMenu && (
             <div className={`absolute top-full mt-1 bg-surface border border-border-default rounded-lg shadow-xl z-50 py-xs min-w-[180px] max-h-[260px] overflow-y-auto thin-scrollbar ${
               dropdownAlign === "right" ? "right-0" : dropdownAlign === "center" ? "left-1/2 -translate-x-1/2" : "left-0"
@@ -223,13 +227,14 @@ export default function SelectionToolbar({
         </div>
       )}
 
+      <Tooltip label="Close" position="bottom">
       <button
         onMouseDown={(e) => { e.preventDefault(); onDismiss(); }}
         className="flex items-center px-sm py-sm text-on-surface-muted hover:text-on-surface transition-colors border-l border-border-default"
-        title="Close"
       >
         <X className="w-3.5 h-3.5" />
       </button>
+      </Tooltip>
     </div>
   );
 }
