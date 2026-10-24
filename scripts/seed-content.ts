@@ -36,7 +36,19 @@ function stripComputed(item: SeedFields): SeedFields {
 
 async function main() {
   const ifEmpty = process.argv.includes("--if-empty");
-  const db = await getDb();
+  let db;
+  try {
+    db = await getDb();
+  } catch (e) {
+    // Local builds without Turso configured must keep working: the app
+    // renders from the store at runtime, and validate-content already
+    // skips its DB check without credentials.
+    if (e instanceof Error && /Missing TURSO/.test(e.message)) {
+      console.log("seed: no database credentials, skipping");
+      return;
+    }
+    throw e;
+  }
   await db.execute(CREATE_CONTENT_ITEMS);
 
   // Build-time mode: fill fresh databases only. Manual runs always refresh.

@@ -67,6 +67,13 @@ export default function StoriesIndexPage() {
         </header>
 
         {/* Staggered Editorial Grid */}
+        {sorted.length === 0 ? (
+          <div className="py-xxl text-center border border-dashed border-border-default rounded-none">
+            <p className="font-dm-sans text-sm text-on-surface-muted mb-md">
+              No stories yet. Publish your first draft to see it here.
+            </p>
+          </div>
+        ) : (
         <div className="grid grid-cols-12 gap-lg md:gap-xxl">
           {/* Featured Card 1 - Large */}
           <article className="col-span-12 md:col-span-8 group cursor-pointer">
@@ -209,6 +216,7 @@ export default function StoriesIndexPage() {
             </Link>
           </article>
         </div>
+        )}
 
         {/* Topics Grid */}
         <section className="mt-giant pt-giant border-t border-border-default">
