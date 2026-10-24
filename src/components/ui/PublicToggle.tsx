@@ -122,7 +122,7 @@ export function PublicToggleButton({ isPublic, onToggle, className, label }: Pub
     : (label ? `${label} : private` : "Private : click to make public");
 
   return (
-    <Tooltip label={title}>
+    <Tooltip label={title} align="start">
       <button
         onClick={onToggle}
         className={className}

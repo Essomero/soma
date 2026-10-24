@@ -127,28 +127,34 @@ export default function ShareButtons({
           Share Story
         </span>
         <div className="flex gap-md">
-          <button
-            onClick={() => handleNativeShare(url, title)}
-            className="w-10 h-10 border border-border-default rounded-full flex items-center justify-center hover:bg-surface-bright transition-colors text-on-surface-muted hover:text-on-surface"
-            aria-label="Share"
-          >
-            <Share2 className="w-4 h-4" />
-          </button>
-          <a
-            href={`mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(url)}`}
-            className="w-10 h-10 border border-border-default rounded-full flex items-center justify-center hover:bg-surface-bright transition-colors text-on-surface-muted hover:text-on-surface"
-            aria-label="Share via email"
-          >
-            <AtSign className="w-4 h-4" />
-          </a>
-          {markdownContent && (
+          <Tooltip label="Share" align="start">
             <button
-              onClick={handleCopyMarkdown}
+              onClick={() => handleNativeShare(url, title)}
               className="w-10 h-10 border border-border-default rounded-full flex items-center justify-center hover:bg-surface-bright transition-colors text-on-surface-muted hover:text-on-surface"
-              aria-label="Copy as Markdown"
+              aria-label="Share"
             >
-              {copied ? <Check className="w-4 h-4 text-secondary" /> : <Clipboard className="w-4 h-4" />}
+              <Share2 className="w-4 h-4" />
             </button>
+          </Tooltip>
+          <Tooltip label="Share via email" align="start">
+            <a
+              href={`mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(url)}`}
+              className="w-10 h-10 border border-border-default rounded-full flex items-center justify-center hover:bg-surface-bright transition-colors text-on-surface-muted hover:text-on-surface"
+              aria-label="Share via email"
+            >
+              <AtSign className="w-4 h-4" />
+            </a>
+          </Tooltip>
+          {markdownContent && (
+            <Tooltip label={copied ? "Copied!" : "Copy as Markdown"} align="start">
+              <button
+                onClick={handleCopyMarkdown}
+                className="w-10 h-10 border border-border-default rounded-full flex items-center justify-center hover:bg-surface-bright transition-colors text-on-surface-muted hover:text-on-surface"
+                aria-label="Copy as Markdown"
+              >
+                {copied ? <Check className="w-4 h-4 text-secondary" /> : <Clipboard className="w-4 h-4" />}
+              </button>
+            </Tooltip>
           )}
         </div>
       </div>
@@ -158,31 +164,37 @@ export default function ShareButtons({
   // row (default icon row)
   return (
     <div className={cn("flex flex-wrap gap-md", className)}>
-      <button
-        onClick={() => handleNativeShare(url, title)}
-        className="text-on-surface-muted hover:text-primary transition-colors"
-        aria-label="Share"
-      >
-        <Share2 className="w-5 h-5" />
-      </button>
-      <a
-        href={getShareUrl("x", url, title)}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-on-surface-muted hover:text-primary transition-colors"
-        aria-label="Share on X"
-      >
-        <XIcon className="w-5 h-5" />
-      </a>
-      <a
-        href={`mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(url)}`}
-        className="text-on-surface-muted hover:text-primary transition-colors"
-        aria-label="Share via email"
-      >
-        <MessageCircle className="w-5 h-5" />
-      </a>
+      <Tooltip label="Share" align="start">
+        <button
+          onClick={() => handleNativeShare(url, title)}
+          className="text-on-surface-muted hover:text-primary transition-colors"
+          aria-label="Share"
+        >
+          <Share2 className="w-5 h-5" />
+        </button>
+      </Tooltip>
+      <Tooltip label="Share on X" align="start">
+        <a
+          href={getShareUrl("x", url, title)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-on-surface-muted hover:text-primary transition-colors"
+          aria-label="Share on X"
+        >
+          <XIcon className="w-5 h-5" />
+        </a>
+      </Tooltip>
+      <Tooltip label="Share via email" align="start">
+        <a
+          href={`mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(url)}`}
+          className="text-on-surface-muted hover:text-primary transition-colors"
+          aria-label="Share via email"
+        >
+          <MessageCircle className="w-5 h-5" />
+        </a>
+      </Tooltip>
       {markdownContent && (
-        <Tooltip label={copied ? "Copied!" : "Copy as Markdown"}>
+        <Tooltip label={copied ? "Copied!" : "Copy as Markdown"} align="start">
           <button
             onClick={handleCopyMarkdown}
             className="text-on-surface-muted hover:text-secondary transition-colors"
