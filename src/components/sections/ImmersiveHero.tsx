@@ -30,6 +30,11 @@ export default function ImmersiveHero({
           className="w-full h-full object-cover object-top opacity-60 md:opacity-100"
           src={image}
         />
+        {/* Theme-aware scrim: no photo survives both themes (light mode sets
+            dark type, dark mode sets white type), so the text zone is pulled
+            toward the theme background instead of hunting for safe images. */}
+        <div className="absolute inset-0 bg-background/40" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/70 via-background/20 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
       </div>
       <div className="relative z-10 min-h-[85vh] max-w-readme mx-auto flex flex-col justify-end px-gutter md:px-margin-desktop pt-24 pb-giant">
