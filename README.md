@@ -2,9 +2,7 @@
 
 > Think on paper but digital. Learn anything at your pace, in your own infrastructure, and make public what you wish.
 
-New here? Start at [Step 0: free Turso database](#step-0-create-a-free-turso-database) below (2 minutes, no installs needed), then come back and click Deploy.
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FEssomero%2Fsoma&env=TURSO_DB,TURSO_TOKEN,SITE_PASSWORD&envDescription=Turso+database+credentials+and+your+site+owner+password&project-name=soma)
+New here? Do [Step 0: free Turso database](#step-0-create-a-free-turso-database) below (2 minutes, no installs), then [**fork the repo**](https://github.com/Essomero/soma/fork) and import your fork in Vercel. Importing uses your fork as-is: no new repo is created.
 
 ---
 
@@ -126,17 +124,13 @@ turso db shell soma-db "select 1;"
 
 Tables initialize automatically on the first API request after deploy. No migrations, no SQL to run by hand.
 
-### Step 1: Fork Soma, Then Deploy Your Fork
+### Step 1: Fork Soma, Then Import Your Fork Into Vercel
 
-Forking gives you your own linked copy in one click, no git needed. It matters later: a fork gets a **Sync fork** button for one-click updates, while a plain copy does not. And since AI agents publish by adding files to your repo, your fork doubles as their workspace.
+Forking gives you your own linked copy in one click, no git needed. Importing uses that copy as-is: Vercel creates no new repo. And since AI agents publish by adding files to your repo, your fork doubles as their workspace. A fork also stays linked for one-click updates later.
 
 1. [**Fork `Essomero/soma`**](https://github.com/Essomero/soma/fork) (accept the defaults).
-2. In Vercel, Add New → Project → **Import** your `soma` fork.
+2. In Vercel, Add New → Project → **Import** your `soma` fork (pick the one under your account, not `Essomero/soma`).
 3. Add the three env vars from Step 2 and press Deploy.
-
-In a hurry? The button below deploys in one click but creates a plain copy with no link back to ours, so future updates need git commands (see Keeping Your Deployment Updated).
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FEssomero%2Fsoma&env=TURSO_DB,TURSO_TOKEN,SITE_PASSWORD&envDescription=Turso+database+credentials+and+your+site+owner+password&project-name=soma)
 
 ### Step 2: Fill In Your 3 Required Environment Variables
 
@@ -164,8 +158,6 @@ To enable the inline margin AI assistant and research chat, add one or more prov
 Your fork stays linked to `Essomero/soma`. Your notes, highlights, and publishing toggles live in your Turso database, never in git, so pulling our updates never touches your writing.
 
 When we ship fixes, open your fork on GitHub. If it shows "This branch is behind", click **Sync fork**, then Update branch. That is the whole update: no terminal, no git commands. If your Vercel project is connected to the repo, it redeploys on its own. Otherwise press Redeploy in the Vercel dashboard.
-
-Deployed with the button instead of forking? That made you a plain copy with no link back, so GitHub offers no sync button. Easiest fix: fork now, import the fork as a new Vercel project, and paste in the SAME Turso URL and token. Your database carries over untouched, so nothing is lost; only the deployment URL changes. (Or, if you know git: add us as upstream and merge. Three commands, same result.)
 
 One habit keeps merges clean forever: agents publish by adding new files under `src/content/`, so keep your own pieces as new files with new slugs instead of editing ours. Everything you write in `/learn` is already safe in your database either way.
 
