@@ -8,10 +8,12 @@ import PrintButton from "@/components/ui/PrintButton";
 import { allDocs } from "@/content/registry";
 import { md, contentToMarkdown } from "@/lib/markdown";
 import type { TocItem } from "@/types";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function DocPage() {
   const { slug } = useParams<{ slug: string }>();
   const doc = allDocs.find((d) => d.slug === slug);
+  const { isOwner } = useAuth();
 
   if (!doc) {
     return (
@@ -97,6 +99,7 @@ export default function DocPage() {
               {tocItems.length > 0 && <SidebarToc items={tocItems} label="In this Doc" />}
               <ShareButtons
                 variant="column"
+                publicToggleSlug={isOwner ? doc.slug : undefined}
                 markdownContent={contentToMarkdown({
                   title: doc.title,
                   intro: doc.description,

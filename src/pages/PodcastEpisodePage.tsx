@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { Link, useParams, Navigate } from "react-router-dom";
+import { useAuth } from "@/lib/AuthContext";
 import { Star, User, PenLine, ChevronLeft, ChevronRight, Printer } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import AudioPlayer from "@/components/ui/AudioPlayer";
@@ -11,6 +12,7 @@ import { allEpisodes } from "@/content/registry";
 
 export default function PodcastEpisodePage() {
   const { slug } = useParams<{ slug: string }>();
+  const { isOwner } = useAuth();
   const transcriptRef = useRef<HTMLDivElement>(null);
 
   const episode = allEpisodes.find((ep) => ep.slug === slug);
@@ -208,6 +210,7 @@ export default function PodcastEpisodePage() {
           {/* Share */}
           <ShareButtons
             variant="column"
+            publicToggleSlug={isOwner && slug ? slug : undefined}
             markdownContent={contentToMarkdown({
               title: episode.title,
               intro: episode.summary || episode.description,

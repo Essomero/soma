@@ -29,38 +29,39 @@ import TestsIndexPage from "@/pages/TestsIndexPage";
 import TestPage from "@/pages/TestPage";
 import CollectionPrintPage from "@/pages/CollectionPrintPage";
 import SinglePrintPage from "@/pages/SinglePrintPage";
+import AuthGuard from "@/components/auth/AuthGuard";
 const router = createBrowserRouter([
   {
     path: "courses/:slug/print",
-    element: <CollectionPrintPage type="course" />,
+    element: (<AuthGuard><CollectionPrintPage type="course" /></AuthGuard>),
   },
   {
     path: "series/:slug/print",
-    element: <CollectionPrintPage type="series" />,
+    element: (<AuthGuard><CollectionPrintPage type="series" /></AuthGuard>),
   },
   {
     path: "books/:slug/print",
-    element: <CollectionPrintPage type="book" />,
+    element: (<AuthGuard><CollectionPrintPage type="book" /></AuthGuard>),
   },
   {
     path: "stories/:slug/print",
-    element: <SinglePrintPage type="story" base="stories" />,
+    element: (<AuthGuard><SinglePrintPage type="story" base="stories" /></AuthGuard>),
   },
   {
     path: "featured/:slug/print",
-    element: <SinglePrintPage type="story" base="featured" />,
+    element: (<AuthGuard><SinglePrintPage type="story" base="featured" /></AuthGuard>),
   },
   {
     path: "guides/:slug/print",
-    element: <SinglePrintPage type="guide" base="guides" />,
+    element: (<AuthGuard><SinglePrintPage type="guide" base="guides" /></AuthGuard>),
   },
   {
     path: "docs/:slug/print",
-    element: <SinglePrintPage type="doc" base="docs" />,
+    element: (<AuthGuard><SinglePrintPage type="doc" base="docs" /></AuthGuard>),
   },
   {
     path: "podcast/:slug/print",
-    element: <SinglePrintPage type="episode" base="podcast" />,
+    element: (<AuthGuard><SinglePrintPage type="episode" base="podcast" /></AuthGuard>),
   },
   {
     element: <Layout />,

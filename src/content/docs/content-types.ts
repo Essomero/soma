@@ -2,7 +2,6 @@ import type { DocContent } from "@/types";
 
 export const contentTypes: DocContent = {
   slug: "content-types",
-  public: true,
   category: "Publishing // Content Model",
   title: "Content Types: What Each One Is For",
   description:

@@ -2,7 +2,6 @@ import type { DocContent } from "@/types";
 
 export const labSetup: DocContent = {
   slug: "lab-setup",
-  public: true,
   category: "Hands-On Drills // Environment",
   title: "Soma Labs Setup: The Single Companion Workspace",
   description:

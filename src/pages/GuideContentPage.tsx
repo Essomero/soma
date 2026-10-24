@@ -120,6 +120,7 @@ export default function GuideContentPage() {
               <ShareButtons
                 variant="row"
                 className="px-sm"
+                publicToggleSlug={isOwner && slug ? slug : undefined}
                 markdownContent={content ? contentToMarkdown({
                   title: guide?.title || "",
                   intro: content.intro,

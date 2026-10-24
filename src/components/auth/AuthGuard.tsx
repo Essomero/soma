@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import LoginPage from "@/pages/LoginPage";
 import { AuthContext } from "@/lib/AuthContext";
-import { allDocs } from "@/content/docs";
 
 function getCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
@@ -10,19 +9,17 @@ function getCookie(name: string): string | null {
 }
 
 function slugFromPath(pathname: string): string {
-  const storyMatch = pathname.match(/^\/stories\/([^/]+)$/);
-  if (storyMatch) return storyMatch[1];
-  const seriesMatch = pathname.match(/^\/series\/([^/]+)$/);
-  if (seriesMatch) return seriesMatch[1];
-  const courseMatch = pathname.match(/^\/courses\/([^/]+)$/);
-  if (courseMatch) return courseMatch[1];
-  // Learn notes: only the article page can be public; index/editor stay login-gated
-  const learnMatch = pathname.match(/^\/learn\/([^/]+)$/);
-  if (learnMatch) return learnMatch[1];
-  // Docs: same again, and the slug is resolved from the bundle rather than the
-  // public_pages table : see the doc branch in the effect below.
-  const docMatch = pathname.match(/^\/docs\/([^/]+)$/);
-  if (docMatch) return docMatch[1];
+  // Print views share the visibility of the page they print.
+  const printMatch = pathname.match(
+    /^\/(stories|series|courses|learn|docs|guides|podcast|featured)\/([^/]+)\/print$/
+  );
+  if (printMatch) return printMatch[2];
+  // Article pages: a slug with a public_pages row reads without the cookie.
+  // Index, editor, and print-index paths never match, so they stay login-gated.
+  const pageMatch = pathname.match(
+    /^\/(stories|series|courses|learn|docs|guides|podcast|featured)\/([^/]+)$/
+  );
+  if (pageMatch) return pageMatch[2];
   return "";
 }
 
@@ -69,20 +66,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Docs carry their own `public` flag in the bundle, so there's no API to
-    // ask : resolve the answer locally. An unknown slug falls through to
-    // setAuthed(false), same as an unlisted story: guessing slugs earns the
-    // login page rather than a 404 that confirms what exists.
-    if (pathname.startsWith("/docs/")) {
-      const doc = allDocs.find((d) => d.slug === slug);
-      if (doc?.public) {
-        setAuthed(true);
-        setIsOwner(false);
-      } else {
-        setAuthed(false);
-      }
-      return;
-    }
+    // An unknown slug falls through to setAuthed(false), same as an unlisted
+    // story: guessing slugs earns the login page rather than a 404 that
+    // confirms what exists.
 
     checkPublic(slug).then(isPublic => {
       if (isPublic) {

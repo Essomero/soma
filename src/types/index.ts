@@ -546,10 +546,6 @@ export interface DocSection {
 
 export interface DocContent {
   slug: string;
-  // Required, no default: a doc must declare who may read it. AuthGuard matches
-  // `/docs/:slug` against this flag : `true` reads for anyone with the link,
-  // `false` needs the auth cookie. Same model as stories.
-  public: boolean;
   category: string;
   title: string;
   description: string;
