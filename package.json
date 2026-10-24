@@ -12,7 +12,9 @@
     "build": "npx tsx scripts/validate-content.ts && tsc -b && vite build",
     "rss": "npx tsx scripts/generate-rss.ts",
     "preview": "vite preview",
-    "server": "node server/api-dev.mjs"
+    "server": "node server/api-dev.mjs",
+    "seed": "npx tsx scripts/seed-content.ts",
+    "publish": "npx tsx scripts/publish-content.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.17.4",
