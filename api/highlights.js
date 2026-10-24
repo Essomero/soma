@@ -57,9 +57,49 @@ async function query(sql, args) {
     return [];
   }
 }
+// Fresh database (e.g. just provisioned via the Vercel integration):
+// create the table on first request so reads/writes never hit
+// "no such table". Safe on every cold start; IF NOT EXISTS makes it
+// a no-op once the table is there.
+let tablesReady = false;
+async function ensureTables() {
+  if (tablesReady) return;
+  await query(`CREATE TABLE IF NOT EXISTS highlights (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    story_slug TEXT NOT NULL,
+    section_index INTEGER NOT NULL DEFAULT 0,
+    paragraph_index INTEGER NOT NULL DEFAULT 0,
+    start_offset INTEGER NOT NULL DEFAULT 0,
+    end_offset INTEGER NOT NULL DEFAULT 0,
+    selected_text TEXT,
+    text_hash TEXT,
+    color TEXT DEFAULT 'yellow',
+    created_at TEXT DEFAULT (datetime('now'))
+  )`);
+  // Threads are fetched from comments on every read, so make sure that
+  // table exists too even if the comments endpoint was never hit first.
+  await query(`CREATE TABLE IF NOT EXISTS comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    story_slug TEXT NOT NULL,
+    body TEXT NOT NULL,
+    parent_id INTEGER,
+    is_ai INTEGER DEFAULT 0,
+    ai_model TEXT,
+    highlight_id INTEGER,
+    section_index INTEGER,
+    paragraph_index INTEGER,
+    start_offset INTEGER,
+    end_offset INTEGER,
+    selected_text TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT
+  )`);
+  tablesReady = true;
+}
 
 export default async function handler(req, res) {
   try {
+    await ensureTables();
     if (req.method === "GET") {
       const story = req.query.story;
       if (!story) return res.status(400).json({ error: "story required" });

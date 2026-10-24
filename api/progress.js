@@ -58,8 +58,25 @@ async function query(sql, args) {
   }
 }
 
+// Fresh database (e.g. just provisioned via the Vercel integration):
+// create the table on first request so reads/writes never hit
+// "no such table". Safe on every cold start; IF NOT EXISTS makes it
+// a no-op once the table is there. story_slug is the primary key
+// because upserts address rows ON CONFLICT(story_slug).
+let tablesReady = false;
+async function ensureTables() {
+  if (tablesReady) return;
+  await query(`CREATE TABLE IF NOT EXISTS progress (
+    story_slug TEXT PRIMARY KEY,
+    completed INTEGER NOT NULL DEFAULT 0,
+    completed_at TEXT
+  )`);
+  tablesReady = true;
+}
+
 export default async function handler(req, res) {
   try {
+    await ensureTables();
     if (req.method === "GET") {
       const slug = req.query.slug;
       const sql = slug

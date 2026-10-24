@@ -83,6 +83,26 @@ function buildTree(rows) {
 let migrated = false;
 async function ensureSchema() {
   if (migrated) return;
+  // Fresh database (e.g. just provisioned via the Vercel integration):
+  // create the table first so the ALTERs and queries below never hit
+  // "no such table". Safe to run on every cold start; IF NOT EXISTS
+  // makes it a no-op once the table is there.
+  await query(`CREATE TABLE IF NOT EXISTS comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    story_slug TEXT NOT NULL,
+    body TEXT NOT NULL,
+    parent_id INTEGER,
+    is_ai INTEGER DEFAULT 0,
+    ai_model TEXT,
+    highlight_id INTEGER,
+    section_index INTEGER,
+    paragraph_index INTEGER,
+    start_offset INTEGER,
+    end_offset INTEGER,
+    selected_text TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT
+  )`);
   try {
     await query("ALTER TABLE comments ADD COLUMN parent_id INTEGER");
   } catch (e) {
