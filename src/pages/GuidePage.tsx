@@ -14,7 +14,6 @@ import InlineHighlights from "@/components/ui/InlineHighlights";
 import StaticHighlightPaint from "@/components/ui/StaticHighlightPaint";
 import type { HighlightData } from "@/lib/highlights";
 import Comments from "@/components/ui/Comments";
-import { PublicToggleButton, usePublicState } from "@/components/ui/PublicToggle";
 import { useAuth } from "@/lib/AuthContext";
 import { useContentItem } from "@/lib/content";
 import type { GuideContent, Author, TocItem, TipCardData } from "@/types";
@@ -66,7 +65,6 @@ export default function GuidePage() {
   const highlightClickRef = useRef<(id: number) => void>(() => {});
   const [pageHighlights, setPageHighlights] = useState<HighlightData[]>([]);
   const [commentsRefresh, setCommentsRefresh] = useState(0);
-  const { isPublic, toggle } = usePublicState(GUIDE_SLUG);
   const { data: guideRow } = useContentItem<GuideContent>("guide", GUIDE_SLUG);
   const guideTitle = typeof guideRow?.title === "string" ? guideRow.title : "";
   const guideIntro = typeof guideRow?.intro === "string" ? guideRow.intro : "";
@@ -125,6 +123,7 @@ export default function GuidePage() {
               <ShareButtons
                 variant="row"
                 className="px-sm"
+                publicToggleSlug={isOwner ? GUIDE_SLUG : undefined}
                 markdownContent={contentToMarkdown({
                   title: "Ship Soma on your own infrastructure in minutes",
                   intro: "Three moves get you deployed: fork the repo, import it into Vercel with one password, and add the Turso card. Your notes live in your database, never in git.",
@@ -141,11 +140,6 @@ export default function GuidePage() {
                 })}
               />
               <PrintButton compact label="Print / Save PDF" />
-              {isOwner && (
-                <div className="px-sm">
-                  <PublicToggleButton isPublic={isPublic} onToggle={toggle} />
-                </div>
-              )}
             </div>
           </aside>
 

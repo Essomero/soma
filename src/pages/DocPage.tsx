@@ -108,7 +108,7 @@ export default function DocPage() {
             <div className="sticky top-24 space-y-xl">
               {tocItems.length > 0 && <SidebarToc items={tocItems} label="In this Doc" />}
               <ShareButtons
-                variant="column"
+                variant="row"
                 publicToggleSlug={isOwner ? doc.slug : undefined}
                 markdownContent={contentToMarkdown({
                   title: doc.title,

@@ -258,7 +258,7 @@ export default function PodcastEpisodePage() {
         <aside className="col-span-12 lg:col-span-4 space-y-giant">
           {/* Share */}
           <ShareButtons
-            variant="column"
+            variant="row"
             publicToggleSlug={isOwner && slug ? slug : undefined}
             markdownContent={contentToMarkdown({
               title: episode.title,
