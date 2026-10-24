@@ -51,6 +51,10 @@ All prose across guides, stories, courses, documentation, and agent-generated le
    - **Contractions always**: Don't, it's, you're, can't.
    - **No hedge openers**: No "it's worth noting," no "let's dive in." Start with the claim.
 
+## Rule 9: Micro Commits, No Lingering Changes
+Commit your own changes as soon as the work is verified: one surgical commit per change, nothing unrelated bundled in.
+Never leave your changes uncommitted at the end of a task. Never commit someone else's changes.
+
 ---
 
 # Soma Project Architecture
