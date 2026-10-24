@@ -860,7 +860,7 @@ ${storyTitle ? `Title: ${storyTitle}\n` : ""}${articleExcerpt}
               <div className="flex justify-between items-center mt-sm">
                 <span className="font-sora text-[10px] text-on-surface-muted">Enter to post</span>
                 <button onClick={handlePostComment} disabled={!commentBody.trim() || posting}
-                  className="px-lg py-sm rounded-lg font-sora text-xs bg-primary text-on-primary hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-xs">
+                  className="px-md py-sm rounded-md font-sora text-xs bg-primary text-on-primary hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-xs">
                   {posting ? <Loader2 className="w-3 h-3 animate-spin" /> : null}{posting ? "Posting..." : "Post"}</button>
               </div>
             </div>
@@ -919,7 +919,7 @@ ${storyTitle ? `Title: ${storyTitle}\n` : ""}${articleExcerpt}
               <div className="flex justify-between items-center mt-sm">
                 <span className="font-sora text-[10px] text-on-surface-muted">Enter to post</span>
                 <button onClick={handlePostComment} disabled={!commentBody.trim() || posting}
-                  className="px-lg py-sm rounded-lg font-sora text-xs bg-primary text-on-primary hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-xs">
+                  className="px-md py-sm rounded-md font-sora text-xs bg-primary text-on-primary hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-xs">
                   {posting ? <Loader2 className="w-3 h-3 animate-spin" /> : null}{posting ? "Posting..." : "Post"}</button>
               </div>
             </div>

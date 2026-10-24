@@ -616,8 +616,8 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
             <div className="space-y-md">
               <textarea value={editBody} onChange={(e) => setEditBody(e.target.value)} rows={3} className="w-full bg-surface border border-border-default rounded-lg px-lg py-md font-dm-sans text-sm text-on-surface focus:border-primary outline-none resize-y" />
               <div className="flex gap-sm">
-                <button onClick={() => handleEdit(comment.id)} className="inline-flex items-center gap-xs text-sm bg-primary text-on-primary px-lg py-sm rounded-lg hover:opacity-90"><Check className="w-3 h-3" /> Save</button>
-                <button onClick={() => setEditingId(null)} className="inline-flex items-center gap-xs text-sm bg-surface border border-border-default text-on-surface-muted px-lg py-sm rounded-lg hover:bg-surface-container"><X className="w-3 h-3" /> Cancel</button>
+                <button onClick={() => handleEdit(comment.id)} className="inline-flex items-center gap-xs font-sora text-xs bg-primary text-on-primary px-md py-sm rounded-md hover:opacity-90"><Check className="w-3 h-3" /> Save</button>
+                <button onClick={() => setEditingId(null)} className="inline-flex items-center gap-xs font-sora text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container"><X className="w-3 h-3" /> Cancel</button>
               </div>
             </div>
           ) : (
@@ -692,10 +692,10 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
                     className="w-full bg-transparent border-0 p-0 font-dm-sans text-sm text-on-surface placeholder:text-on-surface-muted focus:ring-0 outline-none resize-y"
                   />
                   <div className="flex gap-sm">
-                    <button type="submit" disabled={loading || !replyBody.trim()} className="inline-flex items-center gap-xs text-sm bg-primary text-on-primary px-lg py-sm rounded-lg hover:opacity-90 disabled:opacity-50">
+                    <button type="submit" disabled={loading || !replyBody.trim()} className="inline-flex items-center gap-xs font-sora text-xs bg-primary text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50">
                       <Send className="w-3 h-3" /> {loading ? "Posting..." : "Reply"}
                     </button>
-                    <button type="button" onClick={() => { setReplyToId(null); setReplyBody(""); }} className="inline-flex items-center gap-xs text-sm bg-surface border border-border-default text-on-surface-muted px-lg py-sm rounded-lg hover:bg-surface-container">
+                    <button type="button" onClick={() => { setReplyToId(null); setReplyBody(""); }} className="inline-flex items-center gap-xs font-sora text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container">
                       <X className="w-3 h-3" /> Cancel
                     </button>
                   </div>
@@ -757,10 +757,10 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
 
                   {aiLoading !== comment.id && (
                     <div className="flex gap-sm px-xl pb-lg pt-sm">
-                      <button onClick={() => postAiReply(comment.id)} disabled={loading} className="inline-flex items-center gap-xs text-sm bg-brand text-on-primary px-lg py-sm rounded-lg hover:opacity-90 disabled:opacity-50">
+                      <button onClick={() => postAiReply(comment.id)} disabled={loading} className="inline-flex items-center gap-xs font-sora text-xs bg-brand text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50">
                         <Send className="w-3 h-3" /> {loading ? "Posting..." : "Post Reply"}
                       </button>
-                      <button onClick={() => cancelAiReply(comment.id)} className="inline-flex items-center gap-xs text-sm bg-surface border border-border-default text-on-surface-muted px-lg py-sm rounded-lg hover:bg-surface-container">
+                      <button onClick={() => cancelAiReply(comment.id)} className="inline-flex items-center gap-xs font-sora text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container">
                         <X className="w-3 h-3" /> Cancel
                       </button>
                     </div>
@@ -828,7 +828,7 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
               disabled={aiLoading !== null || aiUnavailable}
               className="flex items-center gap-xs bg-surface border border-border-default rounded-md px-sm py-sm font-sora text-xs text-on-surface hover:border-brand/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              <span className="hidden sm:inline">{(models.find(m => m.id === aiModel && m.provider === aiProvider) || models.find(m => m.id === aiModel))?.label || aiModel}</span>
+              <span className="hidden sm:inline">{aiUnavailable ? "No AI models available" : ((models.find(m => m.id === aiModel && m.provider === aiProvider) || models.find(m => m.id === aiModel))?.label || aiModel)}</span>
               <ChevronDown className="w-3 h-3 text-on-surface-muted" />
             </button>
             </span>
@@ -996,10 +996,10 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
 
           {!summarizing && (
             <div className="flex gap-sm px-xl pb-lg pt-sm">
-              <button onClick={postSummary} disabled={loading} className="inline-flex items-center gap-xs text-sm bg-brand text-on-primary px-lg py-sm rounded-lg hover:opacity-90 disabled:opacity-50">
+              <button onClick={postSummary} disabled={loading} className="inline-flex items-center gap-xs font-sora text-xs bg-brand text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50">
                 <Send className="w-3 h-3" /> {loading ? "Posting..." : "Post Summary"}
               </button>
-              <button onClick={() => { setSummaryDraft(""); setSummarizing(false); }} className="inline-flex items-center gap-xs text-sm bg-surface border border-border-default text-on-surface-muted px-lg py-sm rounded-lg hover:bg-surface-container">
+              <button onClick={() => { setSummaryDraft(""); setSummarizing(false); }} className="inline-flex items-center gap-xs font-sora text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container">
                 <X className="w-3 h-3" /> Cancel
               </button>
             </div>
@@ -1056,10 +1056,10 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
 
           {!explaining && (
             <div className="flex gap-sm px-xl pb-lg pt-sm">
-              <button onClick={postExplain} disabled={loading} className="inline-flex items-center gap-xs text-sm bg-brand text-on-primary px-lg py-sm rounded-lg hover:opacity-90 disabled:opacity-50">
+              <button onClick={postExplain} disabled={loading} className="inline-flex items-center gap-xs font-sora text-xs bg-brand text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50">
                 <Send className="w-3 h-3" /> {loading ? "Posting..." : "Post Explanation"}
               </button>
-              <button onClick={() => { setExplainDraft(""); setExplaining(false); }} className="inline-flex items-center gap-xs text-sm bg-surface border border-border-default text-on-surface-muted px-lg py-sm rounded-lg hover:bg-surface-container">
+              <button onClick={() => { setExplainDraft(""); setExplaining(false); }} className="inline-flex items-center gap-xs font-sora text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container">
                 <X className="w-3 h-3" /> Cancel
               </button>
             </div>
@@ -1089,7 +1089,7 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
         </div>
         <div className="flex justify-between items-center mt-md">
           <span className="font-sora text-[10px] text-on-surface-muted uppercase tracking-widest">Markdown supported</span>
-          <button type="submit" disabled={loading || !body.trim()} className="inline-flex items-center gap-sm bg-primary text-on-primary font-sora text-sm px-xl py-md rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"><Send className="w-4 h-4" /> {loading ? "Posting..." : "Post"}</button>
+          <button type="submit" disabled={loading || !body.trim()} className="inline-flex items-center gap-xs bg-primary text-on-primary font-sora text-xs px-md py-sm rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"><Send className="w-3 h-3" /> {loading ? "Posting..." : "Post"}</button>
         </div>
       </form>
 
