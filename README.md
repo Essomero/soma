@@ -2,7 +2,7 @@
 
 > Think on paper but digital. Learn anything at your pace, in your own infrastructure, and make public what you wish.
 
-New here? Do [Step 0: free Turso database](#step-0-create-a-free-turso-database) below (2 minutes, no installs), then [**fork the repo**](https://github.com/Essomero/soma/fork) and [import your fork in Vercel](https://vercel.com/new). Importing uses your fork as-is: no new repo is created.
+New here? Three moves: [**fork the repo**](https://github.com/Essomero/soma/fork), [import it into Vercel](https://vercel.com/new), add one password, click Add on the Turso card, deploy. [Full walkthrough below](#step-0-fork-soma).
 
 ---
 
@@ -91,33 +91,31 @@ Soma is designed from the ground up to collaborate with AI coding agents. The re
 
 ## Quick Start (Deploy in Minutes)
 
-Do the steps in order: the database (Step 0) is provisioned during Vercel import in Step 1, and its credentials land in your project on their own.
+Three moves: fork, import, deploy. Your notes live in your database, never in git, so nothing here can touch anyone else's writing.
 
-### Step 0: Database (One Click, No Setup)
+### Step 0: Fork Soma
 
-You do not need a Turso account or any database before deploying. During Vercel import, the project page suggests a **Turso** card under integrations. Click **Add**: Vercel provisions the database and injects its URL and token into your project on its own. Nothing to copy, no dashboard visit, no CLI. The suggested resource name is random (e.g. `database-celeste-arrow`): it is only a label in the dashboards, so accept it or rename it, the app does not care.
+[**Fork `Essomero/soma`**](https://github.com/Essomero/soma/fork) (accept the defaults). This is your copy: agents publish by adding files to it, and it stays linked for one-click updates later. No git needed.
 
-Tables initialize automatically on the first API request after deploy. No migrations, no SQL to run by hand.
+### Step 1: Import Your Fork Into Vercel
 
-Prefer to use a database you already own, or want it under your own Turso account? Create it at [turso.tech](https://turso.tech) (or `turso db create soma-db`) and paste its URL and token as `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` yourself, instead of adding the integration. Either path lands in the same place.
+In Vercel, [Add New → Project](https://vercel.com/new) → **Import** your `soma` fork (pick the one under your account, not `Essomero/soma`). Importing uses your fork as-is: Vercel creates no new repo.
 
-### Step 1: Fork Soma, Then Import Your Fork Into Vercel
-
-Forking gives you your own linked copy in one click, no git needed. Importing uses that copy as-is: Vercel creates no new repo. And since AI agents publish by adding files to your repo, your fork doubles as their workspace. A fork also stays linked for one-click updates later.
-
-1. [**Fork `Essomero/soma`**](https://github.com/Essomero/soma/fork) (accept the defaults).
-2. In Vercel, [Add New → Project](https://vercel.com/new) → **Import** your `soma` fork (pick the one under your account, not `Essomero/soma`).
-3. Add the three env vars from Step 2 and press Deploy.
-
-### Step 2: Fill In Your 3 Required Environment Variables
-
-Paste the values from Step 0:
+On the configure page, open **Environment Variables** and add one variable:
 
 | Variable | Value | Notes |
 |---|---|---|
-| `TURSO_DATABASE_URL` | URL from Step 0 (e.g. `libsql://soma-db-....turso.io`) | Paste exactly, including the `libsql://` prefix |
-| `TURSO_AUTH_TOKEN` | Token from Step 0 | Mark Sensitive in Vercel afterwards (Project Settings, Environment Variables) |
-| `SITE_PASSWORD` | Any strong string you invent (e.g. `openssl rand -base64 32`) | Your private studio login. Mark Sensitive too |
+| `SITE_PASSWORD` | Any strong string you invent (e.g. `openssl rand -base64 32`) | Your private studio login. Toggle the lock icon to mark it Sensitive |
+
+Do this before pressing Deploy: deploying without it breaks login and forces a redeploy to fix. Do not add any `VITE_*` variables here: those are local-development only and baking them into Vercel would expose your database token in the shipped JavaScript.
+
+### Step 2: Add the Turso Integration, Then Deploy
+
+Further down the same page, under Optional Integrations, click **Add** on the **Turso** card. Vercel provisions the database and injects its URL and token into your project on its own: `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`, no copying. The suggested resource name is random (e.g. `database-celeste-arrow`): it is only a label in the dashboards, so accept it or rename it, the app does not care.
+
+Then press Deploy. Tables initialize automatically on the first API request: no migrations, no SQL to run by hand.
+
+Prefer a database you already own, or want it under your own Turso account? Skip the card and paste its URL and token as `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` yourself, instead. Either path lands in the same place.
 
 ### Step 3: (Optional) Add AI Keys
 
