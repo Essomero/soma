@@ -1,3 +1,4 @@
+const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || "";
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || "";
 const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_DISABLED = process.env.GEMINI_DISABLED === "1" || process.env.GEMINI_DISABLED === "true";
@@ -337,7 +338,7 @@ let cachedMetaModels = null;
 let cacheMetaTime = 0;
 
 async function fetchMetaModels() {
-  if (!META_KEY) return META_MODELS;
+  if (!META_KEY) return [];
   if (cachedMetaModels && Date.now() - cacheMetaTime < CACHE_TTL) return cachedMetaModels;
 
   try {
@@ -388,7 +389,7 @@ let cachedStraitlyModels = null;
 let cacheStraitlyTime = 0;
 
 async function fetchStraitlyModels() {
-  if (!STRAITLY_KEY) return STRAITLY_MODELS;
+  if (!STRAITLY_KEY) return [];
   if (cachedStraitlyModels && Date.now() - cacheStraitlyTime < CACHE_TTL) return cachedStraitlyModels;
 
   try {
@@ -454,8 +455,11 @@ export default async function handler(req, res) {
       fetchStraitlyModels(),
     ]);
 
-    const finalGemini = [...geminiModels];
-    if (!finalGemini.some(m => m.id === "gemini-flash-lite-latest")) {
+    // Only advertise providers whose keys are configured. A model in this
+    // list must be callable: otherwise the UI enables AI actions that can
+    // only fail with "AI service not configured".
+    const finalGemini = (GEMINI_KEY && !GEMINI_DISABLED) ? [...geminiModels] : [];
+    if (finalGemini.length > 0 && !finalGemini.some(m => m.id === "gemini-flash-lite-latest")) {
       finalGemini.unshift({
         id: "gemini-flash-lite-latest",
         label: "Gemini Flash-Lite Latest",
@@ -465,8 +469,8 @@ export default async function handler(req, res) {
       });
     }
 
-    const finalOR = [...openrouterModels];
-    if (!finalOR.some(m => m.id === "google/gemini-flash-lite-latest")) {
+    const finalOR = OPENROUTER_KEY ? [...openrouterModels] : [];
+    if (finalOR.length > 0 && !finalOR.some(m => m.id === "google/gemini-flash-lite-latest")) {
       finalOR.push({
         id: "google/gemini-flash-lite-latest",
         label: "Google: Gemini Flash-Lite Latest",
@@ -476,10 +480,10 @@ export default async function handler(req, res) {
       });
     }
 
-    const models = [...DEEPSEEK_MODELS, ...finalGemini, ...finalOR, ...groqModels, ...cerebrasModels, ...metaModels, ...straitlyModels];
+    const models = [...(DEEPSEEK_KEY ? DEEPSEEK_MODELS : []), ...finalGemini, ...finalOR, ...groqModels, ...cerebrasModels, ...metaModels, ...straitlyModels];
     return res.json({ models });
   } catch (e) {
     console.error("Models handler error:", e.message);
-    return res.json({ models: [...DEEPSEEK_MODELS, ...META_MODELS, ...STRAITLY_MODELS] });
-  }
+    return res.json({ models: [] });
+}
 }
