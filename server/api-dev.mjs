@@ -1,6 +1,6 @@
 // Local API dev server: runs the same handlers as Vercel, but locally
 // Usage: node server/api-dev.mjs
-// Requires: TURSO_DB and TURSO_TOKEN env vars
+// Requires: TURSO_DATABASE_URL and TURSO_AUTH_TOKEN env vars (legacy TURSO_DB / TURSO_TOKEN also accepted)
 
 import { createServer } from "http";
 

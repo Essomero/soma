@@ -1,5 +1,5 @@
-const DB_URL = (process.env.TURSO_DB || "").replace("libsql://", "https://");
-const TOKEN = process.env.TURSO_TOKEN || "";
+const DB_URL = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").replace("libsql://", "https://");
+const TOKEN = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "";
 
 // Table is created idempotently on every request : no manual migration needed.
 const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS learn_articles (

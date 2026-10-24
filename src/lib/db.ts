@@ -1,8 +1,8 @@
 import { createClient } from "@libsql/client/web";
 
 const client = createClient({
-  url: import.meta.env.VITE_TURSO_DB || "",
-  authToken: import.meta.env.VITE_TURSO_TOKEN || "",
+  url: import.meta.env.VITE_TURSO_DATABASE_URL || import.meta.env.VITE_TURSO_DB || "",
+  authToken: import.meta.env.VITE_TURSO_AUTH_TOKEN || import.meta.env.VITE_TURSO_TOKEN || "",
 });
 
 // ── Schema (run once) ──────────────────────────────────

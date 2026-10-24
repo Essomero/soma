@@ -100,8 +100,8 @@ Turso hosts your edge SQLite database. The free tier covers personal use. Two pa
 **Path A: Browser dashboard (no installs, any OS).**
 1. Sign up at [turso.tech](https://turso.tech) (GitHub login works).
 2. Open Databases and create one named `soma-db`. Pick the region closest to you; the default is fine.
-3. Open the database. The Overview page shows a Connect section with the Database URL and a copy button. Copy it. That is your `TURSO_DB`.
-4. Click **Create Token** right below the URL. A dialog shows the token and the URL together. Copy both immediately: the token is shown once and never again. If you close the dialog first, create a fresh token.
+3. Open the database. The Overview page shows a Connect section with the Database URL and a copy button. Copy it. That is your `TURSO_DATABASE_URL`.
+4. Click **Create Token** right below the URL. A dialog shows the token and the URL together. Copy both immediately: the token is shown once and never again. If you close the dialog first, create a fresh token. The token is your `TURSO_AUTH_TOKEN`.
 
 **Path B: Command line.**
 ```bash
@@ -112,8 +112,8 @@ curl -sSfL https://get.tur.so/install.sh | bash
 
 turso auth signup
 turso db create soma-db --group <nearest-region>   # omit --group to accept the default
-turso db show soma-db --url       # copy to TURSO_DB
-turso db tokens create soma-db   # copy to TURSO_TOKEN
+turso db show soma-db --url       # copy to TURSO_DATABASE_URL
+turso db tokens create soma-db   # copy to TURSO_AUTH_TOKEN
 ```
 
 Verify it answers before you deploy:
@@ -138,8 +138,8 @@ Paste the values from Step 0:
 
 | Variable | Value | Notes |
 |---|---|---|
-| `TURSO_DB` | URL from Step 0 (e.g. `libsql://soma-db-....turso.io`) | Paste exactly, including the `libsql://` prefix |
-| `TURSO_TOKEN` | Token from Step 0 | Mark Sensitive in Vercel afterwards (Project Settings, Environment Variables) |
+| `TURSO_DATABASE_URL` | URL from Step 0 (e.g. `libsql://soma-db-....turso.io`) | Paste exactly, including the `libsql://` prefix |
+| `TURSO_AUTH_TOKEN` | Token from Step 0 | Mark Sensitive in Vercel afterwards (Project Settings, Environment Variables) |
 | `SITE_PASSWORD` | Any strong string you invent (e.g. `openssl rand -base64 32`) | Your private studio login. Mark Sensitive too |
 
 ### Step 3: (Optional) Add AI Keys
@@ -198,7 +198,7 @@ npm install
 
 # 3. Configure local environment
 cp .env.example .env.local
-# Populate TURSO_DB, TURSO_TOKEN, and SITE_PASSWORD
+# Populate TURSO_DATABASE_URL, TURSO_AUTH_TOKEN, and SITE_PASSWORD
 
 # 4. Verify installation
 npm run build   # Type-checks and builds the production bundle
