@@ -9,6 +9,7 @@ venv/
 
 # Screenshots downloaded by browsers during testing — clean up after use
 .claude/*.png
+drafts/
 graphify-out/cache/
 
 .codegenius

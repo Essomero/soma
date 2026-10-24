@@ -94,7 +94,9 @@ async function main() {
     const slug = body.slug;
     if (typeof slug !== "string" || !slug) throw new Error(`${f}: export has no usable slug`);
     const dirType = basename(dirname(full));
-    const type = typeOverride || (TYPES.has(dirType) ? dirType : "");
+    // Per-file inference wins: `drafts/<type>/<slug>.ts` batches mix types
+    // freely. --type is the fallback for files outside a typed dir.
+    const type = TYPES.has(dirType) ? dirType : typeOverride;
     if (!type) throw new Error(`${f}: cannot infer type from dir '${dirType}', pass --type`);
     if (!TYPES.has(type)) throw new Error(`${f}: unknown type ${type}`);
     for (const field of REQUIRED[type] || ["slug", "title"]) {

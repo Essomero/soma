@@ -95,11 +95,11 @@ Soma is designed from the ground up to collaborate with AI coding agents. The re
 
 ## Quick Start (Deploy in Minutes)
 
-Three moves: fork, import, deploy. Your notes live in your database, never in git, so nothing here can touch anyone else's writing.
+Three moves: fork, import, deploy. Your notes — and every story, guide, course, and test — live in your database, never in git, so nothing here can touch anyone else's writing. Your fork stays public (GitHub gives you no choice there); your writing stays private until you flip it public.
 
 ### Step 0: Fork Soma
 
-[**Fork `Essomero/soma`**](https://github.com/Essomero/soma/fork) (accept the defaults). This is your copy: agents publish by adding files to it, and it stays linked for one-click updates later. No git needed.
+[**Fork `Essomero/soma`**](https://github.com/Essomero/soma/fork) (accept the defaults). This is your copy: it stays linked for one-click updates later. No git needed. Agents publish into your database, not into the fork, so drafts never touch GitHub.
 
 ### Step 1: Import Your Fork Into Vercel
 
@@ -140,13 +140,13 @@ Add keys in Vercel under Project Settings > Environment Variables, then redeploy
 
 ---
 
-## Keeping Your Deployment Updated
+## Private First, Public on Demand
 
-Your fork stays linked to `Essomero/soma`. Your notes, highlights, and publishing toggles live in your Turso database, never in git, so pulling our updates never touches your writing.
+Your fork is public by design (GitHub forks of public repos cannot go private), so Soma never puts your writing in git. Notes, highlights, publishing toggles, and every story, guide, course, and test live in your Turso database. Pulling our updates never touches your words, and your drafts are invisible to everyone — including anyone browsing your fork — until you flip them public.
 
 When we ship fixes, open your fork on GitHub. If it shows "This branch is behind", click **Sync fork**, then Update branch. That is the whole update: no terminal, no git commands. If your Vercel project is connected to the repo, it redeploys on its own. Otherwise press Redeploy in the Vercel dashboard.
 
-One habit keeps merges clean forever: agents publish by adding new files under `src/content/`, so keep your own pieces as new files with new slugs instead of editing ours. Everything you write in `/learn` is already safe in your database either way.
+One habit keeps merges clean forever: published manuscripts get archived as new files under `src/content/` with new slugs — never edit the seed files in place. Everything you write in `/learn` or publish as a draft is already safe in your database either way.
 
 ---
 
@@ -160,10 +160,10 @@ Because Soma bundles agent skills, you can use any coding assistant to manage yo
 ```
 
 1. The agent reads `.claude/skills/soma/SKILL.md` (or `.agents/skills/soma/SKILL.md`).
-2. It outputs the structured TypeScript content file following the exact schema (`slug`, `title`, `sections`, `bentoHighlights`, `pullQuote`).
-3. It registers the item in the folder aggregator (`index.ts`).
-4. It runs `npm run build` to guarantee zero broken links or type errors.
-5. Push to GitHub: Vercel builds and deploys your new content automatically.
+2. It drafts the structured TypeScript manuscript in a staging file outside git, following the exact schema (`slug`, `title`, `sections`, `bentoHighlights`, `pullQuote`).
+3. It publishes the manuscript as a **draft** with `npm run publish` — validated, private, previewable at your local dev server. Nothing is committed.
+4. On your approval it flips the row to **published**: instant, no rebuild, no redeploy. Unpublishing is the same one-word change back.
+5. It archives the published manuscript under `src/content/` and commits that single file, so git holds the version history of public work and nothing else.
 
 ---
 
@@ -234,8 +234,9 @@ New to the content model? Read [Content Types](https://soma.vercel.app/docs/cont
 1. **Private Scratchpad (`/learn`)**: Open **Learn** in the navigation. Draft rough notes, paste snippets, or outline ideas with live KaTeX math and Mermaid diagrams.
 2. **Margin Highlights & In-App AI**: Select any text to attach annotations, ask the inline AI model for clarifications, or store thoughts.
 3. **Oral Practice (`/tests`)**: Run diagnostic technical screens with Son reading questions and scoring spoken answers.
-4. **One-Click Publishing**: Flip the lock/globe toggle in the margin on any article or note. It is instantly visible to the public without requiring your site password.
-5. **Physical Print & PDF**: Use `/print` routes (such as `/courses/:slug/print` or `/stories/:slug/print`) for distraction-free printing or PDF generation.
+4. **Agent-Drafted Pieces**: Ask any coding assistant for a story, guide, course, or test. It lands as a private draft in your database — preview it locally, iterate, and flip it public only when you say so.
+5. **One-Click Publishing**: Flip the lock/globe toggle in the margin on any article or note. It is instantly visible to the public without requiring your site password. Unpublishing is the same click, just as instant.
+6. **Physical Print & PDF**: Use `/print` routes (such as `/courses/:slug/print` or `/stories/:slug/print`) for distraction-free printing or PDF generation.
 
 ---
 
