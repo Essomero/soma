@@ -729,15 +729,15 @@ ${storyTitle ? `Title: ${storyTitle}\n` : ""}${articleExcerpt}
                   <button
                     onClick={() => handlePostDraft(activeHighlight!.id, comment.id, comment.body, comment.aiAction!)}
                     disabled={!comment.body.trim()}
-                    className="inline-flex items-center gap-xs text-[10px] bg-primary text-on-primary px-sm py-xs rounded-md hover:opacity-90 disabled:opacity-50 font-sora"
+                    className="inline-flex items-center gap-xs text-xs bg-primary text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50 font-sora"
                   >
-                    <Send className="w-2.5 h-2.5" /> Post
+                    <Send className="w-3 h-3" /> Post
                   </button>
                   <button
                     onClick={() => handleCancelDraft(activeHighlight!.id, comment.id)}
-                    className="inline-flex items-center gap-xs text-[10px] bg-surface border border-border-default text-on-surface-muted px-sm py-xs rounded-md hover:bg-surface-container font-sora"
+                    className="inline-flex items-center gap-xs text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container font-sora"
                   >
-                    <X className="w-2.5 h-2.5" /> Cancel
+                    <X className="w-3 h-3" /> Cancel
                   </button>
                 </>
               )}
