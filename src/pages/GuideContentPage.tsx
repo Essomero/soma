@@ -28,79 +28,11 @@ const tipIcons: Record<string, LucideIcon> = {
   Minus, Terminal, UserCheck, AlertTriangle, Lightbulb, Shield, Zap,
 };
 
-const guideContent: Record<string, {
-  intro: string;
-  body: string[];
-  bentoHighlights?: BentoCardData[];
-  pullQuotes?: PullQuoteData[];
-  references?: { title: string; url: string; description?: string }[];
-  tipCards?: { icon: string; bgClass: string; iconColorClass: string; title: string; description: string }[];
-}> = {
-  "accessibility-bugs": {
-    intro: "Drupal's community has long understood something crucial about accessibility: it's not a feature to be added later : it's a fundamental requirement that should be treated with the same urgency as any other bug. Mike Gifford, a long-time Drupal accessibility contributor, explains why this mindset shift matters for every open source project.",
-    body: [
-      "When accessibility issues are filed as bugs rather than feature requests, they enter the same workflow as any other defect. They get triaged, prioritized, and fixed alongside security vulnerabilities and performance regressions. This normalizes accessibility work and ensures it doesn't get perpetually deferred in favor of 'more important' items.",
-      "Drupal's approach has produced measurable results. The project has consistently improved its accessibility compliance release over release, not through heroic efforts, but through systematic, incremental fixes. Each release includes dozens of accessibility improvements, many contributed by developers who aren't accessibility specialists.",
-      "The key insight is that accessibility bugs are often simpler to fix than they appear. Missing alt text, insufficient color contrast, keyboard trap issues : these are specific, testable problems with clear solutions. Treating them as bugs makes them actionable rather than aspirational.",
-      "For maintainers looking to adopt this approach, the first step is simple: add an accessibility template to your issue tracker. Make it easy for users to report problems and for contributors to find them. From there, prioritize accessibility bugs alongside your other work : because they are your other work.",
-    ],
-  },
-  "custom-codeql": {
-    intro:
-      "CodeQL is GitHub's semantic code analysis engine. While the standard library covers thousands of vulnerabilities, the real power lies in writing custom queries tailored to your specific codebase or internal logic. In this guide, we'll walk through the fundamentals of creating and managing these queries effectively.",
-    body: [
-      "Every CodeQL query (.ql) consists of three main parts: imports, the query body (from-where-select), and metadata. The metadata defines the @id, @kind, and @name : essential for query results to show up in the GitHub UI. The select clause is the output statement that defines exactly what vulnerability or pattern you are reporting.",
-      "Once your query is written, you need to compile it into a pack. Managing custom queries as CodeQL Packs allows for easy versioning and distribution across teams. Always include a qlpack.yml file in your directory to define dependencies and ensure the compiler knows which language to target.",
-      "Don't just search for keywords; use the DataFlow or TaintTracking libraries to track how untrusted input moves through your application. The CodeQL extension for VS Code provides real-time AST visualization, which is invaluable for understanding how CodeQL sees your code structure.",
-      "When testing complex queries, run them against a small sample database first to avoid long compilation times. Mastering custom CodeQL queries turns security from a reactive chore into a proactive, automated process. Start small, use the standard library as a reference, and build your specialized detection logic piece by piece.",
-    ],
-  },
-  "self-hosted-runners": {
-    intro: "GitHub Actions runners execute your CI/CD workflows. While GitHub-hosted runners offer convenience, self-hosted runners give you control over hardware, networking, and tooling that can dramatically improve build performance and reduce costs.",
-    body: [
-      "The primary motivation for self-hosted runners is often cost. For teams running hundreds or thousands of workflow jobs per day, the per-minute pricing of GitHub-hosted runners can add up. Self-hosted runners, running on your own infrastructure, can reduce CI costs by 50-80%.",
-      "Performance is another key factor. Self-hosted runners can be provisioned with exactly the resources your builds need : more CPU, more memory, faster disks, GPU access. You can also cache dependencies and Docker layers persistently, eliminating the cold-start penalty of hosted runners.",
-      "Security considerations cut both ways. Self-hosted runners give you complete control over the execution environment, which can satisfy compliance requirements. But they also require you to manage that security yourself : patching the OS, rotating credentials, and ensuring runner isolation between workflows.",
-    ],
-  },
-  "terraform-infrastructure": {
-    intro: "Infrastructure as Code (IaC) has transformed how teams manage cloud resources. Terraform, combined with GitHub Actions, provides a powerful pipeline for provisioning, updating, and maintaining infrastructure at any scale : from startup to enterprise.",
-    body: [
-      "The key to scaling IaC is treating your infrastructure configurations with the same rigor as application code. This means version control, code review, automated testing, and CI/CD pipelines : all practices that GitHub and Terraform support natively.",
-      "A typical workflow starts with a pull request that proposes infrastructure changes. GitHub Actions runs Terraform plan to preview the changes, and reviewers can see exactly what will be created, modified, or destroyed. Once approved, Terraform apply executes the changes automatically.",
-      "For larger teams, the pattern of 'infrastructure as code review' becomes essential. Just as you wouldn't merge application code without review, infrastructure changes deserve the same scrutiny. This catches misconfigurations early and spreads knowledge across the team.",
-    ],
-  },
-  "developer-resume": {
-    intro: "In an era where AI screening tools and automated systems increasingly filter job applications, crafting a developer resume that stands out requires understanding both the human reader and the machine parser. The good news: the same qualities that make you a great developer can make your resume exceptional.",
-    body: [
-      "The most effective developer resumes focus on impact rather than responsibilities. Instead of listing 'maintained CI/CD pipelines,' write 'reduced deployment time by 60% through automated CI/CD pipeline optimization.' Quantifiable results speak louder than titles.",
-      "Open source contributions deserve prominent placement. A strong GitHub contribution graph, well-documented projects, and meaningful pull requests to established projects demonstrate collaboration, code quality, and communication skills : often more effectively than a list of previous job titles.",
-      "In the age of AI screening, keywords matter but authenticity matters more. Use industry-standard terminology naturally, but don't stuff your resume with buzzwords. AI systems are increasingly sophisticated at detecting keyword manipulation, and human reviewers can spot it instantly.",
-    ],
-  },
-  "project-governance": {
-    intro: "Sustainable open source projects don't happen by accident. They require intentional governance : clear decision-making processes, contribution guidelines, and succession planning. Nadia Eghbal's research on open source sustainability provides a framework for projects of any size.",
-    body: [
-      "The single most important governance decision is defining who makes decisions and how. For small projects, a BDFL (Benevolent Dictator For Life) model can work well. As projects grow, moving to a steering committee or technical oversight board spreads responsibility and prevents burnout.",
-      "Contribution guidelines are your project's handshake with the community. Clear documentation about how to report bugs, propose features, and submit code reduces friction for new contributors and sets expectations for response times and review processes.",
-      "Succession planning is often overlooked but critically important. Every maintainer will eventually step back. Having documented processes, multiple maintainers, and a clear path to leadership ensures the project survives any individual's departure.",
-    ],
-  },
-  "supply-chain-sbom": {
-    intro: "Software supply chain security has emerged as one of the most critical challenges in modern development. An SBOM (Software Bill of Materials) provides a comprehensive inventory of your software's components, dependencies, and their provenance : essential knowledge for vulnerability management.",
-    body: [
-      "The executive order on cybersecurity and initiatives like OpenSSF have made SBOMs a requirement for government software procurement. But even for private sector projects, maintaining an accurate SBOM is a security best practice that pays dividends when the next Log4j-level vulnerability emerges.",
-      "Generating an SBOM can be as simple as adding a step to your CI/CD pipeline. Tools like Syft, CycloneDX, and GitHub's dependency graph can automatically produce SBOMs in standard formats. The challenge is not generation but maintenance : keeping the SBOM accurate as dependencies evolve.",
-      "Beyond compliance, SBOMs enable proactive security. When a CVE is published, teams with accurate SBOMs can immediately identify affected systems rather than scrambling to audit every project. This turns security response from days of investigation into minutes of targeted action.",
-    ],
-  },
-};
 
 export default function GuideContentPage() {
   const { slug } = useParams<{ slug: string }>();
   const guide = allGuides.find((g) => g.href === `/guides/${slug}`);
-  const content = slug ? (guideContent[slug] ?? guide ?? null) : null;
+  const content = guide ?? null;
 
   if (!guide) {
     return (

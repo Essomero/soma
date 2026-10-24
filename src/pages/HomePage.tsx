@@ -61,12 +61,14 @@ export default function HomePage() {
           </div>
           <div className="md:w-1/2 grid grid-cols-2 gap-4">
             <div className="space-y-4">
-              <PodcastCard episode={podcastEpisodes[0]} />
-              <PodcastCard episode={podcastEpisodes[1]} />
+              {podcastEpisodes.slice(0, 2).map((ep) => (
+                <PodcastCard key={ep.id} episode={ep} />
+              ))}
             </div>
             <div className="space-y-4 pt-8">
-              <PodcastCard episode={podcastEpisodes[2]} />
-              <PodcastCard episode={podcastEpisodes[3]} />
+              {podcastEpisodes.slice(2, 4).map((ep) => (
+                <PodcastCard key={ep.id} episode={ep} />
+              ))}
             </div>
           </div>
         </div>

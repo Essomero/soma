@@ -14,9 +14,9 @@ const quickActions = [
 ];
 
 const topMatches = [
-  { icon: BookOpen, label: "Accessibility in OS", sub: "Story by Sarah Drasner", href: "/stories/aaron-progressive", color: "text-primary" },
-  { icon: User, label: "Anton Mirhorodchenko", sub: "Core Contributor // Guide Author", href: "/stories/anton-ai", color: "text-secondary" },
-  { icon: BookOpen, label: "Accelerated Web Performance", sub: "Technical Guide // Infrastructure", href: "/guides/generative-ai", color: "text-tertiary" },
+  { icon: BookOpen, label: "Why Does This Type Error?", sub: "Story // TypeScript", href: "/stories/fs-1-why-this-type-error", color: "text-primary" },
+  { icon: User, label: "Putting the African open source community on the map", sub: "Developer Story", href: "/stories/ruth-ikegah", color: "text-secondary" },
+  { icon: BookOpen, label: "Harness the power of generative AI", sub: "Technical Guide // AI & ML", href: "/guides/generative-ai", color: "text-tertiary" },
 ];
 
 function loadRecent(): string[] {

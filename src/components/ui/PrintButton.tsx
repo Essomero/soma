@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Printer } from "lucide-react";
 
 interface PrintButtonProps {
-  /** Print-route href (e.g. `/stories/foo/print`). Opens in a new tab. */
+  /** Print-route href (e.g. `/stories/fs-1-why-this-type-error/print`). Opens in a new tab. */
   to?: string;
   label?: string;
   title?: string;

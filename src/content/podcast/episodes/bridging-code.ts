@@ -45,8 +45,8 @@ export const bridgingCode: PodcastEpisodeFull = {
     { speaker: "Martin", text: "And I'm Martin Woodward from the GitHub developer relations team. Hey, Neha, there's a phrase that Mark Andreessen made famous: \"Software is eating the world.\" Have you heard of that?" },
   ],
   relatedReading: [
-    { tag: "Featured Article", title: "Non-code contributions are the secret to open source success", image: "https://images.unsplash.com/photo-1559523161-0fc0d8b38a7a?w=1200&h=675&fit=crop", color: "primary", href: "/stories/bridging-code" },
-    { tag: "Guide", title: "Finish your projects: Why completion is a superpower", image: "https://images.unsplash.com/photo-1634944902853-3e977c2de8b6?w=1200&h=675&fit=crop", color: "secondary", href: "/guides/accessibility-bugs" },
-    { tag: "Guide", title: "Secure the open source supply chain", image: "", color: "accent-orange", href: "/guides/supply-chain-sbom" },
+    { tag: "Developer Story", title: "Non-code contributions are the secret to open source success", image: "https://images.unsplash.com/photo-1559523161-0fc0d8b38a7a?w=1200&h=675&fit=crop", color: "primary", href: "/stories/ruth-ikegah" },
+    { tag: "Story", title: "Finish your projects: Why completion is a superpower", image: "https://images.unsplash.com/photo-1634944902853-3e977c2de8b6?w=1200&h=675&fit=crop", color: "secondary", href: "/stories/alchemist-6-epilogue" },
+    { tag: "Story", title: "Trust boundaries: where untrusted input stops", image: "", color: "accent-orange", href: "/stories/fs-5-typing-the-boundary" },
   ],
 };
