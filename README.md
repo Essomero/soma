@@ -240,7 +240,7 @@ New to the content model? Read [Content Types](https://soma.vercel.app/docs/cont
 1. **Private Scratchpad (`/learn`)**: Open **Learn** in the navigation. Draft rough notes, paste snippets, or outline ideas with live KaTeX math and Mermaid diagrams.
 2. **Margin Highlights & In-App AI**: Select any text to attach annotations, ask the inline AI model for clarifications, or store thoughts.
 3. **Oral Practice (`/tests`)**: Run diagnostic technical screens with Son reading questions and scoring spoken answers.
-4. **Agent-Drafted Pieces**: Ask any coding assistant for a story, guide, course, or test. It lands as a private row in your database — preview it locally, iterate, and flip it public only when you say so. No terminal needed either: open **Learn** → **Private content** → **New from manuscript** and paste what the agent produced.
+4. **Agent-Drafted Pieces**: Ask any coding assistant for a story, guide, course, or test. It lands as a private row in your database — open its page to preview, iterate through the agent, and flip it public only when you say so. No terminal, ever.
 5. **One-Click Publishing**: Flip the lock/globe toggle in the margin on any article or note. It is instantly visible to the public without requiring your site password. Unpublishing is the same click, just as instant.
 6. **Physical Print & PDF**: Use `/print` routes (such as `/courses/:slug/print` or `/stories/:slug/print`) for distraction-free printing or PDF generation.
 

@@ -617,11 +617,11 @@ npm run dev
 ```
 Plain `npm run dev` serves the API inline (owner view, private rows included), so one terminal is enough. Open `http://localhost:5173/stories/{slug}` (or `/guides/...`, `/featured/...`). Iterate by re-running `npm run publish`. (`npm run server` + `npm run dev:local` remains as the two-terminal alternative.)
 
-### Step 3b: No-CLI path (owner in the browser)
-The owner never needs a terminal. Open **Learn** in the nav → **Private content** section → **New from manuscript**, paste the manuscript as JSON (same fields as the TypeScript schemas), pick the type, and save. It lands as a private row — same store, same preview, same toggle. The CLI stays available for batch/agent work, but it is never required.
+### Step 3b: No-CLI path (owner never touches a terminal)
+The owner never runs commands. Ask any coding assistant for the piece; it stages the manuscript through its own tooling. You open the page URL, preview it as the owner, and flip the toggle when ready. Publishing into the store is the agent's job; sharing it with the world is yours.
 
 ### Step 4: Go public — owner flips the toggle, never a command
-Only the owner shares, and only with the visibility toggle: on the private piece's page or its **Private content** card, flip private → public. The flip is instant — no rebuild, no redeploy. Unpublishing is the same toggle back (reversible, immediate). There is no CLI flag for going public; putting it in the store and sharing it are separate acts on purpose.
+Only the owner shares, and only with the visibility toggle: open the private piece's own page (you see it as owner) and flip private → public. The flip is instant — no rebuild, no redeploy. Unpublishing is the same toggle back (reversible, immediate). There is no CLI flag for going public; putting it in the store and sharing it are separate acts on purpose.
 
 ### Step 5: Commit the manuscript (published work only)
 Copy the staged file to its archive home (`src/content/stories/my-story.ts`, matching the slug) and commit:

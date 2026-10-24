@@ -6,7 +6,6 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import Tooltip from "@/components/ui/Tooltip";
 import { useAuth } from "@/lib/AuthContext";
 import { fetchLearnList, deleteLearn, deriveExcerpt } from "@/lib/learn";
-import PrivateContent from "@/components/studio/PrivateContent";
 import { type LearnArticle } from "@/types";
 
 function formatDate(iso: string): string {
@@ -144,9 +143,8 @@ export default function LearnIndexPage() {
         </div>
       )}
 
-      {isOwner && <PrivateContent />}
-
       {deleteTarget && (
+
         <ConfirmModal
           title="Delete note?"
           message={`"${deleteTarget.title}" and all its comments and highlights will be permanently removed.`}
