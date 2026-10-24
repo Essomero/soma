@@ -153,6 +153,7 @@ export default function TestPage() {
 
   // LLM Evaluation state
   const [models, setModels] = useState<ModelInfo[]>(DEFAULT_MODELS);
+  const [modelsReady, setModelsReady] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>("deepseek-flash");
   const [selectedProvider, setSelectedProvider] = useState<string>("deepseek");
   const [isCustomAiModalOpen, setIsCustomAiModalOpen] = useState<boolean>(false);
@@ -357,8 +358,9 @@ export default function TestPage() {
     fetch("/api/models")
       .then((r) => r.json())
       .then((data) => {
+        setModels(data.models ?? []);
+        setModelsReady(true);
         if (data.models?.length) {
-          setModels(data.models);
           if (!customConfig?.model) {
             const preferred =
               data.models.find((m: ModelInfo) => m.id === "deepseek-flash") ||
@@ -370,8 +372,12 @@ export default function TestPage() {
           }
         }
       })
-      .catch(() => {});
+      .catch(() => { setModels([]); setModelsReady(true); });
   }, [test]);
+
+  // No provider keys configured yet: AI actions stay visible but disabled,
+  // with a message pointing at the fix, so nobody wonders where AI went.
+  const aiUnavailable = !modelsReady || models.length === 0;
 
   // Enforce session invalidation on tab departure
   useEffect(() => {
@@ -1640,10 +1646,12 @@ export default function TestPage() {
                     ref={modelBtnRef}
                     type="button"
                     onClick={() => setModelMenuOpen((v) => !v)}
-                    className="w-full flex items-center justify-between px-md py-sm bg-surface border border-border-default rounded-lg font-sora text-xs text-on-surface hover:border-primary/50 transition-colors"
+                    disabled={aiUnavailable}
+                    title={aiUnavailable ? "Add an AI provider key in Vercel project settings to enable" : "Choose evaluation model"}
+                    className="w-full flex items-center justify-between px-md py-sm bg-surface border border-border-default rounded-lg font-sora text-xs text-on-surface hover:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="truncate">
-                      {(models.find((m) => m.id === selectedModel && m.provider === selectedProvider) || models.find((m) => m.id === selectedModel))?.label || selectedModel}
+                      {aiUnavailable ? "No AI models available" : ((models.find((m) => m.id === selectedModel && m.provider === selectedProvider) || models.find((m) => m.id === selectedModel))?.label || selectedModel)}
                     </span>
                     <ChevronDown
                       className={`w-3.5 h-3.5 text-on-surface-muted ml-2 transition-transform ${
@@ -1835,6 +1843,12 @@ export default function TestPage() {
               </div>
             </div>
 
+            {aiUnavailable && (
+              <div className="bg-surface-container-low border border-border-default rounded-xl p-md flex items-start gap-sm text-xs font-dm-sans text-on-surface-muted">
+                <span aria-hidden="true">🔌</span>
+                <span>AI evaluation is off: no provider key is configured. Add one (e.g. <code>OPENROUTER_API_KEY</code>) in Vercel project settings and redeploy to enable grading. Your answers above are safe; copy the external prompt to grade them elsewhere in the meantime.</span>
+              </div>
+            )}
             <div className="flex items-center justify-end gap-md pt-xl border-t border-border-default/40">
               <Button
                 variant="outline"
@@ -1845,11 +1859,12 @@ export default function TestPage() {
                 <span>{copiedPrompt ? "Prompt Copied!" : "Copy External Prompt"}</span>
               </Button>
 
+              <span title={aiUnavailable ? "Add an AI provider key in Vercel project settings to enable" : "Submit answers for AI grading"}>
               <Button
                 variant="primary"
                 onClick={() => executeEvaluation(answers)}
-                disabled={isEvaluating}
-                className="gap-2 bg-brand-green text-[#0a0e14] hover:bg-brand-green/90 font-bold shadow-lg"
+                disabled={isEvaluating || aiUnavailable}
+                className="gap-2 bg-brand-green text-[#0a0e14] hover:bg-brand-green/90 font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isEvaluating ? (
                   <>
@@ -1863,6 +1878,7 @@ export default function TestPage() {
                   </>
                 )}
               </Button>
+              </span>
             </div>
           </div>
         )}
