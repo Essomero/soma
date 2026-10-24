@@ -34,6 +34,7 @@ export default function FeaturedArticlePage() {
     whyIBuiltSoma.description,
     ...(whyIBuiltSoma.sections || []).flatMap((s) => [s.heading, ...(s.paragraphs || []).filter((p): p is string => typeof p === "string")]),
   ].join(" ");
+  const featuredMarkdown = contentToMarkdown({ title: whyIBuiltSoma.title, intro: whyIBuiltSoma.description, sections: whyIBuiltSoma.sections });
   return (
     <div>
       {/* Immersive Hero */}
@@ -51,9 +52,9 @@ export default function FeaturedArticlePage() {
       <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant grid grid-cols-1 md:grid-cols-12 gap-giant">
         {/* Sidebar */}
         <aside className="md:col-span-3 space-y-xl border-t border-border-default pt-xl md:pt-0">
-          <SidebarAbout publicToggleSlug={isOwner ? STORY_SLUG : undefined} />
+          <SidebarAbout publicToggleSlug={isOwner ? STORY_SLUG : undefined} markdownContent={featuredMarkdown} />
           <div className="hidden md:block">
-            <ShareButtons variant="column" markdownContent={contentToMarkdown({ title: whyIBuiltSoma.title, intro: whyIBuiltSoma.description, sections: whyIBuiltSoma.sections })} />
+            <ShareButtons variant="column" markdownContent={featuredMarkdown} />
           </div>
           <div className="hidden md:block">
             <PrintButton stretch label="Print / Save PDF" />

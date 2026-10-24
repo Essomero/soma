@@ -57,7 +57,7 @@ export default function GenericFeaturedPage() {
       <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant grid grid-cols-1 md:grid-cols-12 gap-giant">
         {/* Sidebar */}
         <aside className="md:col-span-3 space-y-xl border-t border-border-default pt-xl md:border-t-0 md:pt-0">
-          <SidebarAbout />
+          <SidebarAbout markdownContent={contentToMarkdown({ title: article.title, intro: [article.tagline, article.description].filter(Boolean).join("\n\n"), sections: article.sections })} />
           <div className="hidden md:block">
             <ShareButtons variant="column" markdownContent={contentToMarkdown({ title: article.title, intro: [article.tagline, article.description].filter(Boolean).join("\n\n"), sections: article.sections })} />
           </div>
