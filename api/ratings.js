@@ -1,3 +1,4 @@
+import { rateLimit } from "./_limits.js";
 const DB_URL = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").replace("libsql://", "https://");
 const TOKEN = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "";
 
@@ -84,7 +85,10 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "POST") {
+      if (!rateLimit(req, res, { key: "ratings-post", limit: 20, windowMs: 60_000 })) return;
       const { slug, rating } = req.body || {};
+      if (typeof slug !== "string" || !slug || slug.length > 200) return res.status(400).json({ error: "invalid slug" });
+      if (typeof rating !== "number" || !Number.isFinite(rating) || rating < 1 || rating > 5) return res.status(400).json({ error: "rating must be 1-5" });
       const now = new Date().toISOString();
       await query(
         "INSERT INTO ratings (story_slug, rating, rated_at) VALUES (?, ?, ?) ON CONFLICT(story_slug) DO UPDATE SET rating = excluded.rating, rated_at = excluded.rated_at",
@@ -95,7 +99,7 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ error: "Method not allowed" });
   } catch (e) {
-    console.error("Handler error:", e.message);
-    return res.status(500).json({ error: e.message });
+    console.error("Handler error:", e instanceof Error ? e.message : String(e));
+    return res.status(500).json({ error: "Internal server error" });
   }
 }

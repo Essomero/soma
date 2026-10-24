@@ -158,7 +158,7 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ error: "Method not allowed" });
   } catch (e) {
-    console.error("Learn handler error:", e.message);
-    return res.status(500).json({ error: e.message });
+    console.error("Learn handler error:", e instanceof Error ? e.message : String(e));
+    return res.status(500).json({ error: "Internal server error" });
   }
 }

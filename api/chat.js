@@ -25,11 +25,6 @@ const STRAITLY_MODEL_IDS = new Set([
 ]);
 
 export default async function handler(req, res) {
-  // CORS
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
   if (req.method === "OPTIONS") {
     return res.status(204).end();
   }
@@ -41,7 +36,10 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
-  let { systemPrompt, userMessage, messages: reqMessages, model, stream, provider, apiKey: customApiKey, apiUrl: customApiUrl } = req.body || {};
+  // customApiUrl/customApiKey deliberately ignored: the server picks the
+  // endpoint and key from the provider map below (SSRF fix). Any client
+  // supplied URL would turn this authenticated proxy into a fetch oracle.
+  let { systemPrompt, userMessage, messages: reqMessages, model, stream, provider } = req.body || {};
 
   if (!userMessage && Array.isArray(reqMessages)) {
     const sys = reqMessages.find(m => m.role === "system");
@@ -53,13 +51,22 @@ export default async function handler(req, res) {
   if (!userMessage) {
     return res.status(400).json({ error: "userMessage is required" });
   }
+  if (typeof userMessage !== "string" || userMessage.length > 20000) {
+    return res.status(400).json({ error: "userMessage too long" });
+  }
+  if (systemPrompt && (typeof systemPrompt !== "string" || systemPrompt.length > 20000)) {
+    return res.status(400).json({ error: "systemPrompt too long" });
+  }
+  if (typeof model !== "undefined" && (typeof model !== "string" || model.length > 200)) {
+    return res.status(400).json({ error: "invalid model" });
+  }
 
-  // Determine provider: explicit param first, fallback to inference only if omitted
+  // Determine provider: explicit param first, fallback to inference only if omitted.
+  // No "custom" provider: endpoint URLs are server constants, never client input.
+  const ALLOWED_PROVIDERS = new Set(["straitly", "gemini", "openrouter", "groq", "cerebras", "deepseek"]);
   let resolvedProvider = provider;
   if (!resolvedProvider) {
-    if (customApiUrl) {
-      resolvedProvider = "custom";
-    } else if (model && (model.startsWith("straitly/") || STRAITLY_MODEL_IDS.has(model))) {
+    if (model && (model.startsWith("straitly/") || STRAITLY_MODEL_IDS.has(model))) {
       resolvedProvider = "straitly";
     } else if (model && model.startsWith("gemini-")) {
       resolvedProvider = "gemini";
@@ -69,37 +76,35 @@ export default async function handler(req, res) {
       resolvedProvider = "deepseek";
     }
   }
+  if (!ALLOWED_PROVIDERS.has(resolvedProvider)) {
+    return res.status(400).json({ error: "unknown provider" });
+  }
 
-  const isCustom = resolvedProvider === "custom";
   const isStraitly = resolvedProvider === "straitly";
   const isGemini = resolvedProvider === "gemini";
   const isOpenRouter = resolvedProvider === "openrouter";
   const isGroq = resolvedProvider === "groq";
   const isCerebras = resolvedProvider === "cerebras";
-  const isDeepSeek = resolvedProvider === "deepseek";
 
   let apiKey, apiUrl;
-  if (isCustom) {
-    apiKey = customApiKey || "custom-key";
-    apiUrl = customApiUrl || "https://api.openai.com/v1/chat/completions";
-  } else if (isGemini) {
-    apiKey = customApiKey || GEMINI_KEY;
-    apiUrl = customApiUrl || GEMINI_URL;
+  if (isGemini) {
+    apiKey = GEMINI_KEY;
+    apiUrl = GEMINI_URL;
   } else if (isOpenRouter) {
-    apiKey = customApiKey || OPENROUTER_KEY;
-    apiUrl = customApiUrl || OPENROUTER_URL;
+    apiKey = OPENROUTER_KEY;
+    apiUrl = OPENROUTER_URL;
   } else if (isGroq) {
-    apiKey = customApiKey || GROQ_KEY;
-    apiUrl = customApiUrl || GROQ_URL;
+    apiKey = GROQ_KEY;
+    apiUrl = GROQ_URL;
   } else if (isCerebras) {
-    apiKey = customApiKey || CEREBRAS_KEY;
-    apiUrl = customApiUrl || CEREBRAS_URL;
+    apiKey = CEREBRAS_KEY;
+    apiUrl = CEREBRAS_URL;
   } else if (isStraitly) {
-    apiKey = customApiKey || STRAITLY_KEY;
-    apiUrl = customApiUrl || STRAITLY_URL;
+    apiKey = STRAITLY_KEY;
+    apiUrl = STRAITLY_URL;
   } else {
-    apiKey = customApiKey || DEEPSEEK_KEY;
-    apiUrl = customApiUrl || DEEPSEEK_URL;
+    apiKey = DEEPSEEK_KEY;
+    apiUrl = DEEPSEEK_URL;
   }
 
   if (!apiKey) {
@@ -172,7 +177,7 @@ export default async function handler(req, res) {
         model: selectedModel,
         messages,
         temperature: 0.7,
-        max_tokens: req.body?.max_tokens || 3500,
+        max_tokens: Math.min(Math.max(Number(req.body?.max_tokens) || 3500, 1), 4000),
         stream: shouldStream,
       }),
       signal: controller.signal,
@@ -192,9 +197,6 @@ export default async function handler(req, res) {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
         "Connection": "keep-alive",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
       });
 
       const reader = r.body.getReader();

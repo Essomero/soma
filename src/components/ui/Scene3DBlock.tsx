@@ -276,11 +276,21 @@ function ObjectNode({ obj, mods }: { obj: SceneObject; mods: SceneMods }) {
 }
 
 // Compile the surface expression: a JS function of (x, y) → height.
-// Author-supplied code, but the only inputs are numeric x and y and the
-// only output is a number : same trust level as markdown.
+// Author-supplied code, so the evaluator is allowlisted to math only.
+// Anything outside numbers, x/y, operators, and Math.* helpers is rejected
+// and the surface falls flat instead of running arbitrary JS.
+const SURFACE_TOKENS = /^(?:\s*(?:\d+(?:\.\d+)?|\.\d+|x|y|\+|-|\*|\/|%|\^|\(|\)|,|\s|Math\.(?:sin|cos|tan|asin|acos|atan|atan2|sqrt|cbrt|pow|abs|exp|log|min|max|floor|ceil|round|PI|E))*)+$/;
 function compileSurfaceExpression(expr: string): (x: number, y: number) => number {
-  // eslint-disable-next-line no-new-func
-  return new Function("x", "y", `return (${expr});`) as (x: number, y: number) => number;
+  if (typeof expr !== "string" || expr.length > 500 || !SURFACE_TOKENS.test(expr)) return () => 0;
+  try {
+    // eslint-disable-next-line no-new-func
+    const fn = new Function("x", "y", `"use strict"; return (${expr});`) as (x: number, y: number) => number;
+    const probe = fn(0, 0);
+    if (typeof probe !== "number" || !Number.isFinite(probe)) return () => 0;
+    return fn;
+  } catch {
+    return () => 0;
+  }
 }
 
 function SurfaceNode({ obj, THREE, mods }: { obj: Extract<SceneObject, { kind: "surface" }>; THREE: SceneMods["THREE"]; mods: SceneMods }) {

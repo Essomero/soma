@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
 import katex from "katex";
 import hljs from "highlight.js";
+import DOMPurify from "dompurify";
 import type { ContentBlock } from "@/types";
 import { mdBlock } from "@/lib/markdown";
 import { useScrollLock } from "@/lib/useScrollLock";
@@ -111,6 +112,7 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
       const isDark = theme === "dark";
       mermaid.default.initialize({
         startOnLoad: false,
+        securityLevel: "strict",
         theme: isDark ? "dark" : "neutral",
         themeVariables: isDark
           ? {
@@ -133,8 +135,9 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
         .render(renderId, diagram)
         .then(({ svg }) => {
           if (ref.current && !cancelled) {
-            svgRef.current = svg;
-            ref.current.innerHTML = svg;
+            const clean = DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true } });
+            svgRef.current = clean;
+            ref.current.innerHTML = clean;
           }
         })
         .catch(() => {

@@ -1,4 +1,8 @@
 import { isAuthed, requireAuth } from "./_auth.js";
+import { rateLimit } from "./_limits.js";
+
+const MAX_BODY = 5000;
+const MAX_FIELD = 2000;
 
 const DB_URL = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").replace("libsql://", "https://");
 const TOKEN = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "";
@@ -157,8 +161,14 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "POST") {
+      if (!rateLimit(req, res, { key: "comments-post", limit: 20, windowMs: 60_000 })) return;
       const { storySlug, body, parentId, isAi, aiModel, highlightId, sectionIndex, paragraphIndex, startOffset, endOffset, selectedText } = req.body || {};
       if (!storySlug || !body) return res.status(400).json({ error: "storySlug and body required" });
+      if (typeof body !== "string" || body.length > MAX_BODY) return res.status(400).json({ error: "body too long" });
+      if (typeof storySlug !== "string" || storySlug.length > 200) return res.status(400).json({ error: "invalid storySlug" });
+      for (const f of [selectedText, aiModel]) {
+        if (typeof f !== "undefined" && f !== null && (typeof f !== "string" || f.length > MAX_FIELD)) return res.status(400).json({ error: "field too long" });
+      }
 
       const now = new Date().toISOString();
       const result = await query(
@@ -188,7 +198,7 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ error: "Method not allowed" });
   } catch (e) {
-    console.error("Handler error:", e.message);
-    return res.status(500).json({ error: e.message });
+    console.error("Handler error:", e instanceof Error ? e.message : String(e));
+    return res.status(500).json({ error: "Internal server error" });
   }
 }

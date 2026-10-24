@@ -254,22 +254,24 @@ export default async function handler(req, res) {
     // rules, so anonymous search can never surface private rows.
     if (req.method === "GET" && req.query.type) {
       const authed = isAuthed(req);
-      const statusFilter = authed && req.query.status && STATUSES.has(req.query.status)
-        ? " AND status = '" + req.query.status + "'"
-        : (authed ? "" : " AND status = 'published'");
+      const statusValue = authed && typeof req.query.status === "string" && STATUSES.has(req.query.status)
+        ? req.query.status
+        : (authed ? null : "published");
+      const statusClause = statusValue ? " AND status = ?" : "";
+      const baseArgs = (extra) => statusValue ? [req.query.type, statusValue, ...extra] : [req.query.type, ...extra];
       const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
       if (q) {
         const like = "%" + q.replace(/[\\%_]/g, (c) => "\\" + c) + "%";
         const rows = await query(
-          `SELECT * FROM content_items WHERE type = ?${statusFilter}
+          `SELECT * FROM content_items WHERE type = ?${statusClause}
            AND (title LIKE ? ESCAPE '\\' OR excerpt LIKE ? ESCAPE '\\' OR body_json LIKE ? ESCAPE '\\')
            ORDER BY position ASC`,
-          [req.query.type, like, like, like]);
+          baseArgs([like, like, like]));
         return res.json(rows.map(mapRow));
       }
       const rows = await query(
-        `SELECT * FROM content_items WHERE type = ?${statusFilter} ORDER BY position ASC`
-        , [req.query.type]);
+        `SELECT * FROM content_items WHERE type = ?${statusClause} ORDER BY position ASC`
+        , baseArgs([]));
       return res.json(rows.map(mapRow));
     }
 
@@ -320,7 +322,7 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ error: "Method not allowed" });
   } catch (e) {
-    console.error("Content handler error:", e.message);
-    return res.status(500).json({ error: e.message });
+    console.error("Content handler error:", e instanceof Error ? e.message : String(e));
+    return res.status(500).json({ error: "Internal server error" });
   }
 }

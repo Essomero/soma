@@ -1,5 +1,19 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { timingSafeEqual } from "node:crypto";
 import { createSessionToken, isAuthed } from "./_auth.js";
+import { rateLimit } from "./_limits.js";
+
+function passwordsMatch(a: unknown, b: string): boolean {
+  if (typeof a !== "string") return false;
+  const ab = Buffer.from(a, "utf8");
+  const bb = Buffer.from(b, "utf8");
+  if (ab.length !== bb.length) return false;
+  try {
+    return timingSafeEqual(ab, bb);
+  } catch {
+    return false;
+  }
+}
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   // GET : session check for AuthGuard. The client-readable flag alone
@@ -12,6 +26,8 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
+  // 10 attempts/minute per IP: single-password gate, brute-force first.
+  if (!rateLimit(req as never, res as never, { key: "login", limit: 10, windowMs: 60_000 })) return;
   const { password } = req.body || {};
   const validPassword = process.env.SITE_PASSWORD;
 
@@ -19,7 +35,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: "Auth not configured" });
   }
 
-  if (password === validPassword) {
+  if (passwordsMatch(password, validPassword)) {
     // Two cookies: soma_auth stays the client-readable UX flag AuthGuard
     // checks from document.cookie. soma_session is the HttpOnly HMAC-signed
     // token every /api/* handler enforces (see api/_auth.js). The flag alone

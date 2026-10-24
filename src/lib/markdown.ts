@@ -9,8 +9,9 @@ import type { ContentBlock } from "@/types";
  * and learn notes are visitor input rendered with dangerouslySetInnerHTML
  * downstream, so raw HTML, event handlers, and javascript: URLs must die here.
  * `style` stays allowed because KaTeX positions math with inline styles;
- * modern browsers no longer execute script from style, and the auth cookie
- * holds a boolean flag rather than a session worth stealing.
+ * modern browsers no longer execute script from style. XSS here cannot read
+ * the HttpOnly session cookie, but it can still ride it via same-origin
+ * fetch, so sanitization stays mandatory.
  */
 function clean(html: string): string {
   return DOMPurify.sanitize(html, { ADD_ATTR: ["style"] });
