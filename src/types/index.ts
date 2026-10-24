@@ -401,7 +401,7 @@ export interface PodcastEpisodeFull {
   coverAlt?: string;
   segments?: { time: string; title: string; description: string }[];
   guests?: { name: string; role: string; description: string; color: string }[];
-  transcript?: { speaker: string; text: string }[];
+  transcript?: { speaker: string; text: string; start?: number }[]; // start: seconds into audio, for transcript sync
   relatedReading?: { tag: string; title: string; image: string; color: string; href: string }[];
 }
 

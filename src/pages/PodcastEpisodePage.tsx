@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams, Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { Star, User, PenLine, ChevronLeft, ChevronRight, Printer } from "lucide-react";
@@ -23,6 +23,36 @@ export default function PodcastEpisodePage() {
   const idx = sortedByDate.indexOf(episode);
   const prev = idx > 0 ? sortedByDate[idx - 1] : null;
   const next = idx < sortedByDate.length - 1 ? sortedByDate[idx + 1] : null;
+
+  // ── Transcript sync ─────────────────────────────────
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [seekReq, setSeekReq] = useState<{ time: number; req: number } | null>(null);
+  const turnRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const synced = episode.transcript?.some((l) => l.start != null) ?? false;
+
+  const toSeconds = (s: string) => {
+    const p = s.split(":").map(Number);
+    return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] * 60 + p[1];
+  };
+
+  const seekToTime = useCallback((time: number) => {
+    setSeekReq((r) => ({ time, req: (r?.req ?? 0) + 1 }));
+  }, []);
+
+  const handleTimeUpdate = useCallback((t: number) => {
+    const tr = episode.transcript;
+    if (!tr || tr.length === 0) return;
+    let idx = 0;
+    for (let i = 0; i < tr.length; i++) {
+      if ((tr[i].start ?? 0) <= t) idx = i;
+      else break;
+    }
+    setActiveIdx((prev) => (prev === idx ? prev : idx));
+  }, [episode]);
+
+  useEffect(() => {
+    turnRefs.current[activeIdx]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [activeIdx]);
 
   // Body text for comments context
   const bodyText = episode.transcript
@@ -71,6 +101,8 @@ export default function PodcastEpisodePage() {
           durationSeconds={episode.durationSeconds}
           episodeSlug={episode.slug}
           title={episode.title}
+          onTimeUpdate={synced ? handleTimeUpdate : undefined}
+          seekTo={seekReq}
         />
       )}
 
@@ -89,13 +121,13 @@ export default function PodcastEpisodePage() {
               {episode.segments && (
                 <div className="space-y-md border-l-2 border-border-default pl-xl">
                   {episode.segments.map((seg) => (
-                    <div key={seg.time} className="flex gap-md group">
+                    <button key={seg.time} onClick={() => seekToTime(toSeconds(seg.time))} className="flex gap-md group text-left w-full rounded-md px-2 -mx-2 py-1 hover:bg-surface-container transition-colors">
                       <span className="font-sora text-label-caps text-primary pt-1 shrink-0">{seg.time}</span>
                       <div>
                         <p className="font-dm-sans font-bold text-on-surface">{seg.title}</p>
                         <p className="font-dm-sans text-sm text-on-surface-muted">{seg.description}</p>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -157,7 +189,13 @@ export default function PodcastEpisodePage() {
               </div>
               <div className="p-lg h-96 overflow-y-auto font-dm-sans text-on-surface-variant space-y-lg text-sm leading-relaxed">
                 {episode.transcript.map((line, i) => (
-                  <div key={i}>
+                  <div
+                    key={i}
+                    ref={(el) => { turnRefs.current[i] = el; }}
+                    onClick={() => { if (line.start != null) seekToTime(line.start); }}
+                    title={line.start != null ? "Jump audio here" : undefined}
+                    className={`rounded-md px-2 -mx-2 py-1 transition-colors ${line.start != null ? "cursor-pointer" : ""} ${synced && i === activeIdx ? "bg-primary/10" : ""}`}
+                  >
                     <p className="font-bold text-on-surface mb-1 uppercase tracking-tighter text-xs">
                       {line.speaker}:
                     </p>
@@ -256,7 +294,7 @@ export default function PodcastEpisodePage() {
             <p className="font-dm-sans text-sm text-on-surface-muted mb-lg">
               Know a topic that deserves a deep dive? Let us know.
             </p>
-            <a className="inline-block font-sora text-label-caps text-primary hover:underline" href="#">
+            <a className="inline-block font-sora text-label-caps text-primary hover:underline" href="https://github.com/Essomero/soma/issues/new" target="_blank" rel="noopener noreferrer">
               Suggest Now →
             </a>
           </section>

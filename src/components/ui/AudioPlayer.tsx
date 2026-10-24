@@ -13,6 +13,8 @@ interface AudioPlayerProps {
   episodeSlug?: string;
   title?: string;
   className?: string;
+  onTimeUpdate?: (seconds: number) => void;
+  seekTo?: { time: number; req: number } | null;
 }
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -46,6 +48,8 @@ export default function AudioPlayer({
   episodeSlug,
   title,
   className,
+  onTimeUpdate,
+  seekTo,
 }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -56,6 +60,11 @@ export default function AudioPlayer({
   const [speed, setSpeed] = useState(1);
   const [showSpeed, setShowSpeed] = useState(false);
   const [hasResumed, setHasResumed] = useState(false);
+  const onTimeUpdateRef = useRef(onTimeUpdate);
+
+  useEffect(() => {
+    onTimeUpdateRef.current = onTimeUpdate;
+  }, [onTimeUpdate]);
 
   // ── Create audio element ────────────────────────────
   useEffect(() => {
@@ -78,7 +87,10 @@ export default function AudioPlayer({
       }
     };
 
-    const onTime = () => setCurrentTime(audio.currentTime);
+    const onTime = () => {
+      setCurrentTime(audio.currentTime);
+      onTimeUpdateRef.current?.(audio.currentTime);
+    };
     const onEnd = () => setIsPlaying(false);
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
@@ -99,6 +111,14 @@ export default function AudioPlayer({
       audio.src = "";
     };
   }, [audioUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── External seek (transcript / chapter click) ─────
+  useEffect(() => {
+    if (seekTo && audioRef.current) {
+      audioRef.current.currentTime = seekTo.time;
+      setCurrentTime(seekTo.time);
+    }
+  }, [seekTo]);
 
   // ── Persist progress on pause / unmount ─────────────
   const persist = useCallback(() => {
