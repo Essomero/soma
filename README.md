@@ -103,7 +103,7 @@ Turso hosts your edge SQLite database. The free tier covers personal use. Two pa
 1. Sign up at [turso.tech](https://turso.tech) (GitHub login works).
 2. Open Databases and create one named `soma-db`. Pick the region closest to you; the default is fine.
 3. Open the database. The Overview page shows a Connect section with the Database URL and a copy button. Copy it. That is your `TURSO_DB`.
-4. Click **Create Token** right below the URL, and copy the token. That is your `TURSO_TOKEN`.
+4. Click **Create Token** right below the URL. A dialog shows the token and the URL together. Copy both immediately: the token is shown once and never again. If you close the dialog first, create a fresh token.
 
 **Path B: Command line.**
 ```bash
