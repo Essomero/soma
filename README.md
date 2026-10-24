@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/icon-soma.png" alt="Soma icon" width="128" />
+</p>
+
 # Soma
 
 > Think on paper but digital. Learn anything at your pace, in your own infrastructure, and make public what you wish.
