@@ -154,10 +154,20 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
     return () => document.removeEventListener("mousedown", handler);
   }, [modelMenuOpen]);
 
+  // Turso returns integers as strings; normalize once on the way in so
+  // identity checks below (containsId, reply attach) compare numbers.
+  const normalize = (nodes: any[]): Comment[] => nodes.map(n => ({
+    ...n,
+    id: Number(n.id),
+    parent_id: n.parent_id != null ? Number(n.parent_id) : null,
+    is_ai: Number(n.is_ai ?? 0),
+    replies: normalize(n.replies || []),
+  }));
+
   const fetchComments = useCallback(async () => {
     try {
       const r = await fetch(`/api/comments?story=${encodeURIComponent(storySlug)}`);
-      if (r.ok) setComments(await r.json());
+      if (r.ok) setComments(normalize(await r.json()));
     } catch {}
   }, [storySlug]);
 
