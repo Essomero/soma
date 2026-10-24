@@ -59,8 +59,8 @@ export default function FeaturedArticlePage() {
         description="Most tools force a trade: publish before you understand, or understand in a silo nobody can see. I built Soma so learning and publishing live in the same place, on infrastructure you own."
         author={somaAuthor}
         date="October 24, 2026"
-        image="https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&h=675&fit=crop"
-        imageAlt="Benjamin Mayanja"
+        image="https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=1200&h=675&fit=crop"
+        imageAlt="Writing by hand in a paper planner next to a laptop, coffee, and books"
       />
 
       {/* Article Content */}
