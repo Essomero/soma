@@ -20,7 +20,7 @@ const REQUIRED: Record<string, string[]> = {
   topic: ["slug", "title"],
 };
 
-interface DraftRow {
+interface PrivateRow {
   slug: string;
   type: string;
   status: string;
@@ -60,17 +60,17 @@ function parseManuscript(text: string, type: string): { slug: string; title: str
   return { slug, title, excerpt: typeof desc === "string" ? desc : "", body };
 }
 
-function DraftCard({ row, onChanged }: { row: DraftRow; onChanged: () => void }) {
+function PrivateCard({ row, onChanged }: { row: PrivateRow; onChanged: () => void }) {
   const { isPublic, toggle } = usePublicState(row.slug);
   return (
     <article className="group flex flex-col border-2 border-inverse-surface bg-surface rounded-none overflow-hidden">
       <div className="block flex-1 p-lg flex flex-col">
         <p className="font-sora text-metadata-tag text-on-surface-muted uppercase tracking-widest mb-md">
-          {row.type} // updated {formatDate(row.updatedAt)} {isPublic ? "// public" : "// draft"}
+          {row.type} // updated {formatDate(row.updatedAt)} {isPublic ? "// public" : "// private"}
         </p>
         <h3 className="font-sora text-xl text-on-surface mb-md">{row.title || row.slug}</h3>
         <div className="flex items-center gap-xs mt-auto">
-          <Tooltip label="Preview as the owner (visitors cannot see drafts)">
+          <Tooltip label="Preview as the owner (visitors cannot see private pieces)">
             <Link
               to={row.href}
               className="inline-flex items-center gap-xs px-md py-xs rounded-md font-sora text-[10px] uppercase tracking-widest text-on-surface-muted hover:text-primary hover:bg-surface-container transition-colors"
@@ -128,7 +128,7 @@ function ManuscriptDialog({ onClose, onSaved }: { onClose: () => void; onSaved: 
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-md">
-          <h2 className="font-sora text-xl text-on-surface">New draft from manuscript</h2>
+          <h2 className="font-sora text-xl text-on-surface">New private piece from manuscript</h2>
           <button onClick={onClose} aria-label="Close" className="text-on-surface-muted hover:text-primary">
             <X className="w-5 h-5" />
           </button>
@@ -163,14 +163,14 @@ function ManuscriptDialog({ onClose, onSaved }: { onClose: () => void; onSaved: 
           <p className="font-dm-sans text-sm text-error mb-md">{error}</p>
         )}
         <div className="flex justify-end">
-          <Tooltip label="Saves to your database as a private draft — nothing becomes public until you flip its visibility toggle.">
+          <Tooltip label="Saves to your database as a private piece — nothing becomes public until you flip its visibility toggle.">
             <button
               onClick={save}
               disabled={saving || !text.trim()}
               className="inline-flex items-center gap-xs px-xl py-md rounded-none font-sora text-sm font-bold bg-primary text-on-primary border-2 border-inverse-surface shadow-brutal-sm hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-brutal active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all disabled:opacity-50"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-              Save as draft
+              Save as private
             </button>
           </Tooltip>
         </div>
@@ -179,8 +179,8 @@ function ManuscriptDialog({ onClose, onSaved }: { onClose: () => void; onSaved: 
   );
 }
 
-export default function DraftsSection() {
-  const [drafts, setDrafts] = useState<DraftRow[]>([]);
+export default function PrivateContent() {
+  const [pieces, setPieces] = useState<PrivateRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -190,9 +190,9 @@ export default function DraftsSection() {
       const r = await fetch("/api/content");
       if (!r.ok) throw new Error();
       const rows = await r.json();
-      setDrafts((Array.isArray(rows) ? rows : []).filter((d) => d.status === "draft"));
+      setPieces((Array.isArray(rows) ? rows : []).filter((d) => d.status !== "published"));
     } catch {
-      setDrafts([]);
+      setPieces([]);
     } finally {
       setLoading(false);
     }
@@ -204,7 +204,7 @@ export default function DraftsSection() {
     <section className="mt-giant pt-giant border-t border-border-default">
       <div className="flex items-end justify-between gap-lg flex-wrap mb-md">
         <div>
-          <h2 className="font-sora text-article-title text-on-surface">Content drafts</h2>
+          <h2 className="font-sora text-article-title text-on-surface">Private content</h2>
           <p className="font-dm-sans text-body-base text-on-surface-variant max-w-2xl mt-sm">
             Agent manuscripts and unpublished pieces live here, in your database — never in git, never visible to visitors. Preview as owner, flip the toggle to go public.
           </p>
@@ -221,17 +221,17 @@ export default function DraftsSection() {
         <div className="flex items-center justify-center py-xxl">
           <Loader2 className="w-6 h-6 animate-spin text-primary" />
         </div>
-      ) : drafts.length === 0 ? (
+      ) : pieces.length === 0 ? (
         <div className="py-xxl text-center border border-dashed border-border-default rounded-none">
           <FileText className="w-8 h-8 mx-auto text-on-surface-muted mb-md" />
           <p className="font-dm-sans text-sm text-on-surface-muted">
-            No drafts. Ask any coding assistant for a piece, or paste its manuscript above.
+            Nothing private right now. Ask any coding assistant for a piece, or paste its manuscript above.
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
-          {drafts.map((d) => (
-            <DraftCard key={`${d.type}/${d.slug}`} row={d} onChanged={load} />
+          {pieces.map((d) => (
+            <PrivateCard key={`${d.type}/${d.slug}`} row={d} onChanged={load} />
           ))}
         </div>
       )}

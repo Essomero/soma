@@ -25,7 +25,7 @@ const somaAuthor: Author = { name: "Benjamin Mayanja", handle: "@Essomero" };
 const somaBentoHighlights: BentoCardData[] = [
   { label: "SOVEREIGN BY DEFAULT", title: "Your Words Live in Your Database", description: "Notes, highlights, and publishing toggles sit in your own Turso edge SQLite behind one password you invent. There is no Soma cloud holding your writing hostage." },
   { label: "LEARN OUT LOUD", title: "Reading You Can Prove", description: "Margin AI explains any paragraph, Soma Labs turns lessons into runnable drills, and the Son voice agent scores your spoken answers in real time." },
-  { label: "AGENTS THAT PUBLISH", title: "Publishing Is a Git Push", description: "Soma ships the same skills its author writes with, so any coding assistant can draft typed content, run the build, and open a pull request." },
+  { label: "AGENTS THAT PUBLISH", title: "Staged Private, Shared by Choice", description: "Soma ships the same skills its author writes with, so any coding assistant can draft typed content and stage it into your database as a private piece. One toggle makes it public." },
 ];
 
 const somaPullQuotes: PullQuoteData[] = [
@@ -154,8 +154,8 @@ export default function FeaturedArticlePage() {
               Then say it out loud. The Son voice agent reads diagnostic test
               questions to you and scores your spoken answers in real time,
               all from your own machine. And when the words are ready, any
-              coding assistant can draft them as typed content and ship with
-              a git push. If one reader prints a course, runs every lab, and
+              coding assistant can draft them as typed content staged private
+              in your database. One toggle makes them public. If one reader
               passes an oral screen without ever touching someone else's
               server, Soma did its job.
             </p>

@@ -94,7 +94,7 @@ export default async function handler(req, res) {
         // Content rows carry their own status column (read by /api/content);
         // the toggle writes both stores so route gate and data gate agree.
         // No content_items table yet (fresh DB, learn-only notes) → no-op.
-        await query("UPDATE content_items SET status = ?, updated_at = ? WHERE slug = ?", [isPublic ? "published" : "draft", now, slug]);
+        await query("UPDATE content_items SET status = ?, updated_at = ? WHERE slug = ?", [isPublic ? "published" : "private", now, slug]);
       }
 
       return res.json({ success: true });

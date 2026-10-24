@@ -37,7 +37,7 @@ export async function getDb() {
 export const CREATE_CONTENT_ITEMS = `CREATE TABLE IF NOT EXISTS content_items (
   slug TEXT PRIMARY KEY,
   type TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'draft',
+  status TEXT NOT NULL DEFAULT 'private',
   title TEXT NOT NULL DEFAULT '',
   excerpt TEXT NOT NULL DEFAULT '',
   body_json TEXT NOT NULL,

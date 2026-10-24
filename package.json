@@ -13,7 +13,6 @@
     "rss": "npx tsx scripts/generate-rss.ts",
     "preview": "vite preview",
     "server": "node server/api-dev.mjs",
-    "seed": "npx tsx scripts/seed-content.ts",
     "publish": "npx tsx scripts/publish-content.ts"
   },
   "dependencies": {

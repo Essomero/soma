@@ -38,7 +38,7 @@ const guideTipCards: TipCardData[] = [
   { icon: "AlertTriangle", bgClass: "bg-error-container/20", iconColorClass: "text-error", title: "Set the password before you deploy", description: "Deploying without SITE_PASSWORD breaks login and forces a redeploy to fix. Add it on the Vercel configure page first." },
   { icon: "Terminal", bgClass: "bg-secondary/20", iconColorClass: "text-secondary", title: "Keep VITE_ vars local", description: "Local-only keys stay in .env.local. Baking them into Vercel would ship your database token inside public JavaScript." },
   { icon: "Minus", bgClass: "bg-primary-container/20", iconColorClass: "text-primary", title: "One toggle publishes", description: "Notes are private by default. Flip the lock/globe toggle and the same page is public. There is no migration step." },
-  { icon: "UserCheck", bgClass: "bg-tertiary-container/20", iconColorClass: "text-tertiary", title: "New work means new slugs", description: "Agents publish by adding new files under src/content/ with new slugs. Writing in your database is already safe from updates." },
+  { icon: "UserCheck", bgClass: "bg-tertiary-container/20", iconColorClass: "text-tertiary", title: "New work stays private", description: "New pieces land as private rows in your database. Flip the toggle when ready; updates never touch your writing." },
 ];
 
 const guideCodeBlock = {
@@ -136,7 +136,7 @@ export default function GuidePage() {
                     "## 03. Deploy, then stay updated forever",
                     "Tables self-create on first request. Sync your fork to pull updates; your database writing is never touched.",
                     "## 04. Optional: add AI keys and publish with agents",
-                    "Add a provider key for margin AI, and let any coding assistant draft typed content and ship it with a git push.",
+                    "Add a provider key for margin AI, and let any coding assistant draft typed content and save it to your database as a private piece — one toggle makes it public.",
                   ],
                 })}
               />
@@ -293,9 +293,9 @@ export default function GuidePage() {
                   </p>
                   <p>
                     When you want words on the site, ask any coding assistant
-                    to draft typed TypeScript content under src/content/, run
-                    the build, and push. Publishing is a git push, and the
-                    site redeploys on its own.
+                    to draft typed content and stage it into your database as
+                    a private piece. Flipping it public is one toggle, no
+                    rebuild, no redeploy.
                   </p>
                 </div>
               </section>

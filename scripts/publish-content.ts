@@ -1,11 +1,10 @@
 #!/usr/bin/env tsx
 /**
- * Agent publishing path: .ts manuscript -> content_items row.
- *   npm run publish -- [--status draft|published] [--type story] [--featured] <file...>
- * Defaults: status=draft (private-first), type inferred from parent dir.
- * New slugs append at max(position)+1; existing slugs upsert in place.
- * Cross-file references (course lessons, book chapters, series episodes,
- * test sources) must resolve in the DB or within the same batch.
+ * Agent publishing path: .ts manuscript -> content_items row (always private).
+ *   npm run publish -- [--type story] [--featured] <file...>
+ * Publishing validates schema and cross-file references, then upserts.
+ * Publishing never touches visibility: new rows land private, existing rows
+ * keep their status. Going public is a human toggle flip, never a CLI flag.
  */
 import { pathToFileURL } from "url";
 import { basename, dirname, resolve } from "path";
@@ -14,7 +13,6 @@ import { getDb, CREATE_CONTENT_ITEMS } from "./content-db.ts";
 type Fields = Record<string, unknown>;
 
 const TYPES = new Set(["story", "guide", "doc", "course", "book", "series", "test", "featured", "podcast", "topic"]);
-const STATUSES = new Set(["draft", "published"]);
 
 // Minimal per-type required fields : shape depth is enforced by tsc on the manuscript.
 const REQUIRED: Record<string, string[]> = {
@@ -65,22 +63,17 @@ function refsOf(type: string, body: Fields): string[] {
 
 async function main() {
   const rawArgs = process.argv.slice(2);
-  let status = "";
   let typeOverride = "";
   let featured = false;
   const files: string[] = [];
   for (let i = 0; i < rawArgs.length; i++) {
     const a = rawArgs[i];
-    if (a === "--status") status = rawArgs[++i] || status;
-    else if (a === "--type") typeOverride = rawArgs[++i] || typeOverride;
+    if (a === "--type") typeOverride = rawArgs[++i] || typeOverride;
     else if (a === "--featured") featured = true;
     else if (a.startsWith("--")) throw new Error(`unknown flag ${a}`);
     else files.push(a);
   }
-  if (!files.length) throw new Error("usage: npm run publish -- [--status draft|published] [--type story] [--featured] <file...>");
-  if (status && !STATUSES.has(status)) throw new Error(`status must be draft|published, got ${status}`);
-  // Omitted --status preserves the row's current status (new rows land as
-  // draft): re-publishing an edit never flips visibility by accident.
+  if (!files.length) throw new Error("usage: npm run publish -- [--type story] [--featured] <file...>");
 
   const db = await getDb();
   await db.execute(CREATE_CONTENT_ITEMS);
@@ -139,7 +132,7 @@ async function main() {
     const existing = await db.execute({ sql: "SELECT position, status FROM content_items WHERE slug = ?", args: [b.slug] });
     const rawMax = posRow.rows[0]?.m;
     const existingStatus = existing.rows.length && typeof existing.rows[0]?.status === "string" ? existing.rows[0].status : "";
-    const effectiveStatus = status || existingStatus || "draft";
+    const effectiveStatus = existingStatus === "published" ? "published" : "private";
     const meta = featured ? { featured: true } : {};
     const position = existing.rows.length
       ? (typeof existing.rows[0]?.position === "number" ? (existing.rows[0]?.position as number) : 0)
@@ -160,7 +153,7 @@ async function main() {
             ON CONFLICT(slug) DO UPDATE SET "public" = excluded."public", set_at = excluded.set_at`,
       args: [b.slug, effectiveStatus === "published" ? 1 : 0, now],
     });
-    console.log(`${effectiveStatus === "published" ? "PUBLISHED" : "draft"} ${b.type} ${b.slug} <- ${b.file}`);
+    console.log(`published ${b.type} ${b.slug} <- ${b.file} [${effectiveStatus}]`);
   }
 }
 

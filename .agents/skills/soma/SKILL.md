@@ -31,7 +31,7 @@ Match the type to what the reader should walk away able to do. Full rationale wi
 
 ## Content Schema
 
-Every content file is a manuscript, not the publication. You author a typed object (schemas below), validate it with `tsc`, and publish it into the Turso content store with `npm run publish` — the API injects `id` and `href` at serve time, so you only provide `slug` and content fields. Readers never download manuscripts: pages fetch store rows at runtime, gated owner-or-published. A manuscript committed to git is implicitly public (forks are public), so publish drafts with `--status draft` (default, private) and flip to published only on explicit owner approval.
+Every content file is a manuscript, not the publication. You author a typed object (schemas below), validate it with `tsc`, and publish it into the Turso content store with `npm run publish` — the API injects `id` and `href` at serve time, so you only provide `slug` and content fields. Readers never download manuscripts: pages fetch store rows at runtime, private to the owner until flipped public. A manuscript committed to git is implicitly public (forks are public), so publishing always lands private and only the owner's toggle makes anything public.
 
 ### Story (`src/content/stories/my-story.ts`)
 
@@ -594,41 +594,34 @@ The project uses React for component composition — pages compose sub-component
 - **Every featured article MUST have a corresponding story row** with the same slug, so it appears in `/stories` listings.
 
 ### Step 1: Draft the manuscript (never in git)
-Author the typed object in a staging file outside git (e.g. `/tmp/my-story.ts` or a gitignored drafts dir). Unpublished writing MUST NOT touch `src/content/`: the fork is public, and anything committed there is world-readable on push. The `src/content/<type>/` files are the versioned archive of *published* work plus the seed corpus — read-only until publish day.
+Author the typed object in a staging file outside git (e.g. `drafts/story/my-story.ts`; `drafts/` is gitignored). Unpublished writing MUST NOT touch `src/content/`: the fork is public, and anything committed there is world-readable on push. The `src/content/<type>/` files are the versioned archive of *published* work plus the seed corpus — read-only except when archiving.
 
-### Step 2: Publish as a draft
+### Step 2: Publish it (private, always)
 ```bash
-npm run publish -- /tmp/my-story.ts
+npm run publish -- drafts/story/my-story.ts
 # validates schema fields, slug uniqueness, and cross-file references
 # (course lessons, book chapters, test sources) against the DB + batch,
-# then upserts the row as status=draft (private)
+# then upserts the row as private. Publishing never touches visibility.
 ```
-Multi-file batches publish atomically: `npm run publish -- ch1.ts ch2.ts course.ts`. References must resolve in the DB or the same batch. `--featured` moves the `isFeatured` flag to that row.
-
-Type inference reads the parent directory name and only matches singular type names (`story`, `guide`, ...). Files staged in `/tmp` or plural dirs MUST pass `--type` explicitly or publish aborts.
+Multi-file batches publish atomically: `npm run publish -- drafts/story/a.ts drafts/story/b.ts drafts/course/c.ts`. References must resolve in the DB or the same batch. `--featured` moves the `isFeatured` flag to that row. Type inference reads the parent directory name; files outside a typed dir MUST pass `--type` explicitly.
 
 The task is NOT done when the `.ts` file exists. The UI reads the store, never the files. Confirm the row before yielding:
 
 ```bash
 npx tsx -e "import('./scripts/content-db.ts').then(async ({getDb}) => { const db = await getDb(); const r = await db.execute({ sql: 'SELECT slug, status FROM content_items WHERE slug = ?', args: ['my-story'] }); console.log(JSON.stringify(r.rows)); })"
-# expect a row with "status":"draft". Missing row or script error means the draft never landed: fix and re-run, never report it as done.
+# expect a row with "status":"private". Missing row or script error means the piece never landed: fix and re-run, never report it as done.
 ```
-
-### Step 3: Preview the draft locally
+### Step 3: Preview the private piece locally
 ```bash
 npm run dev
 ```
-Plain `npm run dev` serves the API inline (owner view, drafts included), so one terminal is enough. Open `http://localhost:5173/stories/{slug}` (or `/guides/...`, `/featured/...`). Iterate by re-running `npm run publish`. (`npm run server` + `npm run dev:local` remains as the two-terminal alternative.)
+Plain `npm run dev` serves the API inline (owner view, private rows included), so one terminal is enough. Open `http://localhost:5173/stories/{slug}` (or `/guides/...`, `/featured/...`). Iterate by re-running `npm run publish`. (`npm run server` + `npm run dev:local` remains as the two-terminal alternative.)
 
 ### Step 3b: No-CLI path (owner in the browser)
-The owner never needs a terminal. Open **Learn** in the nav → **Content drafts** section → **New from manuscript**, paste the manuscript as JSON (same fields as the TypeScript schemas), pick the type, and save. It lands as a private draft row — same store, same preview, same toggle. The CLI stays available for batch/agent work, but it is never required.
+The owner never needs a terminal. Open **Learn** in the nav → **Private content** section → **New from manuscript**, paste the manuscript as JSON (same fields as the TypeScript schemas), pick the type, and save. It lands as a private row — same store, same preview, same toggle. The CLI stays available for batch/agent work, but it is never required.
 
-### Step 4: Go public on explicit approval
-Only when the owner says the piece is ready:
-```bash
-npm run publish -- --status published /tmp/my-story.ts
-```
-The flip is instant — no rebuild, no redeploy. Unpublishing is the same command with `--status draft` (reversible, immediate).
+### Step 4: Go public — owner flips the toggle, never a command
+Only the owner shares, and only with the visibility toggle: on the private piece's page or its **Private content** card, flip private → public. The flip is instant — no rebuild, no redeploy. Unpublishing is the same toggle back (reversible, immediate). There is no CLI flag for going public; putting it in the store and sharing it are separate acts on purpose.
 
 ### Step 5: Commit the manuscript (published work only)
 Copy the staged file to its archive home (`src/content/stories/my-story.ts`, matching the slug) and commit:
@@ -637,7 +630,7 @@ git add src/content/stories/my-story.ts
 git commit -m "Add [type]: [title]"
 git push
 ```
-Never `git add -A`: a blind add sweeps drafts into the public fork. Commit only the published manuscript. The page is live at `https://soma.vercel.app/stories/my-story` the moment the row flips to published — the commit is version history, not deployment.
+Never `git add -A`: a blind add sweeps unfinished work into the public fork. Commit only the published manuscript. The page is live at `https://soma.vercel.app/stories/my-story` the moment the row flips to published — the commit is version history, not deployment.
 
 ## Image URLs
 
@@ -652,7 +645,7 @@ Images must use verified Unsplash numeric IDs. See **Content Verification** abov
 
 **alt text:** Always write descriptive alt text for the specific photo. Don't leave it as a generic placeholder.
 
-## ⚠️ Content Verification — MANDATORY BEFORE PUBLISH
+## ⚠️ Content Verification — MANDATORY BEFORE PUBLISHING
 
 **Every URL in content files MUST be verified with curl before `npm run publish`. No exceptions.** Broken URLs, guessed IDs, and untested embeds ship broken content to readers. This is the #1 source of bugs in this project and it is completely preventable. The publish script validates schema and references, but only you can verify that an image actually loads.
 
@@ -821,12 +814,12 @@ The dark editorial theme uses these Tailwind classes:
 **User asks:** "Write a story about Jane Doe who built an open source accessibility tool"
 
 **Agent actions:**
-1. Draft `/tmp/jane-doe.ts` with the Story schema (outside git)
+1. Draft `drafts/story/jane-doe.ts` with the Story schema (outside git)
 2. Verify URLs with curl (Pre-Publish Checklist)
-3. `npm run publish -- /tmp/jane-doe.ts` — row lands as `draft` (private)
-4. Preview at `http://localhost:5173/stories/jane-doe` (server + dev:local), iterate
-5. Owner approves → `npm run publish -- --status published /tmp/jane-doe.ts` — live instantly
-6. Archive: `cp /tmp/jane-doe.ts src/content/stories/jane-doe.ts`, commit that file only
+3. `npm run publish -- drafts/story/jane-doe.ts` — row lands private
+4. Preview at `http://localhost:5173/stories/jane-doe`, iterate (re-publish edits; visibility never changes)
+5. Owner flips the toggle to public — live instantly
+6. Archive: `cp drafts/story/jane-doe.ts src/content/stories/jane-doe.ts`, commit that file only
 7. Done — live at `/stories/jane-doe`
 
 ### Example 2: Create a technical guide
@@ -834,10 +827,10 @@ The dark editorial theme uses these Tailwind classes:
 **User asks:** "Write a guide about setting up CI/CD with GitHub Actions"
 
 **Agent actions:**
-1. Draft `/tmp/github-actions-cicd.ts` with the Guide schema (outside git)
+1. Draft `drafts/guide/github-actions-cicd.ts` with the Guide schema (outside git)
 2. Use a verified Unsplash photo ID (see Image Strategy above), curl-verify it
-3. `npm run publish -- /tmp/github-actions-cicd.ts` — draft, preview, iterate
-4. Owner approves → `npm run publish -- --status published /tmp/github-actions-cicd.ts`
+3. `npm run publish -- drafts/guide/github-actions-cicd.ts` — private, preview, iterate
+4. Owner flips the toggle to public
 5. Archive the manuscript, commit that file only
 6. Done — live at `/guides/github-actions-cicd`
 
@@ -846,16 +839,16 @@ The dark editorial theme uses these Tailwind classes:
 **User asks:** "Featured article about the future of WebAssembly"
 
 **Agent actions:**
-1. **Draft the story manuscript first**: `/tmp/wasm-future-story.ts` with full rich content (sections, bentoHighlights, pullQuotes, topics)
-2. **Draft the featured manuscript**: `/tmp/wasm-future.ts` — same sections/bento/quotes, plus featured-only metadata (tag, tagline, hero image). A featured article MUST have a matching story row with the same slug
-3. `npm run publish -- /tmp/wasm-future-story.ts /tmp/wasm-future.ts` — batch validates both, drafts both
+1. **Draft the story manuscript first**: `drafts/story/wasm-future.ts` with full rich content (sections, bentoHighlights, pullQuotes, topics)
+2. **Draft the featured manuscript**: `drafts/featured/wasm-future.ts` — same sections/bento/quotes, plus featured-only metadata (tag, tagline, hero image). A featured article MUST have a matching story row with the same slug
+3. `npm run publish -- drafts/story/wasm-future.ts drafts/featured/wasm-future.ts` — batch validates both as private
 4. Preview both routes locally, iterate
-5. Owner approves → re-run with `--status published`
+5. Owner flips both toggles to public
 6. Archive both manuscripts, commit those files only. Homepage hero derives from the featured row automatically
 
 ## Important Rules
 
-1. **Featured articles must be explicitly asked for.** Never create featured rows unless the user directly requests them. The homepage hero derives from the featured store automatically. Adding a story means staging the manuscript and publishing it as a draft, nothing more.
+1. **Featured articles must be explicitly asked for.** Never create featured rows unless the user directly requests them. The homepage hero derives from the featured store automatically. Adding a story means publishing the manuscript as a private row, nothing more.
 2. **Verify every URL before publishing** (curl images, YouTube embeds, and external links). No exceptions. See Content Verification section.
 3. **Never delete or modify existing content files** unless explicitly asked.
 4. **Validation lives in `npm run publish`** (schema, slug uniqueness, cross-references). `npm run build` must still pass, but it only type-checks app code now — content ships through the store, not the bundle.
@@ -893,8 +886,8 @@ The dark editorial theme uses these Tailwind classes:
     - **Practice problems** with hints and solutions. Write each hint and each solution as its own paragraph, starting with the marker on a line of its own: `**Hint:**` and `**Solution:**` (or `*Hint:*` / `*Solution & Fix:*`). StoryPage splits them out of the question and renders them as separate collapsed panels, so the answer is never in the reader's face. A block where the marker is absent from the start of a line stays inline prose, so keep the marker on its own line.
     - **Runnable labs must be hands-on.** When a lesson ships a lab (`LabBlock`), the companion code must let the reader change an input and watch the output change (see *Companion Labs Architecture* above). A green test suite on its own is not a lab.
     - **Code blocks** with syntax highlighting (specify language: TypeScript, OCaml, Python, Bash)
-12. **Commit messages** follow format: `"Add [type]: [title]"` (archive commits for published manuscripts only — drafts are never committed).
-13. **No manuscript task is done until its row is verified in the store.** Authoring the `.ts` file is half the job. Every new manuscript MUST be pushed with `npm run publish` (draft default) plus a `SELECT slug, status` confirmation in the same task, every time. Never report a story as created or live based on the file alone. A missed publish is a silent no-op: the file sits in git while the UI shows nothing.
+12. **Commit messages** follow format: `"Add [type]: [title]"` (archive commits for published manuscripts only — private pieces are never committed).
+13. **No manuscript task is done until its row is verified in the store.** Authoring the `.ts` file is half the job. Every new manuscript MUST be published with `npm run publish` plus a `SELECT slug, status` confirmation in the same task, every time. Never report a story as created or live based on the file alone. A missed publish is a silent no-op: the file sits in git while the UI shows nothing.
 ## Kill Criteria for Content (don't publish if)
 
 The mechanical layer (schemas, formatting, verification) is what makes a post publishable. The judgment layer is what makes a post worth publishing. Apply these kill tests **before** writing the post. If any fires, don't write it — even if the format is perfect and the URLs are verified.

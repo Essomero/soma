@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 /**
  * One-time (and re-runnable) migration: seed corpus .ts files -> content_items.
- * - Inserts missing slugs (status from public_pages: public=published, else draft).
+ * - Inserts missing slugs (status from public_pages: public=published, else private).
  * - Never touches status of existing rows (owner flips are sacred).
  * - Refreshes body/title/excerpt/position/meta on every run.
  * Run: npm run seed (manual refresh) — builds use --if-empty (fresh DBs only).
@@ -43,7 +43,7 @@ async function main() {
       if (typeof row.slug === "string") publicSlugs.add(row.slug);
     }
   } catch {
-    console.log("no public_pages table yet : all seed rows land as draft");
+    console.log("no public_pages table yet : all seed rows land as private");
   }
 
   const corpus = loadCorpus();
@@ -53,13 +53,14 @@ async function main() {
     byType.get(entry.type)!.push(entry);
   }
 
-  const report: Array<{ type: string; published: number; draft: number; drafts: string[] }> = [];
+  const report: Array<{ type: string; published: number; private: number; privateSlugs: string[] }> = [];
   for (const [type, entries] of byType) {
     let published = 0;
-    const drafts: string[] = [];
+    const privateSlugs: string[] = [];
     for (const e of entries) {
       // Build-time mode inserts only what's missing; manual runs refresh all.
       if (ifEmpty && present.has(e.slug)) continue;
+      const status = publicSlugs.has(e.slug) ? "published" : "private";
       const now = new Date().toISOString();
       await db.execute({
         sql: `INSERT INTO content_items (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
@@ -73,21 +74,21 @@ async function main() {
       });
       const cur = await db.execute({ sql: "SELECT status FROM content_items WHERE slug = ?", args: [e.slug] });
       if (cur.rows[0]?.status === "published") published++;
-      else drafts.push(e.slug);
+      else privateSlugs.push(e.slug);
     }
-    report.push({ type, published, draft: drafts.length, drafts });
+    report.push({ type, published, private: privateSlugs.length, privateSlugs });
   }
 
   if (ifEmpty) {
-    const inserted = report.reduce((n, r) => n + r.published + r.draft, 0);
+    const inserted = report.reduce((n, r) => n + r.published + r.private, 0);
     console.log(`seed: store already complete (${present.size} rows present, ${inserted} inserted)`);
     return;
   }
   console.log("seed complete:");
   for (const r of report) {
-    console.log(`  ${r.type}: ${r.published} published, ${r.draft} draft${r.drafts.length ? " (" + r.drafts.join(", ") + ")" : ""}`);
+    console.log(`  ${r.type}: ${r.published} published, ${r.private} private${r.privateSlugs.length ? " (" + r.privateSlugs.join(", ") + ")" : ""}`);
   }
-  console.log("Draft rows are invisible until flipped: UPDATE content_items SET status='published' WHERE slug=?");
+  console.log("Private rows are invisible until flipped: UPDATE content_items SET status='published' WHERE slug=?");
 }
 
 main().catch((e: unknown) => {

@@ -10,7 +10,7 @@ const TOKEN = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "";
 const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS content_items (
   slug TEXT PRIMARY KEY,
   type TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'draft',
+  status TEXT NOT NULL DEFAULT 'private',
   title TEXT NOT NULL DEFAULT '',
   excerpt TEXT NOT NULL DEFAULT '',
   body_json TEXT NOT NULL,
@@ -33,10 +33,10 @@ const ROUTE_BASE = {
   topic: "topics",
 };
 
-const STATUSES = new Set(["draft", "published"]);
+const STATUSES = new Set(["private", "published"]);
 
 // Runtime self-heal: the seed corpus is the always-present baseline. Any
-// seed slug missing from the store is inserted on first read (draft unless
+// seed slug missing from the store is inserted on first read (private unless
 // public_pages says public). One redeploy picks this up; after that no CLI
 // or rebuild is ever needed.
 const CREATE_PUBLIC_PAGES = `CREATE TABLE IF NOT EXISTS public_pages (slug TEXT PRIMARY KEY, "public" INTEGER NOT NULL DEFAULT 0, set_at TEXT)`;
@@ -94,11 +94,11 @@ async function loadCorpusRows() {
 }
 
 // Baseline sync: the seed corpus is the always-present baseline. Any seed
-// slug missing from the store is inserted (draft unless public_pages says
+// slug missing from the store is inserted (private unless public_pages says
 // otherwise). Runs once per cold start, before any GET below, so fresh,
 // pre-seed, and partially-seeded databases all converge with no CLI step
 // and no rebuild. INSERT OR IGNORE keeps concurrent requests from doubling.
-// Deliberately deleted seed rows come back as drafts on next cold start.
+// Deliberately deleted seed rows come back as private on next cold start.
 let baselinePromise = null;
 function ensureSeedBaseline() {
   if (!baselinePromise) baselinePromise = syncSeedBaseline().catch(() => {});
@@ -129,7 +129,7 @@ async function syncSeedBaseline() {
   for (const e of missing) {
     const published = publicSlugs.has(e.slug);
     inserts.push(
-      { type: "execute", stmt: { sql: `INSERT OR IGNORE INTO content_items (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, args: [e.slug, e.type || "story", published ? "published" : "draft", e.title || "", e.excerpt || "", JSON.stringify(e.body || {}), JSON.stringify(e.meta || {}), Number(e.position) || 0, now].map(toArg) } },
+      { type: "execute", stmt: { sql: `INSERT OR IGNORE INTO content_items (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, args: [e.slug, e.type || "story", published ? "published" : "private", e.title || "", e.excerpt || "", JSON.stringify(e.body || {}), JSON.stringify(e.meta || {}), Number(e.position) || 0, now].map(toArg) } },
       { type: "execute", stmt: { sql: `INSERT OR IGNORE INTO public_pages (slug, "public", set_at) VALUES (?, ?, ?)`, args: [e.slug, published ? 1 : 0, now].map(toArg) } },
     );
   }
@@ -251,7 +251,7 @@ export default async function handler(req, res) {
 
     // GET ?type= : ordered list. Unauthenticated callers see published only.
     // With ?q= : substring search over title/excerpt/body, same visibility
-    // rules, so anonymous search can never surface drafts.
+    // rules, so anonymous search can never surface private rows.
     if (req.method === "GET" && req.query.type) {
       const authed = isAuthed(req);
       const statusFilter = authed && req.query.status && STATUSES.has(req.query.status)
@@ -282,7 +282,7 @@ export default async function handler(req, res) {
 
     // POST : create or replace one item (publish script + studio dialog).
     // Editing content never flips visibility by accident: an omitted status
-    // keeps the row's current status (new rows default to draft).
+    // keeps the row's current status (new rows default to private).
     if (req.method === "POST") {
       if (!requireAuth(req, res)) return;
       const { slug, type, status, title, excerpt, body, meta, position } = req.body || {};
@@ -290,9 +290,9 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "slug, type and body required" });
       }
       if (!ROUTE_BASE[type]) return res.status(400).json({ error: "unknown type: " + type });
-      if (status && !STATUSES.has(status)) return res.status(400).json({ error: "status must be draft|published" });
+      if (status && !STATUSES.has(status)) return res.status(400).json({ error: "status must be private|published" });
       const existing = await query("SELECT status FROM content_items WHERE slug = ?", [slug]);
-      const effectiveStatus = status || (existing.length && existing[0].status) || "draft";
+      const effectiveStatus = status || (existing.length && existing[0].status) || "private";
       const now = new Date().toISOString();
       const rows = await query(
         `INSERT INTO content_items (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
@@ -309,7 +309,7 @@ export default async function handler(req, res) {
       return res.status(201).json(mapRow(rows[0]));
     }
 
-    // DELETE ?slug= : owner only. Prefer unpublishing (status=draft); this is the hard path.
+    // DELETE ?slug= : owner only. Prefer unpublishing (status=private); this is the hard path.
     if (req.method === "DELETE") {
       if (!requireAuth(req, res)) return;
       const slug = (req.body && req.body.slug) || req.query.slug;

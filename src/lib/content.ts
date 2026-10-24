@@ -35,7 +35,7 @@ export function fetchContentItem<T>(type: string, slug: string): Promise<T> {
   return p;
 }
 
-/** All items of a type, ordered by position. Owner session sees drafts too. */
+/** All items of a type, ordered by position. Owner session sees private rows too. */
 export function fetchContentList<T>(type: string, q?: string): Promise<T[]> {
   const key = q ? `${type}?q=${q}` : type;
   let p = listCache.get(key) as Promise<T[]> | undefined;
