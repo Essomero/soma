@@ -22,7 +22,7 @@ import { type HighlightData } from "@/lib/highlights";
 import type { BentoCardData, PullQuoteData } from "@/types";
 import type { LucideIcon } from "lucide-react";
 
-// Icon map for tip cards (matches generative-ai pattern)
+// Icon map for tip cards (matches ship-soma pattern)
 const tipIcons: Record<string, LucideIcon> = {
   Minus, Terminal, UserCheck, AlertTriangle, Lightbulb, Shield, Zap,
 };
@@ -71,7 +71,7 @@ export default function GuideContentPage() {
   return (
     <div className="pt-32 pb-giant">
       <article ref={articleRef} className="max-w-readme mx-auto px-gutter md:px-margin-desktop">
-        {/* Hero Header : matches generative-ai layout */}
+        {/* Hero Header : matches ship-soma layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-xl items-end mb-giant">
           <div className="lg:col-span-8">
             <AccentBar variant="small" className="mb-md" />
@@ -101,7 +101,7 @@ export default function GuideContentPage() {
           </div>
         </div>
 
-        {/* Featured Image : wide 21:9, matches generative-ai */}
+        {/* Featured Image : wide 21:9, matches ship-soma */}
         <div className="w-full aspect-[21/9] mb-giant overflow-hidden rounded-xl border border-border-default group">
           <img
             alt={guide.imageAlt}
@@ -143,7 +143,7 @@ export default function GuideContentPage() {
                     />
                   </div>
 
-                  {/* Tip Cards : like generative-ai tips section */}
+                  {/* Tip Cards : like ship-soma tips section */}
                   {content.tipCards && content.tipCards.length > 0 && (
                     <div className="not-prose grid grid-cols-1 md:grid-cols-2 gap-md mb-giant">
                       {content.tipCards.map((tip) => {

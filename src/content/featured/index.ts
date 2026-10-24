@@ -1,6 +1,6 @@
 import type { FeaturedContent } from "@/types";
-import { nvdaAccessibility } from "./nvda-accessibility";
+import { structuralTyping } from "./structural-typing";
 
 export const allFeatured: FeaturedContent[] = [
-  nvdaAccessibility,
+  structuralTyping,
 ];

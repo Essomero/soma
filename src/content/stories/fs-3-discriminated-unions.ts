@@ -7,7 +7,7 @@ export const fs3DiscriminatedUnions = {
     "You modeled state with three booleans: isLoading, isError, and data. At 2 AM, your app crashed because all three were true at the same time. This lesson shows how discriminated unions eliminate impossible states, how string literal tags guide the compiler, and how to use exhaustiveness checking so new features never slip past you unnoticed.",
   image: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1200&h=675&fit=crop",
   imageAlt: "Mist rolling over branching mountain ridges showing paths that fork and narrow",
-  author: { name: "Soma Editorial" },
+  author: { name: "Benjamin Mayanja", handle: "@Essomero" },
   date: "2026-08-16",
   added: "2026-08-16T00:00:00+03:00",
   tags: ["Full-Stack Prep", "TypeScript"],

@@ -7,7 +7,7 @@ export const fs2Generics = {
     "Generics look like complex algebra, but they are really just relationships between two points in your code. This lesson shows why 'any' and 'unknown' fail to preserve connections, how TypeScript infers types from arguments, and how to use constraints without over-engineering your codebase.",
   image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&h=675&fit=crop",
   imageAlt: "Abstract 3D shapes showing a mold that produces an infinite family of forms",
-  author: { name: "Soma Editorial" },
+  author: { name: "Benjamin Mayanja", handle: "@Essomero" },
   date: "2026-08-16",
   added: "2026-08-16T00:00:00+03:00",
   tags: ["Full-Stack Prep", "TypeScript"],

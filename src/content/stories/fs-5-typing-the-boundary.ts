@@ -7,7 +7,7 @@ export const fs5TypingTheBoundary = {
     "Inside your program, TypeScript checks every line. But at the boundary where data enters from the outside (a fetch call, localStorage, or user input), TypeScript goes blind. This lesson shows why 'any' causes production crashes, why 'as' is just a fake passport, and how to use schemas to safely parse data at the front door.",
   image: "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?w=1200&h=675&fit=crop",
   imageAlt: "Sunlight through an open doorway representing the boundary where untrusted data enters",
-  author: { name: "Soma Editorial" },
+  author: { name: "Benjamin Mayanja", handle: "@Essomero" },
   date: "2026-08-16",
   added: "2026-08-16T00:00:00+03:00",
   tags: ["Full-Stack Prep", "TypeScript"],

@@ -10,8 +10,8 @@ export const sqlQueryOptimizationTest: TestContent = {
   image: "https://images.unsplash.com/photo-1511721285502-9f81e79be874?w=1200&h=675&fit=crop",
   imageAlt: "Row of wooden card catalog drawers with brass handles",
   author: {
-    name: "Soma Editorial",
-    handle: "@soma",
+    name: "Benjamin Mayanja",
+    handle: "@Essomero",
   },
   date: "September 2026",
   tags: ["PostgreSQL", "SQL", "Indexes", "Query Optimization", "Concurrency"],

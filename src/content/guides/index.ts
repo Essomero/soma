@@ -1,8 +1,8 @@
 import type { GuideContent, ArticleCardData } from "@/types";
-import { generativeAi } from "./generative-ai";
+import { shipSoma } from "./ship-soma";
 
 const rawGuides = [
-  generativeAi,
+  shipSoma,
 ];
 
 // Inject computed fields

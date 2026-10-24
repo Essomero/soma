@@ -14,14 +14,14 @@ import type { HighlightData } from "@/lib/highlights";
 import Comments from "@/components/ui/Comments";
 import { useAuth } from "@/lib/AuthContext";
 import {
-  nvdaAuthor,
-  nvdaBentoHighlights,
-  nvdaPullQuotes,
-  nvdaMoreStories,
+  shapesAuthor,
+  shapesBentoHighlights,
+  shapesPullQuotes,
+  shapesMoreStories,
 } from "@/content/registry";
-import { nvdaAccessibility } from "@/content/featured/nvda-accessibility";
+import { structuralTyping } from "@/content/featured/structural-typing";
 
-const STORY_SLUG = "nvda-accessibility";
+const STORY_SLUG = "structural-typing";
 
 export default function FeaturedArticlePage() {
   const { isOwner } = useAuth();
@@ -30,20 +30,20 @@ export default function FeaturedArticlePage() {
   const [pageHighlights, setPageHighlights] = useState<HighlightData[]>([]);
   const [commentsRefresh, setCommentsRefresh] = useState(0);
   const storyText = [
-    nvdaAccessibility.description,
-    ...(nvdaAccessibility.sections || []).flatMap((s) => [s.heading, ...(s.paragraphs || []).filter((p): p is string => typeof p === "string")]),
+    structuralTyping.description,
+    ...(structuralTyping.sections || []).flatMap((s) => [s.heading, ...(s.paragraphs || []).filter((p): p is string => typeof p === "string")]),
   ].join(" ");
   return (
     <div>
       {/* Immersive Hero */}
       <ImmersiveHero
-        tag="FEATURED ARTICLE // ACCESSIBILITY"
-        title="Coding accessibility: Software by the blind, for the blind"
-        description="The NVDA screen reader has helped empower a new generation of blind and low-vision developers."
-        author={nvdaAuthor}
-        date="May 16, 2024"
-        image="https://images.unsplash.com/photo-1634944902853-3e977c2de8b6?w=1200&h=675&fit=crop"
-        imageAlt="A cinematic, vibrant editorial illustration for a technology article"
+        tag="FEATURED ARTICLE // TYPESCRIPT"
+        title="Why does this type error? Shapes, not names"
+        description="TypeScript rejects objects that look perfectly fine. The compiler is not being difficult: it checks shapes instead of names, and fresh literals get checked harder than variables."
+        author={shapesAuthor}
+        date="October 24, 2026"
+        image="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=675&fit=crop"
+        imageAlt="Code editor displaying a compile error overlay on a monitor"
       />
 
       {/* Article Content */}
@@ -63,28 +63,29 @@ export default function FeaturedArticlePage() {
         <article ref={articleRef} data-section-index={0} data-paragraph-index={0} className="md:col-span-8 space-y-xl">
           <div className="font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md">
             <p className="drop-cap">
-              A lot of what Derek Riemer needed to know to become a professional
-              software developer, he learned during his years involved with the
-              NVDA (NonVisual Desktop Access) project, an open source screen
-              reader for Microsoft Windows.
+              You write an object that carries every property a function needs,
+              plus one extra field, and TypeScript draws a red squiggle: object
+              literal may only specify known properties. Your frustration is
+              reasonable. The function would ignore the extra field at runtime,
+              so why fail the build?
             </p>
             <p>
-              Like most of those involved with NVDA and its development, Riemer
-              is blind. He found NVDA in 2011, while still in high school, when
-              he was looking for a free alternative to his proprietary screen
-              reader. He quickly became involved in the community, taught himself
-              to code, and offered support where he could.
+              Now store that exact same object in a variable first, and pass the
+              variable instead. Zero errors. Same data, same function, different
+              verdict. Most developers meet TypeScript as an obstacle course of
+              red squiggles and reach for a hammer like `as any` to make them
+              vanish.
             </p>
             <p>
-              By 2013, he'd written his first NVDA add-on, and he's since
-              written 20 more and contributed code to NVDA itself. Today, Riemer
-              works as a software engineer at Google.
+              But the checker runs on one simple physical rule. Learn it, and
+              the red lines stop reading like noise. They start reading like a
+              blueprint.
             </p>
           </div>
 
           {/* Bento Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-md my-giant">
-            {nvdaBentoHighlights.map((card) => (
+            {shapesBentoHighlights.map((card) => (
               <BentoCard key={card.title} card={card} />
             ))}
           </div>
@@ -92,63 +93,67 @@ export default function FeaturedArticlePage() {
           {/* Pull Quote 1 */}
           <PullQuote
             variant="gradient-bar"
-            quote={nvdaPullQuotes[0].quote}
-            attribution={nvdaPullQuotes[0].attribution}
+            quote={shapesPullQuotes[0].quote}
+            attribution={shapesPullQuotes[0].attribution}
           />
 
           <div className="font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md">
             <h2 className="font-sora text-article-title text-on-surface pt-lg pb-md">
-              Software by the blind, for the blind
+              The backpack test
             </h2>
             <p>
-              The NVDA screen reader gives blind and low-vision people access to
-              fundamentals like education and employment, as well as everyday
-              functions such as online banking, shopping, and getting the news.
-              The overwhelming majority of people who build and translate NVDA
-              are blind or low-vision themselves, and Riemer says this is key.
+              In nominal languages like Java or C#, types work like birth
+              certificates. A function that asks for a Customer rejects a User
+              with identical fields, because the names differ. TypeScript is
+              structural. If a mountain guide says your backpack must contain
+              water and a compass, they do not check the brand. Water, compass,
+              plus a bag of trail mix, and you are on the trail.
             </p>
             <p>
-              "A product built by the community, for the community, is better
-              than one built by some company, simply because the community is in
-              charge of what goes into it," says Riemer. "I can build an add-on
-              when I need something and don't need to wait for some company to
-              choose to actually fix the issue for me."
+              Fresh literals get the extra check because of typos. Write an
+              object inline with a misspelled field and you almost certainly
+              meant the real one. TypeScript stops you at the counter: did you
+              really mean to put this here? Variables skip that check because
+              they already exist somewhere else.
             </p>
           </div>
 
           {/* Pull Quote 2 */}
           <PullQuote
             variant="border-left"
-            quote={nvdaPullQuotes[1].quote}
+            quote={shapesPullQuotes[1].quote}
           />
 
           <div className="font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md">
             <h2 className="font-sora text-article-title text-on-surface pt-lg pb-md">
-              Community amplification
+              Read the error backwards
             </h2>
             <p>
-              Community plays a big role for both OSARA and NVDA, and Teh says
-              that's on purpose. "It was really important to us that we foster a
-              healthy, open, well-functioning, and friendly community," he says.
+              Almost every compiler message belongs to one of a few simple
+              situations. A type is not assignable means the hole expects one
+              shape and you brought a different one. An excess property on a
+              fresh literal means a typo or an interface missing a field you
+              actually need.
             </p>
             <p>
-              If you follow these communities one step further, you'll quickly
-              find things like the Eyes On Success podcast, which Peter Torpey
-              produces with his wife Nancy using OSARA. They discuss "products,
-              services, and daily living tips for people with vision loss,"
-              empowering others to empower themselves:and the cycle continues.
+              Always read the message backwards. Look at the very end to see
+              what the function asked for, then look at the beginning to see
+              what you handed it. Then ask the only question that matters: is
+              the data wrong, or is the type out of date? And never reach for
+              `as` or `any` to end the conversation. That does not fix the bug.
+              It only tapes over the warning light.
             </p>
           </div>
         </article>
       </section>
 
       {/* Comments */}
-      <Comments storySlug={STORY_SLUG} storyContext={{ title: "Coding accessibility: Software by the blind, for the blind", body: storyText }} refreshSignal={commentsRefresh} />
+      <Comments storySlug={STORY_SLUG} storyContext={{ title: "Why does this type error? Shapes, not names", body: storyText }} refreshSignal={commentsRefresh} />
 
       <InlineHighlights
         slug={STORY_SLUG}
         storyText={storyText}
-        storyTitle="Coding accessibility: Software by the blind, for the blind"
+        storyTitle="Why does this type error? Shapes, not names"
         articleRef={articleRef}
         isOwner={isOwner}
         onHighlightsChange={(hs) => { setPageHighlights(hs); setCommentsRefresh((n: number) => n + 1); }}
@@ -178,7 +183,7 @@ export default function FeaturedArticlePage() {
           </Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-lg">
-          {nvdaMoreStories.map((story) => (
+          {shapesMoreStories.map((story) => (
             <ArticleCard key={story.id} article={story} />
           ))}
         </div>

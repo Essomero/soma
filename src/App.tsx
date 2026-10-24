@@ -70,12 +70,12 @@ const router = createBrowserRouter([
 
       // Featured articles
       {
-        path: "featured/nvda-accessibility",
+        path: "featured/structural-typing",
         element: <FeaturedArticlePage />,
       },
       {
-        path: "featured/:slug",
-        element: <StoryPage />,
+        path: "featured/nvda-accessibility",
+        element: <Navigate to="/featured/structural-typing" replace />,
       },
 
       // Developer stories (index + individual)
@@ -102,8 +102,12 @@ const router = createBrowserRouter([
         element: <GuidesIndexPage />,
       },
       {
-        path: "guides/generative-ai",
+        path: "guides/ship-soma",
         element: <GuidePage />,
+      },
+      {
+        path: "guides/generative-ai",
+        element: <Navigate to="/guides/ship-soma" replace />,
       },
       {
         path: "guides/:slug",

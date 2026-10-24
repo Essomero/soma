@@ -16,7 +16,7 @@ const quickActions = [
 const topMatches = [
   { icon: BookOpen, label: "Why Does This Type Error?", sub: "Story // TypeScript", href: "/stories/fs-1-why-this-type-error", color: "text-primary" },
   { icon: User, label: "Think on paper, but digital: why I built Soma", sub: "Developer Story", href: "/stories/benjamin-mayanja", color: "text-secondary" },
-  { icon: BookOpen, label: "Harness the power of generative AI", sub: "Technical Guide // AI & ML", href: "/guides/generative-ai", color: "text-tertiary" },
+  { icon: BookOpen, label: "Ship Soma on your own infrastructure in minutes", sub: "Technical Guide // Self-Hosting", href: "/guides/ship-soma", color: "text-tertiary" },
 ];
 
 function loadRecent(): string[] {

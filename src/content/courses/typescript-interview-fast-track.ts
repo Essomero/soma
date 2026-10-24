@@ -9,7 +9,7 @@ export const typescriptInterviewFastTrack: CourseContent = {
     "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1600&h=900&fit=crop",
   imageAlt:
     "Code editor displaying clean TypeScript type definitions on a dark monitor",
-  author: { name: "Soma Editorial" },
+  author: { name: "Benjamin Mayanja", handle: "@Essomero" },
   date: "2026-10-16",
   added: "2026-10-16T00:00:00+03:00",
   topics: ["technology", "career"],

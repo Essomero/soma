@@ -7,7 +7,7 @@ export const fs4UtilityTypes = {
     "You use Partial, Pick, and Omit every day, but they often feel like built-in magic spells. This lesson demystifies utility types by building them from scratch: how loops over keys work, how conditional types act like if-statements, and how infer lets you extract pieces from existing shapes.",
   image: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=1200&h=675&fit=crop",
   imageAlt: "Engineer's hands over a technical blueprint showing precision design",
-  author: { name: "Soma Editorial" },
+  author: { name: "Benjamin Mayanja", handle: "@Essomero" },
   date: "2026-08-16",
   added: "2026-08-16T00:00:00+03:00",
   tags: ["Full-Stack Prep", "TypeScript"],

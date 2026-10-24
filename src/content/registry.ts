@@ -22,5 +22,5 @@ export {
 
 // Legacy exports for custom page layouts
 export { benjaminStory, benjaminMoreStories } from "./stories/benjamin-mayanja";
-export { nvdaAuthor, nvdaBentoHighlights, nvdaPullQuotes, nvdaMoreStories } from "./featured/nvda-accessibility";
-export { antonAuthor, guideToc, guideSections, guideTipCards, guideCodeBlock } from "./guides/generative-ai";
+export { shapesAuthor, shapesBentoHighlights, shapesPullQuotes, shapesMoreStories } from "./featured/structural-typing";
+export { guideAuthor, guideToc, guideSections, guideTipCards, guideCodeBlock } from "./guides/ship-soma";

@@ -9,7 +9,7 @@ export const contentTypes: DocContent = {
     "Story, lesson, lab, guide, doc, course, and the rest: what job each type does, when to reach for it instead of the others, and a canonical example of each.",
   image: "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1600&h=900&fit=crop",
   imageAlt: "A fountain pen resting on handwritten manuscript pages",
-  author: { name: "Soma Editorial" },
+  author: { name: "Benjamin Mayanja", handle: "@Essomero" },
   date: "October 2026",
   tags: ["Publishing", "Content Model", "Writing"],
   topics: ["technology"],
@@ -25,7 +25,7 @@ export const contentTypes: DocContent = {
         {
           question: "How do I choose in under ten seconds?",
           answer: [
-            "Ask what changes for the reader:\n\n| If the reader should... | Use | Example |\n|---|---|---|\n| Feel one idea deeply | Story | `/stories/benjamin-mayanja` |\n| Follow steps to build something | Guide | `/guides/generative-ai` |\n| Look something up fast | Doc | `/docs/lab-setup` |\n| Prove they can do it | Test | `/tests/sql-query-optimization` |\n| Learn a skill across sittings | Course | `/courses/typescript-interview-fast-track` |\n| Read a long arc in order | Book or Series | `/books/the-alchemist`, `/series/the-craft-of-software` |\n| Listen instead of read | Podcast | `/podcast/bridging-code-and-community` |\n\nFeatured is not a topic, it is a stage: any story strong enough to carry the front page. Topics are not content at all, they are the shelves content sits on.",
+            "Ask what changes for the reader:\n\n| If the reader should... | Use | Example |\n|---|---|---|\n| Feel one idea deeply | Story | `/stories/benjamin-mayanja` |\n| Follow steps to build something | Guide | `/guides/ship-soma` |\n| Look something up fast | Doc | `/docs/lab-setup` |\n| Prove they can do it | Test | `/tests/sql-query-optimization` |\n| Learn a skill across sittings | Course | `/courses/typescript-interview-fast-track` |\n| Read a long arc in order | Book or Series | `/books/the-alchemist`, `/series/the-craft-of-software` |\n| Listen instead of read | Podcast | `/podcast/bridging-code-and-community` |\n\nFeatured is not a topic, it is a stage: any story strong enough to carry the front page. Topics are not content at all, they are the shelves content sits on.",
           ],
         },
       ],
@@ -72,7 +72,7 @@ export const contentTypes: DocContent = {
         {
           question: "When do I write a guide?",
           answer: [
-            "When the reader follows steps in order to end somewhere new: set up an environment, integrate a library, ship a workflow. Canonical example: `/guides/generative-ai` moves from mental model to prompting tactics to coding lessons in sequence. Skip a step and the rest stops making sense.",
+            "When the reader follows steps in order to end somewhere new: set up an environment, integrate a library, ship a workflow. Canonical example: `/guides/ship-soma` moves from fork to deploy to agent publishing in sequence. Skip a step and the rest stops making sense.",
           ],
         },
         {
@@ -101,7 +101,7 @@ export const contentTypes: DocContent = {
         {
           question: "What makes something featured?",
           answer: [
-            "Featured is a stage, not a topic. A featured piece is any story the editor judges strong enough to carry the front page hero, with bento highlights and pull quotes doing the visual lifting. Canonical example: `/featured/nvda-accessibility`. Anything can be promoted to featured; nothing is born there.",
+            "Featured is a stage, not a topic. A featured piece is any story the editor judges strong enough to carry the front page hero, with bento highlights and pull quotes doing the visual lifting. Canonical example: `/featured/structural-typing`. Anything can be promoted to featured; nothing is born there.",
           ],
         },
         {

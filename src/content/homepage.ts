@@ -19,26 +19,26 @@ function toCard(s: any): ArticleCardData {
 
 const defaultFeatured = allFeatured[0];
 export const featuredHero: FeaturedStoryData = {
-  id: defaultFeatured ? defaultFeatured.slug : "nvda-accessibility",
+  id: defaultFeatured ? defaultFeatured.slug : "structural-typing",
   tag: "Featured Article",
-  title: defaultFeatured ? defaultFeatured.title : "Accessibility as a Force Multiplier",
-  description: defaultFeatured ? defaultFeatured.description : "How open source accessibility tools empower developers worldwide.",
-  image: defaultFeatured ? defaultFeatured.image : "https://images.unsplash.com/photo-1634944902853-3e977c2de8b6?w=1200&h=675&fit=crop",
-  imageAlt: defaultFeatured ? defaultFeatured.imageAlt : "Editorial illustration representing accessible technology",
-  cta: { label: "Read story", href: defaultFeatured ? `/featured/${defaultFeatured.slug}` : "/featured/nvda-accessibility" },
+  title: defaultFeatured ? defaultFeatured.title : "Why does this type error? Shapes, not names",
+  description: defaultFeatured ? defaultFeatured.description : "The compiler checks shapes instead of names, and fresh literals get checked harder than variables.",
+  image: defaultFeatured ? defaultFeatured.image : "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=675&fit=crop",
+  imageAlt: defaultFeatured ? defaultFeatured.imageAlt : "Code editor displaying a compile error overlay on a monitor",
+  cta: { label: "Read story", href: defaultFeatured ? `/featured/${defaultFeatured.slug}` : "/featured/structural-typing" },
 };
 
 export const featuredStories: ArticleCardData[] = allStories.map(toCard).slice(0, 3);
 
 const firstGuide = allGuides[0];
 export const secondaryGuide: ArticleCardData = firstGuide ? toCard(firstGuide) : (allStories[0] ? toCard(allStories[0]) : toCard({
-  slug: "generative-ai",
-  title: "Building with Generative AI",
+  slug: "ship-soma",
+  title: "Ship Soma on your own infrastructure in minutes",
   category: "Guide",
-  excerpt: "An architectural guide to generative AI models and tooling.",
-  image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&h=675&fit=crop",
-  imageAlt: "AI neural network abstract design",
-  author: { name: "Soma Editorial" },
+  excerpt: "Three moves: fork the repo, import it into Vercel, add one password, click Add on the Turso card, deploy.",
+  image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=675&fit=crop",
+  imageAlt: "Server racks in a data center",
+  author: { name: "Benjamin Mayanja" },
   date: "2026-10-23",
 }));
 
@@ -51,7 +51,7 @@ export const latestUpdates = allStories.slice(0, 5).map((s) => ({
 }));
 
 export const featuredGuide = {
-  title: firstGuide ? firstGuide.title : "Building with Generative AI",
-  href: firstGuide ? `/guides/${firstGuide.slug}` : "/guides/generative-ai",
-  image: firstGuide ? firstGuide.image : "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&h=675&fit=crop",
+  title: firstGuide ? firstGuide.title : "Ship Soma on your own infrastructure in minutes",
+  href: firstGuide ? `/guides/${firstGuide.slug}` : "/guides/ship-soma",
+  image: firstGuide ? firstGuide.image : "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=675&fit=crop",
 };

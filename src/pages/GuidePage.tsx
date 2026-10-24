@@ -17,15 +17,15 @@ import Comments from "@/components/ui/Comments";
 import { PublicToggleButton, usePublicState } from "@/components/ui/PublicToggle";
 import { useAuth } from "@/lib/AuthContext";
 import {
-  antonAuthor,
+  guideAuthor,
   guideToc,
   guideSections,
   guideTipCards,
   guideCodeBlock,
 } from "@/content/registry";
-import { generativeAi } from "@/content/guides/generative-ai";
+import { shipSoma } from "@/content/guides/ship-soma";
 
-const GUIDE_SLUG = "generative-ai";
+const GUIDE_SLUG = "ship-soma";
 
 import type { LucideIcon } from "lucide-react";
 
@@ -44,7 +44,7 @@ export default function GuidePage() {
   const [pageHighlights, setPageHighlights] = useState<HighlightData[]>([]);
   const [commentsRefresh, setCommentsRefresh] = useState(0);
   const { isPublic, toggle } = usePublicState(GUIDE_SLUG);
-  const storyText = [generativeAi.intro, ...(generativeAi.body || [])].join(" ");
+  const storyText = [shipSoma.intro, ...(shipSoma.body || [])].join(" ");
   return (
     <div className="pt-32 pb-giant">
       <article ref={articleRef} data-section-index={0} data-paragraph-index={0} className="max-w-readme mx-auto px-gutter md:px-margin-desktop">
@@ -56,12 +56,12 @@ export default function GuidePage() {
               Technical Guide
             </Tag>
             <h1 className="font-sora text-headline-md text-on-surface mb-md max-w-4xl">
-              Harness the power of generative AI for software development
+              Ship Soma on your own infrastructure in minutes
             </h1>
             <p className="font-dm-sans text-body-base text-on-surface-variant max-w-2xl text-xl">
-              Tools like GitHub Copilot and ChatGPT can change the way you build
-              software, from architecture to environment configuration to the
-              code itself.
+              Three moves: fork the repo, import it into Vercel, add one
+              password, click Add on the Turso card, deploy. Your notes live in
+              your database, never in git.
             </p>
           </div>
           <div className="lg:col-span-4 pb-sm flex lg:justify-end">
@@ -70,10 +70,10 @@ export default function GuidePage() {
                 Written By
               </span>
               <span className="font-sora text-label-caps text-on-surface">
-                {antonAuthor.name}
+                {guideAuthor.name}
               </span>
               <span className="font-sora text-metadata-tag text-on-surface-muted">
-                {antonAuthor.title}
+                {guideAuthor.title}
               </span>
             </div>
           </div>
@@ -82,9 +82,9 @@ export default function GuidePage() {
         {/* Featured Image */}
         <div className="w-full aspect-[21/9] mb-giant overflow-hidden rounded-xl border border-border-default group">
           <img
-            alt="Generative AI concept illustration"
+            alt="Server racks in a data center"
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            src="https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=1200&h=675&fit=crop"
+            src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=675&fit=crop"
           />
         </div>
 
@@ -94,22 +94,22 @@ export default function GuidePage() {
           <aside className="lg:col-span-3 order-2 lg:order-1">
             <div className="sticky top-24 space-y-xl">
               <SidebarToc items={guideToc} />
-              <AuthorBio author={antonAuthor} />
+              <AuthorBio author={guideAuthor} />
               <ShareButtons
                 variant="row"
                 className="px-sm"
                 markdownContent={contentToMarkdown({
-                  title: "Harness the power of generative AI for software development",
-                  intro: "Across industries, large language models (LLMs), such as the ones powering tools like ChatGPT and GitHub Copilot, are automating tasks and revolutionizing the way we interact with both technology and one another.",
+                  title: "Ship Soma on your own infrastructure in minutes",
+                  intro: "Three moves get you deployed: fork the repo, import it into Vercel with one password, and add the Turso card. Your notes live in your database, never in git.",
                   body: [
-                    "## 01. Approximations of intelligence, nothing more",
-                    "An LLM, like any other neural network, should be regarded primarily as complex mathematical objects.",
-                    "## 02. Tips and tricks for effective LLM use",
-                    "Minimize text inputs. Use domain terminology. Use the 'Act as' trick. Be deliberate with wording.",
-                    "## 03. AI-assisted coding: lessons learned",
-                    "Use ChatGPT for higher-level operations and GitHub Copilot for code generation.",
-                    "## 04. The Expert requirement",
-                    "Using AI tools effectively requires you to be an expert in the domain you're working in.",
+                    "## 01. Fork your copy, import it into Vercel",
+                    "Fork Essomero/soma, import it into Vercel, and add SITE_PASSWORD before you press Deploy.",
+                    "## 02. One password plus the Turso card",
+                    "Set the password first, never bake VITE_ vars into Vercel, and let the Turso card inject your database credentials.",
+                    "## 03. Deploy, then stay updated forever",
+                    "Tables self-create on first request. Sync your fork to pull updates; your database writing is never touched.",
+                    "## 04. Optional: add AI keys and publish with agents",
+                    "Add a provider key for margin AI, and let any coding assistant draft typed content and ship it with a git push.",
                   ],
                 })}
               />
@@ -128,13 +128,11 @@ export default function GuidePage() {
               {/* Intro */}
               <div className="mb-giant">
                 <p className="font-dm-sans text-lg lg:text-xl text-on-surface-variant leading-relaxed drop-cap">
-                  Across industries, large language models (LLMs), such as the
-                  ones powering tools like ChatGPT and GitHub Copilot, are
-                  automating tasks and revolutionizing the way we interact with
-                  both technology and one another. But despite their growing
-                  prominence, LLMs are frequently misunderstood or misused,
-                  leading to unrealistic expectations:and a certain
-                  disenchantment when they're not met.
+                  Soma runs entirely on infrastructure you own: a Vercel project
+                  for hosting, a Turso database for your writing, and one
+                  password that gates your studio. Three moves get you deployed,
+                  and because your notes live in your database instead of git,
+                  pulling my updates later never touches your words.
                 </p>
               </div>
 
@@ -145,29 +143,26 @@ export default function GuidePage() {
                     01
                   </span>
                   <h2 className="font-sora text-article-title text-on-surface">
-                    Approximations of intelligence, nothing more
+                    Fork your copy, import it into Vercel
                   </h2>
                 </div>
                 <div className="space-y-md font-dm-sans text-body-base text-on-surface-variant leading-relaxed">
                   <p>
-                    An LLM, like any other neural network, should be regarded
-                    primarily as complex mathematical objects. Although there is a
-                    strong association between AI and the human brain, it is a
-                    misconception. Neural networks only mimic a small fraction of
-                    the brain's processes:enough to achieve notable practical
-                    results and successfully approximate real intelligence:but not
-                    more.
+                    Start with your own copy. Fork Essomero/soma on GitHub and
+                    accept the defaults. This fork is yours: agents publish by
+                    adding files to it, and it stays linked for one-click
+                    updates later. No git commands needed for any of this.
                   </p>
                   <PullQuote
                     variant="border-left"
-                    quote="In essence, LLMs provide a reasonable approximation of human language and knowledge, but their approximations aren't always optimal and they can still make significant errors."
+                    quote="Three moves: fork, import, deploy. Your notes live in your database, never in git."
                   />
                   <p>
-                    As an end-user, you need to understand that LLMs aim to
-                    accurately predict the correct output by taking into account
-                    the context and meaning of the input. As the input's length
-                    increases, it becomes more challenging to find connections
-                    between words, leading to a decline in accuracy.
+                    Next, open Vercel and Add New Project, then Import your soma
+                    fork. On the configure page, open Environment Variables and
+                    add one variable: SITE_PASSWORD, any strong string you
+                    invent. Do this before pressing Deploy. Deploying without
+                    it breaks login and forces a redeploy to fix.
                   </p>
                 </div>
               </section>
@@ -181,7 +176,7 @@ export default function GuidePage() {
                     02
                   </span>
                   <h2 className="font-sora text-article-title text-on-surface">
-                    Tips and tricks for effective LLM use
+                    One password plus the Turso card
                   </h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
@@ -214,35 +209,38 @@ export default function GuidePage() {
                     03
                   </span>
                   <h2 className="font-sora text-article-title text-on-surface">
-                    AI-assisted coding: lessons learned
+                    Deploy, then stay updated forever
                   </h2>
                 </div>
                 <p className="font-dm-sans text-body-base text-on-surface-variant mb-xl leading-relaxed">
-                  I recently conducted research on the effective use of AI for
-                  creating quality code, published in an open source project
-                  called User Country Analytics. My goal was to see if AI could
-                  help me use Laravel and Redux effectively, as I had limited
-                  prior knowledge.
+                  Further down the Vercel configure page, under Optional
+                  Integrations, click Add on the Turso card. Vercel provisions
+                  the database and injects its URL and token into your project
+                  on its own. Then press Deploy. Tables initialize automatically
+                  on the first API request: no migrations, no SQL to run by
+                  hand.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-xl">
                   <div className="space-y-md">
                     <h4 className="font-sora text-label-caps text-on-surface double-slash">
-                      The Strategy
+                      The First Boot
                     </h4>
                     <p className="font-dm-sans text-sm text-on-surface-muted">
-                      Use ChatGPT for higher-level operations: task description,
-                      breaking down tasks, complexity estimation, and
-                      architectural templates.
+                      Open /learn, log in with your SITE_PASSWORD, and write
+                      one note. The tables self-create on first use. Flip the
+                      lock/globe toggle and check the page in a private window
+                      to confirm public access.
                     </p>
                   </div>
                   <div className="space-y-md">
                     <h4 className="font-sora text-label-caps text-on-surface double-slash">
-                      The Execution
+                      Every Update After
                     </h4>
                     <p className="font-dm-sans text-sm text-on-surface-muted">
-                      Use GitHub Copilot for the actual code generation. It
-                      understands comments and individual nuances far better for
-                      implementation.
+                      When I ship fixes, open your fork on GitHub, click Sync
+                      fork, then Update branch. Vercel redeploys on its own.
+                      Keep your own pieces as new files with new slugs and
+                      merges stay clean forever.
                     </p>
                   </div>
                 </div>
@@ -255,21 +253,22 @@ export default function GuidePage() {
                     04
                   </span>
                   <h2 className="font-sora text-article-title text-on-surface">
-                    The Expert requirement
+                    Optional: add AI keys and publish with agents
                   </h2>
                 </div>
                 <div className="space-y-md font-dm-sans text-body-base text-on-surface-variant leading-relaxed">
                   <p>
-                    Using AI tools effectively requires you to be an expert in
-                    the domain you're working in. You need to understand what good
-                    code looks like before you can judge whether the AI has
-                    produced something correct.
+                    To enable the inline margin AI, add one or more provider
+                    keys in your Vercel project settings: OPENROUTER_API_KEY,
+                    DEEPSEEK_API_KEY, GROQ_API_KEY, or GEMINI_API_KEY. The
+                    writing experience works fully without them; the AI buttons
+                    simply stay quiet until a provider is configured.
                   </p>
                   <p>
-                    The AI can accelerate your workflow dramatically, but it
-                    cannot replace your judgment. The best results come from
-                    treating AI as a powerful junior developer on your team:one
-                    who works incredibly fast but needs careful code review.
+                    When you want words on the site, ask any coding assistant
+                    to draft typed TypeScript content under src/content/, run
+                    the build, and push. Publishing is a git push, and the
+                    site redeploys on its own.
                   </p>
                 </div>
               </section>
@@ -279,12 +278,12 @@ export default function GuidePage() {
       </article>
 
       {/* Comments */}
-      <Comments storySlug={GUIDE_SLUG} storyContext={{ title: generativeAi.title, body: storyText }} refreshSignal={commentsRefresh} />
+      <Comments storySlug={GUIDE_SLUG} storyContext={{ title: shipSoma.title, body: storyText }} refreshSignal={commentsRefresh} />
 
       <InlineHighlights
         slug={GUIDE_SLUG}
         storyText={storyText}
-        storyTitle={generativeAi.title}
+        storyTitle={shipSoma.title}
         articleRef={articleRef}
         isOwner={isOwner}
         onHighlightsChange={(hs) => { setPageHighlights(hs); setCommentsRefresh((n: number) => n + 1); }}

@@ -20,7 +20,7 @@ export const benjaminMoreStories: ArticleCardData[] = [
     excerpt: "The backpack rule: why TypeScript checks shapes instead of names.",
     image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&h=400&fit=crop",
     imageAlt: "TypeScript code editor", href: "/stories/fs-1-why-this-type-error",
-    author: { name: "Soma Editorial" },
+    author: { name: "Benjamin Mayanja" },
   },
   {
     id: "fs-2-generics", category: "ENGINEERING",
@@ -28,7 +28,7 @@ export const benjaminMoreStories: ArticleCardData[] = [
     excerpt: "Connecting input types to output types without cluttering signatures.",
     image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&h=400&fit=crop",
     imageAlt: "Laptop with code", href: "/stories/fs-2-generics",
-    author: { name: "Soma Editorial" },
+    author: { name: "Benjamin Mayanja" },
   },
   {
     id: "alchemist-1-prologue", category: "PHILOSOPHY",
