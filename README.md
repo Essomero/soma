@@ -16,7 +16,7 @@ Most publishing tools force a trade:
 - **Blogging platforms** (Ghost, Substack) push you to publish for an audience before you have understood the topic yourself.
 - **Note-taking apps** (Notion, Obsidian) keep thoughts trapped in proprietary clouds or require fragile sync setups with clumsy export pipelines.
 
-Soma gives you a private notebook, an AI agent publishing engine, an editorial reading experience, hands-on code drills, real-time voice screening, and an offline print press in a single architecture that lives entirely in your own infrastructure.
+Soma gives you a private notebook, an AI agent publishing engine, an editorial reading experience, hands-on code drills, real-time voice screening, and an offline print press in a single architecture that lives entirely in your own infrastructure. Read [why I built Soma](https://soma.mayanja.dev/featured/why-i-built-soma) for the story behind it.
 
 ---
 
@@ -217,6 +217,8 @@ After starting the dev server, confirm the loop works end to end:
 3. Flip the lock/globe toggle on the note and open it in a private window to confirm public access.
 
 ### Companion Repositories Setup
+Running drills? Start with [Lab Setup](https://soma.mayanja.dev/docs/lab-setup): one companion workspace you clone once, then every lesson gives you the folder and verification command.
+
 ```bash
 # Companion Labs (open-ended polyglot drills)
 git clone https://github.com/Essomero/soma-labs.git
@@ -235,7 +237,7 @@ son start server  # Runs at http://localhost:7860 to power oral tests
 
 ## Writing & Publishing Workflow
 
-New to the content model? Read [Content Types](https://soma.vercel.app/docs/content-types) first: one page explaining what each type is for, with a canonical example of each.
+New to the content model? Read [Content Types](https://soma.mayanja.dev/docs/content-types) first: one page explaining what each type is for, with a canonical example of each.
 
 1. **Private Scratchpad (`/learn`)**: Open **Learn** in the navigation. Draft rough notes, paste snippets, or outline ideas with live KaTeX math and Mermaid diagrams.
 2. **Margin Highlights & In-App AI**: Select any text to attach annotations, ask the inline AI model for clarifications, or store thoughts.
