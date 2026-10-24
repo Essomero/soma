@@ -131,9 +131,10 @@ Add keys in Vercel under Project Settings > Environment Variables, then redeploy
 | `DEEPSEEK_API_KEY` | Direct DeepSeek models | [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys) |
 | `GEMINI_API_KEY` | Direct Google Gemini models | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
 | `GROQ_API_KEY` | Fast Llama and Mixtral inference | [console.groq.com/keys](https://console.groq.com/keys) |
-| `CELEBRAS_API_KEY` | Fast Cerebras inference | [cloud.cerebras.ai](https://cloud.cerebras.ai/) |
+| `CEREBRAS_API_KEY` | Fast Cerebras inference | [cloud.cerebras.ai](https://cloud.cerebras.ai/) |
+| `STRAITLY_API_KEY` | Multi-model gateway (100+ models) | [straitly.ai/app/keys](https://straitly.ai/app/keys) |
 
-Two more vars exist for custom gateways if you already run them (`STRAITLY_API_KEY`, `META_API_KEY` / `MODEL_API_KEY`). You don't need them for the features above.
+`META_API_KEY` (also accepted as `MODEL_API_KEY`) is Meta's own model API, for Muse Spark models. You don't need it for the features above.
 
 ---
 

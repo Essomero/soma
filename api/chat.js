@@ -7,7 +7,7 @@ const GEMINI_DISABLED = process.env.GEMINI_DISABLED === "1" || process.env.GEMIN
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-const CEREBRAS_KEY = process.env.CELEBRAS_API_KEY || "";
+const CEREBRAS_KEY = process.env.CEREBRAS_API_KEY || "";
 const CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions";
 const META_KEY = process.env.META_API_KEY || process.env.MODEL_API_KEY || "";
 const META_URL = "https://api.meta.ai/v1/chat/completions";
@@ -106,7 +106,7 @@ export default async function handler(req, res) {
   }
 
   if (!apiKey) {
-    const name = isGemini ? "GEMINI_API_KEY" : isOpenRouter ? "OPENROUTER_API_KEY" : isGroq ? "GROQ_API_KEY" : isCerebras ? "CELEBRAS_API_KEY" : isMeta ? "META_API_KEY" : isStraitly ? "STRAITLY_API_KEY" : "DEEPSEEK_API_KEY";
+    const name = isGemini ? "GEMINI_API_KEY" : isOpenRouter ? "OPENROUTER_API_KEY" : isGroq ? "GROQ_API_KEY" : isCerebras ? "CEREBRAS_API_KEY" : isMeta ? "META_API_KEY" : isStraitly ? "STRAITLY_API_KEY" : "DEEPSEEK_API_KEY";
     console.error(`${name} is not configured`);
     return res.status(500).json({ error: `AI service not configured (${name})` });
   }

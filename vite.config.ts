@@ -13,7 +13,7 @@ function chatDevPlugin(env: Record<string, string>) {
   const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models";
   const GROQ_KEY = env.GROQ_API_KEY || "";
   const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-  const CEREBRAS_KEY = env.CELEBRAS_API_KEY || "";
+  const CEREBRAS_KEY = env.CEREBRAS_API_KEY || "";
   const CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions";
   const META_KEY = env.META_API_KEY || env.MODEL_API_KEY || "";
   const META_URL = "https://api.meta.ai/v1/chat/completions";
@@ -508,7 +508,7 @@ function chatDevPlugin(env: Record<string, string>) {
         }
 
         if (!apiKey) {
-          const name = isGemini ? "GEMINI_API_KEY" : isOpenRouter ? "OPENROUTER_API_KEY" : isGroq ? "GROQ_API_KEY" : isCerebras ? "CELEBRAS_API_KEY" : isMeta ? "META_API_KEY" : isStraitly ? "STRAITLY_API_KEY" : "DEEPSEEK_API_KEY";
+          const name = isGemini ? "GEMINI_API_KEY" : isOpenRouter ? "OPENROUTER_API_KEY" : isGroq ? "GROQ_API_KEY" : isCerebras ? "CEREBRAS_API_KEY" : isMeta ? "META_API_KEY" : isStraitly ? "STRAITLY_API_KEY" : "DEEPSEEK_API_KEY";
           console.error(`[chat-dev] ${name} not configured`);
           res.writeHead(500, { "Content-Type": "application/json" });
           return res.end(JSON.stringify({ error: `AI service not configured (${name})` }));
