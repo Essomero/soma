@@ -166,6 +166,14 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
   // in real time, no refresh needed).
   useEffect(() => { fetchComments(); }, [fetchComments, refreshSignal]);
 
+  const containsId = (nodes: Comment[], id: number): boolean => {
+    for (const n of nodes) {
+      if (n.id === id) return true;
+      if (n.replies?.length && containsId(n.replies, id)) return true;
+    }
+    return false;
+  };
+
   const insertCreated = (created: any) => {
     if (!created || created.id == null) return;
     const node: Comment = {
@@ -176,6 +184,9 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
       replies: [],
     };
     setComments(prev => {
+      // No-op when the node is already listed (e.g. reconciling after a
+      // refetch that already included it). Keeps re-insert safe.
+      if (containsId(prev, node.id)) return prev;
       if (node.parent_id == null) return [node, ...prev];
       let attached = false;
       const attach = (nodes: Comment[]): Comment[] => nodes.map(n => {
@@ -198,11 +209,15 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
         body: JSON.stringify({ storySlug, body: text.trim(), parentId: parentId ?? null }),
       });
       if (r.ok) {
-        try { insertCreated(await r.json()); } catch {}
+        let created: any = null;
+        try { created = await r.json(); insertCreated(created); } catch {}
         setBody("");
         setReplyBody("");
         setReplyToId(null);
         await fetchComments();
+        // Refetch can return a stale read that drops the new row; re-insert
+        // is a no-op when the row is already listed.
+        insertCreated(created);
       }
     } catch {}
     setLoading(false);
@@ -451,6 +466,7 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
           setSummaryDraft("");
           setSummarizing(false);
           await fetchComments();
+          insertCreated(created);
         } else {
           setAiError({ id: -1, message: (created && created.error) || "Couldn't save — try again." });
         }
@@ -562,6 +578,7 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
           setExplainDraft("");
           setExplaining(false);
           await fetchComments();
+          insertCreated(created);
         } else {
           setAiError({ id: -2, message: (created && created.error) || "Couldn't save — try again." });
         }
@@ -601,6 +618,7 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
             return next;
           });
           await fetchComments();
+          insertCreated(created);
         } else {
           setAiError({ id: commentId, message: (created && created.error) || "Couldn't save — try again." });
         }
