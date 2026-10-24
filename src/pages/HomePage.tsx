@@ -138,7 +138,9 @@ export default function HomePage() {
               Have a topic or question that deserves a deep dive? Let us know.
             </p>
             <a
-              href="#"
+              href="https://github.com/Essomero/soma/issues/new"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 font-bold rounded-full transition-all font-sora bg-brand text-white hover:bg-brand/90 px-6 py-3 text-sm w-full justify-center rounded-md"
             >
               Send suggestion

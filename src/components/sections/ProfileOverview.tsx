@@ -7,6 +7,12 @@ interface ProfileOverviewProps {
   organizations?: string[];
 }
 
+function toExternalHref(value: string): string {
+  if (/^https?:\/\//i.test(value)) return value;
+  if (value.startsWith("@")) return `https://x.com/${value.slice(1)}`;
+  return `https://${value}`;
+}
+
 export default function ProfileOverview({
   location,
   social,
@@ -32,7 +38,9 @@ export default function ProfileOverview({
               Social
             </span>
             <a
-              href="#"
+              href={toExternalHref(social)}
+              target="_blank"
+              rel="noopener noreferrer"
               className="font-dm-sans text-body-base text-accent-blue-neon hover:underline"
             >
               {social}
@@ -45,7 +53,9 @@ export default function ProfileOverview({
               Website
             </span>
             <a
-              href="#"
+              href={toExternalHref(website)}
+              target="_blank"
+              rel="noopener noreferrer"
               className="font-dm-sans text-body-base text-accent-blue-neon hover:underline"
             >
               {website}

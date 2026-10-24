@@ -41,7 +41,7 @@ function getShareUrl(platform: string, url: string, title: string) {
     case "linkedin":
       return `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
     default:
-      return "#";
+      return `https://x.com/intent/post?url=${encodedUrl}&text=${encodedTitle}`;
   }
 }
 
