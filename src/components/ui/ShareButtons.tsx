@@ -116,24 +116,6 @@ export default function ShareButtons({
         >
           LINKEDIN
         </a>
-        {markdownContent && (
-          <button
-            onClick={handleCopyMarkdown}
-            className="w-full flex items-center justify-center gap-sm border border-border-default rounded py-sm font-sora text-metadata-tag hover:border-secondary transition-all text-on-surface-variant hover:text-on-surface"
-          >
-            {copied ? (
-              <>
-                <Check className="w-4 h-4 text-secondary" />
-                COPIED!
-              </>
-            ) : (
-              <>
-                <Clipboard className="w-4 h-4" />
-                COPY AS MARKDOWN
-              </>
-            )}
-          </button>
-        )}
       </div>
     );
   }
