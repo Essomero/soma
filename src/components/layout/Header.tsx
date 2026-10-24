@@ -90,11 +90,13 @@ export default function Header() {
               {theme === "dark" ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-slate-700" />}
             </button>
           </Tooltip>
-          <button onClick={() => setOpen(true)} className="p-2 text-on-surface-variant hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-colors" aria-label="Search (Cmd+K)">
-            <Search className="w-5 h-5" />
-          </button>
+          <Tooltip label="Search (Cmd+K)" position="bottom">
+            <button onClick={() => setOpen(true)} className="p-2 text-on-surface-variant hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-colors" aria-label="Search (Cmd+K)">
+              <Search className="w-5 h-5" />
+            </button>
+          </Tooltip>
           {authed && (
-            <Tooltip label="Sign out" position="bottom">
+            <Tooltip label="Sign out" position="bottom" align="end">
               <button
                 onClick={() => { document.cookie = "soma_auth=; Path=/; Max-Age=0"; window.location.reload(); }}
                 className="p-2 text-on-surface-variant hover:text-error rounded-lg hover:bg-surface-container-low transition-colors"

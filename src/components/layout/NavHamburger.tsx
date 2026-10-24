@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { NavItem } from "@/types";
+import Tooltip from "@/components/ui/Tooltip";
 
 interface NavHamburgerProps {
   /** All nav items shown in the popover (the header shows only a few inline). */
@@ -35,15 +36,17 @@ export default function NavHamburger({ links }: NavHamburgerProps) {
 
   return (
     <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        aria-label={open ? "Close menu" : "Open menu"}
-        aria-expanded={open}
-        className="flex items-center justify-center w-9 h-9 rounded-none text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
-      >
-        {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-      </button>
+      <Tooltip label={open ? "Close menu" : "Open menu"} position="bottom" align="start">
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          aria-label={open ? "Close menu" : "Open menu"}
+          aria-expanded={open}
+          className="flex items-center justify-center w-9 h-9 rounded-none text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
+        >
+          {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+      </Tooltip>
 
       {/* Always mounted so the transition animates both ways; hidden via opacity/visibility when closed */}
       <div
