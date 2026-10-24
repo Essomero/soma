@@ -138,9 +138,7 @@ Paste the values from Step 0:
 |---|---|---|
 | `TURSO_DB` | URL from Step 0 (e.g. `libsql://soma-db-....turso.io`) | Paste exactly, including the `libsql://` prefix |
 | `TURSO_TOKEN` | Token from Step 0 | Mark Sensitive in Vercel afterwards (Project Settings, Environment Variables) |
-| `SITE_PASSWORD` | A password you invent (see below) | Your private studio login. Mark Sensitive too |
-
-**Picking a good site password (no tech needed).** This password guards your private notes, so make it long rather than complicated. The easiest method: pick 5 random words and join them with dashes, for example `river-mango-bridge-cloud-7`. Never copy an example word for word, including that one: invent your own. Avoid names, birthdays, pet names, and any password you already use elsewhere. If your phone or browser offers to generate and save a password (Apple Passwords, Google Password Manager, Bitwarden, 1Password), accept it and let it remember a 20+ character one for you. If you ever forget it, nothing is lost: set a new value in Vercel and redeploy.
+| `SITE_PASSWORD` | Any strong string you invent (e.g. `openssl rand -base64 32`) | Your private studio login. Mark Sensitive too |
 
 ### Step 3: (Optional) Add AI Keys
 
