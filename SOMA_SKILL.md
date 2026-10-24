@@ -605,6 +605,15 @@ npm run publish -- /tmp/my-story.ts
 ```
 Multi-file batches publish atomically: `npm run publish -- ch1.ts ch2.ts course.ts`. References must resolve in the DB or the same batch. `--featured` moves the `isFeatured` flag to that row.
 
+Type inference reads the parent directory name and only matches singular type names (`story`, `guide`, ...). Files staged in `/tmp` or plural dirs MUST pass `--type` explicitly or publish aborts.
+
+The task is NOT done when the `.ts` file exists. The UI reads the store, never the files. Confirm the row before yielding:
+
+```bash
+npx tsx -e "import('./scripts/content-db.ts').then(async ({getDb}) => { const db = await getDb(); const r = await db.execute({ sql: 'SELECT slug, status FROM content_items WHERE slug = ?', args: ['my-story'] }); console.log(JSON.stringify(r.rows)); })"
+# expect a row with "status":"draft". Missing row or script error means the draft never landed: fix and re-run, never report it as done.
+```
+
 ### Step 3: Preview the draft locally
 ```bash
 npm run server    # terminal 1: local edge API on :3001
@@ -886,6 +895,7 @@ The dark editorial theme uses these Tailwind classes:
     - **Runnable labs must be hands-on.** When a lesson ships a lab (`LabBlock`), the companion code must let the reader change an input and watch the output change (see *Companion Labs Architecture* above). A green test suite on its own is not a lab.
     - **Code blocks** with syntax highlighting (specify language: TypeScript, OCaml, Python, Bash)
 12. **Commit messages** follow format: `"Add [type]: [title]"` (archive commits for published manuscripts only — drafts are never committed).
+13. **No manuscript task is done until its row is verified in the store.** Authoring the `.ts` file is half the job. Every new manuscript MUST be pushed with `npm run publish` (draft default) plus a `SELECT slug, status` confirmation in the same task, every time. Never report a story as created or live based on the file alone. A missed publish is a silent no-op: the file sits in git while the UI shows nothing.
 ## Kill Criteria for Content (don't publish if)
 
 The mechanical layer (schemas, formatting, verification) is what makes a post publishable. The judgment layer is what makes a post worth publishing. Apply these kill tests **before** writing the post. If any fires, don't write it — even if the format is perfect and the URLs are verified.

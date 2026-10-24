@@ -130,6 +130,7 @@ async function main() {
   // (route gate) while /api/content reads status (data gate). Both writers
   // update both stores so the two gates never disagree.
   await db.execute(`CREATE TABLE IF NOT EXISTS public_pages (slug TEXT PRIMARY KEY, "public" INTEGER NOT NULL DEFAULT 0, set_at TEXT)`);
+  const now = new Date().toISOString();
   for (const b of batch) {
     const title = typeof b.body.title === "string" ? b.body.title : "";
     const desc = b.body.excerpt ?? b.body.description;
@@ -139,6 +140,7 @@ async function main() {
     const rawMax = posRow.rows[0]?.m;
     const existingStatus = existing.rows.length && typeof existing.rows[0]?.status === "string" ? existing.rows[0].status : "";
     const effectiveStatus = status || existingStatus || "draft";
+    const meta = featured ? { featured: true } : {};
     const position = existing.rows.length
       ? (typeof existing.rows[0]?.position === "number" ? (existing.rows[0]?.position as number) : 0)
       : (typeof rawMax === "number" ? rawMax + 1 : 0);
