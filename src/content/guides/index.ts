@@ -1,8 +1,10 @@
 import type { GuideContent, ArticleCardData } from "@/types";
 import { shipSoma } from "./ship-soma";
+import { marketSomaSuite } from "./market-soma-suite";
 
 const rawGuides = [
   shipSoma,
+  marketSomaSuite,
 ];
 
 // Inject computed fields
