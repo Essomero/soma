@@ -93,36 +93,13 @@ Soma is designed from the ground up to collaborate with AI coding agents. The re
 
 Order matters: create the free Turso database first (Step 0), because the Deploy button asks for its credentials.
 
-### Step 0: Create a Free Turso Database
+### Step 0: Database (One Click, No Setup)
 
-Turso hosts your edge SQLite database. The free tier covers personal use. Two paths, same result:
-
-**Path A: Browser dashboard (no installs, any OS).**
-1. Sign up at [turso.tech](https://turso.tech) (GitHub login works).
-2. Open Databases and create one named `soma-db`. Pick the region closest to you; the default is fine.
-3. Open the database. The Overview page shows a Connect section with the Database URL and a copy button. Copy it. That is your `TURSO_DATABASE_URL`.
-4. Click **Create Token** right below the URL. A dialog shows the token and the URL together. Copy both immediately: the token is shown once and never again. If you close the dialog first, create a fresh token. The token is your `TURSO_AUTH_TOKEN`.
-
-**Path B: Command line.**
-```bash
-# macOS:
-brew install tursodatabase/tap/turso
-# Linux / Windows (WSL):
-curl -sSfL https://get.tur.so/install.sh | bash
-
-turso auth signup
-turso db create soma-db --group <nearest-region>   # omit --group to accept the default
-turso db show soma-db --url       # copy to TURSO_DATABASE_URL
-turso db tokens create soma-db   # copy to TURSO_AUTH_TOKEN
-```
-
-Verify it answers before you deploy:
-```bash
-turso db shell soma-db "select 1;"
-# expect: a single row with the value 1
-```
+You do not need a Turso account or any database before deploying. During Vercel import, the project page suggests a **Turso** card under integrations. Click **Add**: Vercel provisions the database and injects its URL and token into your project on its own. Nothing to copy, no dashboard visit, no CLI. The suggested resource name is random (e.g. `database-celeste-arrow`): it is only a label in the dashboards, so accept it or rename it, the app does not care.
 
 Tables initialize automatically on the first API request after deploy. No migrations, no SQL to run by hand.
+
+Prefer to use a database you already own, or want it under your own Turso account? Create it at [turso.tech](https://turso.tech) (or `turso db create soma-db`) and paste its URL and token as `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` yourself, instead of adding the integration. Either path lands in the same place.
 
 ### Step 1: Fork Soma, Then Import Your Fork Into Vercel
 
