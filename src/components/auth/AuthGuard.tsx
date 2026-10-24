@@ -48,19 +48,40 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Auth cookie present → full access to everything
-    const cookie = getCookie("soma_auth");
-    if (cookie) {
-      setAuthed(true);
-      setIsOwner(true);
-      return;
-    }
-
-    // No auth cookie. Check if this specific page is public.
+    // The soma_auth flag alone authorizes nothing (it is client-readable and
+    // forgeable, and predates the signed session). A present flag earns a
+    // server check; a missing or stale one falls through to the public check.
     const slug = slugFromPath(pathname);
 
     if (authedPath === pathname && authed === true) return;
 
+    const cookie = getCookie("soma_auth");
+    if (cookie) {
+      fetch("/api/auth")
+        .then((r) => r.json().then((d) => ({ ok: r.ok, d })).catch(() => ({ ok: false, d: {} })))
+        .then(({ ok, d }: { ok: boolean; d: { authenticated?: boolean } }) => {
+          if (ok && d.authenticated) {
+            setAuthed(true);
+            setIsOwner(true);
+            setAuthedPath(pathname);
+          } else {
+            setAuthedPath(null);
+            checkPublic(slug).then((isPublic) => {
+              if (isPublic) {
+                setAuthed(true);
+                setIsOwner(false); // public access, not the owner
+                setAuthedPath(pathname);
+              } else {
+                setAuthed(false);
+              }
+            });
+          }
+        })
+        .catch(() => setAuthed(false));
+      return;
+    }
+
+    // No auth cookie. Check if this specific page is public.
     if (!slug) {
       setAuthed(false);
       return;

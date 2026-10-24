@@ -1,11 +1,17 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { createSessionToken } from "./_auth.js";
+import { createSessionToken, isAuthed } from "./_auth.js";
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
+  // GET : session check for AuthGuard. The client-readable flag alone
+  // authorizes nothing, so the guard confirms the signed session here.
+  // Stale or forged flags fall through to the public-page check.
+  if (req.method === "GET") {
+    return res.status(200).json({ authenticated: isAuthed(req) });
+  }
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
-
   const { password } = req.body || {};
   const validPassword = process.env.SITE_PASSWORD;
 
