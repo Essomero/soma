@@ -64,7 +64,7 @@ export default function LearnIndexPage() {
           {isOwner && (
             <Link
               to="/learn/new"
-              className="inline-flex items-center gap-xs px-xl py-md rounded-lg font-sora text-sm bg-primary text-on-primary hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-xs px-xl py-md rounded-none font-sora text-sm font-bold bg-primary text-on-primary border-2 border-inverse-surface shadow-brutal-sm hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-brutal active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all"
             >
               <Plus className="w-4 h-4" /> New note
             </Link>
@@ -85,7 +85,7 @@ export default function LearnIndexPage() {
           <p className="font-dm-sans text-sm text-error">Couldn't load notes. Try again.</p>
         </div>
       ) : articles.length === 0 ? (
-        <div className="py-xxl text-center border border-dashed border-border-default rounded-xl">
+        <div className="py-xxl text-center border border-dashed border-border-default rounded-none">
           <StickyNote className="w-8 h-8 mx-auto text-on-surface-muted mb-md" />
           <p className="font-dm-sans text-sm text-on-surface-muted mb-lg">
             No notes yet : capture your first study note.
@@ -93,7 +93,7 @@ export default function LearnIndexPage() {
           {isOwner && (
             <Link
               to="/learn/new"
-              className="inline-flex items-center gap-xs px-xl py-md rounded-lg font-sora text-sm bg-primary text-on-primary hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-xs px-xl py-md rounded-none font-sora text-sm font-bold bg-primary text-on-primary border-2 border-inverse-surface shadow-brutal-sm hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-brutal active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all"
             >
               <Plus className="w-4 h-4" /> Write a note
             </Link>
@@ -104,7 +104,7 @@ export default function LearnIndexPage() {
           {articles.map((a) => (
             <article
               key={a.slug}
-              className="group flex flex-col border border-border-default bg-surface hover:border-outline hover:-translate-y-1 transition-all duration-300 rounded-lg overflow-hidden"
+              className="group flex flex-col border-2 border-inverse-surface bg-surface hover:-translate-y-1 hover:shadow-brutal transition-all duration-200 rounded-none overflow-hidden"
             >
               <Link to={`/learn/${a.slug}`} className="block flex-1 p-lg flex flex-col">
                 <p className="font-sora text-metadata-tag text-on-surface-muted uppercase tracking-widest mb-md">

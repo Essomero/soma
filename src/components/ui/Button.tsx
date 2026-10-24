@@ -12,17 +12,18 @@ interface ButtonProps {
   onClick?: React.MouseEventHandler<HTMLElement>;
   disabled?: boolean;
 }
+const press = "hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-brutal active:translate-x-[2px] active:translate-y-[2px] active:shadow-none";
 const variantStyles = {
   primary:
-    "bg-brand text-white hover:bg-brand/90",
+    `bg-brand text-white border-2 border-inverse-surface shadow-brutal-sm ${press}`,
   outline:
-    "border-2 border-brand text-brand hover:bg-brand hover:text-white",
+    `border-2 border-brand text-brand shadow-brutal-sm hover:bg-brand hover:text-white ${press}`,
   ghost:
-    "text-on-surface-muted hover:text-on-surface",
+    "text-on-surface-muted hover:text-on-surface border-2 border-transparent",
   brand:
-    "bg-primary text-on-primary hover:opacity-90",
+    `bg-primary text-on-primary border-2 border-inverse-surface shadow-brutal-sm ${press}`,
   white:
-    "bg-white text-surface-lowest hover:bg-gray-200",
+    `bg-white text-surface-lowest border-2 border-inverse-surface shadow-brutal-sm ${press}`,
 };
 
 const sizeStyles = {
@@ -43,7 +44,7 @@ export default function Button({
   disabled,
 }: ButtonProps) {
   const classes = cn(
-    "inline-flex items-center gap-2 font-bold rounded-full transition-all font-sora",
+    "inline-flex items-center gap-2 font-bold rounded-none transition-all font-sora",
     disabled && "opacity-50 cursor-not-allowed pointer-events-none",
     variantStyles[variant],
     sizeStyles[size],
