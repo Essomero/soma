@@ -4,7 +4,6 @@ const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_DISABLED = process.env.GEMINI_DISABLED === "1" || process.env.GEMINI_DISABLED === "true";
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
 const CEREBRAS_KEY = process.env.CEREBRAS_API_KEY || "";
-const META_KEY = process.env.META_API_KEY || process.env.MODEL_API_KEY || "";
 const STRAITLY_KEY = process.env.STRAITLY_API_KEY || process.env.STRAIGHTLY_API_KEY || "";
 const STRAITLY_URL = "https://api.straitly.ai/v1/models";
 
@@ -18,11 +17,6 @@ const STRAITLY_MODELS = [
   { id: "meta-llama/muse-spark-1.3-contributor", label: "Muse Spark 1.3 Contributor", provider: "straitly", free: false },
   { id: "gemini-3.8-flash", label: "Gemini 3.8 Flash", provider: "straitly", free: false },
   { id: "deepseek/deepseek-v4-pro", label: "DeepSeek V4 Pro", provider: "straitly", free: false },
-];
-
-// Hardcoded direct Meta models (always available in dropdown)
-const META_MODELS = [
-  { id: "muse-spark-1.3", label: "Muse Spark 1.3", provider: "meta", free: false },
 ];
 
 // Hardcoded direct DeepSeek models (always available if DEEPSEEK_API_KEY is set)
@@ -333,57 +327,6 @@ async function fetchCerebrasModels() {
     return cachedCerebrasModels || [];
   }
 }
-// Cache Meta models in memory
-let cachedMetaModels = null;
-let cacheMetaTime = 0;
-
-async function fetchMetaModels() {
-  if (!META_KEY) return [];
-  if (cachedMetaModels && Date.now() - cacheMetaTime < CACHE_TTL) return cachedMetaModels;
-
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-
-    const r = await fetch("https://api.meta.ai/v1/models", {
-      headers: {
-        "Authorization": `Bearer ${META_KEY}`,
-        "Content-Type": "application/json",
-      },
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeout);
-
-    if (!r.ok) {
-      console.error(`Meta models error ${r.status}`);
-      return cachedMetaModels || META_MODELS;
-    }
-
-    const data = await r.json();
-    const rawList = Array.isArray(data.data) ? data.data : Array.isArray(data.models) ? data.models : [];
-    const models = rawList
-      .filter(m => {
-        const id = (m.id || m.name || "").toLowerCase();
-        return id.includes("muse-spark");
-      })
-      .map(m => ({
-        id: m.id || m.name,
-        label: m.displayName || m.name || m.id,
-        provider: "meta",
-        free: false,
-        context_length: m.context_window || m.context_length || 1048576,
-      }));
-
-    const result = models.length > 0 ? models : META_MODELS;
-    cachedMetaModels = result;
-    cacheMetaTime = Date.now();
-    return result;
-  } catch (e) {
-    console.error("Meta fetch error:", e.message);
-    return cachedMetaModels || META_MODELS;
-  }
-}
 // Cache Straitly models in memory
 let cachedStraitlyModels = null;
 let cacheStraitlyTime = 0;
@@ -446,12 +389,11 @@ export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
 
   try {
-    const [geminiModels, openrouterModels, groqModels, cerebrasModels, metaModels, straitlyModels] = await Promise.all([
+    const [geminiModels, openrouterModels, groqModels, cerebrasModels, straitlyModels] = await Promise.all([
       fetchGeminiModels(),
       fetchOpenRouterModels(),
       fetchGroqModels(),
       fetchCerebrasModels(),
-      fetchMetaModels(),
       fetchStraitlyModels(),
     ]);
 
@@ -480,7 +422,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const models = [...(DEEPSEEK_KEY ? DEEPSEEK_MODELS : []), ...finalGemini, ...finalOR, ...groqModels, ...cerebrasModels, ...metaModels, ...straitlyModels];
+    const models = [...(DEEPSEEK_KEY ? DEEPSEEK_MODELS : []), ...finalGemini, ...finalOR, ...groqModels, ...cerebrasModels, ...straitlyModels];
     return res.json({ models });
   } catch (e) {
     console.error("Models handler error:", e.message);

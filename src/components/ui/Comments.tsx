@@ -849,7 +849,6 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
                   const openrouterModels = models.filter(m => m.provider === "openrouter");
                   const groqModels = models.filter(m => m.provider === "groq");
                   const cerebrasModels = models.filter(m => m.provider === "cerebras");
-                  const metaModels = models.filter(m => m.provider === "meta");
                   const straitlyModels = models.filter(m => m.provider === "straitly");
                   const freeOR = openrouterModels.filter(m => m.free);
                   const paidOR = openrouterModels.filter(m => !m.free);
@@ -893,17 +892,6 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
                         <>
                           <SectionHeader label="Cerebras" dotColor="#a78bfa" />
                           {cerebrasModels.map(m => (
-                            <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setAiModel(m.id); setAiProvider(m.provider); setModelMenuOpen(false); }}
-                              className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === aiModel && m.provider === aiProvider ? "text-brand font-medium" : "text-on-surface"}`}>
-                              {m.label}
-                            </button>
-                          ))}
-                        </>
-                      )}
-                      {metaModels.length > 0 && (
-                        <>
-                          <SectionHeader label="Meta" dotColor="#0866FF" />
-                          {metaModels.map(m => (
                             <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setAiModel(m.id); setAiProvider(m.provider); setModelMenuOpen(false); }}
                               className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === aiModel && m.provider === aiProvider ? "text-brand font-medium" : "text-on-surface"}`}>
                               {m.label}

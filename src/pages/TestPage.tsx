@@ -742,7 +742,6 @@ export default function TestPage() {
   const geminiModels = models.filter((m) => m.provider === "gemini");
   const groqModels = models.filter((m) => m.provider === "groq");
   const cerebrasModels = models.filter((m) => m.provider === "cerebras");
-  const metaModels = models.filter((m) => m.provider === "meta");
   const straitlyModels = models.filter((m) => m.provider === "straitly");
   const freeOR = models.filter((m) => m.provider === "openrouter" && m.free);
   const paidOR = models.filter((m) => m.provider === "openrouter" && !m.free);
@@ -1739,26 +1738,6 @@ export default function TestPage() {
                               <>
                                 <SectionHeader label="Cerebras" dotColor="#a78bfa" />
                                 {cerebrasModels.map((m) => (
-                                  <button
-                                    key={m.id}
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedModel(m.id);
-                                      setModelMenuOpen(false);
-                                    }}
-                                    className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${
-                                      m.id === selectedModel ? "text-brand font-bold" : "text-on-surface"
-                                    }`}
-                                  >
-                                    {m.label}
-                                  </button>
-                                ))}
-                              </>
-                            )}
-                            {metaModels.length > 0 && (
-                              <>
-                                <SectionHeader label="Meta" dotColor="#0866FF" />
-                                {metaModels.map((m) => (
                                   <button
                                     key={m.id}
                                     type="button"

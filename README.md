@@ -134,8 +134,6 @@ Add keys in Vercel under Project Settings > Environment Variables, then redeploy
 | `CEREBRAS_API_KEY` | Fast Cerebras inference | [cloud.cerebras.ai](https://cloud.cerebras.ai/) |
 | `STRAITLY_API_KEY` | Multi-model gateway (100+ models) | [straitly.ai/app/keys](https://straitly.ai/app/keys) |
 
-`META_API_KEY` (also accepted as `MODEL_API_KEY`) is Meta's own model API, for Muse Spark models. You don't need it for the features above.
-
 ---
 
 ## Keeping Your Deployment Updated

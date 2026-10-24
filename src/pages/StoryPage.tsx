@@ -1420,7 +1420,6 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
                           const openrouter = inlineModels.filter(m => m.provider === "openrouter");
                           const groq = inlineModels.filter(m => m.provider === "groq");
                           const cerebras = inlineModels.filter(m => m.provider === "cerebras");
-                          const meta = inlineModels.filter(m => m.provider === "meta");
                           const straitly = inlineModels.filter(m => m.provider === "straitly");
                           return (
                             <>
@@ -1462,17 +1461,6 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
                                 <>
                                   <SectionHeader label="Cerebras" dotColor="#a78bfa" />
                                   {cerebras.map(m => (
-                                    <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }}
-                                      className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>
-                                      {m.label}
-                                    </button>
-                                  ))}
-                                </>
-                              )}
-                              {meta.length > 0 && (
-                                <>
-                                  <SectionHeader label="Meta" dotColor="#0866FF" />
-                                  {meta.map(m => (
                                     <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }}
                                       className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>
                                       {m.label}
@@ -1812,14 +1800,12 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
                           const d = inlineModels.filter(m => m.provider === "deepseek"), g = inlineModels.filter(m => m.provider === "gemini"),
                             o = inlineModels.filter(m => m.provider === "openrouter"), gr = inlineModels.filter(m => m.provider === "groq"),
                             ce = inlineModels.filter(m => m.provider === "cerebras"),
-                            mt = inlineModels.filter(m => m.provider === "meta"),
                             st = inlineModels.filter(m => m.provider === "straitly");
                           return (<>
                             {d.length > 0 && (<><SectionHeader label="DeepSeek" dotColor="#b8c3ff" />{d.map(m => <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>{m.label}</button>)}</>)}
                             {g.length > 0 && (<><SectionHeader label="Gemini" dotColor="#47e175" />{g.map(m => <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors flex items-center justify-between ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}><span className="truncate mr-sm">{m.label}</span>{m.free && <span className="text-[9px] text-accent-orange flex-shrink-0">FREE</span>}</button>)}</>)}
                             {gr.length > 0 && (<><SectionHeader label="Groq" dotColor="#fde68a" />{gr.map(m => <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>{m.label}</button>)}</>)}
                             {ce.length > 0 && (<><SectionHeader label="Cerebras" dotColor="#a78bfa" />{ce.map(m => <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>{m.label}</button>)}</>)}
-                            {mt.length > 0 && (<><SectionHeader label="Meta" dotColor="#0866FF" />{mt.map(m => <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>{m.label}</button>)}</>)}
                             {st.length > 0 && (<><SectionHeader label="Straightly" dotColor="#06B6D4" />{st.map(m => <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel && m.provider === inlineAiProvider ? "text-brand font-medium" : "text-on-surface"}`}>{m.label}</button>)}</>)}
                             {o.filter(m => m.free).length > 0 && (<><SectionHeader label="OpenRouter · Free" dotColor="#fb923c" />{o.filter(m => m.free).map(m => <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors flex items-center justify-between ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}><span className="truncate mr-sm">{m.label}</span>{m.free && <span className="text-[9px] text-accent-orange flex-shrink-0">FREE</span>}</button>)}</>)}
                             {o.filter(m => !m.free).length > 0 && (<><SectionHeader label="OpenRouter · Paid" dotColor="#fb923c" />{o.filter(m => !m.free).map(m => <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>{m.label}</button>)}</>)}

@@ -9,8 +9,6 @@ const GROQ_KEY = process.env.GROQ_API_KEY || "";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const CEREBRAS_KEY = process.env.CEREBRAS_API_KEY || "";
 const CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions";
-const META_KEY = process.env.META_API_KEY || process.env.MODEL_API_KEY || "";
-const META_URL = "https://api.meta.ai/v1/chat/completions";
 const STRAITLY_KEY = process.env.STRAITLY_API_KEY || process.env.STRAIGHTLY_API_KEY || "";
 const STRAITLY_URL = "https://api.straitly.ai/v1/chat/completions";
 const STRAITLY_MODEL_IDS = new Set([
@@ -58,8 +56,6 @@ export default async function handler(req, res) {
       resolvedProvider = "custom";
     } else if (model && (model.startsWith("straitly/") || STRAITLY_MODEL_IDS.has(model))) {
       resolvedProvider = "straitly";
-    } else if (model && (model.startsWith("muse-") || model.startsWith("meta/"))) {
-      resolvedProvider = "meta";
     } else if (model && model.startsWith("gemini-")) {
       resolvedProvider = "gemini";
     } else if (model && model.includes("/")) {
@@ -75,7 +71,6 @@ export default async function handler(req, res) {
   const isOpenRouter = resolvedProvider === "openrouter";
   const isGroq = resolvedProvider === "groq";
   const isCerebras = resolvedProvider === "cerebras";
-  const isMeta = resolvedProvider === "meta";
   const isDeepSeek = resolvedProvider === "deepseek";
 
   let apiKey, apiUrl;
@@ -94,9 +89,6 @@ export default async function handler(req, res) {
   } else if (isCerebras) {
     apiKey = customApiKey || CEREBRAS_KEY;
     apiUrl = customApiUrl || CEREBRAS_URL;
-  } else if (isMeta) {
-    apiKey = customApiKey || META_KEY;
-    apiUrl = customApiUrl || META_URL;
   } else if (isStraitly) {
     apiKey = customApiKey || STRAITLY_KEY;
     apiUrl = customApiUrl || STRAITLY_URL;
@@ -106,7 +98,7 @@ export default async function handler(req, res) {
   }
 
   if (!apiKey) {
-    const name = isGemini ? "GEMINI_API_KEY" : isOpenRouter ? "OPENROUTER_API_KEY" : isGroq ? "GROQ_API_KEY" : isCerebras ? "CEREBRAS_API_KEY" : isMeta ? "META_API_KEY" : isStraitly ? "STRAITLY_API_KEY" : "DEEPSEEK_API_KEY";
+    const name = isGemini ? "GEMINI_API_KEY" : isOpenRouter ? "OPENROUTER_API_KEY" : isGroq ? "GROQ_API_KEY" : isCerebras ? "CEREBRAS_API_KEY" : isStraitly ? "STRAITLY_API_KEY" : "DEEPSEEK_API_KEY";
     console.error(`${name} is not configured`);
     return res.status(500).json({ error: `AI service not configured (${name})` });
   }
@@ -114,10 +106,7 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: "Gemini is temporarily disabled (GEMINI_DISABLED=1)." });
   }
 
-  let selectedModel = model || (isGemini ? "gemini-2.5-flash" : isStraitly ? "deepseek/deepseek-v4-1-flash" : isOpenRouter ? "deepseek/deepseek-v4-flash" : isGroq ? "llama-3.1-8b-instant" : isCerebras ? "gemma-4-31b" : isMeta ? "muse-spark-1.3" : "deepseek-flash");
-  if (isMeta) {
-    selectedModel = selectedModel.replace(/^meta\//, "");
-  }
+  let selectedModel = model || (isGemini ? "gemini-2.5-flash" : isStraitly ? "deepseek/deepseek-v4-1-flash" : isOpenRouter ? "deepseek/deepseek-v4-flash" : isGroq ? "llama-3.1-8b-instant" : isCerebras ? "gemma-4-31b" : "deepseek-flash");
   if (isStraitly) {
     selectedModel = selectedModel.replace(/^straitly\//, "");
   }
