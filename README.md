@@ -111,11 +111,9 @@ Do this before pressing Deploy: deploying without it breaks login and forces a r
 
 ### Step 2: Add the Turso Integration, Then Deploy
 
-Further down the same page, under Optional Integrations, click **Add** on the **Turso** card. Vercel provisions the database and injects its URL and token into your project on its own: `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`, no copying. The suggested resource name is random (e.g. `database-celeste-arrow`): it is only a label in the dashboards, so accept it or rename it, the app does not care.
+Vercel tells you what to do here: "Review the recommended integrations below, then deploy." Further down the same page, under Optional Integrations, click **Add** on the **Turso** card. Vercel provisions the database and injects its URL and token into your project on its own: `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`, no copying. The suggested resource name is random (e.g. `database-celeste-arrow`): it is only a label in the dashboards, so accept it or rename it, the app does not care.
 
 Then press Deploy. Tables initialize automatically on the first API request: no migrations, no SQL to run by hand.
-
-Prefer a database you already own, or want it under your own Turso account? Skip the card and paste its URL and token as `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` yourself, instead. Either path lands in the same place.
 
 ### Step 3: (Optional) Add AI Keys
 
