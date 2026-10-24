@@ -35,6 +35,109 @@ const ROUTE_BASE = {
 
 const STATUSES = new Set(["draft", "published"]);
 
+// Runtime self-heal: a deployment whose store is empty (fresh database,
+// never seeded) fills itself from the build-time corpus snapshot on first
+// read. One redeploy picks this up; after that no CLI or rebuild is ever
+// needed. Seeded rows honor public_pages, so fresh stores land as drafts.
+const CREATE_PUBLIC_PAGES = `CREATE TABLE IF NOT EXISTS public_pages (slug TEXT PRIMARY KEY, "public" INTEGER NOT NULL DEFAULT 0, set_at TEXT)`;
+const CREATE_SEED_META = `CREATE TABLE IF NOT EXISTS _seed_meta (key TEXT PRIMARY KEY, done_at TEXT)`;
+
+function toArg(a) {
+  if (a === null || a === undefined) return { type: "null" };
+  if (typeof a === "number") return { type: "integer", value: String(a) };
+  return { type: "text", value: String(a) };
+}
+
+async function pipeline(requests) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
+  try {
+    const r = await fetch(DB_URL + "/v2/pipeline", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
+      body: JSON.stringify({ requests }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch {
+    clearTimeout(timeout);
+    return null;
+  }
+}
+
+function rowsOf(data, i) {
+  try {
+    const result = data.results[i].response.result;
+    const cols = (result.cols || []).map(function(c) { return c.name || c; });
+    return (result.rows || []).map(function(row) {
+      const obj = {};
+      cols.forEach(function(c, j) {
+        const cell = row[j];
+        obj[c] = (cell && typeof cell === "object") ? (cell.type === "null" ? null : (cell.value !== undefined ? cell.value : null)) : cell;
+      });
+      return obj;
+    });
+  } catch {
+    return [];
+  }
+}
+
+async function loadCorpusRows() {
+  try {
+    const mod = await import("./_corpus.js");
+    const raw = typeof mod.CORPUS_JSON === "string" ? JSON.parse(mod.CORPUS_JSON) : [];
+    return Array.isArray(raw) ? raw : [];
+  } catch {
+    return [];
+  }
+}
+
+// Returns true when it seeded (caller should re-run its query once).
+// INSERT OR IGNORE keeps concurrent first requests from duplicating rows.
+async function healIfEmptyStore() {
+  const check = await pipeline([
+    { type: "execute", stmt: { sql: CREATE_TABLE } },
+    { type: "execute", stmt: { sql: CREATE_PUBLIC_PAGES } },
+    { type: "execute", stmt: { sql: CREATE_SEED_META } },
+    { type: "execute", stmt: { sql: "SELECT done_at FROM _seed_meta WHERE key = 'corpus'", args: [] } },
+    { type: "execute", stmt: { sql: "SELECT COUNT(*) AS n FROM content_items", args: [] } },
+  ]);
+  if (!check) return false;
+  const flagged = rowsOf(check, 3).length > 0;
+  const countRow = rowsOf(check, 4)[0];
+  const count = countRow ? Number(countRow.n) || 0 : 0;
+  if (flagged || count > 0) return false;
+
+  const corpus = await loadCorpusRows();
+  if (!corpus.length) return false;
+
+  const vis = await pipeline([
+    { type: "execute", stmt: { sql: 'SELECT slug FROM public_pages WHERE "public" = 1', args: [] } },
+  ]);
+  const publicSlugs = new Set(rowsOf(vis || { results: [] }, 0).map((r) => r.slug));
+  const now = new Date().toISOString();
+  const inserts = [];
+  for (const e of corpus) {
+    if (!e || typeof e.slug !== "string") continue;
+    const published = publicSlugs.has(e.slug);
+    inserts.push(
+      { type: "execute", stmt: { sql: `INSERT OR IGNORE INTO content_items (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, args: [e.slug, e.type || "story", published ? "published" : "draft", e.title || "", e.excerpt || "", JSON.stringify(e.body || {}), JSON.stringify(e.meta || {}), Number(e.position) || 0, now].map(toArg) } },
+      { type: "execute", stmt: { sql: `INSERT OR IGNORE INTO public_pages (slug, "public", set_at) VALUES (?, ?, ?)`, args: [e.slug, published ? 1 : 0, now].map(toArg) } },
+    );
+  }
+  if (!inserts.length) return false;
+  // Chunked so no single pipeline call grows without bound; the flag lands
+  // only after every chunk applies, so a partial failure heals forward.
+  for (let i = 0; i < inserts.length; i += 40) {
+    const ok = await pipeline(inserts.slice(i, i + 40));
+    if (!ok) return false;
+  }
+  await pipeline([{ type: "execute", stmt: { sql: "INSERT OR IGNORE INTO _seed_meta (key, done_at) VALUES ('corpus', ?)", args: [toArg(now)] } }]);
+  return true;
+}
+
 async function query(sql, args) {
   args = args || [];
   const body = {
@@ -128,7 +231,10 @@ export default async function handler(req, res) {
     // When ?type= is also given, the row must match it (slugs are unique per
     // type, not globally).
     if (req.method === "GET" && req.query.slug) {
-      const rows = await query("SELECT * FROM content_items WHERE slug = ?", [req.query.slug]);
+      let rows = await query("SELECT * FROM content_items WHERE slug = ?", [req.query.slug]);
+      if (!rows[0] && await healIfEmptyStore()) {
+        rows = await query("SELECT * FROM content_items WHERE slug = ?", [req.query.slug]);
+      }
       const row = rows[0];
       if (!row) return res.status(404).json({ error: "Not found" });
       if (req.query.type && row.type !== req.query.type) {
@@ -151,23 +257,38 @@ export default async function handler(req, res) {
       const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
       if (q) {
         const like = "%" + q.replace(/[\\%_]/g, (c) => "\\" + c) + "%";
-        const rows = await query(
+        let rows = await query(
           `SELECT * FROM content_items WHERE type = ?${statusFilter}
            AND (title LIKE ? ESCAPE '\\' OR excerpt LIKE ? ESCAPE '\\' OR body_json LIKE ? ESCAPE '\\')
            ORDER BY position ASC`,
           [req.query.type, like, like, like]);
+        if (!rows.length && await healIfEmptyStore()) {
+          rows = await query(
+            `SELECT * FROM content_items WHERE type = ?${statusFilter}
+             AND (title LIKE ? ESCAPE '\\' OR excerpt LIKE ? ESCAPE '\\' OR body_json LIKE ? ESCAPE '\\')
+             ORDER BY position ASC`,
+            [req.query.type, like, like, like]);
+        }
         return res.json(rows.map(mapRow));
       }
-      const rows = await query(
+      let rows = await query(
         `SELECT * FROM content_items WHERE type = ?${statusFilter} ORDER BY position ASC`
         , [req.query.type]);
+      if (!rows.length && await healIfEmptyStore()) {
+        rows = await query(
+          `SELECT * FROM content_items WHERE type = ?${statusFilter} ORDER BY position ASC`
+          , [req.query.type]);
+      }
       return res.json(rows.map(mapRow));
     }
 
     // GET (no params) : full store for the owner (migration/audit tooling).
     if (req.method === "GET") {
       if (!requireAuth(req, res)) return;
-      const rows = await query("SELECT * FROM content_items ORDER BY type ASC, position ASC", []);
+      let rows = await query("SELECT * FROM content_items ORDER BY type ASC, position ASC", []);
+      if (!rows.length && await healIfEmptyStore()) {
+        rows = await query("SELECT * FROM content_items ORDER BY type ASC, position ASC", []);
+      }
       return res.json(rows.map(mapRow));
     }
 
