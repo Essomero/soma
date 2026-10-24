@@ -166,6 +166,28 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
   // in real time, no refresh needed).
   useEffect(() => { fetchComments(); }, [fetchComments, refreshSignal]);
 
+  const insertCreated = (created: any) => {
+    if (!created || created.id == null) return;
+    const node: Comment = {
+      ...created,
+      id: Number(created.id),
+      parent_id: created.parent_id != null ? Number(created.parent_id) : null,
+      is_ai: Number(created.is_ai ?? 0),
+      replies: [],
+    };
+    setComments(prev => {
+      if (node.parent_id == null) return [node, ...prev];
+      let attached = false;
+      const attach = (nodes: Comment[]): Comment[] => nodes.map(n => {
+        if (n.id === node.parent_id) { attached = true; return { ...n, replies: [...(n.replies || []), node] }; }
+        const replies = attach(n.replies || []);
+        return replies === n.replies ? n : { ...n, replies };
+      });
+      const next = attach(prev);
+      return attached ? next : [node, ...prev];
+    });
+  };
+
   const postComment = async (text: string, parentId?: number | null) => {
     if (!text.trim()) return;
     setLoading(true);
@@ -176,10 +198,11 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
         body: JSON.stringify({ storySlug, body: text.trim(), parentId: parentId ?? null }),
       });
       if (r.ok) {
+        try { insertCreated(await r.json()); } catch {}
         setBody("");
         setReplyBody("");
         setReplyToId(null);
-        fetchComments();
+        await fetchComments();
       }
     } catch {}
     setLoading(false);
@@ -421,11 +444,22 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
         body: JSON.stringify({ storySlug, body: summaryDraft.trim(), isAi: true, aiModel }),
       });
       if (r.ok) {
-        setSummaryDraft("");
-        setSummarizing(false);
-        fetchComments();
+        let created: any = null;
+        try { created = await r.json(); } catch {}
+        if (created && created.id != null) {
+          insertCreated(created);
+          setSummaryDraft("");
+          setSummarizing(false);
+          await fetchComments();
+        } else {
+          setAiError({ id: -1, message: (created && created.error) || "Couldn't save — try again." });
+        }
+      } else {
+        setAiError({ id: -1, message: `Couldn't save (HTTP ${r.status}) — try again.` });
       }
-    } catch {}
+    } catch {
+      setAiError({ id: -1, message: "Couldn't save — try again." });
+    }
     setLoading(false);
   };
 
@@ -521,11 +555,22 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
         body: JSON.stringify({ storySlug, body: explainDraft.trim(), isAi: true, aiModel }),
       });
       if (r.ok) {
-        setExplainDraft("");
-        setExplaining(false);
-        fetchComments();
+        let created: any = null;
+        try { created = await r.json(); } catch {}
+        if (created && created.id != null) {
+          insertCreated(created);
+          setExplainDraft("");
+          setExplaining(false);
+          await fetchComments();
+        } else {
+          setAiError({ id: -2, message: (created && created.error) || "Couldn't save — try again." });
+        }
+      } else {
+        setAiError({ id: -2, message: `Couldn't save (HTTP ${r.status}) — try again.` });
       }
-    } catch {}
+    } catch {
+      setAiError({ id: -2, message: "Couldn't save — try again." });
+    }
     setLoading(false);
   };
 
@@ -541,19 +586,30 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
         body: JSON.stringify({ storySlug, body: draft.trim(), parentId: commentId, isAi: true, aiModel }),
       });
       if (r.ok) {
-        setAiDrafts(prev => {
-          const next = new Map(prev);
-          next.delete(commentId);
-          return next;
-        });
-        setAiDraftTabs(prev => {
-          const next = new Map(prev);
-          next.delete(commentId);
-          return next;
-        });
-        fetchComments();
+        let created: any = null;
+        try { created = await r.json(); } catch {}
+        if (created && created.id != null) {
+          insertCreated(created);
+          setAiDrafts(prev => {
+            const next = new Map(prev);
+            next.delete(commentId);
+            return next;
+          });
+          setAiDraftTabs(prev => {
+            const next = new Map(prev);
+            next.delete(commentId);
+            return next;
+          });
+          await fetchComments();
+        } else {
+          setAiError({ id: commentId, message: (created && created.error) || "Couldn't save — try again." });
+        }
+      } else {
+        setAiError({ id: commentId, message: `Couldn't save (HTTP ${r.status}) — try again.` });
       }
-    } catch {}
+    } catch {
+      setAiError({ id: commentId, message: "Couldn't save — try again." });
+    }
     setLoading(false);
   };
 
