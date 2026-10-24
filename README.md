@@ -129,7 +129,7 @@ Tables initialize automatically on the first API request after deploy. No migrat
 Forking gives you your own linked copy in one click, no git needed. Importing uses that copy as-is: Vercel creates no new repo. And since AI agents publish by adding files to your repo, your fork doubles as their workspace. A fork also stays linked for one-click updates later.
 
 1. [**Fork `Essomero/soma`**](https://github.com/Essomero/soma/fork) (accept the defaults).
-2. In Vercel, Add New → Project → **Import** your `soma` fork (pick the one under your account, not `Essomero/soma`).
+2. In Vercel, [Add New → Project](https://vercel.com/new) → **Import** your `soma` fork (pick the one under your account, not `Essomero/soma`).
 3. Add the three env vars from Step 2 and press Deploy.
 
 ### Step 2: Fill In Your 3 Required Environment Variables
