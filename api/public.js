@@ -83,7 +83,6 @@ export default async function handler(req, res) {
       const { slugs, public: isPublic } = req.body || {};
       const slugList = slugs || (req.body.slug ? [req.body.slug] : []);
       if (!slugList.length) return res.status(400).json({ error: "Missing slugs" });
-
       const now = new Date().toISOString();
       const val = isPublic ? 1 : 0;
 
@@ -92,6 +91,10 @@ export default async function handler(req, res) {
           "INSERT INTO public_pages (slug, \"public\", set_at) VALUES (?, ?, ?) ON CONFLICT(slug) DO UPDATE SET \"public\" = excluded.\"public\", set_at = excluded.set_at",
           [slug, val, now]
         );
+        // Content rows carry their own status column (read by /api/content);
+        // the toggle writes both stores so route gate and data gate agree.
+        // No content_items table yet (fresh DB, learn-only notes) → no-op.
+        await query("UPDATE content_items SET status = ?, updated_at = ? WHERE slug = ?", [isPublic ? "published" : "draft", now, slug]);
       }
 
       return res.json({ success: true });

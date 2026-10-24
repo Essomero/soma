@@ -124,7 +124,10 @@ async function main() {
     }
   }
 
-  // Write.
+  // Write + mirror visibility: the lock/globe toggle reads public_pages
+  // (route gate) while /api/content reads status (data gate). Both writers
+  // update both stores so the two gates never disagree.
+  await db.execute(`CREATE TABLE IF NOT EXISTS public_pages (slug TEXT PRIMARY KEY, "public" INTEGER NOT NULL DEFAULT 0, set_at TEXT)`);
   for (const b of batch) {
     const title = typeof b.body.title === "string" ? b.body.title : "";
     const desc = b.body.excerpt ?? b.body.description;
@@ -147,6 +150,11 @@ async function main() {
               title = excluded.title, excerpt = excluded.excerpt, body_json = excluded.body_json,
               meta_json = excluded.meta_json, position = excluded.position, updated_at = excluded.updated_at`,
       args: [b.slug, b.type, status, title, excerpt, JSON.stringify(b.body), JSON.stringify(meta), position, now],
+    });
+    await db.execute({
+      sql: `INSERT INTO public_pages (slug, "public", set_at) VALUES (?, ?, ?)
+            ON CONFLICT(slug) DO UPDATE SET "public" = excluded."public", set_at = excluded.set_at`,
+      args: [b.slug, status === "published" ? 1 : 0, now],
     });
     console.log(`${status === "published" ? "PUBLISHED" : "draft"} ${b.type} ${b.slug} <- ${b.file}`);
   }
