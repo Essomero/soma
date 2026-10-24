@@ -272,10 +272,12 @@ function chatDevPlugin(env: Record<string, string>) {
   let cacheMetaTime = 0;
 
   async function fetchMetaModels(): Promise<DevModelItem[]> {
+    // No key means no models: the UI disables AI actions instead of
+    // advertising a model that can only fail with "not configured".
+    if (!META_KEY) return [];
     const defaultMeta: DevModelItem[] = [
       { id: "muse-spark-1.3", label: "Muse Spark 1.3", provider: "meta", free: false },
     ];
-    if (!META_KEY) return defaultMeta;
     if (cachedMetaModels.length && Date.now() - cacheMetaTime < CACHE_TTL) return cachedMetaModels;
     try {
       const controller = new AbortController();
@@ -316,6 +318,9 @@ function chatDevPlugin(env: Record<string, string>) {
   let cacheStraitlyTime = 0;
 
   async function fetchStraitlyModels(): Promise<DevModelItem[]> {
+    // Same gating as production api/models.js: unconfigured provider
+    // contributes zero models so explain/summarize stay disabled.
+    if (!STRAITLY_KEY) return [];
     const defaultStraitly: DevModelItem[] = [
       { id: "deepseek/deepseek-v4-1-flash", label: "DeepSeek V4.1 Flash", provider: "straitly", free: false },
       { id: "z-ai/glm-5.3-flash", label: "GLM 5.3 Flash", provider: "straitly", free: false },
@@ -326,7 +331,6 @@ function chatDevPlugin(env: Record<string, string>) {
       { id: "gemini-3.8-flash", label: "Gemini 3.8 Flash", provider: "straitly", free: false },
       { id: "deepseek/deepseek-v4-pro", label: "DeepSeek V4 Pro", provider: "straitly", free: false },
     ];
-    if (!STRAITLY_KEY) return defaultStraitly;
     if (cachedStraitlyModels.length && Date.now() - cacheStraitlyTime < CACHE_TTL) return cachedStraitlyModels;
     try {
       const controller = new AbortController();
@@ -364,10 +368,13 @@ function chatDevPlugin(env: Record<string, string>) {
 
 
   async function getModels(): Promise<any[]> {
-    const base = [
+    // Mirror production api/models.js: only advertise providers whose keys
+    // are configured. A model in this list must be callable, otherwise the
+    // UI enables explain/summarize actions that can only fail.
+    const base = DEEPSEEK_KEY ? [
       { id: "deepseek-flash", label: "DeepSeek Flash", provider: "deepseek", free: false },
       { id: "deepseek-v4-pro", label: "DeepSeek V4 Pro", provider: "deepseek", free: false },
-    ];
+    ] : [];
     const [geminiModels, orModels, groqModels, cerebrasModels, metaModels, straitlyModels] = await Promise.all([
       fetchGeminiModels(),
       fetchOpenRouterModels(),
@@ -377,8 +384,8 @@ function chatDevPlugin(env: Record<string, string>) {
       fetchStraitlyModels(),
     ]);
 
-    const finalGemini = [...geminiModels];
-    if (!finalGemini.some((m: any) => m.id === "gemini-flash-lite-latest")) {
+    const finalGemini = (GEMINI_KEY && !GEMINI_DISABLED) ? [...geminiModels] : [];
+    if (finalGemini.length > 0 && !finalGemini.some((m: any) => m.id === "gemini-flash-lite-latest")) {
       finalGemini.unshift({
         id: "gemini-flash-lite-latest",
         label: "Gemini Flash-Lite Latest",
@@ -388,8 +395,8 @@ function chatDevPlugin(env: Record<string, string>) {
       });
     }
 
-    const finalOR = [...orModels];
-    if (!finalOR.some((m: any) => m.id === "google/gemini-flash-lite-latest")) {
+    const finalOR = OPENROUTER_KEY ? [...orModels] : [];
+    if (finalOR.length > 0 && !finalOR.some((m: any) => m.id === "google/gemini-flash-lite-latest")) {
       finalOR.push({
         id: "google/gemini-flash-lite-latest",
         label: "Google: Gemini Flash-Lite Latest",
