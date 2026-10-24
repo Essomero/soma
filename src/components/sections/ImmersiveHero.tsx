@@ -23,7 +23,7 @@ export default function ImmersiveHero({
   imageAlt,
 }: ImmersiveHeroProps) {
   return (
-    <header className="relative w-full h-[85vh] overflow-hidden">
+    <header className="relative w-full min-h-[85vh] overflow-hidden">
       <div className="absolute inset-0 z-0">
         <img
           alt={imageAlt}
@@ -32,7 +32,7 @@ export default function ImmersiveHero({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
       </div>
-      <div className="relative z-10 h-full max-w-readme mx-auto flex flex-col justify-end px-gutter md:px-margin-desktop pb-giant">
+      <div className="relative z-10 min-h-[85vh] max-w-readme mx-auto flex flex-col justify-end px-gutter md:px-margin-desktop pt-24 pb-giant">
         <div className="max-w-4xl">
           <AccentBar variant="editorial" className="mb-md" />
           <Tag variant="primary" className="mb-md block">
