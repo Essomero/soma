@@ -5,6 +5,12 @@ import { fs2Generics } from "./fs-2-generics";
 import { fs3DiscriminatedUnions } from "./fs-3-discriminated-unions";
 import { fs4UtilityTypes } from "./fs-4-utility-types";
 import { fs5TypingTheBoundary } from "./fs-5-typing-the-boundary";
+import { prophet1OnLove } from "./prophet-1-on-love";
+import { prophet2OnMarriage } from "./prophet-2-on-marriage";
+import { prophet3OnChildren } from "./prophet-3-on-children";
+import { prophet4OnWork } from "./prophet-4-on-work";
+import { prophet5OnReasonAndPassion } from "./prophet-5-on-reason-and-passion";
+import { prophet6OnSorrow } from "./prophet-6-on-sorrow";
 
 const rawStories = [
   benjaminMayanja,
@@ -13,6 +19,12 @@ const rawStories = [
   fs3DiscriminatedUnions,
   fs4UtilityTypes,
   fs5TypingTheBoundary,
+  prophet1OnLove,
+  prophet2OnMarriage,
+  prophet3OnChildren,
+  prophet4OnWork,
+  prophet5OnReasonAndPassion,
+  prophet6OnSorrow,
 ];
 
 // Inject computed fields
