@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Stars } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
@@ -9,6 +9,8 @@ import PullQuote from "@/components/ui/PullQuote";
 import StoryCard from "@/components/cards/StoryCard";
 import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import InlineHighlights from "@/components/ui/InlineHighlights";
+import StaticHighlightPaint from "@/components/ui/StaticHighlightPaint";
+import type { HighlightData } from "@/lib/highlights";
 import Comments from "@/components/ui/Comments";
 import { PublicToggleButton, usePublicState } from "@/components/ui/PublicToggle";
 import { useAuth } from "@/lib/AuthContext";
@@ -22,6 +24,8 @@ export default function DeveloperStoryPage() {
   const { isOwner } = useAuth();
   const articleRef = useRef<HTMLElement>(null);
   const highlightClickRef = useRef<(id: number) => void>(() => {});
+  const [pageHighlights, setPageHighlights] = useState<HighlightData[]>([]);
+  const [commentsRefresh, setCommentsRefresh] = useState(0);
   const { isPublic, toggle } = usePublicState(STORY_SLUG);
   const storyText = [ruthIkegah.intro, ...(ruthIkegah.body || [])].join(" ");
   return (
@@ -205,7 +209,7 @@ export default function DeveloperStoryPage() {
       </section>
 
       {/* Comments */}
-      <Comments storySlug={STORY_SLUG} storyContext={{ title: ruthStory.title, body: storyText }} />
+      <Comments storySlug={STORY_SLUG} storyContext={{ title: ruthStory.title, body: storyText }} refreshSignal={commentsRefresh} />
 
       <InlineHighlights
         slug={STORY_SLUG}
@@ -213,9 +217,14 @@ export default function DeveloperStoryPage() {
         storyTitle={ruthStory.title}
         articleRef={articleRef}
         isOwner={isOwner}
-        onHighlightsChange={() => {}}
+        onHighlightsChange={(hs) => { setPageHighlights(hs); setCommentsRefresh((n: number) => n + 1); }}
         highlightClickRef={highlightClickRef}
         selectionAi
+      />
+      <StaticHighlightPaint
+        containerRef={articleRef}
+        highlights={pageHighlights}
+        onOpen={(id) => highlightClickRef.current(id)}
       />
 
       {/* More Stories */}

@@ -109,6 +109,7 @@ export default function LearnArticlePage() {
   const [notFound, setNotFound] = useState(false);
 
   const [allHighlights, setAllHighlights] = useState<HighlightData[]>([]);
+  const [commentsRefresh, setCommentsRefresh] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [orphanDeleting, setOrphanDeleting] = useState<number | null>(null);
@@ -145,6 +146,9 @@ export default function LearnArticlePage() {
 
   const handleHighlightsChange = useCallback((hs: HighlightData[]) => {
     setAllHighlights(hs);
+    // A highlight interaction may have added comments: refresh the
+    // section below so they appear without a page reload.
+    setCommentsRefresh((n) => n + 1);
   }, []);
 
   const storyText = article ? article.content : "";
@@ -291,6 +295,7 @@ export default function LearnArticlePage() {
         <Comments
           storySlug={article.slug}
           storyContext={{ title: article.title, body: storyText }}
+          refreshSignal={commentsRefresh}
         />
       </section>
 

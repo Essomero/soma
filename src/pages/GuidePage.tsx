@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Minus, Terminal, UserCheck, AlertTriangle } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
@@ -12,6 +12,8 @@ import PullQuote from "@/components/ui/PullQuote";
 import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import PrintButton from "@/components/ui/PrintButton";
 import InlineHighlights from "@/components/ui/InlineHighlights";
+import StaticHighlightPaint from "@/components/ui/StaticHighlightPaint";
+import type { HighlightData } from "@/lib/highlights";
 import Comments from "@/components/ui/Comments";
 import { PublicToggleButton, usePublicState } from "@/components/ui/PublicToggle";
 import { useAuth } from "@/lib/AuthContext";
@@ -40,6 +42,8 @@ export default function GuidePage() {
   const { isOwner } = useAuth();
   const articleRef = useRef<HTMLElement>(null);
   const highlightClickRef = useRef<(id: number) => void>(() => {});
+  const [pageHighlights, setPageHighlights] = useState<HighlightData[]>([]);
+  const [commentsRefresh, setCommentsRefresh] = useState(0);
   const { isPublic, toggle } = usePublicState(GUIDE_SLUG);
   const storyText = [generativeAi.intro, ...(generativeAi.body || [])].join(" ");
   return (
@@ -276,7 +280,7 @@ export default function GuidePage() {
       </article>
 
       {/* Comments */}
-      <Comments storySlug={GUIDE_SLUG} storyContext={{ title: generativeAi.title, body: storyText }} />
+      <Comments storySlug={GUIDE_SLUG} storyContext={{ title: generativeAi.title, body: storyText }} refreshSignal={commentsRefresh} />
 
       <InlineHighlights
         slug={GUIDE_SLUG}
@@ -284,9 +288,14 @@ export default function GuidePage() {
         storyTitle={generativeAi.title}
         articleRef={articleRef}
         isOwner={isOwner}
-        onHighlightsChange={() => {}}
+        onHighlightsChange={(hs) => { setPageHighlights(hs); setCommentsRefresh((n: number) => n + 1); }}
         highlightClickRef={highlightClickRef}
         selectionAi
+      />
+      <StaticHighlightPaint
+        containerRef={articleRef}
+        highlights={pageHighlights}
+        onOpen={(id) => highlightClickRef.current(id)}
       />
 
       {/* Newsletter CTA */}

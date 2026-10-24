@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import ImmersiveHero from "@/components/sections/ImmersiveHero";
 import SidebarAbout from "@/components/sections/SidebarAbout";
@@ -10,6 +10,8 @@ import ArticleCard from "@/components/cards/ArticleCard";
 import NewsletterSignup from "@/components/ui/NewsletterSignup";
 import AccentBar from "@/components/ui/AccentBar";
 import InlineHighlights from "@/components/ui/InlineHighlights";
+import StaticHighlightPaint from "@/components/ui/StaticHighlightPaint";
+import type { HighlightData } from "@/lib/highlights";
 import Comments from "@/components/ui/Comments";
 import { PublicToggleButton, usePublicState } from "@/components/ui/PublicToggle";
 import { useAuth } from "@/lib/AuthContext";
@@ -27,6 +29,8 @@ export default function FeaturedArticlePage() {
   const { isOwner } = useAuth();
   const articleRef = useRef<HTMLElement>(null);
   const highlightClickRef = useRef<(id: number) => void>(() => {});
+  const [pageHighlights, setPageHighlights] = useState<HighlightData[]>([]);
+  const [commentsRefresh, setCommentsRefresh] = useState(0);
   const { isPublic, toggle } = usePublicState(STORY_SLUG);
   const storyText = [
     nvdaAccessibility.description,
@@ -147,7 +151,7 @@ export default function FeaturedArticlePage() {
       </section>
 
       {/* Comments */}
-      <Comments storySlug={STORY_SLUG} storyContext={{ title: "Coding accessibility: Software by the blind, for the blind", body: storyText }} />
+      <Comments storySlug={STORY_SLUG} storyContext={{ title: "Coding accessibility: Software by the blind, for the blind", body: storyText }} refreshSignal={commentsRefresh} />
 
       <InlineHighlights
         slug={STORY_SLUG}
@@ -155,9 +159,14 @@ export default function FeaturedArticlePage() {
         storyTitle="Coding accessibility: Software by the blind, for the blind"
         articleRef={articleRef}
         isOwner={isOwner}
-        onHighlightsChange={() => {}}
+        onHighlightsChange={(hs) => { setPageHighlights(hs); setCommentsRefresh((n: number) => n + 1); }}
         highlightClickRef={highlightClickRef}
         selectionAi
+      />
+      <StaticHighlightPaint
+        containerRef={articleRef}
+        highlights={pageHighlights}
+        onOpen={(id) => highlightClickRef.current(id)}
       />
 
       {/* Newsletter CTA - Brand variant */}

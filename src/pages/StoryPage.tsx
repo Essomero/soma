@@ -136,6 +136,7 @@ export default function StoryPage() {
   // ── Highlights ────────────────────────────────────────
   const { isOwner } = useAuth();
   const [highlights, setHighlights] = useState<HighlightData[]>([]);
+  const [commentsRefresh, setCommentsRefresh] = useState(0);
   const articleRef = useRef<HTMLElement>(null);
   const { selection, clearSelection } = useTextSelection(articleRef);
 
@@ -551,6 +552,7 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
         }),
       });
       if (r.ok) {
+        setCommentsRefresh((n: number) => n + 1);
         const newComment = await r.json();
         setHighlights((prev) => prev.map((hl) =>
           hl.id === highlightId
@@ -571,6 +573,7 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
               )}
             : hl,
         ));
+        setCommentsRefresh((n: number) => n + 1);
       }
     } catch {}
     setDraftPosting(null);
@@ -639,6 +642,7 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
         }),
       });
       if (r.ok) {
+        setCommentsRefresh((n: number) => n + 1);
         const newComment = await r.json();
         // Add comment to local state
         setHighlights((prev) => prev.map((hl) =>
@@ -809,6 +813,7 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
         }),
       });
       if (r.ok) {
+        setCommentsRefresh((n: number) => n + 1);
         const newComment = await r.json();
         setHighlights((prev) => prev.map((hl) =>
           hl.id === activeHighlight.id
@@ -844,6 +849,7 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
         }),
       });
       if (r.ok) {
+        setCommentsRefresh((n: number) => n + 1);
         const newComment = await r.json();
         setHighlights((prev) => prev.map((hl) =>
           hl.id === activeHighlight.id
@@ -901,6 +907,7 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
         body: JSON.stringify({ id: commentId }),
       });
       if (r.ok) {
+        setCommentsRefresh((n: number) => n + 1);
         setHighlights((prev) => prev.map((hl) => ({
           ...hl,
           comments: removeCommentFromTree((hl.comments || []) as ThreadedComment[], commentId),
@@ -1332,7 +1339,7 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
       )}
 
       {/* Comments */}
-      {slug && <Comments storySlug={slug} storyContext={{ title: story?.title || "", body: storyText }} />}
+      {slug && <Comments storySlug={slug} storyContext={{ title: story?.title || "", body: storyText }} refreshSignal={commentsRefresh} />}
 
       {/* More Stories */}
       <section className="bg-surface-container-low py-giant border-t border-border-default">

@@ -183,7 +183,10 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
     } catch {}
   }, [storySlug]);
 
-  useEffect(() => { fetchComments(); }, [fetchComments]);
+  // Refetch on mount, on story change, and whenever a sibling highlight
+  // interaction bumps refreshSignal (new highlight comments appear below
+  // in real time, no refresh needed).
+  useEffect(() => { fetchComments(); }, [fetchComments, refreshSignal]);
 
   const postComment = async (text: string, parentId?: number | null) => {
     if (!text.trim()) return;
