@@ -6,6 +6,7 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import Tooltip from "@/components/ui/Tooltip";
 import { useAuth } from "@/lib/AuthContext";
 import { fetchLearnList, deleteLearn, deriveExcerpt } from "@/lib/learn";
+import PublishAll from "@/components/studio/PublishAll";
 import { type LearnArticle } from "@/types";
 
 function formatDate(iso: string): string {
@@ -142,6 +143,8 @@ export default function LearnIndexPage() {
           ))}
         </div>
       )}
+
+      {isOwner && <PublishAll />}
 
       {deleteTarget && (
 

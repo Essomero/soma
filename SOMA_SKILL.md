@@ -621,7 +621,7 @@ Plain `npm run dev` serves the API inline (owner view, private rows included), s
 The owner never runs commands. Ask any coding assistant for the piece; it stages the manuscript through its own tooling. You open the page URL, preview it as the owner, and flip the toggle when ready. Publishing into the store is the agent's job; sharing it with the world is yours.
 
 ### Step 4: Go public — owner flips the toggle, never a command
-Only the owner shares, and only with the visibility toggle: open the private piece's own page (you see it as owner) and flip private → public. The flip is instant — no rebuild, no redeploy. Unpublishing is the same toggle back (reversible, immediate). There is no CLI flag for going public; putting it in the store and sharing it are separate acts on purpose.
+Only the owner shares, and only with the visibility toggle. Open the private piece and flip private → public — the flip is instant, no rebuild, no redeploy. Unpublishing is the same toggle back (reversible, immediate). A course, series, or book toggle flips the whole collection at once: the collection plus every lesson, episode, or chapter in one action. The Studio (`/learn`, bottom of the page) has a global switch that flips *everything* at once, with a count and a confirmation step. There is no CLI flag for going public; putting it in the store and sharing it are separate acts on purpose.
 
 ### Step 5: Commit the manuscript (published work only)
 Copy the staged file to its archive home (`src/content/stories/my-story.ts`, matching the slug) and commit:

@@ -241,7 +241,7 @@ New to the content model? Read [Content Types](https://soma.vercel.app/docs/cont
 2. **Margin Highlights & In-App AI**: Select any text to attach annotations, ask the inline AI model for clarifications, or store thoughts.
 3. **Oral Practice (`/tests`)**: Run diagnostic technical screens with Son reading questions and scoring spoken answers.
 4. **Agent-Drafted Pieces**: Ask any coding assistant for a story, guide, course, or test. It lands as a private row in your database — open its page to preview, iterate through the agent, and flip it public only when you say so. No terminal, ever.
-5. **One-Click Publishing**: Flip the lock/globe toggle in the margin on any article or note. It is instantly visible to the public without requiring your site password. Unpublishing is the same click, just as instant.
+5. **One-Click Publishing**: Flip the lock/globe toggle in the margin on any article or note. It is instantly visible to the public without requiring your site password. Unpublishing is the same click, just as instant. A course, series, or book toggle publishes the whole collection at once, and the Studio (`/learn`, bottom of the page) has a global switch that flips everything at once, with a confirmation step.
 6. **Physical Print & PDF**: Use `/print` routes (such as `/courses/:slug/print` or `/stories/:slug/print`) for distraction-free printing or PDF generation.
 
 ---
