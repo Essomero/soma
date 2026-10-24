@@ -14,12 +14,8 @@
 // - no <text>, no external refs, no script, no <style>
 // - 6KB or smaller per file (print chunk budget)
 
-import theAlchemist from "./the-alchemist.svg?raw";
-
 /** Raw SVG markup keyed by collection slug. Absent = motif fallback. */
-export const coverArt: Record<string, string> = {
-  "the-alchemist": theAlchemist,
-};
+export const coverArt: Record<string, string> = {};
 
 export function artFor(slug: string): string | undefined {
   return coverArt[slug];

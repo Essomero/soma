@@ -25,7 +25,7 @@ export const contentTypes: DocContent = {
         {
           question: "How do I choose in under ten seconds?",
           answer: [
-            "Ask what changes for the reader:\n\n| If the reader should... | Use | Example |\n|---|---|---|\n| Feel one idea deeply | Story | `/stories/benjamin-mayanja` |\n| Follow steps to build something | Guide | `/guides/ship-soma` |\n| Look something up fast | Doc | `/docs/lab-setup` |\n| Prove they can do it | Test | `/tests/sql-query-optimization` |\n| Learn a skill across sittings | Course | `/courses/typescript-interview-fast-track` |\n| Read a long arc in order | Book or Series | `/books/the-alchemist`, `/series/the-craft-of-software` |\n| Listen instead of read | Podcast | `/podcast/bridging-code-and-community` |\n\nFeatured is not a topic, it is a stage: any story strong enough to carry the front page. Topics are not content at all, they are the shelves content sits on.",
+            "Ask what changes for the reader:\n\n| If the reader should... | Use | Example |\n|---|---|---|\n| Feel one idea deeply | Story | `/stories/benjamin-mayanja` |\n| Follow steps to build something | Guide | `/guides/ship-soma` |\n| Look something up fast | Doc | `/docs/lab-setup` |\n| Prove they can do it | Test | `/tests/sql-query-optimization` |\n| Learn a skill across sittings | Course | `/courses/typescript-interview-fast-track` |\n| Read a long arc in order | Book or Series | `/series/the-craft-of-software` |\n| Listen instead of read | Podcast | `/podcast/bridging-code-and-community` |\n\nFeatured is not a topic, it is a stage: any story strong enough to carry the front page. Topics are not content at all, they are the shelves content sits on.",
           ],
         },
       ],
@@ -94,14 +94,13 @@ export const contentTypes: DocContent = {
         {
           question: "Book versus series?",
           answer: [
-            "A book is one long work read in chapter order, where chapters are stories that only make sense together. Canonical example: `/books/the-alchemist` reads its six chapter stories front to back. A series is a log of work released over time, where each episode stands alone but gains meaning in sequence. Canonical example: `/series/the-craft-of-software` documents building in the open, episode by episode.",
-            "Use a book for a finished arc. Use a series for work that is still happening.",
+            "A book is one long work read in chapter order, where chapters are stories that only make sense together. No book is published yet; the shelf is ready at `/books`. A series is a log of work released over time, where each episode stands alone but gains meaning in sequence. Canonical example: `/series/the-craft-of-software` documents building in the open, episode by episode.",
           ],
         },
         {
           question: "What makes something featured?",
           answer: [
-            "Featured is a stage, not a topic. A featured piece is any story the editor judges strong enough to carry the front page hero, with bento highlights and pull quotes doing the visual lifting. Canonical example: `/featured/structural-typing`. Anything can be promoted to featured; nothing is born there.",
+            "Featured is a stage, not a topic. A featured piece is any story the editor judges strong enough to carry the front page hero, with bento highlights and pull quotes doing the visual lifting. Canonical example: `/featured/why-i-built-soma`. Anything can be promoted to featured; nothing is born there.",
           ],
         },
         {

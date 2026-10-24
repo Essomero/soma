@@ -13,7 +13,6 @@ export const fs3DiscriminatedUnions = {
   tags: ["Full-Stack Prep", "TypeScript"],
   topics: ["technology", "career"],
   archived: false,
-  listed: false,
 
   intro: "*You fetch data from an API and track it with three boolean flags: isLoading, isError, and data. Everything seems fine until an edge case hits: your user sees a loading spinner, an error alert, and a profile card all on screen at the exact same second. How did that happen? Because three boolean flags create eight possible combinations, but only three make sense in the real world. This lesson shows how to build data shapes that make impossible states impossible to write.*",
 

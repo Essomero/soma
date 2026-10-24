@@ -1,6 +1,6 @@
 import type { FeaturedContent } from "@/types";
-import { structuralTyping } from "./structural-typing";
+import { whyIBuiltSoma } from "./why-i-built-soma";
 
 export const allFeatured: FeaturedContent[] = [
-  structuralTyping,
+  whyIBuiltSoma,
 ];

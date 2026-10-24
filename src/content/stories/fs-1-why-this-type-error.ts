@@ -13,7 +13,6 @@ export const fs1WhyThisTypeError = {
   tags: ["Full-Stack Prep", "TypeScript"],
   topics: ["technology", "career"],
   archived: false,
-  listed: false,
 
   intro: "*You write an object that has every property a function needs, but you also include one extra field. TypeScript slaps you with a red squiggle: 'Type is not assignable'. You stare at it and think: why do you care? JavaScript doesn't care! The function gets what it asked for. This lesson is the journey into how the compiler actually looks at your data, why it treats variables differently from fresh literals, and how to read its errors without panic.*",
 

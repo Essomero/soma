@@ -45,7 +45,7 @@ export const bridgingCode: PodcastEpisodeFull = {
   ],
   relatedReading: [
     { tag: "Developer Story", title: "Think on paper, but digital: why I built Soma", image: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&h=675&fit=crop", color: "primary", href: "/stories/benjamin-mayanja" },
-    { tag: "Story", title: "Finish your projects: Why completion is a superpower", image: "https://images.unsplash.com/photo-1634944902853-3e977c2de8b6?w=1200&h=675&fit=crop", color: "secondary", href: "/stories/alchemist-6-epilogue" },
+    { tag: "Story", title: "Why does this type error?", image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=675&fit=crop", color: "secondary", href: "/stories/fs-1-why-this-type-error" },
     { tag: "Story", title: "Trust boundaries: where untrusted input stops", image: "", color: "accent-orange", href: "/stories/fs-5-typing-the-boundary" },
   ],
 };

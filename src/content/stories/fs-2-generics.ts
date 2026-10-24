@@ -13,7 +13,6 @@ export const fs2Generics = {
   tags: ["Full-Stack Prep", "TypeScript"],
   topics: ["technology", "career"],
   archived: false,
-  listed: false,
 
   intro: "*You write a simple wrapper function that takes an item and returns it. If you use 'any', TypeScript forgets what the item was. If you use 'unknown', TypeScript locks the item in a vault and won't let you touch it. You don't want amnesia, and you don't want a locked vault. You want a relationship: whatever goes into this function is exactly what comes out. That relationship is what generics are for.*",
 

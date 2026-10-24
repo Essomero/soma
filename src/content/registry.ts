@@ -22,5 +22,5 @@ export {
 
 // Legacy exports for custom page layouts
 export { benjaminStory, benjaminMoreStories } from "./stories/benjamin-mayanja";
-export { shapesAuthor, shapesBentoHighlights, shapesPullQuotes, shapesMoreStories } from "./featured/structural-typing";
+export { somaAuthor, somaBentoHighlights, somaPullQuotes, somaMoreStories } from "./featured/why-i-built-soma";
 export { guideAuthor, guideToc, guideSections, guideTipCards, guideCodeBlock } from "./guides/ship-soma";

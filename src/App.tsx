@@ -70,12 +70,12 @@ const router = createBrowserRouter([
 
       // Featured articles
       {
-        path: "featured/structural-typing",
+        path: "featured/why-i-built-soma",
         element: <FeaturedArticlePage />,
       },
       {
-        path: "featured/nvda-accessibility",
-        element: <Navigate to="/featured/structural-typing" replace />,
+        path: "featured/structural-typing",
+        element: <Navigate to="/featured/why-i-built-soma" replace />,
       },
 
       // Developer stories (index + individual)

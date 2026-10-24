@@ -9,7 +9,7 @@ import { md } from "@/lib/markdown";
 
 const trendingItems = [
   { label: "01 // RECENT", title: "Why Does This Type Error?", href: "/stories/fs-1-why-this-type-error" },
-  { label: "02 // POPULAR", title: "Prologue and the Shepherd's Dream", href: "/stories/alchemist-1-prologue" },
+  { label: "02 // POPULAR", title: "Generics as Relationships", href: "/stories/fs-2-generics" },
 ];
 
 function wordCount(s: typeof allStories[0]): number {

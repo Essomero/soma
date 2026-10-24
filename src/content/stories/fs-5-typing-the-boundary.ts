@@ -13,7 +13,6 @@ export const fs5TypingTheBoundary = {
   tags: ["Full-Stack Prep", "TypeScript"],
   topics: ["technology", "career"],
   archived: false,
-  listed: false,
 
   intro: "*Inside your codebase, TypeScript feels like an impenetrable shield. Every variable has a known shape, and every function call is verified. But then your app calls fetch() to load data from an API. The internet does not know TypeScript. The bytes that arrive over the wire could be anything: a user, a 404 error, or corrupt JSON. If you write 'as User', you are holding a fake passport. This lesson is about what happens at the border, and how to parse data safely once so your app never crashes.*",
 

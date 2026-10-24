@@ -19,13 +19,13 @@ function toCard(s: any): ArticleCardData {
 
 const defaultFeatured = allFeatured[0];
 export const featuredHero: FeaturedStoryData = {
-  id: defaultFeatured ? defaultFeatured.slug : "structural-typing",
+  id: defaultFeatured ? defaultFeatured.slug : "why-i-built-soma",
   tag: "Featured Article",
-  title: defaultFeatured ? defaultFeatured.title : "Why does this type error? Shapes, not names",
-  description: defaultFeatured ? defaultFeatured.description : "The compiler checks shapes instead of names, and fresh literals get checked harder than variables.",
-  image: defaultFeatured ? defaultFeatured.image : "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=675&fit=crop",
-  imageAlt: defaultFeatured ? defaultFeatured.imageAlt : "Code editor displaying a compile error overlay on a monitor",
-  cta: { label: "Read story", href: defaultFeatured ? `/featured/${defaultFeatured.slug}` : "/featured/structural-typing" },
+  title: defaultFeatured ? defaultFeatured.title : "Think on paper, but digital: why I built Soma",
+  description: defaultFeatured ? defaultFeatured.description : "Most tools force a trade: publish before you understand, or understand in a silo nobody can see.",
+  image: defaultFeatured ? defaultFeatured.image : "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&h=675&fit=crop",
+  imageAlt: defaultFeatured ? defaultFeatured.imageAlt : "Benjamin Mayanja",
+  cta: { label: "Read story", href: defaultFeatured ? `/featured/${defaultFeatured.slug}` : "/featured/why-i-built-soma" },
 };
 
 export const featuredStories: ArticleCardData[] = allStories.map(toCard).slice(0, 3);

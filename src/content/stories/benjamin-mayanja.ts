@@ -31,12 +31,12 @@ export const benjaminMoreStories: ArticleCardData[] = [
     author: { name: "Benjamin Mayanja" },
   },
   {
-    id: "alchemist-1-prologue", category: "PHILOSOPHY",
-    title: "Prologue and the Shepherd's Dream",
-    excerpt: "The alchemist reads the story of Narcissus and listens to the desert.",
-    image: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=600&h=400&fit=crop",
-    imageAlt: "Desert dunes under sunset sky", href: "/stories/alchemist-1-prologue",
-    author: { name: "Paulo Coelho" },
+    id: "fs-3-discriminated-unions", category: "ENGINEERING",
+    title: "Discriminated Unions & Narrowing: Making Impossible States Impossible",
+    excerpt: "You modeled state with three booleans: isLoading, isError, and data.",
+    image: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=600&h=400&fit=crop",
+    imageAlt: "Mist rolling over branching mountain ridges showing paths that fork and narrow", href: "/stories/fs-3-discriminated-unions",
+    author: { name: "Benjamin Mayanja" },
   },
 ];
 

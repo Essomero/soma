@@ -13,7 +13,6 @@ export const fs4UtilityTypes = {
   tags: ["Full-Stack Prep", "TypeScript"],
   topics: ["technology", "career"],
   archived: false,
-  listed: false,
 
   intro: "*You use Partial, Pick, and Omit every single day. But where do they actually come from? Are they hardcoded into the compiler, or are they written in the same TypeScript language you use? The answer is surprising: every standard utility is just a two-line recipe. Once you see the simple loops and if-statements the type system provides, the mystery disappears completely.*",
 

@@ -13,14 +13,14 @@ export const theCraftOfSoftware: SeriesContent = {
   tagline: "From first principles to working systems.",
   episodes: [
     {
-      title: "Episode 1: Why Systems Fail",
+      title: "Episode 1: Why Does This Type Error?",
       storySlug: "fs-1-why-this-type-error",
-      description: "Understanding trust boundaries and structural assumptions.",
+      description: "Why the compiler checks shapes instead of names, why fresh literals get checked harder, and how to read errors like a blueprint.",
     },
     {
-      title: "Episode 2: Boundaries and Invariants",
+      title: "Episode 2: Generics as Relationships",
       storySlug: "fs-2-generics",
-      description: "How typed relationships prevent runtime drift across services.",
+      description: "How TypeScript infers types from arguments, and how to use constraints without over-engineering.",
     },
   ],
 };

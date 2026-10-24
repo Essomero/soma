@@ -14,14 +14,14 @@ import type { HighlightData } from "@/lib/highlights";
 import Comments from "@/components/ui/Comments";
 import { useAuth } from "@/lib/AuthContext";
 import {
-  shapesAuthor,
-  shapesBentoHighlights,
-  shapesPullQuotes,
-  shapesMoreStories,
+  somaAuthor,
+  somaBentoHighlights,
+  somaPullQuotes,
+  somaMoreStories,
 } from "@/content/registry";
-import { structuralTyping } from "@/content/featured/structural-typing";
+import { whyIBuiltSoma } from "@/content/featured/why-i-built-soma";
 
-const STORY_SLUG = "structural-typing";
+const STORY_SLUG = "why-i-built-soma";
 
 export default function FeaturedArticlePage() {
   const { isOwner } = useAuth();
@@ -30,26 +30,26 @@ export default function FeaturedArticlePage() {
   const [pageHighlights, setPageHighlights] = useState<HighlightData[]>([]);
   const [commentsRefresh, setCommentsRefresh] = useState(0);
   const storyText = [
-    structuralTyping.description,
-    ...(structuralTyping.sections || []).flatMap((s) => [s.heading, ...(s.paragraphs || []).filter((p): p is string => typeof p === "string")]),
+    whyIBuiltSoma.description,
+    ...(whyIBuiltSoma.sections || []).flatMap((s) => [s.heading, ...(s.paragraphs || []).filter((p): p is string => typeof p === "string")]),
   ].join(" ");
   return (
     <div>
       {/* Immersive Hero */}
       <ImmersiveHero
-        tag="FEATURED ARTICLE // TYPESCRIPT"
-        title="Why does this type error? Shapes, not names"
-        description="TypeScript rejects objects that look perfectly fine. The compiler is not being difficult: it checks shapes instead of names, and fresh literals get checked harder than variables."
-        author={shapesAuthor}
+        tag="FEATURED ARTICLE // SOMA"
+        title="Think on paper, but digital: why I built Soma"
+        description="Most tools force a trade: publish before you understand, or understand in a silo nobody can see. I built Soma so learning and publishing live in the same place, on infrastructure you own."
+        author={somaAuthor}
         date="October 24, 2026"
-        image="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=675&fit=crop"
-        imageAlt="Code editor displaying a compile error overlay on a monitor"
+        image="https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&h=675&fit=crop"
+        imageAlt="Benjamin Mayanja"
       />
 
       {/* Article Content */}
       <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant grid grid-cols-1 md:grid-cols-12 gap-giant">
         {/* Sidebar */}
-        <aside className="md:col-span-3 space-y-xl border-t border-border-default pt-xl md:border-t-0 md:pt-0">
+        <aside className="md:col-span-3 space-y-xl border-t border-border-default pt-xl md:pt-0">
           <SidebarAbout publicToggleSlug={isOwner ? STORY_SLUG : undefined} />
           <div className="hidden md:block">
             <ShareButtons variant="column" />
@@ -63,29 +63,30 @@ export default function FeaturedArticlePage() {
         <article ref={articleRef} data-section-index={0} data-paragraph-index={0} className="md:col-span-8 space-y-xl">
           <div className="font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md">
             <p className="drop-cap">
-              You write an object that carries every property a function needs,
-              plus one extra field, and TypeScript draws a red squiggle: object
-              literal may only specify known properties. Your frustration is
-              reasonable. The function would ignore the extra field at runtime,
-              so why fail the build?
+              Hey, I am Benjamin Mayanja. I build Soma, an AI-native learning
+              and publishing platform that treats reading like thinking on
+              paper: private by default, public when you choose, and running
+              entirely on infrastructure you own.
             </p>
             <p>
-              Now store that exact same object in a variable first, and pass the
-              variable instead. Zero errors. Same data, same function, different
-              verdict. Most developers meet TypeScript as an obstacle course of
-              red squiggles and reach for a hammer like `as any` to make them
-              vanish.
+              Every publishing tool I tried forced the same trade. Blogging
+              platforms push you to perform for an audience before you have
+              understood the topic yourself. Note-taking apps keep your
+              thinking trapped in proprietary clouds or fragile sync setups.
+              You either publish too early or you never ship at all.
             </p>
             <p>
-              But the checker runs on one simple physical rule. Learn it, and
-              the red lines stop reading like noise. They start reading like a
-              blueprint.
+              So I stopped shopping for tools and started building one. Soma
+              (Luganda: to read, study, learn) puts the private notebook, the
+              editorial reading experience, and the publish button in one
+              place. Draft the way you would on paper, flip one toggle, and
+              the same page is on the public web.
             </p>
           </div>
 
           {/* Bento Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-md my-giant">
-            {shapesBentoHighlights.map((card) => (
+            {somaBentoHighlights.map((card) => (
               <BentoCard key={card.title} card={card} />
             ))}
           </div>
@@ -93,67 +94,65 @@ export default function FeaturedArticlePage() {
           {/* Pull Quote 1 */}
           <PullQuote
             variant="gradient-bar"
-            quote={shapesPullQuotes[0].quote}
-            attribution={shapesPullQuotes[0].attribution}
+            quote={somaPullQuotes[0].quote}
+            attribution={somaPullQuotes[0].attribution}
           />
 
           <div className="font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md">
             <h2 className="font-sora text-article-title text-on-surface pt-lg pb-md">
-              The backpack test
+              Owning the loop
             </h2>
             <p>
-              In nominal languages like Java or C#, types work like birth
-              certificates. A function that asks for a Customer rejects a User
-              with identical fields, because the names differ. TypeScript is
-              structural. If a mountain guide says your backpack must contain
-              water and a compass, they do not check the brand. Water, compass,
-              plus a bag of trail mix, and you are on the trail.
+              Owning the loop mattered more than any feature. Fork the repo,
+              import it into Vercel, add one password, click Add on the Turso
+              card, deploy. Tables initialize on their own, and pulling my
+              updates later never touches your words, because your writing
+              lives in your database, never in git.
             </p>
             <p>
-              Fresh literals get the extra check because of typos. Write an
-              object inline with a misspelled field and you almost certainly
-              meant the real one. TypeScript stops you at the counter: did you
-              really mean to put this here? Variables skip that check because
-              they already exist somewhere else.
+              Your notes, highlights, and publishing toggles sit in your own
+              Turso edge SQLite behind one password you invent. There is no
+              Soma cloud holding your writing hostage, which means my fixes
+              can never overwrite a single sentence of yours.
             </p>
           </div>
 
           {/* Pull Quote 2 */}
           <PullQuote
             variant="border-left"
-            quote={shapesPullQuotes[1].quote}
+            quote={somaPullQuotes[1].quote}
           />
 
           <div className="font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md">
             <h2 className="font-sora text-article-title text-on-surface pt-lg pb-md">
-              Read the error backwards
+              Learn it, prove it, publish it
             </h2>
             <p>
-              Almost every compiler message belongs to one of a few simple
-              situations. A type is not assignable means the hole expects one
-              shape and you brought a different one. An excess property on a
-              fresh literal means a typo or an interface missing a field you
-              actually need.
+              Learning here is something you do, not something you consume.
+              Select any paragraph and ask the margin AI to explain, challenge,
+              or simplify it. Open the companion Soma Labs repo and run the
+              drills with your own hands instead of copying code into a void.
             </p>
             <p>
-              Always read the message backwards. Look at the very end to see
-              what the function asked for, then look at the beginning to see
-              what you handed it. Then ask the only question that matters: is
-              the data wrong, or is the type out of date? And never reach for
-              `as` or `any` to end the conversation. That does not fix the bug.
-              It only tapes over the warning light.
+              Then say it out loud. The Son voice agent reads diagnostic test
+              questions to you and scores your spoken answers in real time,
+              all from your own machine. And when the words are ready, any
+              coding assistant can draft them as typed content and ship with
+              a git push. If one reader prints a course, runs every lab, and
+              passes an oral screen without ever touching someone else's
+              server, Soma did its job.
             </p>
           </div>
         </article>
       </section>
 
       {/* Comments */}
-      <Comments storySlug={STORY_SLUG} storyContext={{ title: "Why does this type error? Shapes, not names", body: storyText }} refreshSignal={commentsRefresh} />
+      <Comments storySlug={STORY_SLUG} storyContext={{ title: "Think on paper, but digital: why I built Soma", body: storyText }} refreshSignal={commentsRefresh} />
 
       <InlineHighlights
         slug={STORY_SLUG}
         storyText={storyText}
-        storyTitle="Why does this type error? Shapes, not names"
+        storyTitle="Think on paper, but digital: why I built Soma"
         articleRef={articleRef}
         isOwner={isOwner}
         onHighlightsChange={(hs) => { setPageHighlights(hs); setCommentsRefresh((n: number) => n + 1); }}
@@ -183,7 +182,7 @@ export default function FeaturedArticlePage() {
           </Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-lg">
-          {shapesMoreStories.map((story) => (
+          {somaMoreStories.map((story) => (
             <ArticleCard key={story.id} article={story} />
           ))}
         </div>
