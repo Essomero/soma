@@ -49,7 +49,7 @@ export default function TopicsPage() {
     allStories.filter((s) => s.topics?.includes(topicSlug)).length;
 
   const techCount = storyCount("technology");
-  const openSourceCount = storyCount("open-source");
+  const careerCount = storyCount("career");
 
   const filteredTopics = allTopics.filter((topic) => {
     const q = searchTerm.toLowerCase();
@@ -126,9 +126,9 @@ export default function TopicsPage() {
             <Link to="/topics/technology" className="md:col-span-8 group overflow-hidden border border-border-default bg-surface-container-low hover:border-on-surface hover:-translate-y-1 transition-all duration-300 block">
               <div className="relative h-80 overflow-hidden">
                 <img
-                  alt="AI neural network illustration"
+                  alt="Code editor displaying TypeScript types"
                   className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-105 group-hover:scale-100"
-                  src="https://images.unsplash.com/photo-1627704442358-61c8e05c7bf4?w=1200&h=675&fit=crop"
+                  src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=675&fit=crop"
                 />
                 <div className="absolute top-4 left-4">
                   <span className="px-3 py-1 bg-primary text-on-primary font-sora text-metadata-tag uppercase rounded-sm">
@@ -138,37 +138,35 @@ export default function TopicsPage() {
               </div>
               <div className="p-xl">
                 <p className="font-sora text-metadata-tag text-primary mb-sm uppercase tracking-widest">
-                  Core // AI &amp; Machine Learning
+                  Core // TypeScript
                 </p>
                 <h3 className="font-sora text-article-title group-hover:text-primary transition-colors mb-md text-on-surface">
-                  The Generative Revolution
+                  Shapes Over Names
                 </h3>
                 <p className="font-dm-sans text-body-base text-on-surface-muted">
-                  How LLMs are rewriting the developer workflow from syntax to
-                  architecture. Explore our deep collection of stories and guides.
+                  Five visual lessons that make the type system click: the backpack rule, generics as relationships, and boundaries you can trust.
                 </p>
               </div>
             </Link>
 
             {/* Vertical Featured Card - Security */}
-            <Link to="/topics/open-source" className="md:col-span-4 group overflow-hidden border border-border-default bg-surface-container-low hover:border-on-surface hover:-translate-y-1 transition-all duration-300 block">
+            <Link to="/topics/career" className="md:col-span-4 group overflow-hidden border border-border-default bg-surface-container-low hover:border-on-surface hover:-translate-y-1 transition-all duration-300 block">
               <div className="p-xl h-full flex flex-col">
                 <div className="mb-auto">
-                  <Shield className="w-12 h-12 text-secondary-container mb-lg" />
+                  <GraduationCap className="w-12 h-12 text-secondary-container mb-lg" />
                   <p className="font-sora text-metadata-tag text-on-surface-muted mb-sm uppercase tracking-widest">
-                    Essential // Security
+                    Essential // Interview Prep
                   </p>
                   <h3 className="font-sora text-article-title group-hover:text-secondary-container transition-colors text-on-surface">
-                    Securing the Supply Chain
+                    The Fast Track
                   </h3>
                   <p className="font-dm-sans text-body-base text-on-surface-muted mt-md">
-                    From Zero Trust to SBOMs, learn how top teams protect their
-                    codebases in an era of sophisticated threats.
+                    Full-stack prep lessons that turn type errors into blueprints: read the checker, prove you know it, say it out loud.
                   </p>
                 </div>
                 <div className="mt-xl pt-lg border-t border-border-default flex items-center justify-between">
                   <span className="font-sora text-label-caps uppercase text-on-surface-muted">
-                    {openSourceCount} Articles
+                    {careerCount} Articles
                   </span>
                   <TrendingUp className="w-5 h-5 text-on-surface-muted" />
                 </div>
