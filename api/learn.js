@@ -1,3 +1,5 @@
+import { isAuthed, requireAuth } from "./_auth.js";
+
 const DB_URL = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").replace("libsql://", "https://");
 const TOKEN = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "";
 
@@ -85,17 +87,33 @@ function mapRow(r) {
 
 export default async function handler(req, res) {
   try {
-    // GET: list all (newest-first) or ?slug= single
+    // GET: list all (newest-first) or ?slug= single.
+    // Unauthenticated callers see only rows flagged public in public_pages;
+    // everything else requires the owner session.
     if (req.method === "GET") {
+      const authed = isAuthed(req);
       if (req.query.slug) {
         const rows = await query("SELECT * FROM learn_articles WHERE slug = ?", [req.query.slug]);
         const row = rows[0];
         if (!row) return res.status(404).json({ error: "Not found" });
+        if (!authed) {
+          const vis = await query("SELECT \"public\" FROM public_pages WHERE slug = ?", [req.query.slug]);
+          if (!(vis.length > 0 && vis[0].public == 1)) return res.status(404).json({ error: "Not found" });
+        }
         return res.json(mapRow(row));
       }
-      const rows = await query("SELECT * FROM learn_articles ORDER BY updated_at DESC, created_at DESC");
+      if (authed) {
+        const rows = await query("SELECT * FROM learn_articles ORDER BY updated_at DESC, created_at DESC");
+        return res.json(rows.map(mapRow));
+      }
+      const rows = await query(
+        "SELECT la.* FROM learn_articles la JOIN public_pages pp ON pp.slug = la.slug WHERE pp.\"public\" = 1 ORDER BY la.updated_at DESC, la.created_at DESC"
+      );
       return res.json(rows.map(mapRow));
     }
+
+    // POST / PUT / DELETE mutate the notebook: owner only.
+    if (!requireAuth(req, res)) return;
 
     if (req.method === "POST") {
       const { title, content, slug } = req.body || {};

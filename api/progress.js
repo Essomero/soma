@@ -1,3 +1,5 @@
+import { requireAuth } from "./_auth.js";
+
 const DB_URL = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").replace("libsql://", "https://");
 const TOKEN = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "";
 
@@ -77,6 +79,9 @@ async function ensureTables() {
 export default async function handler(req, res) {
   try {
     await ensureTables();
+    // Reading progress and toggling it are owner-only. The useProgress
+    // hooks tolerate 401 and render empty state for visitors.
+    if (!requireAuth(req, res)) return;
     if (req.method === "GET") {
       const slug = req.query.slug;
       const sql = slug

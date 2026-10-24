@@ -1,3 +1,5 @@
+import { requireAuth } from "./_auth.js";
+
 const DB_URL = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").replace("libsql://", "https://");
 const TOKEN = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "";
 
@@ -74,8 +76,10 @@ export default async function handler(req, res) {
       return res.json({ public: isPublic });
     }
 
-    // POST /api/public : set public state for one or more slugs
+    // POST /api/public : set public state for one or more slugs (owner only).
+    // GET stays open: AuthGuard calls it to decide whether a slug renders.
     if (req.method === "POST") {
+      if (!requireAuth(req, res)) return;
       const { slugs, public: isPublic } = req.body || {};
       const slugList = slugs || (req.body.slug ? [req.body.slug] : []);
       if (!slugList.length) return res.status(400).json({ error: "Missing slugs" });

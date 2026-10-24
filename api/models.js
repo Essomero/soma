@@ -1,3 +1,5 @@
+import { requireAuth } from "./_auth.js";
+
 const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || "";
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || "";
 const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
@@ -387,6 +389,9 @@ export default async function handler(req, res) {
 
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
+  // Model availability reveals configured providers; consumers degrade to
+  // [] for visitors, disabling AI buttons with an explanatory tooltip.
+  if (!requireAuth(req, res)) return;
 
   try {
     const [geminiModels, openrouterModels, groqModels, cerebrasModels, straitlyModels] = await Promise.all([

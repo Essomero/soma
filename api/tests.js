@@ -1,3 +1,5 @@
+import { requireAuth } from "./_auth.js";
+
 const DB_URL = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").replace("libsql://", "https://");
 const TOKEN = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "";
 
@@ -94,7 +96,10 @@ export default async function handler(req, res) {
   try {
     await ensureTable();
 
+    // Submission history is owner-only (fetchTests tolerates 401 → []).
+    // POST stays open so public tests remain submittable by visitors.
     if (req.method === "GET") {
+      if (!requireAuth(req, res)) return;
       const slug = req.query.slug;
       const sql = slug
         ? "SELECT * FROM test_submissions WHERE test_slug = ? ORDER BY created_at DESC LIMIT 20"

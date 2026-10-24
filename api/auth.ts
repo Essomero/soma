@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { createSessionToken } from "./_auth.js";
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
@@ -13,13 +14,17 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (password === validPassword) {
-    // Secure only behind HTTPS (Vercel sets x-forwarded-proto). Local HTTP
-    // dev has no such header, so the cookie still lands there. HttpOnly is
-    // intentionally absent: AuthGuard reads the flag from document.cookie.
-    // The cookie holds a boolean, never a session, so theft value is minimal.
+    // Two cookies: soma_auth stays the client-readable UX flag AuthGuard
+    // checks from document.cookie. soma_session is the HttpOnly HMAC-signed
+    // token every /api/* handler enforces (see api/_auth.js). The flag alone
+    // authorizes nothing.
+    const session = createSessionToken();
     const proto = (req.headers["x-forwarded-proto"] as string | undefined) || "";
     const secure = proto.split(",")[0].trim() === "https" ? "; Secure" : "";
-    res.setHeader("Set-Cookie", `soma_auth=1; Path=/; Max-Age=2592000; SameSite=Lax${secure}`);
+    res.setHeader("Set-Cookie", [
+      `soma_auth=1; Path=/; Max-Age=2592000; SameSite=Lax${secure}`,
+      `soma_session=${session.token}; Path=/; Max-Age=${session.maxAge}; HttpOnly; SameSite=Lax${secure}`,
+    ]);
     return res.status(200).json({ success: true });
   }
 

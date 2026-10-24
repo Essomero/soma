@@ -1,3 +1,5 @@
+import { requireAuth } from "./_auth.js";
+
 const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || "";
 const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || "";
@@ -32,10 +34,13 @@ export default async function handler(req, res) {
     return res.status(204).end();
   }
 
+  // This proxies the owner's paid AI keys: owner session required.
+  // Public test grading and visitor margin AI now need the owner login.
+  if (!requireAuth(req, res)) return;
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
-
   let { systemPrompt, userMessage, messages: reqMessages, model, stream, provider, apiKey: customApiKey, apiUrl: customApiUrl } = req.body || {};
 
   if (!userMessage && Array.isArray(reqMessages)) {

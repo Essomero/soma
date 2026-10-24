@@ -63,8 +63,10 @@ const server = createServer(async (req, res) => {
     try { body = JSON.parse(Buffer.concat(chunks).toString()); } catch {}
   }
 
-  // Build Vercel-compatible request/response objects
-  const vercelReq = { method: req.method, query: Object.fromEntries(url.searchParams), body };
+  // Build Vercel-compatible request/response objects.
+  // localBypass mirrors production auth without a login flow: localhost is
+  // single-user, and Vercel never sets this flag (it builds req itself).
+  const vercelReq = { method: req.method, query: Object.fromEntries(url.searchParams), body, headers: { cookie: req.headers.cookie || "" }, localBypass: true };
   const vercelRes = {
     status(code) { res.statusCode = code; return this; },
     json(data) { res.setHeader("Content-Type", "application/json"); res.end(JSON.stringify(data)); },

@@ -1,3 +1,5 @@
+import { isAuthed, requireAuth } from "./_auth.js";
+
 const DB_URL = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").replace("libsql://", "https://");
 const TOKEN = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "";
 
@@ -131,6 +133,14 @@ export default async function handler(req, res) {
       const story = req.query.story;
       if (!story) return res.status(400).json({ error: "story required" });
 
+      // Thread reads stay open for public slugs (visitors see discussion)
+      // but private slugs need the owner session. A missing public_pages
+      // table (fresh DB) means nothing is public yet, so fall to 404.
+      if (!isAuthed(req)) {
+        const vis = await query("SELECT \"public\" FROM public_pages WHERE slug = ?", [story]).catch(() => []);
+        if (!(vis.length > 0 && vis[0].public == 1)) return res.status(404).json({ error: "Not found" });
+      }
+
       // Fetch all comments for the story, newest first at top level
       const rows = await query(
         "SELECT * FROM comments WHERE story_slug = ? ORDER BY created_at DESC",
@@ -157,6 +167,12 @@ export default async function handler(req, res) {
       );
       return res.status(201).json(result[0] || { error: "Failed" });
     }
+    // Edits and deletes are owner-only. POST stays open: public visitors
+    // comment as Anonymous (see Comments.tsx).
+    if (req.method === "PUT" || req.method === "DELETE") {
+      if (!requireAuth(req, res)) return;
+    }
+
     if (req.method === "PUT") {
       const { id, body } = req.body || {};
       await query("UPDATE comments SET body = ?, updated_at = ? WHERE id = ?", [body, new Date().toISOString(), id]);

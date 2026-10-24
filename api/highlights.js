@@ -1,3 +1,5 @@
+import { isAuthed, requireAuth } from "./_auth.js";
+
 const DB_URL = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").replace("libsql://", "https://");
 const TOKEN = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "";
 
@@ -104,6 +106,13 @@ export default async function handler(req, res) {
       const story = req.query.story;
       if (!story) return res.status(400).json({ error: "story required" });
 
+      // Marginalia is private: unauthenticated callers need the slug
+      // flagged public, same rule as comments.
+      if (!isAuthed(req)) {
+        const vis = await query("SELECT \"public\" FROM public_pages WHERE slug = ?", [story]).catch(() => []);
+        if (!(vis.length > 0 && vis[0].public == 1)) return res.status(404).json({ error: "Not found" });
+      }
+
       const rows = await query(
         "SELECT * FROM highlights WHERE story_slug = ? ORDER BY section_index, paragraph_index, start_offset",
         [story]
@@ -141,6 +150,11 @@ export default async function handler(req, res) {
       }
 
       return res.json(highlightsWithComments);
+    }
+
+    // Creating or deleting marginalia is owner-only.
+    if (req.method === "POST" || req.method === "DELETE") {
+      if (!requireAuth(req, res)) return;
     }
 
     if (req.method === "POST") {
