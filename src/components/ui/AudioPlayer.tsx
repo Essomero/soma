@@ -163,6 +163,7 @@ export default function AudioPlayer({
   // ── Format helpers ───────────────────────────────────
   const total = audioDuration || durationSeconds;
   const progress = total > 0 ? (currentTime / total) * 100 : 0;
+  const audioExt = audioUrl.split("?")[0].toLowerCase().endsWith(".m4a") ? "m4a" : "mp3";
 
   const fmtTime = (s: number) => {
     const m = Math.floor(s / 60);
@@ -286,7 +287,7 @@ export default function AudioPlayer({
           <Tooltip label="Download episode">
             <a
               href={audioUrl}
-              download={title ? `${title}.mp3` : "episode.mp3"}
+              download={title ? `${title}.${audioExt}` : `episode.${audioExt}`}
               className="flex items-center gap-xs font-sora text-metadata-tag uppercase text-on-surface-variant hover:text-primary transition-colors"
             >
               <Download className="w-4 h-4" />

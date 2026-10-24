@@ -20,14 +20,15 @@
       <link>https://soma.vercel.app/podcast</link>
     </image>
     <item>
-      <title>Think on paper, but digital</title>
+      <title>How Soma turns notes into interactive textbooks</title>
       <link>https://soma.vercel.app/podcast/bridging-code-and-community</link>
       <guid isPermaLink="true">https://soma.vercel.app/podcast/bridging-code-and-community</guid>
-      <description>Soma founder Benjamin Mayanja walks through the idea behind the platform: a private notebook and a public press in one place, running on your own database.</description>
-      <itunes:summary>Soma founder Benjamin Mayanja walks through the idea behind the platform: a private notebook and a public press in one place, running on your own database.</itunes:summary>
-      <itunes:author>Benjamin Mayanja</itunes:author>
-      <itunes:duration>1080</itunes:duration>
-      <itunes:keywords>Benjamin Mayanja (Founder, Soma)</itunes:keywords>
+      <description>Two hosts unpack Soma: the journal-to-textbook loop, ten content types as intentional constraint, hands-on labs, oral exams with Son, and infrastructure you own.</description>
+      <itunes:summary>A two-host deep dive into Soma, drawn from the creator's manifesto and GitHub docs.</itunes:summary>
+      <itunes:author>Soma Podcast</itunes:author>
+      <itunes:duration>323</itunes:duration>
+      <enclosure url="https://soma.vercel.app/audio/bridging-code-and-community.m4a" length="10392917" type="audio/x-m4a" />
+      <itunes:keywords>Soma Podcast</itunes:keywords>
       <itunes:image href="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=1200&amp;h=1200&amp;fit=crop" />
       
       <pubDate>Sat, 24 Oct 2026 09:00:00 GMT</pubDate>
