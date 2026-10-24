@@ -33,7 +33,7 @@ import Tooltip from "@/components/ui/Tooltip";
 import MarkdownHtml from "@/components/ui/MarkdownHtml";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { mdBlock } from "@/lib/markdown";
-import { useContentItem } from "@/lib/content";
+import { useContentItem, useContentList } from "@/lib/content";
 import {
   buildEvaluationPrompts,
   evaluateTestWithLLM,
@@ -77,6 +77,9 @@ import type {
   OpenTestQuestion,
   MultipleChoiceTestQuestion,
   TestContent,
+  StoryContent,
+  GuideContent,
+  DocContent,
 } from "@/types";
 
 interface ModelInfo {
@@ -112,6 +115,10 @@ function balanceMarkdownFences(text: string): string {
 export default function TestPage() {
   const { slug } = useParams<{ slug: string }>();
   const { data: test, loading: testLoading } = useContentItem<TestContent>("test", slug);
+  const { data: evalStories } = useContentList<StoryContent>("story");
+  const { data: evalGuides } = useContentList<GuideContent>("guide");
+  const { data: evalDocs } = useContentList<DocContent>("doc");
+  const sourceLookup = { stories: evalStories ?? [], guides: evalGuides ?? [], docs: evalDocs ?? [] };
   const lenis = useLenis();
 
   // Core test state
@@ -504,6 +511,7 @@ export default function TestPage() {
           provider,
           apiKey,
           apiUrl,
+          lookup: sourceLookup,
           onReasoning: (_rToken, accReasoning) => {
             setReasoningText(accReasoning);
           },
@@ -693,7 +701,7 @@ export default function TestPage() {
   // Copy evaluation prompt
   const handleCopyPrompt = () => {
     if (!test) return;
-    const { systemPrompt, userMessage } = buildEvaluationPrompts(test, answers);
+    const { systemPrompt, userMessage } = buildEvaluationPrompts(test, answers, sourceLookup);
     const copiablePrompt = `${systemPrompt}\n\n---\n\n${userMessage}`;
     navigator.clipboard.writeText(copiablePrompt).then(() => {
       setCopiedPrompt(true);

@@ -1,26 +1,10 @@
 // ── Content Registry ──────────────────────────────────
-// The single import point for all content. Every page imports from here.
-
-export { allStories } from "./stories";
-export { allFeatured } from "./featured";
-export { allGuides, toArticleCard } from "./guides";
-export { allBooks } from "./books";
-export { allCourses } from "./courses";
-export { allSeries } from "./series";
-export { allDocs } from "./docs";
-export { allTests } from "./tests";
+// Taxonomy + site config ONLY. Prose content lives in Turso
+// (see api/content.js) and is NEVER imported into the client bundle:
+// the .ts files under src/content/<type>/ are the versioned seed
+// corpus, read solely by `npm run seed`. Importing them into a page
+// or component would ship every draft to every visitor.
 export { allTopics } from "./topics";
-export { podcastEpisodes, recentEpisodes, podcastTopics } from "./podcast/episodes";
-export { allEpisodes, toEpisodeCard } from "./podcast/episodes/index";
-export {
-  featuredHero, featuredStories, secondaryGuide,
-  secondaryStories, latestUpdates, featuredGuide,
-} from "./homepage";
 export {
   readmeNavLinks, innerNavLinks, siteTitle,
 } from "./navigation";
-
-// Legacy exports for custom page layouts
-export { benjaminStory, benjaminMoreStories } from "./stories/benjamin-mayanja";
-export { somaAuthor, somaBentoHighlights, somaPullQuotes, somaMoreStories } from "./featured/why-i-built-soma";
-export { guideAuthor, guideToc, guideSections, guideTipCards, guideCodeBlock } from "./guides/ship-soma";

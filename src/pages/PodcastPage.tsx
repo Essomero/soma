@@ -1,8 +1,12 @@
 import { Link } from "react-router-dom";
 import { Play, ArrowRight, Podcast, Radio, Rss, Share2, Loader2 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
-import { podcastTopics } from "@/content/registry";
 import { useContentList } from "@/lib/content";
+
+// Topic chips for the podcast page (page config, not content).
+const podcastTopics = [
+  "Open Source", "Software Engineering", "Systems Architecture", "Community",
+];
 import type { PodcastEpisodeFull } from "@/types";
 import { md } from "@/lib/markdown";
 

@@ -4,9 +4,19 @@ import type {
   OpenTestQuestion,
   MultipleChoiceTestQuestion,
   TestSource,
+  StoryContent,
+  GuideContent,
+  DocContent,
 } from "@/types";
-import { allStories, allGuides, allDocs } from "@/content/registry";
 import { contentToMarkdown } from "@/lib/markdown";
+
+// Runtime content lookup injected by the caller (TestPage fetches these
+// from /api/content). Empty arrays preserve the "not found" fallbacks.
+export interface SourceLookup {
+  stories?: StoryContent[];
+  guides?: GuideContent[];
+  docs?: DocContent[];
+}
 
 export type TestUserAnswers = Record<string, string | string[]>;
 
@@ -37,7 +47,7 @@ export interface ResolvedTestSource {
  * Resolves any TestSource (inline markdown, linked story/lesson, guide, doc, or external link)
  * into a standardized representation with full markdown content for the LLM.
  */
-export function resolveTestSource(source: TestSource): ResolvedTestSource {
+export function resolveTestSource(source: TestSource, lookup: SourceLookup = {}): ResolvedTestSource {
   if (source.type === "markdown") {
     return {
       title: source.title,
@@ -48,7 +58,7 @@ export function resolveTestSource(source: TestSource): ResolvedTestSource {
   }
 
   if (source.type === "story") {
-    const story = allStories.find((s) => s.slug === source.storySlug);
+    const story = (lookup.stories ?? []).find((s) => s.slug === source.storySlug);
     if (!story) {
       return {
         title: source.title || source.storySlug,
@@ -75,7 +85,7 @@ export function resolveTestSource(source: TestSource): ResolvedTestSource {
   }
 
   if (source.type === "guide") {
-    const guide = allGuides.find((g) => g.slug === source.guideSlug);
+    const guide = (lookup.guides ?? []).find((g) => g.slug === source.guideSlug);
     if (!guide) {
       return {
         title: source.title || source.guideSlug,
@@ -101,7 +111,7 @@ export function resolveTestSource(source: TestSource): ResolvedTestSource {
   }
 
   if (source.type === "doc") {
-    const doc = allDocs.find((d) => d.slug === source.docSlug);
+    const doc = (lookup.docs ?? []).find((d) => d.slug === source.docSlug);
     if (!doc) {
       return {
         title: source.title || source.docSlug,
@@ -334,7 +344,7 @@ export function analyzeFillerWords(text: string): FillerWordAnalysis {
  * Builds the system prompt and structured test message for LLM evaluation.
  * Includes all source materials (markdown, stories, guides, docs, & links) and the candidate's responses.
  */
-export function buildEvaluationPrompts(test: TestContent, answers: TestUserAnswers): {
+export function buildEvaluationPrompts(test: TestContent, answers: TestUserAnswers, lookup: SourceLookup = {}): {
   systemPrompt: string;
   userMessage: string;
   copyablePrompt: string;
@@ -378,7 +388,7 @@ Format your response strictly using this Markdown structure:
   // Build the source materials section using resolved sources
   const sourceSections: string[] = [];
   test.sources.forEach((source, idx) => {
-    const resolved = resolveTestSource(source);
+    const resolved = resolveTestSource(source, lookup);
     if (resolved.kind === "link") {
       sourceSections.push(`### Source ${idx + 1} (External Reference Link): ${resolved.title}
 - **URL:** ${resolved.url}
@@ -518,10 +528,11 @@ export async function evaluateTestWithLLM(opts: {
   provider?: string;
   apiKey?: string;
   apiUrl?: string;
+  lookup?: SourceLookup;
   onToken?: (token: string, accumulated: string) => void;
   onReasoning?: (reasoning: string, accumulatedReasoning: string) => void;
 }): Promise<string> {
-  const { systemPrompt, userMessage } = buildEvaluationPrompts(opts.test, opts.answers);
+  const { systemPrompt, userMessage } = buildEvaluationPrompts(opts.test, opts.answers, opts.lookup);
 
   const payload: Record<string, unknown> = {
     systemPrompt,
