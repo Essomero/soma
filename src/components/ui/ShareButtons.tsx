@@ -9,7 +9,7 @@ interface ShareButtonsProps {
   className?: string;
   url?: string;
   title?: string;
-  /** Story slug for the public/private toggle (row variant only). */
+  /** Story slug for the public/private toggle. Omit to hide the toggle. */
   publicToggleSlug?: string;
   /** Parent collection slug for fallback (series/course). */
   publicToggleCollection?: string;
@@ -116,6 +116,27 @@ export default function ShareButtons({
         >
           LINKEDIN
         </a>
+        <a
+          href={`mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(url)}`}
+          className="w-full flex items-center justify-center border border-border-default rounded py-sm font-sora text-metadata-tag hover:border-primary transition-all text-on-surface-variant hover:text-on-surface"
+          aria-label="Share via email"
+        >
+          EMAIL
+        </a>
+        {markdownContent && (
+          <button
+            onClick={handleCopyMarkdown}
+            className="w-full flex items-center justify-center border border-border-default rounded py-sm font-sora text-metadata-tag hover:border-primary transition-all text-on-surface-variant hover:text-on-surface"
+            aria-label="Copy as Markdown"
+          >
+            {copied ? "COPIED!" : "COPY AS MARKDOWN"}
+          </button>
+        )}
+        {publicToggleSlug && (
+          <div className="w-full flex items-center justify-center border border-border-default rounded py-sm">
+            <PublicToggleButton isPublic={isPublic} onToggle={toggle} className="text-on-surface-muted hover:text-primary transition-colors" />
+          </div>
+        )}
       </div>
     );
   }
