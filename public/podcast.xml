@@ -11,9 +11,9 @@
     <language>en-us</language>
     <itunes:author>Benjamin Mayanja</itunes:author>
     <itunes:summary>Deep dives into technology, economics, and philosophy.</itunes:summary>
+    <itunes:explicit>no</itunes:explicit>
     <itunes:image href="https://soma.mayanja.dev/podcast-cover.jpg" />
     <itunes:category text="Technology" />
-    <itunes:explicit>no</itunes:explicit>
     <podcast:locked>yes</podcast:locked>
     <podcast:guid>D9702888-031D-4582-93D4-31BBF20CF083</podcast:guid>
     <atom:link href="https://soma.mayanja.dev/podcast.xml" rel="self" type="application/rss+xml" />
@@ -33,7 +33,7 @@
       <itunes:keywords>Benjamin Mayanja (Founder, Soma)</itunes:keywords>
       <itunes:explicit>no</itunes:explicit>
       <itunes:image href="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=1200&amp;h=1200&amp;fit=crop" />
-      
+      <enclosure url="https://soma.mayanja.dev/audio/bridging-code-and-community.m4a" length="10392917" type="audio/mp4" />
       <pubDate>Sat, 24 Oct 2026 09:00:00 GMT</pubDate>
       <itunes:episodeType>full</itunes:episodeType>
     </item>

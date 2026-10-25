@@ -19,6 +19,8 @@ interface Episode {
   duration?: string;
   durationSeconds?: number;
   audioUrl?: string;
+  audioLength?: string;
+  audioType?: string;
   image: string;
   number?: string;
   episode?: string;
@@ -42,7 +44,9 @@ async function main() {
       date: "OCT 24",
       duration: "18 MIN",
       durationSeconds: 1080,
-      audioUrl: "",
+      audioUrl: `${baseUrl}/audio/bridging-code-and-community.m4a`,
+      audioLength: "10392917",
+      audioType: "audio/mp4",
       image: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=1200&h=1200&fit=crop",
       number: "Episode 1",
       guests: [
@@ -55,8 +59,8 @@ async function main() {
     const pubDate = "Sat, 24 Oct 2026 09:00:00 GMT"; // Episode 1: founder intro
     const guid = `${baseUrl}/podcast/${ep.slug}`;
     const audioUrl = ep.audioUrl || "";
-    const audioLength = audioUrl ? "7000000" : "0"; // Approximate
-    const audioType = "audio/mpeg";
+    const audioLength = ep.audioLength || "0";
+    const audioType = ep.audioType || "audio/mpeg";
 
     const summary = ep.summary || ep.description;
     const guestList = ep.guests
@@ -93,9 +97,9 @@ async function main() {
     <language>en-us</language>
     <itunes:author>Benjamin Mayanja</itunes:author>
     <itunes:summary>Deep dives into technology, economics, and philosophy.</itunes:summary>
+    <itunes:explicit>no</itunes:explicit>
     <itunes:image href="${baseUrl}/podcast-cover.jpg" />
     <itunes:category text="Technology" />
-    <itunes:explicit>no</itunes:explicit>
     <podcast:locked>yes</podcast:locked>
     <podcast:guid>D9702888-031D-4582-93D4-31BBF20CF083</podcast:guid>
     <atom:link href="${baseUrl}/podcast.xml" rel="self" type="application/rss+xml" />
