@@ -4,19 +4,19 @@
 
 # Soma
 
-> Think on paper but digital. Learn anything at your pace, in your own infrastructure, and make public what you wish.
+> Learn anything at your pace with AI, prove you know it, and share it only if you want.
 
 New here? Three moves: [**fork the repo**](https://github.com/Essomero/soma/fork), [import it into Vercel](https://vercel.com/new), add one password, click Add on the Turso card, deploy. [Full walkthrough below](#step-0-fork-soma).
 
 ---
 
-Soma (*Luganda: to read, study, learn*) is an AI-native learning, publishing, and writing platform. It combines the tactile focus of paper with sovereign edge infrastructure, in-app AI interaction, oral audio Q&A, and autonomous agent publishing.
+Soma (*Luganda: to read, study, learn*) exists because learning and sharing have never been easier. AI can teach you anything at whatever pace you need, tests (written and spoken) can prove you know it, and one toggle can share it with the world. Soma puts all three in one place you own, with visuals for how you think: Mermaid diagrams, interactive graphs, and full 3D scenes next to math and code.
 
 Most publishing tools force a trade:
 - **Blogging platforms** (Ghost, Substack) push you to publish for an audience before you have understood the topic yourself.
 - **Note-taking apps** (Notion, Obsidian) keep thoughts trapped in proprietary clouds or require fragile sync setups with clumsy export pipelines.
 
-Soma gives you a private notebook, an AI agent publishing engine, an editorial reading experience, hands-on code drills, real-time voice screening, and an offline print press in a single architecture that lives entirely in your own infrastructure. Read [why I built Soma](https://soma.mayanja.dev/featured/why-i-built-soma) for the story behind it.
+Soma gives you a private notebook that teaches at your pace, text and voice tests that verify what you learned, visual components that show it, and one toggle that shares it. Read [why I built Soma](https://soma.mayanja.dev/featured/why-i-built-soma) for the story behind it.
 
 ---
 

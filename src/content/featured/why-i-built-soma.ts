@@ -25,7 +25,7 @@ export const whyIBuiltSoma: FeaturedContent = {
   tag: "FEATURED ARTICLE // SOMA",
   title: "Think on paper, but digital: why I built Soma",
   description:
-    "Most tools force a trade: publish before you understand, or understand in a silo nobody can see. I built Soma so learning and publishing live in the same place, on infrastructure you own.",
+    "AI can now teach you anything at your pace, tests can prove you know it, and one toggle can share it. I built Soma so learning, proving, seeing, and sharing live in the same place, on infrastructure you own.",
   image:
     "https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=1200&h=675&fit=crop",
   imageAlt: "Writing by hand in a paper planner next to a laptop, coffee, and books",
@@ -43,7 +43,7 @@ export const whyIBuiltSoma: FeaturedContent = {
       label: "LEARN OUT LOUD",
       title: "Reading You Can Prove",
       description:
-        "Margin AI explains any paragraph, Soma Labs turns lessons into runnable drills, and the Son voice agent scores your spoken answers in real time.",
+        "Margin AI teaches at your pace, Soma Labs turns lessons into runnable drills, and the Son voice agent scores your spoken answers in real time.",
     },
     {
       label: "AGENTS THAT PUBLISH",
@@ -68,14 +68,21 @@ export const whyIBuiltSoma: FeaturedContent = {
       heading: "The trade every tool forces",
       paragraphs: [
         "Every publishing tool I tried forced the same trade. Blogging platforms like Ghost and Substack push you to perform for an audience before you have understood the topic yourself. Note-taking apps like Notion and Obsidian keep your thinking trapped in proprietary clouds or fragile sync setups. You either publish too early or you never ship at all.",
-        "So I stopped shopping for tools and started building one. Soma (Luganda: to read, study, learn) is a single place where the private notebook, the editorial reading experience, and the publish button live together. You draft the way you would on paper, then flip one toggle and the same page is on the public web.",
+        "So I stopped shopping for tools and started building one. Soma (Luganda: to read, study, learn) starts from a simple belief: learning and sharing have never been easier. AI can teach anything at whatever pace you need, so you do not have to keep up with a class or wait for one.",
       ],
     },
     {
-      heading: "Owning the loop",
+      heading: "Learn it at your pace, then prove you know it",
       paragraphs: [
-        "Owning the loop mattered more than any feature. Fork the repo, import it into Vercel, add one password, click Add on the Turso card, deploy. Tables initialize on their own, and pulling my updates later never touches your words, because your writing lives in your database, never in git.",
-        "Learning here is something you do, not something you consume. Ask the margin AI to challenge a paragraph. Run the drills in Soma Labs with your own hands. Then say it out loud: the Son voice agent reads diagnostic questions to you and scores your spoken answers. If one reader prints a course, runs every lab, and passes an oral screen without ever touching someone else's server, Soma did its job.",
+        "Here is how a lesson feels in Soma. You read a hard paragraph on database lock contention, you select it, and you ask the margin AI to explain it like you are new, then challenge you like you are interviewing. You set the pace, not the page. When you are ready, Soma Labs hands you a runnable drill you run with your own hands, not a snippet you skim.",
+        "Then you say it out loud. Diagnostic tests grade your written answers, and the Son voice agent reads questions to you and scores your spoken answers in real time. If you cannot explain it in text and speech, you do not know it yet. That check is the whole point.",
+      ],
+    },
+    {
+      heading: "See it, then share it only if you want",
+      paragraphs: [
+        "Some ideas do not click until you see them move. Every page in Soma can draw: Mermaid diagrams for flows, interactive graphs for relationships, and full 3D scenes for systems you need to turn around in your head. If you learn by looking, you get the same first class treatment as someone who learns by reading.",
+        "Owning the loop mattered more than any single feature. Fork the repo, import it into Vercel, add one password, click Add on the Turso card, deploy. Your writing lives in your database, never in git, so pulling my updates never touches your words. You think in private, you prove it to yourself, and you flip one toggle only when you want the world to see it.",
       ],
     },
   ],
