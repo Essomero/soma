@@ -23,7 +23,7 @@ export default function ImmersiveHero({
   imageAlt,
 }: ImmersiveHeroProps) {
   return (
-    <header className="relative w-full min-h-[85vh] overflow-hidden">
+    <header className="relative w-full min-h-[85vh] overflow-hidden print:hidden">
       <div className="absolute inset-0 z-0">
         <img
           alt={imageAlt}

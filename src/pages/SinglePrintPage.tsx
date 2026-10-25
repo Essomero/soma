@@ -11,15 +11,17 @@ import type {
   GuideContent,
   DocContent,
   PodcastEpisodeFull,
+  FeaturedContent,
 } from "@/types";
 
-export type SinglePrintType = "story" | "guide" | "doc" | "episode";
+export type SinglePrintType = "story" | "guide" | "doc" | "episode" | "featured";
 
 const TYPE_LABEL: Record<SinglePrintType, string> = {
   story: "LESSON",
   guide: "GUIDE",
   doc: "DOC",
   episode: "EPISODE",
+  featured: "FEATURED",
 };
 
 function plainText(blocks: (string | { type: string })[]): string {
@@ -53,7 +55,7 @@ export default function SinglePrintPage({ type, base }: { type: SinglePrintType;
   const backHref = slug ? `/${base}/${slug}` : `/${base}`;
   const apiType = type === "episode" ? "podcast" : type;
 
-  const { data: item, loading } = useContentItem<StoryContent | GuideContent | DocContent | PodcastEpisodeFull>(apiType, slug);
+  const { data: item, loading } = useContentItem<StoryContent | GuideContent | DocContent | PodcastEpisodeFull | FeaturedContent>(apiType, slug);
   const story: StoryContent | undefined =
     type === "story" && item ? (item as StoryContent) : undefined;
   const guide: GuideContent | undefined =
@@ -62,10 +64,12 @@ export default function SinglePrintPage({ type, base }: { type: SinglePrintType;
     type === "doc" && item ? (item as DocContent) : undefined;
   const episode: PodcastEpisodeFull | undefined =
     type === "episode" && item ? (item as PodcastEpisodeFull) : undefined;
+  const featured: FeaturedContent | undefined =
+    type === "featured" && item ? (item as FeaturedContent) : undefined;
 
-  const found = story ?? guide ?? doc ?? episode ?? null;
+  const found = story ?? guide ?? doc ?? episode ?? featured ?? null;
 
-  const title = story?.title ?? guide?.title ?? doc?.title ?? episode?.title ?? "";
+  const title = story?.title ?? guide?.title ?? doc?.title ?? episode?.title ?? featured?.title ?? "";
 
   useEffect(() => {
     if (title) {
@@ -87,17 +91,19 @@ export default function SinglePrintPage({ type, base }: { type: SinglePrintType;
 
 
   const description =
-    story?.excerpt ?? guide?.excerpt ?? doc?.description ?? episode?.description ?? "";
+    story?.excerpt ?? guide?.excerpt ?? doc?.description ?? episode?.description ?? featured?.description ?? "";
   const authorName =
     (story as { author?: { name: string } } | undefined)?.author?.name ??
     guide?.author?.name ??
     doc?.author?.name ??
+    featured?.author?.name ??
     "Soma";
   const date =
     (story as { date?: string } | undefined)?.date ??
     guide?.date ??
     doc?.date ??
     episode?.date ??
+    featured?.date ??
     "";
   const minutes = (() => {
     if (story) {
@@ -124,6 +130,16 @@ export default function SinglePrintPage({ type, base }: { type: SinglePrintType;
       const text = [
         episode.summary || "",
         ...(episode.transcript?.map((l) => l.text) || []),
+      ].join(" ");
+      return getReadingTime(text);
+    }
+    if (featured) {
+      const text = [
+        featured.description || "",
+        featured.tagline || "",
+        ...(featured.sections?.flatMap((s) =>
+          s.paragraphs.filter((p): p is string => typeof p === "string")
+        ) || []),
       ].join(" ");
       return getReadingTime(text);
     }
@@ -188,7 +204,8 @@ export default function SinglePrintPage({ type, base }: { type: SinglePrintType;
           goals={
             story?.sections?.map((s) => s.heading) ??
             doc?.sections.map((s) => s.heading) ??
-            episode?.segments?.map((s) => s.title)
+            episode?.segments?.map((s) => s.title) ??
+            featured?.sections?.map((s) => s.heading)
           }
         />
 
@@ -343,6 +360,51 @@ export default function SinglePrintPage({ type, base }: { type: SinglePrintType;
                   </ul>
                 </section>
               )}
+            </div>
+          )}
+          {featured && (
+            <div className="space-y-8">
+              {featured.tagline && (
+                <p
+                  className="font-dm-sans text-base text-on-surface-variant italic leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: md(featured.tagline) }}
+                />
+              )}
+              {featured.bentoHighlights && featured.bentoHighlights.length > 0 && (
+                <div className="space-y-4">
+                  {featured.bentoHighlights.map((card) => (
+                    <div key={card.title} className="avoid-break border border-border-default rounded-lg p-4">
+                      <p className="font-sora text-xs font-bold uppercase tracking-widest text-primary mb-1">
+                        {card.label}
+                      </p>
+                      <p className="font-sora text-base font-bold text-on-surface mb-1">
+                        {card.title}
+                      </p>
+                      <p className="font-dm-sans text-sm text-on-surface-variant">
+                        {card.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {featured.sections?.map((section, i) => (
+                <section key={i} className="pt-6">
+                  <h2 className="font-sora text-2xl font-bold text-on-surface mb-4 pb-2 border-b border-border-default/50 break-after-avoid">
+                    {section.heading}
+                  </h2>
+                  <ContentBlocks blocks={section.paragraphs} isPrint={true} />
+                  {featured.pullQuotes?.[i] && (
+                    <blockquote className="avoid-break mt-6 border-l-4 border-primary pl-4 py-1 font-sora text-lg font-bold text-on-surface">
+                      &ldquo;{featured.pullQuotes[i].quote}&rdquo;
+                      {featured.pullQuotes[i].attribution && (
+                        <cite className="block mt-2 text-xs font-dm-sans font-normal not-italic uppercase tracking-widest text-on-surface-muted">
+                          {featured.pullQuotes[i].attribution}
+                        </cite>
+                      )}
+                    </blockquote>
+                  )}
+                </section>
+              ))}
             </div>
           )}
         </div>

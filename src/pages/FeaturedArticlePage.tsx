@@ -66,15 +66,30 @@ export default function FeaturedArticlePage() {
       />
 
       {/* Article Content */}
-      <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant grid grid-cols-1 md:grid-cols-12 gap-giant">
+      <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant grid grid-cols-1 md:grid-cols-12 gap-giant print:block">
+        {/* Print-only cover: mirrors the story article title block so the printed page opens like a normal story */}
+        <div className="hidden print:block mb-8">
+          <p className="font-sora text-xs font-bold text-primary uppercase tracking-widest mb-3">
+            Featured Article // Soma
+          </p>
+          <h1 className="font-sora text-3xl font-extrabold text-on-surface leading-tight mb-3">
+            Think on paper, but digital: why I built Soma
+          </h1>
+          <p className="font-dm-sans text-base text-on-surface-muted leading-relaxed mb-3">
+            Most tools force a trade: publish before you understand, or understand in a silo nobody can see. I built Soma so learning and publishing live in the same place, on infrastructure you own.
+          </p>
+          <p className="font-sora text-xs text-on-surface-muted">
+            Benjamin Mayanja // @Essomero <span className="text-secondary mx-1">//</span> October 24, 2026
+          </p>
+        </div>
         {/* Sidebar */}
-        <aside className="md:col-span-3 space-y-xl border-t border-border-default pt-xl md:pt-0">
+        <aside className="md:col-span-3 space-y-xl border-t border-border-default pt-xl md:pt-0 print:hidden">
           <SidebarAbout publicToggleSlug={isOwner ? STORY_SLUG : undefined} markdownContent={featuredMarkdown} />
           <div className="hidden md:block">
             <ShareButtons variant="column" markdownContent={featuredMarkdown} />
           </div>
           <div className="hidden md:block">
-            <PrintButton stretch label="Print / Save PDF" />
+            <PrintButton to="/featured/why-i-built-soma/print" stretch label="Print / Save PDF" />
           </div>
         </aside>
 
@@ -166,7 +181,9 @@ export default function FeaturedArticlePage() {
       </section>
 
       {/* Comments */}
+      <div className="print:hidden">
       <Comments storySlug={STORY_SLUG} storyContext={{ title: "Think on paper, but digital: why I built Soma", body: storyText }} refreshSignal={commentsRefresh} />
+      </div>
 
       <InlineHighlights
         slug={STORY_SLUG}
@@ -185,7 +202,7 @@ export default function FeaturedArticlePage() {
       />
 
       {/* More Stories */}
-      <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant">
+      <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant print:hidden">
         <div className="flex justify-between items-end mb-xl">
           <div>
             <AccentBar variant="editorial" className="mb-md" />

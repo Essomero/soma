@@ -7,6 +7,7 @@ import ShareButtons from "@/components/ui/ShareButtons";
 import BentoCard from "@/components/cards/BentoCard";
 import PullQuote from "@/components/ui/PullQuote";
 import ArticleCard from "@/components/cards/ArticleCard";
+import PrintButton from "@/components/ui/PrintButton";
 import AccentBar from "@/components/ui/AccentBar";
 import ContentBlocks from "@/components/ui/ContentBlocks";
 import InlineHighlights from "@/components/ui/InlineHighlights";
@@ -68,12 +69,30 @@ export default function GenericFeaturedPage() {
       />
 
       {/* Article Content */}
-      <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant grid grid-cols-1 md:grid-cols-12 gap-giant">
+      <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant grid grid-cols-1 md:grid-cols-12 gap-giant print:block">
+        {/* Print-only cover: mirrors the story article title block so the printed page opens like a normal story */}
+        <div className="hidden print:block mb-8">
+          <p className="font-sora text-xs font-bold text-primary uppercase tracking-widest mb-3">
+            {article.tag}
+          </p>
+          <h1 className="font-sora text-3xl font-extrabold text-on-surface leading-tight mb-3">
+            {article.title}
+          </h1>
+          <p className="font-dm-sans text-base text-on-surface-muted leading-relaxed mb-3">
+            {article.description}
+          </p>
+          <p className="font-sora text-xs text-on-surface-muted">
+            {article.author.name} // {article.author.handle} <span className="text-secondary mx-1">//</span> {article.date}
+          </p>
+        </div>
         {/* Sidebar */}
-        <aside className="md:col-span-3 space-y-xl border-t border-border-default pt-xl md:border-t-0 md:pt-0">
+        <aside className="md:col-span-3 space-y-xl border-t border-border-default pt-xl md:border-t-0 md:pt-0 print:hidden">
           <SidebarAbout markdownContent={contentToMarkdown({ title: article.title, intro: [article.tagline, article.description].filter(Boolean).join("\n\n"), sections: article.sections })} />
           <div className="hidden md:block">
             <ShareButtons variant="column" markdownContent={contentToMarkdown({ title: article.title, intro: [article.tagline, article.description].filter(Boolean).join("\n\n"), sections: article.sections })} />
+          </div>
+          <div className="hidden md:block">
+            {slug && <PrintButton to={`/featured/${slug}/print`} stretch label="Print / Save PDF" />}
           </div>
         </aside>
 
@@ -152,7 +171,7 @@ export default function GenericFeaturedPage() {
       </section>
 
       {/* More Featured Articles */}
-      <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant">
+      <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant print:hidden">
         <div className="flex justify-between items-end mb-xl">
           <div>
             <AccentBar variant="editorial" className="mb-md" />

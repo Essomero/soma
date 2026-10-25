@@ -49,7 +49,7 @@ const router = createBrowserRouter([
   },
   {
     path: "featured/:slug/print",
-    element: (<AuthGuard><SinglePrintPage type="story" base="featured" /></AuthGuard>),
+    element: (<AuthGuard><SinglePrintPage type="featured" base="featured" /></AuthGuard>),
   },
   {
     path: "guides/:slug/print",
