@@ -3,12 +3,14 @@ import { shipSoma } from "./ship-soma";
 import { marketSomaSuite } from "./market-soma-suite";
 import { somaLabs } from "./soma-labs";
 import { son } from "./son";
+import { launchVideos } from "./launch-videos";
 
 const rawGuides = [
   shipSoma,
   marketSomaSuite,
   somaLabs,
   son,
+  launchVideos,
 ];
 
 // Inject computed fields
