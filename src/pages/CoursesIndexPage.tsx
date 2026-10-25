@@ -5,9 +5,11 @@ import AccentBar from "@/components/ui/AccentBar";
 import LoadMore from "@/components/ui/LoadMore";
 import { useContentList } from "@/lib/content";
 import type { CourseContent } from "@/types";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function CoursesIndexPage() {
   const { data: courses, loading } = useContentList<CourseContent>("course");
+  usePageMeta({ title: "Courses", description: "Ordered lessons that build on each other, with drills to prove every idea." });
   if (loading) {
     return (
       <div className="pt-32 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">

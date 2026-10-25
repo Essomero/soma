@@ -8,6 +8,7 @@ import { useContentList } from "@/lib/content";
 import type { StoryContent } from "@/types";
 import { useAllReadSlugs } from "@/lib/useProgress";
 import { md } from "@/lib/markdown";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 const trendingItems = [
   { label: "01 // RECENT", title: "Why Does This Type Error?", href: "/stories/fs-1-why-this-type-error" },
@@ -25,6 +26,7 @@ function wordCount(s: StoryContent): number {
 export default function StoriesIndexPage() {
   const readSlugs = useAllReadSlugs();
   const { data: stories, loading } = useContentList<StoryContent>("story");
+  usePageMeta({ title: "Stories", description: "One idea per story, felt deeply: engineering, craft, and the systems underneath." });
   if (loading) {
     return (
       <div className="pt-32 pb-xxl max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">

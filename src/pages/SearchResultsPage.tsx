@@ -21,10 +21,13 @@ const filters = [
 
 const trendingTopics = ["REACT", "WEBGL", "RUST", "DOCKER"];
 
+import { usePageMeta } from "@/hooks/usePageMeta";
+
 export default function SearchResultsPage() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
   const [activeFilter, setActiveFilter] = useState("All Results");
+  usePageMeta({ title: query ? `Search: ${query}` : "Search" });
   // Stories + guides come from the server search endpoint, which enforces
   // published-or-owner visibility : drafts never reach the client.
   const [storyResults, setStoryResults] = useState<StoryContent[]>([]);

@@ -6,6 +6,7 @@ import Tag from "@/components/ui/Tag";
 import { useContentList } from "@/lib/content";
 import type { TestContent } from "@/types";
 import { getStoredAnswers, getStoredEvaluation } from "@/lib/testEvaluation";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function TestsIndexPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -14,6 +15,7 @@ export default function TestsIndexPage() {
   >({});
   const { data: tests, loading } = useContentList<TestContent>("test");
   const activeTests = (tests ?? []).filter((t) => !t.archived);
+  usePageMeta({ title: "Tests", description: "Proof under time pressure: diagnostic screens with scored written and oral answers." });
 
   // Extract categories and add "Oral Exams" filter tab
   const rawCategories = Array.from(new Set(activeTests.map((t) => t.category)));

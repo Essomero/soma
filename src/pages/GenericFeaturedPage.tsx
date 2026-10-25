@@ -14,6 +14,7 @@ import { useContentItem, useContentList } from "@/lib/content";
 import type { FeaturedContent } from "@/types";
 import { type HighlightData } from "@/lib/highlights";
 import { md, contentToMarkdown } from "@/lib/markdown";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function GenericFeaturedPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -23,6 +24,7 @@ export default function GenericFeaturedPage() {
   const [highlights, setHighlights] = useState<HighlightData[]>([]);
   const highlightClickRef = useRef<(id: number) => void>(() => {});
   const storyText = [article?.description || "", article?.tagline || "", ...(article?.sections?.flatMap(s => s.paragraphs.filter((p): p is string => typeof p === "string")) || [])].join(" ");
+  usePageMeta({ title: article?.title, description: article?.description, image: article?.image });
 
   if (loading) {
     return (

@@ -8,6 +8,7 @@ import type { BookContent, StoryContent } from "@/types";
 import { useProgress } from "@/lib/useProgress";
 import { getTotalReadingTime } from "@/lib/readingTime";
 import { md } from "@/lib/markdown";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function BookDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -16,6 +17,7 @@ export default function BookDetailPage() {
   const allStories = stories ?? [];
   const chapterSlugs = book ? book.chapters.map((ch) => ch.storySlug) : [];
   const { isCompleted, toggle, progress } = useProgress(slug ?? "", chapterSlugs);
+  usePageMeta({ title: book?.title, description: book?.description, image: book?.image });
   const totalMinutes = book
     ? getTotalReadingTime(book.chapters.map((ch) => ch.storySlug), allStories)
     : 0;

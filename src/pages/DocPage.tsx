@@ -10,11 +10,13 @@ import { useContentItem } from "@/lib/content";
 import type { DocContent, TocItem } from "@/types";
 import { md, contentToMarkdown } from "@/lib/markdown";
 import { useAuth } from "@/lib/AuthContext";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function DocPage() {
   const { slug } = useParams<{ slug: string }>();
   const { data: doc, loading } = useContentItem<DocContent>("doc", slug);
   const { isOwner } = useAuth();
+  usePageMeta({ title: doc?.title, description: doc?.description, image: doc?.image });
 
   if (loading) {
     return (

@@ -16,6 +16,7 @@ import type { HighlightData } from "@/lib/highlights";
 import Comments from "@/components/ui/Comments";
 import { useAuth } from "@/lib/AuthContext";
 import { useContentItem } from "@/lib/content";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import type { GuideContent, Author, TocItem, TipCardData } from "@/types";
 
 const GUIDE_SLUG = "ship-soma";
@@ -69,6 +70,7 @@ export default function GuidePage() {
   const guideTitle = typeof guideRow?.title === "string" ? guideRow.title : "";
   const guideIntro = typeof guideRow?.intro === "string" ? guideRow.intro : "";
   const guideBody = Array.isArray(guideRow?.body) ? (guideRow.body as string[]) : [];
+  usePageMeta({ title: guideTitle || undefined, description: guideIntro || undefined, image: guideRow?.image });
   const storyText = [guideIntro, ...guideBody].join(" ");
   return (
     <div className="pt-32 pb-giant">

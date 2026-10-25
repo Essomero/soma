@@ -1,4 +1,5 @@
 import { useParams, Link, useLocation } from "react-router-dom";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
@@ -127,6 +128,7 @@ export default function StoryPage() {
   const { data: story, loading: storyLoading } = useContentItem<StoryContent>("story", slug);
   const courses = useContentList<CourseContent>("course").data ?? [];
   const books = useContentList<BookContent>("book").data ?? [];
+  usePageMeta({ title: story?.title, description: story?.excerpt, image: story?.image });
   const series = useContentList<SeriesContent>("series").data ?? [];
   const tests = useContentList<TestContent>("test").data ?? [];
   const stories = useContentList<StoryContent>("story").data ?? [];

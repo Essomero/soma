@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useLenis } from "lenis/react";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import {
   Clock,
   RotateCcw,
@@ -121,6 +122,7 @@ export default function TestPage() {
   const sourceLookup = { stories: evalStories ?? [], guides: evalGuides ?? [], docs: evalDocs ?? [] };
   const lenis = useLenis();
 
+  usePageMeta({ title: test?.title, description: test?.description, image: test?.image });
   // Core test state
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [answers, setAnswers] = useState<TestUserAnswers>({});

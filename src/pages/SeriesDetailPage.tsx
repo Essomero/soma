@@ -9,6 +9,7 @@ import { useProgress } from "@/lib/useProgress";
 import { getTotalReadingTime } from "@/lib/readingTime";
 import { PublicToggleInline, useCollectionPublicState } from "@/components/ui/PublicToggle";
 import { md } from "@/lib/markdown";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function SeriesDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -17,6 +18,7 @@ export default function SeriesDetailPage() {
   const allStories = stories ?? [];
   const episodeSlugs = series ? series.episodes.map((e) => e.storySlug) : [];
   const { isCompleted, toggle, progress } = useProgress(slug ?? "", episodeSlugs);
+  usePageMeta({ title: series?.title, description: series?.description, image: series?.image });
   const totalMinutes = series
     ? getTotalReadingTime(series.episodes.map((e) => e.storySlug), allStories)
     : 0;

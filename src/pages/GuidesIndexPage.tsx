@@ -4,9 +4,11 @@ import { ArrowRight, Loader2, Search, ChevronDown } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import { useContentList } from "@/lib/content";
 import type { GuideContent } from "@/types";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function GuidesIndexPage() {
   const { data: guides, loading } = useContentList<GuideContent>("guide");
+  usePageMeta({ title: "Guides", description: "Step-by-step guides that end somewhere new: self-hosting, drills, launch playbooks." });
   if (loading) {
     return (
       <div className="pt-24 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">

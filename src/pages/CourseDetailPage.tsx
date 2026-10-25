@@ -9,6 +9,7 @@ import { useProgress } from "@/lib/useProgress";
 import { getTotalReadingTime } from "@/lib/readingTime";
 import { PublicToggleInline, useCollectionPublicState } from "@/components/ui/PublicToggle";
 import { md } from "@/lib/markdown";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function CourseDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -22,6 +23,7 @@ export default function CourseDetailPage() {
   const totalMinutes = course
     ? getTotalReadingTime(course.lessons.map((l) => l.storySlug), allStories)
     : 0;
+  usePageMeta({ title: course?.title, description: course?.description, image: course?.image });
 
   if (loading) {
     return (

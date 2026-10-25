@@ -4,9 +4,11 @@ import AccentBar from "@/components/ui/AccentBar";
 import LoadMore from "@/components/ui/LoadMore";
 import { useContentList } from "@/lib/content";
 import type { DocContent } from "@/types";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function DocsIndexPage() {
   const { data: docs, loading } = useContentList<DocContent>("doc");
+  usePageMeta({ title: "Docs", description: "Lookup answers: setup references and infrastructure notes. Jump in anywhere." });
   if (loading) {
     return (
       <div className="pt-32 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">

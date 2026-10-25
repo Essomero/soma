@@ -9,9 +9,11 @@ const podcastTopics = [
 ];
 import type { PodcastEpisodeFull } from "@/types";
 import { md } from "@/lib/markdown";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function PodcastPage() {
   const { data: episodes, loading } = useContentList<PodcastEpisodeFull>("podcast");
+  usePageMeta({ title: "Podcast", description: "Ideas better heard than read: deep dives into technology, economics, and philosophy." });
   if (loading) {
     return (
       <div className="mt-16 py-giant text-center">

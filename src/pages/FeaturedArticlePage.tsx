@@ -16,6 +16,7 @@ import Comments from "@/components/ui/Comments";
 import { useAuth } from "@/lib/AuthContext";
 import { useContentItem, useContentList, toCard } from "@/lib/content";
 import type { FeaturedContent, StoryContent, Author, BentoCardData, PullQuoteData } from "@/types";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 const STORY_SLUG = "why-i-built-soma";
 
@@ -44,6 +45,7 @@ export default function FeaturedArticlePage() {
   const sections = Array.isArray(row?.sections) ? row.sections : [];
   const rowTitle = typeof row?.title === "string" ? row.title : "";
   const rowDescription = typeof row?.description === "string" ? row.description : "";
+  usePageMeta({ title: rowTitle || undefined, description: rowDescription || undefined, image: row?.image });
   const storyText = [
     rowDescription,
     ...sections.flatMap((s) => [s.heading, ...(s.paragraphs || []).filter((p): p is string => typeof p === "string")]),

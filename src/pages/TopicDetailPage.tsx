@@ -5,12 +5,14 @@ import ArticleCard from "@/components/cards/ArticleCard";
 import { allTopics } from "@/content/registry";
 import { useContentList } from "@/lib/content";
 import type { StoryContent } from "@/types";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function TopicDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const topic = allTopics.find((t) => t.slug === (slug ?? ""));
   const { data: stories } = useContentList<StoryContent>("story");
 
+  usePageMeta({ title: topic?.title, description: topic?.description });
   if (!topic) {
     return (
       <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant text-center">

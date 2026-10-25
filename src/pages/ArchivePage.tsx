@@ -7,10 +7,12 @@ import LoadMore from "@/components/ui/LoadMore";
 import { useContentList } from "@/lib/content";
 import type { StoryContent } from "@/types";
 import { useAllReadSlugs } from "@/lib/useProgress";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function ArchivePage() {
   const readSlugs = useAllReadSlugs();
   const { data: stories, loading } = useContentList<StoryContent>("story");
+  usePageMeta({ title: "Archive", description: "Every retired story, grouped by year. Still readable, still searchable." });
   if (loading) {
     return (
       <div className="pt-32 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">

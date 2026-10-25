@@ -16,6 +16,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useContentItem, useContentList, toCard } from "@/lib/content";
 import type { StoryContent } from "@/types";
 import { md, contentToMarkdown } from "@/lib/markdown";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 const STORY_SLUG = "benjamin-mayanja";
 
@@ -44,6 +45,7 @@ export default function DeveloperStoryPage() {
   const intro = typeof storyRow?.intro === "string" ? storyRow.intro : "";
   const body = Array.isArray(storyRow?.body) ? (storyRow.body as string[]) : [];
   const storyText = [intro, ...body].join(" ");
+  usePageMeta({ title: (typeof storyRow?.title === "string" && storyRow.title) || "Think on paper, but digital", description: intro || undefined });
   const moreStories = (storyRows ?? []).filter((s) => s.slug !== STORY_SLUG).slice(0, 3).map(toCard);
   return (
     <div>

@@ -43,6 +43,8 @@ const iconMap: Record<string, LucideIcon> = {
 
 const filterTabs = ["All", "Tech", "Culture", "Business"];
 
+import { usePageMeta } from "@/hooks/usePageMeta";
+
 export default function TopicsPage() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
@@ -50,6 +52,7 @@ export default function TopicsPage() {
   const { data: stories } = useContentList<StoryContent>("story");
   const storyCount = (topicSlug: string) =>
     (stories ?? []).filter((s) => s.topics?.includes(topicSlug)).length;
+  usePageMeta({ title: "Topics", description: "Shelves, not piles: every story, guide, and course grouped by interest." });
 
   const techCount = storyCount("technology");
   const careerCount = storyCount("career");

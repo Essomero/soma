@@ -10,6 +10,7 @@ import Comments from "@/components/ui/Comments";
 import { contentToMarkdown, md } from "@/lib/markdown";
 import { useContentItem, useContentList } from "@/lib/content";
 import type { PodcastEpisodeFull } from "@/types";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function PodcastEpisodePage() {
   const { slug } = useParams<{ slug: string }>();
@@ -19,6 +20,7 @@ export default function PodcastEpisodePage() {
   const { data: episode, loading } = useContentItem<PodcastEpisodeFull>("podcast", slug);
   const { data: episodes } = useContentList<PodcastEpisodeFull>("podcast");
   const allEpisodes = episodes ?? [];
+  usePageMeta({ title: episode?.title, description: episode?.summary || episode?.description, image: episode?.coverImage || episode?.image });
 
   // ── Prev / Next ──────────────────────────────────────
   const sortedByDate = allEpisodes.filter((ep) => ep.slug); // only full episodes

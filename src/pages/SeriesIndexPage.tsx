@@ -5,9 +5,11 @@ import AccentBar from "@/components/ui/AccentBar";
 import LoadMore from "@/components/ui/LoadMore";
 import { useContentList } from "@/lib/content";
 import type { SeriesContent } from "@/types";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function SeriesIndexPage() {
   const { data: series, loading } = useContentList<SeriesContent>("series");
+  usePageMeta({ title: "Series", description: "Build logs released over time: episodes that stand alone but gain meaning in sequence." });
   if (loading) {
     return (
       <div className="pt-32 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">

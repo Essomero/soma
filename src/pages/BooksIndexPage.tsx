@@ -5,9 +5,11 @@ import AccentBar from "@/components/ui/AccentBar";
 import LoadMore from "@/components/ui/LoadMore";
 import { useContentList } from "@/lib/content";
 import type { BookContent } from "@/types";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function BooksIndexPage() {
   const { data: books, loading } = useContentList<BookContent>("book");
+  usePageMeta({ title: "Books", description: "Finished works to read in chapter order." });
   if (loading) {
     return (
       <div className="pt-32 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">

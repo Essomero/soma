@@ -9,12 +9,14 @@ import Tag from "@/components/ui/Tag";
 import { useContentList, toCard } from "@/lib/content";
 import type { StoryContent, GuideContent, FeaturedContent, PodcastEpisodeFull } from "@/types";
 import { Link } from "react-router-dom";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function HomePage() {
   const storiesQ = useContentList<StoryContent>("story");
   const guidesQ = useContentList<GuideContent>("guide");
   const featuredQ = useContentList<FeaturedContent>("featured");
   const podcastQ = useContentList<PodcastEpisodeFull>("podcast");
+  usePageMeta({});
   if (storiesQ.loading || guidesQ.loading || featuredQ.loading || podcastQ.loading) {
     return (
       <div className="mx-auto max-w-readme px-6 py-12 text-center">

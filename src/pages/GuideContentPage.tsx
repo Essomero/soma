@@ -22,6 +22,7 @@ import { type HighlightData } from "@/lib/highlights";
 
 import type { BentoCardData, PullQuoteData } from "@/types";
 import type { LucideIcon } from "lucide-react";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 // Icon map for tip cards (matches ship-soma pattern)
 const tipIcons: Record<string, LucideIcon> = {
@@ -40,6 +41,7 @@ export default function GuideContentPage() {
   const content = guide ?? null;
   const otherGuides = (guides ?? []).filter((g) => g.id !== guide?.id).slice(0, 3);
   const storyText = [content?.intro || "", ...(content?.body || [])].join(" ");
+  usePageMeta({ title: guide?.title, description: guide?.excerpt, image: guide?.image });
 
   // Extract TOC from ## headings only, preserving their numbers
   const tocItems = (content?.body || [])
