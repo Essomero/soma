@@ -25,7 +25,7 @@ export const whyIBuiltSoma: FeaturedContent = {
   tag: "FEATURED ARTICLE // SOMA",
   title: "Think on paper, but digital: why I built Soma",
   description:
-    "AI can now teach you anything at your pace, tests can prove you know it, and one toggle can share it. I built Soma so learning, proving, seeing, and sharing live in the same place, on infrastructure you own.",
+    "AI can now teach you anything at your pace, tests can prove you know it, and one toggle can share it. And Soma is not only for studying: it holds anything readable. I built it so learning, reading, proving, seeing, and sharing live in the same place, on infrastructure you own.",
   image:
     "https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=1200&h=675&fit=crop",
   imageAlt: "Writing by hand in a paper planner next to a laptop, coffee, and books",
@@ -82,7 +82,8 @@ export const whyIBuiltSoma: FeaturedContent = {
       heading: "See it, then share it only if you want",
       paragraphs: [
         "Some ideas do not click until you see them move. Every page in Soma can draw: Mermaid diagrams for flows, interactive graphs for relationships, and full 3D scenes for systems you need to turn around in your head. If you learn by looking, you get the same first class treatment as someone who learns by reading.",
-        "Owning the loop mattered more than any single feature. Fork the repo, import it into Vercel, add one password, click Add on the Turso card, deploy. Your writing lives in your database, never in git, so pulling my updates never touches your words. You think in private, you prove it to yourself, and you flip one toggle only when you want the world to see it.",
+        "And Soma is not only for lessons. It holds anything you like to read: a novel draft, a favorite essay, a book you want with you everywhere. If it reads like markdown-style content, Soma renders it, and the bundled agent skill converts any source into a Soma page. Bring what you already read, open it on your phone, tablet, or desktop, and share it with one click when you want someone else to see it.",
+        "Owning the loop mattered more than any single feature. Fork the repo, import it into Vercel, add one password, click Add on the Turso card, deploy. Your writing lives in your database, never in git, so pulling my updates never touches your words. Nothing locks you in either: copy any page as markdown or export a beautiful PDF for print. You think in private, you prove it to yourself, and you flip one toggle only when you want the world to see it.",
       ],
     },
   ],

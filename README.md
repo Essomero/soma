@@ -12,11 +12,13 @@ New here? Three moves: [**fork the repo**](https://github.com/Essomero/soma/fork
 
 Soma (*Luganda: to read, study, learn*) exists because learning and sharing have never been easier. AI can teach you anything at whatever pace you need, tests (written and spoken) can prove you know it, and one toggle can share it with the world. Soma puts all three in one place you own, with visuals for how you think: Mermaid diagrams, interactive graphs, and full 3D scenes next to math and code.
 
+And it is not only for studying. Soma holds anything readable: books, essays, leisure reads, notes. If it reads like markdown-style content, Soma renders it, and the bundled agent skill converts any source into a Soma page. Bring what you already read, open it on phone, tablet, or desktop, and share it with one click when you want.
+
 Most publishing tools force a trade:
 - **Blogging platforms** (Ghost, Substack) push you to publish for an audience before you have understood the topic yourself.
 - **Note-taking apps** (Notion, Obsidian) keep thoughts trapped in proprietary clouds or require fragile sync setups with clumsy export pipelines.
 
-Soma gives you a private notebook that teaches at your pace, text and voice tests that verify what you learned, visual components that show it, and one toggle that shares it. Read [why I built Soma](https://soma.mayanja.dev/featured/why-i-built-soma) for the story behind it.
+Soma gives you a private library that teaches at your pace, text and voice tests that verify what you learned, visual components that show it, and one toggle that shares it. Nothing locks you in: copy any page as markdown or export a beautiful PDF for print. Read [why I built Soma](https://soma.mayanja.dev/featured/why-i-built-soma) for the story behind it.
 
 ---
 
@@ -69,11 +71,11 @@ Soma is designed from the ground up to collaborate with AI coding agents. The re
 - **Content Skill (`.claude/skills/soma`, `.agents/skills/soma`, `SOMA_SKILL.md`)**: Instructs any AI agent (Claude Code, Cursor, Windsurf, Cline, Aider, omp) to draft, type-check, and publish courses, stories, guides, books, and diagnostic tests in the *Grokking Algorithms* voice.
 - **Opinionation Skill (`.claude/skills/opinionation`, `.agents/skills/opinionation`, `OPINIONATION_SKILL.md`)**: Enforces minimal dependencies, explicit prerequisites, automated install setup, and self-contained README standards across code and companion labs.
 
-- **Zero-friction publishing pipeline**: Ask your agent: *"Write a 4-lesson guide on WebSockets with companion drills."* The agent creates typed TypeScript schema files under `src/content/`, links companion lab folders, verifies `npm run build`, and your git push deploys it to the world.
+- **Zero-friction publishing pipeline**: Ask your agent: *"Write a 4-lesson guide on WebSockets with companion drills."* The agent creates typed TypeScript schema files under `src/content/`, links companion lab folders, verifies `npm run build`, and your git push deploys it to the world. Got an existing book, essay, or leisure read? Ask the agent to convert it: any markdown-style source becomes a Soma page.
 ### 2. Think on Paper, but Digital
 - **Tactile typography**: Built with Sora (display), DM Sans (body), and KaTeX (mathematics) with wide reading margins.
 - **Marginalia that survives edits**: Highlight any passage to leave private notes or questions. If you edit or rewrite the text later, an unmapped notes drawer preserves your annotations so your marginalia never drifts or vanishes.
-- **Offline physical print edition**: Dedicated `/print` routes format any article, book, or full course into clean, paginated layouts for physical paper printing or PDF export.
+- **No lock-in, beautiful paper**: Copy any page as markdown in one click. Dedicated `/print` routes format any article, book, or full course into clean, paginated layouts for physical paper printing or PDF export.
 
 ### 3. Interact with AI Anywhere in the Reading Experience
 - **Inline margin AI**: Select any paragraph, derivation, or code snippet to ask an AI model to explain, challenge, or simplify the text directly in the margin.
@@ -86,10 +88,10 @@ Soma is designed from the ground up to collaborate with AI coding agents. The re
 - **Barge-in and low latency**: Natural voice conversation without sending audio through proprietary cloud services.
 - **Son is optional and independent**: Soma works fully without it. When Son is unreachable at `http://localhost:7860`, tests fall back to silent text mode. Son itself runs standalone and never needs Soma.
 
-### 5. Write Notes & Access Anywhere
-- **Private notebook (`/learn`)**: A distraction-free markdown studio with instant KaTeX math, tables, callouts, and Mermaid diagrams. Accessible on mobile, tablet, or desktop.
+### 5. Your Library, Anywhere
+- **Private notebook (`/learn`)**: A distraction-free markdown studio with instant KaTeX math, tables, callouts, and Mermaid diagrams. Draft notes, import books, or keep leisure reads. Accessible on mobile, tablet, or desktop.
 - **In your own infrastructure**: Powered by Vercel Serverless Functions and Turso (libSQL / edge SQLite). 100% sovereign data. Free tier forever, zero telemetry, and zero tracking scripts.
-- **Make public what you wish**: Private by default behind your site password. A single click on the margin lock/globe toggle publishes any note, story, or entire course to the public web.
+- **Make public what you wish**: Private by default behind your site password. A single click on the margin lock/globe toggle publishes any note, book, story, or entire course to the public web.
 
 ---
 
