@@ -10,12 +10,12 @@
     <language>en-us</language>
     <itunes:author>Benjamin Mayanja</itunes:author>
     <itunes:summary>Deep dives into technology, economics, and philosophy.</itunes:summary>
-    <itunes:image href="https://soma.mayanja.dev/favicon.ico" />
+    <itunes:image href="https://soma.mayanja.dev/podcast-cover.jpg" />
     <itunes:category text="Technology" />
     <itunes:explicit>no</itunes:explicit>
     <atom:link href="https://soma.mayanja.dev/podcast.xml" rel="self" type="application/rss+xml" />
     <image>
-      <url>https://soma.mayanja.dev/favicon.ico</url>
+      <url>https://soma.mayanja.dev/podcast-cover.jpg</url>
       <title>Soma Podcast</title>
       <link>https://soma.mayanja.dev/podcast</link>
     </image>

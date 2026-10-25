@@ -91,12 +91,12 @@ async function main() {
     <language>en-us</language>
     <itunes:author>Benjamin Mayanja</itunes:author>
     <itunes:summary>Deep dives into technology, economics, and philosophy.</itunes:summary>
-    <itunes:image href="${baseUrl}/favicon.ico" />
+    <itunes:image href="${baseUrl}/podcast-cover.jpg" />
     <itunes:category text="Technology" />
     <itunes:explicit>no</itunes:explicit>
     <atom:link href="${baseUrl}/podcast.xml" rel="self" type="application/rss+xml" />
     <image>
-      <url>${baseUrl}/favicon.ico</url>
+      <url>${baseUrl}/podcast-cover.jpg</url>
       <title>Soma Podcast</title>
       <link>${baseUrl}/podcast</link>
     </image>
