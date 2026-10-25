@@ -15,11 +15,11 @@ export const marketSomaSuite = {
   body: [
     "## The pain: your launch address disagrees with itself",
 
-    "Picture launch day before the fix. You post to Hacker News and link `soma.vercel.app`. A reader clicks through to your docs and lands on `soma.mayanja.dev`. Google sees two sites with the same words, your link previews point at the throwaway domain, and every upvote gets split across two addresses. That was Soma through October 2026: the OG tags in `index.html` said `vercel.app`, the README pointed at `mayanja.dev`, and no redirect settled the argument. Launching before fixing that pours traffic into a bucket with a hole in it.",
+    "Picture launch day before the fix. Someone shares your link and the preview card points at `soma.vercel.app`. That domain was never yours: an earlier draft of this repo guessed it because the app is called Soma and it deploys on Vercel, and the real address belongs to a stranger. Meanwhile your docs live at `soma.mayanja.dev`. So the share cards advertised someone else's property while your real home sat unlinked. Launching before fixing that pours traffic into a bucket with a hole in it.",
 
     "## Step 1: pick one home address",
 
-    "Choose `soma.mayanja.dev` as the canonical home, since that is what your docs already promise. Then do three small jobs in this order. First, redirect `soma.vercel.app` to it with a host-based redirect in `vercel.json` so old links keep working. Second, rewrite the OG block: `og:url`, `og:image`, and the Twitter image must use the canonical domain, or every share card advertises the wrong address. Third, update the URLs baked into `public/podcast.xml`: the channel `<link>`, the `<atom:link self>`, and every episode URL. Podcast directories treat the feed URL as identity, so a domain change later reads as a brand new show. All three jobs are done: the redirect, the OG block, and the feed now point at `mayanja.dev`.",
+    "Choose `soma.mayanja.dev` as the canonical home: it is what your docs already promise, and the only address you actually own. Then do three small jobs in this order. First, note what you cannot do: redirect a domain you never owned. There is no redirect to write, only references to remove, so audit for inbound links to the old address and accept they are lost (in practice there were none, since it was never publicized as yours). Second, rewrite the OG block: `og:url`, `og:image`, and the Twitter image must use the canonical domain, or every share card advertises the wrong address. Third, update the URLs baked into `public/podcast.xml`: the channel `<link>`, the `<atom:link self>`, and every episode URL. Podcast directories treat the feed URL as identity, so a domain change later reads as a brand new show. All three jobs are done: no file anywhere references the stranger's domain, and the OG block and feed point at `mayanja.dev`.",
 
     "> One address everywhere. If a stranger can reach the same page through two domains, you do not have a home, you have a rumor.",
 
@@ -71,7 +71,7 @@ export const marketSomaSuite = {
       label: "HOME FIRST",
       title: "One canonical domain",
       description:
-        "One canonical domain: soma.mayanja.dev. The redirect, the OG tags, and the feed URLs all point there, so every launch post inherits the right address.",
+        "One canonical domain: soma.mayanja.dev, the only address you own. The vercel.app strings were never yours. The OG tags and feed URLs point home now, so every launch post inherits the right address.",
     },
     {
       label: "TUESDAY TO THURSDAY",
