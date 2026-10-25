@@ -163,7 +163,7 @@ export default async function handler(req, res) {
 
     // OpenRouter requires these headers
     if (isOpenRouter) {
-      headers["HTTP-Referer"] = "https://soma.vercel.app";
+      headers["HTTP-Referer"] = "https://soma.mayanja.dev";
       headers["X-Title"] = "Soma";
     }
 

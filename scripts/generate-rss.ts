@@ -31,7 +31,7 @@ async function main() {
   // For now, generate from hardcoded episode data to avoid
   // the complexity of importing TS modules at build time
 
-  const baseUrl = "https://soma.vercel.app";
+  const baseUrl = "https://soma.mayanja.dev";
 
   const episodes: Episode[] = [
     {

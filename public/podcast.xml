@@ -5,29 +5,29 @@
   xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Soma Podcast</title>
-    <link>https://soma.vercel.app/podcast</link>
+    <link>https://soma.mayanja.dev/podcast</link>
     <description>Deep dives into technology, economics, and philosophy. Stories from the people behind the code.</description>
     <language>en-us</language>
     <itunes:author>Benjamin Mayanja</itunes:author>
     <itunes:summary>Deep dives into technology, economics, and philosophy.</itunes:summary>
-    <itunes:image href="https://soma.vercel.app/favicon.ico" />
+    <itunes:image href="https://soma.mayanja.dev/favicon.ico" />
     <itunes:category text="Technology" />
     <itunes:explicit>no</itunes:explicit>
-    <atom:link href="https://soma.vercel.app/podcast.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://soma.mayanja.dev/podcast.xml" rel="self" type="application/rss+xml" />
     <image>
-      <url>https://soma.vercel.app/favicon.ico</url>
+      <url>https://soma.mayanja.dev/favicon.ico</url>
       <title>Soma Podcast</title>
-      <link>https://soma.vercel.app/podcast</link>
+      <link>https://soma.mayanja.dev/podcast</link>
     </image>
     <item>
       <title>How Soma turns notes into interactive textbooks</title>
-      <link>https://soma.vercel.app/podcast/bridging-code-and-community</link>
-      <guid isPermaLink="true">https://soma.vercel.app/podcast/bridging-code-and-community</guid>
+      <link>https://soma.mayanja.dev/podcast/bridging-code-and-community</link>
+      <guid isPermaLink="true">https://soma.mayanja.dev/podcast/bridging-code-and-community</guid>
       <description>Two hosts unpack Soma: the journal-to-textbook loop, ten content types as intentional constraint, hands-on labs, oral exams with Son, and infrastructure you own.</description>
       <itunes:summary>A two-host deep dive into Soma, drawn from the creator's manifesto and GitHub docs.</itunes:summary>
       <itunes:author>Soma Podcast</itunes:author>
       <itunes:duration>323</itunes:duration>
-      <enclosure url="https://soma.vercel.app/audio/bridging-code-and-community.m4a" length="10392917" type="audio/x-m4a" />
+      <enclosure url="https://soma.mayanja.dev/audio/bridging-code-and-community.m4a" length="10392917" type="audio/x-m4a" />
       <itunes:keywords>Soma Podcast</itunes:keywords>
       <itunes:image href="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=1200&amp;h=1200&amp;fit=crop" />
       

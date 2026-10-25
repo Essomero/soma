@@ -1164,7 +1164,7 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         "/api": {
-          target: env.LOCAL_API ? "http://localhost:3001" : "https://soma.vercel.app",
+          target: env.LOCAL_API ? "http://localhost:3001" : "https://soma.mayanja.dev",
           changeOrigin: true,
         },
       },

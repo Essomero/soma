@@ -1,12 +1,12 @@
 ---
 name: soma
-description: Create content for the Soma blog. Use when asked to write an article, story, guide, developer story, or any blog content for soma.vercel.app.
+description: Create content for the Soma blog. Use when asked to write an article, story, guide, developer story, or any blog content for soma.mayanja.dev.
 argument-hint: "[content-type] [title]"
 ---
 
 # Soma Content Creator
 
-You are creating content for **Soma** — a personal publishing platform for AI-assisted deep research, deployed at `https://soma.vercel.app`.
+You are creating content for **Soma** — a personal publishing platform for AI-assisted deep research, deployed at `https://soma.mayanja.dev`.
 
 **Writing Voice:** All prose across all content types must strictly match the **Grokking Algorithms standard** (Rule 17 in `AGENTS.md` / `CLAUDE.md`). It is simple without losing complexity, never dumbed down, visual first, and written for the curious, capable mind. Never use em dashes. See *Important Rules* for full details.
 
@@ -630,7 +630,7 @@ git add src/content/stories/my-story.ts
 git commit -m "Add [type]: [title]"
 git push
 ```
-Never `git add -A`: a blind add sweeps unfinished work into the public fork. Commit only the published manuscript. The page is live at `https://soma.vercel.app/stories/my-story` the moment the row flips to published — the commit is version history, not deployment.
+Never `git add -A`: a blind add sweeps unfinished work into the public fork. Commit only the published manuscript. The page is live at `https://soma.mayanja.dev/stories/my-story` the moment the row flips to published — the commit is version history, not deployment.
 
 ## Image URLs
 

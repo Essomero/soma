@@ -42,7 +42,7 @@ ROOT_DIR="$(cd "$SELF_DIR/.." && pwd)"
 
 DB="${SQL_PRACTICE_DB:-drills}"
 CONTAINER="${SQL_PRACTICE_CONTAINER:-sqldrills}"
-KIT_URL="${SQL_PRACTICE_KIT_URL:-https://soma.vercel.app/sql}"
+KIT_URL="${SQL_PRACTICE_KIT_URL:-https://soma.mayanja.dev/sql}"
 KIT_CACHE="${SQL_PRACTICE_KIT_CACHE:-$HOME/.sql-practice/kit}"
 SOCKET_DIR="${SQL_PRACTICE_SOCKET:-/tmp}"
 
