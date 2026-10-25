@@ -2,7 +2,8 @@
 <rss version="2.0"
   xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
   xmlns:content="http://purl.org/rss/1.0/modules/content/"
-  xmlns:atom="http://www.w3.org/2005/Atom">
+  xmlns:atom="http://www.w3.org/2005/Atom"
+  xmlns:podcast="https://podcastindex.org/namespace/1.0">
   <channel>
     <title>Soma Podcast</title>
     <link>https://soma.mayanja.dev/podcast</link>
@@ -13,6 +14,8 @@
     <itunes:image href="https://soma.mayanja.dev/podcast-cover.jpg" />
     <itunes:category text="Technology" />
     <itunes:explicit>no</itunes:explicit>
+    <podcast:locked>yes</podcast:locked>
+    <podcast:guid>D9702888-031D-4582-93D4-31BBF20CF083</podcast:guid>
     <atom:link href="https://soma.mayanja.dev/podcast.xml" rel="self" type="application/rss+xml" />
     <image>
       <url>https://soma.mayanja.dev/podcast-cover.jpg</url>
@@ -20,15 +23,15 @@
       <link>https://soma.mayanja.dev/podcast</link>
     </image>
     <item>
-      <title>How Soma turns notes into interactive textbooks</title>
+      <title>Think on paper, but digital</title>
       <link>https://soma.mayanja.dev/podcast/bridging-code-and-community</link>
       <guid isPermaLink="true">https://soma.mayanja.dev/podcast/bridging-code-and-community</guid>
-      <description>Two hosts unpack Soma: the journal-to-textbook loop, ten content types as intentional constraint, hands-on labs, oral exams with Son, and infrastructure you own.</description>
-      <itunes:summary>A two-host deep dive into Soma, drawn from the creator's manifesto and GitHub docs.</itunes:summary>
-      <itunes:author>Soma Podcast</itunes:author>
-      <itunes:duration>323</itunes:duration>
-      <enclosure url="https://soma.mayanja.dev/audio/bridging-code-and-community.m4a" length="10392917" type="audio/x-m4a" />
-      <itunes:keywords>Soma Podcast</itunes:keywords>
+      <description>Soma founder Benjamin Mayanja walks through the idea behind the platform: a private notebook and a public press in one place, running on your own database.</description>
+      <itunes:summary>Soma founder Benjamin Mayanja walks through the idea behind the platform: a private notebook and a public press in one place, running on your own database.</itunes:summary>
+      <itunes:author>Benjamin Mayanja</itunes:author>
+      <itunes:duration>1080</itunes:duration>
+      <itunes:keywords>Benjamin Mayanja (Founder, Soma)</itunes:keywords>
+      <itunes:explicit>no</itunes:explicit>
       <itunes:image href="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=1200&amp;h=1200&amp;fit=crop" />
       
       <pubDate>Sat, 24 Oct 2026 09:00:00 GMT</pubDate>

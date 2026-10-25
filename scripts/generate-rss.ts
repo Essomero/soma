@@ -72,6 +72,7 @@ async function main() {
       <itunes:author>Benjamin Mayanja</itunes:author>
       <itunes:duration>${ep.durationSeconds || 0}</itunes:duration>
       ${guestList ? `<itunes:keywords>${esc(guestList)}</itunes:keywords>` : ""}
+      <itunes:explicit>no</itunes:explicit>
       <itunes:image href="${esc(ep.image)}" />
       ${audioUrl ? `<enclosure url="${esc(audioUrl)}" length="${audioLength}" type="${audioType}" />` : ""}
       <pubDate>${pubDate}</pubDate>
@@ -83,7 +84,8 @@ async function main() {
 <rss version="2.0"
   xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
   xmlns:content="http://purl.org/rss/1.0/modules/content/"
-  xmlns:atom="http://www.w3.org/2005/Atom">
+  xmlns:atom="http://www.w3.org/2005/Atom"
+  xmlns:podcast="https://podcastindex.org/namespace/1.0">
   <channel>
     <title>Soma Podcast</title>
     <link>${baseUrl}/podcast</link>
@@ -94,6 +96,8 @@ async function main() {
     <itunes:image href="${baseUrl}/podcast-cover.jpg" />
     <itunes:category text="Technology" />
     <itunes:explicit>no</itunes:explicit>
+    <podcast:locked>yes</podcast:locked>
+    <podcast:guid>D9702888-031D-4582-93D4-31BBF20CF083</podcast:guid>
     <atom:link href="${baseUrl}/podcast.xml" rel="self" type="application/rss+xml" />
     <image>
       <url>${baseUrl}/podcast-cover.jpg</url>
