@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Loader2 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import ArticleCard from "@/components/cards/ArticleCard";
 import LoadMore from "@/components/ui/LoadMore";
 import { allTopics } from "@/content/registry";
-import { useContentList } from "@/lib/content";
+import { useContentList, sortContent } from "@/lib/content";
+import type { SortKey } from "@/lib/content";
+import SortControl, { SORT_OPTIONS } from "@/components/ui/SortControl";
 import type { StoryContent } from "@/types";
 import { useAllReadSlugs } from "@/lib/useProgress";
 import { md } from "@/lib/markdown";
@@ -26,6 +29,7 @@ function wordCount(s: StoryContent): number {
 export default function StoriesIndexPage() {
   const readSlugs = useAllReadSlugs();
   const { data: stories, loading } = useContentList<StoryContent>("story");
+  const [sort, setSort] = useState<SortKey | "unread">("unread");
   usePageMeta({ title: "Stories", description: "One idea per story, felt deeply: engineering, craft, and the systems underneath." });
   if (loading) {
     return (
@@ -44,7 +48,7 @@ export default function StoriesIndexPage() {
     return new Date(b.added || b.date).getTime() - new Date(a.added || a.date).getTime();
   };
 
-  const sorted = [...active].sort(sortUnreadFirst);
+  const sorted = sort === "unread" ? [...active].sort(sortUnreadFirst) : sortContent(active, sort);
   const featured = sorted.find((s) => s.isFeatured) || sorted[0];
   const gridStory2 = sorted[1];
   const longRead = sorted.filter((s) => s.slug !== featured?.slug && s.slug !== gridStory2?.slug).sort((a, b) => wordCount(b) - wordCount(a))[0];
@@ -67,6 +71,16 @@ export default function StoriesIndexPage() {
             Deep dives on <span className="text-gradient">ideas</span> that matter.
           </h1>
         </header>
+
+        {active.length > 1 && (
+          <div className="flex justify-end mb-lg">
+            <SortControl
+              value={sort}
+              onChange={(v) => setSort(v as SortKey | "unread")}
+              options={[{ value: "unread", label: "Unread first" }, ...SORT_OPTIONS]}
+            />
+          </div>
+        )}
 
         {/* Staggered Editorial Grid */}
         {sorted.length === 0 ? (

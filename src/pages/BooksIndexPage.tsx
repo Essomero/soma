@@ -1,14 +1,18 @@
+import { useState } from "react";
 import { md } from "@/lib/markdown";
 import { Link } from "react-router-dom";
 import { BookOpen, ArrowRight, Loader2 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import LoadMore from "@/components/ui/LoadMore";
-import { useContentList } from "@/lib/content";
+import { useContentList, sortContent } from "@/lib/content";
+import type { SortKey } from "@/lib/content";
+import SortControl from "@/components/ui/SortControl";
 import type { BookContent } from "@/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function BooksIndexPage() {
   const { data: books, loading } = useContentList<BookContent>("book");
+  const [sort, setSort] = useState<SortKey>("newest");
   usePageMeta({ title: "Books", description: "Finished works to read in chapter order." });
   if (loading) {
     return (
@@ -17,9 +21,7 @@ export default function BooksIndexPage() {
       </div>
     );
   }
-  const active = (books ?? [])
-    .filter((b) => !b.archived)
-    .sort((a, b) => new Date(b.added || b.date).getTime() - new Date(a.added || a.date).getTime());
+  const active = sortContent((books ?? []).filter((b) => !b.archived), sort);
 
   return (
     <div>
@@ -36,6 +38,12 @@ export default function BooksIndexPage() {
             Books organized into chapters. Read cover to cover, or jump to the chapter you need. Each chapter is a full article with all the rich content you'd expect.
           </p>
         </header>
+
+        {active.length > 1 && (
+          <div className="flex justify-end mb-lg">
+            <SortControl value={sort} onChange={(v) => setSort(v as SortKey)} />
+          </div>
+        )}
 
         {active.length === 0 ? (
           <div className="text-center py-xxl border-2 border-dashed border-border-default rounded-xl">

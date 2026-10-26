@@ -1,14 +1,18 @@
+import { useState } from "react";
 import { md } from "@/lib/markdown";
 import { Link } from "react-router-dom";
 import { BookOpen, ArrowRight, Loader2 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import LoadMore from "@/components/ui/LoadMore";
-import { useContentList } from "@/lib/content";
+import { useContentList, sortContent } from "@/lib/content";
+import type { SortKey } from "@/lib/content";
+import SortControl from "@/components/ui/SortControl";
 import type { CourseContent } from "@/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function CoursesIndexPage() {
   const { data: courses, loading } = useContentList<CourseContent>("course");
+  const [sort, setSort] = useState<SortKey>("newest");
   usePageMeta({ title: "Courses", description: "Ordered lessons that build on each other, with drills to prove every idea." });
   if (loading) {
     return (
@@ -17,9 +21,7 @@ export default function CoursesIndexPage() {
       </div>
     );
   }
-  const active = (courses ?? [])
-    .filter((c) => !c.archived)
-    .sort((a, b) => new Date(b.added || b.date).getTime() - new Date(a.added || a.date).getTime());
+  const active = sortContent((courses ?? []).filter((c) => !c.archived), sort);
 
   return (
     <div>
@@ -36,6 +38,12 @@ export default function CoursesIndexPage() {
             Multi-lesson courses that build understanding from the ground up. Each lesson is a full article : read in sequence or jump to what you need.
           </p>
         </header>
+
+        {active.length > 1 && (
+          <div className="flex justify-end mb-lg">
+            <SortControl value={sort} onChange={(v) => setSort(v as SortKey)} />
+          </div>
+        )}
 
         {active.length === 0 ? (
           <div className="text-center py-xxl border-2 border-dashed border-border-default rounded-xl">

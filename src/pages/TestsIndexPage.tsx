@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import { Clock, FileText, ArrowRight, Sparkles, CheckCircle2, BookOpen, Mic, Loader2 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
-import { useContentList } from "@/lib/content";
+import { useContentList, sortContent } from "@/lib/content";
+import type { SortKey } from "@/lib/content";
+import SortControl from "@/components/ui/SortControl";
 import type { TestContent } from "@/types";
 import { getStoredAnswers, getStoredEvaluation } from "@/lib/testEvaluation";
 import { usePageMeta } from "@/hooks/usePageMeta";
@@ -14,6 +16,7 @@ export default function TestsIndexPage() {
     Record<string, { answeredCount: number; hasEvaluation: boolean; evaluationModel?: string }>
   >({});
   const { data: tests, loading } = useContentList<TestContent>("test");
+  const [sort, setSort] = useState<SortKey>("newest");
   const activeTests = (tests ?? []).filter((t) => !t.archived);
   usePageMeta({ title: "Tests", description: "Proof under time pressure: diagnostic screens with scored written and oral answers." });
 
@@ -21,12 +24,14 @@ export default function TestsIndexPage() {
   const rawCategories = Array.from(new Set(activeTests.map((t) => t.category)));
   const categories = ["All", "Oral Exams", ...rawCategories];
 
-  const filteredTests =
+  const filteredTests = sortContent(
     selectedCategory === "All"
       ? activeTests
       : selectedCategory === "Oral Exams"
       ? activeTests.filter((t) => t.format === "oral")
-      : activeTests.filter((t) => t.category === selectedCategory);
+      : activeTests.filter((t) => t.category === selectedCategory),
+    sort,
+  );
 
   useEffect(() => {
     // Check local storage for test progress
@@ -94,6 +99,12 @@ export default function TestsIndexPage() {
             </div>
           )}
         </header>
+
+        {filteredTests.length > 1 && (
+          <div className="flex justify-end mb-lg">
+            <SortControl value={sort} onChange={(v) => setSort(v as SortKey)} />
+          </div>
+        )}
 
         {filteredTests.length === 0 ? (
           <div className="text-center py-xxl border-2 border-dashed border-border-default rounded-xl">

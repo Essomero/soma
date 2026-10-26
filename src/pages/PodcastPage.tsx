@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Play, ArrowRight, Podcast, Radio, Rss, Share2, Loader2 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
-import { useContentList } from "@/lib/content";
+import { useContentList, sortContent } from "@/lib/content";
+import type { SortKey } from "@/lib/content";
+import SortControl from "@/components/ui/SortControl";
 
 // Topic chips for the podcast page (page config, not content).
 const podcastTopics = [
@@ -13,6 +16,7 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function PodcastPage() {
   const { data: episodes, loading } = useContentList<PodcastEpisodeFull>("podcast");
+  const [sort, setSort] = useState<SortKey>("newest");
   usePageMeta({ title: "Podcast", description: "Ideas better heard than read: deep dives into technology, economics, and philosophy." });
   if (loading) {
     return (
@@ -22,7 +26,8 @@ export default function PodcastPage() {
     );
   }
   const allEpisodes = episodes ?? [];
-  const featured = allEpisodes[0];
+  const ordered = sortContent(allEpisodes, sort);
+  const featured = ordered[0];
 
   const featuredEpisode = {
     title: featured?.title || "Bridging code and community",
@@ -95,12 +100,17 @@ export default function PodcastPage() {
                 Stories from the people behind the code.
               </p>
             </div>
-            <button className="hidden md:flex items-center gap-xs font-sora text-metadata-tag uppercase tracking-widest text-primary hover:underline">
-              View all episodes <ArrowRight className="w-4 h-4" />
-            </button>
+            <div className="hidden md:flex items-center gap-md">
+              {ordered.length > 1 && (
+                <SortControl value={sort} onChange={(v) => setSort(v as SortKey)} />
+              )}
+              <button className="flex items-center gap-xs font-sora text-metadata-tag uppercase tracking-widest text-primary hover:underline">
+                View all episodes <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-xl">
-            {allEpisodes.map((ep) => (
+            {ordered.map((ep) => (
               <Link
                 key={ep.id}
                 to={ep.href}

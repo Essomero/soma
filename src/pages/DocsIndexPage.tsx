@@ -1,13 +1,17 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FileText, ArrowRight, Loader2 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import LoadMore from "@/components/ui/LoadMore";
-import { useContentList } from "@/lib/content";
+import { useContentList, sortContent } from "@/lib/content";
+import type { SortKey } from "@/lib/content";
+import SortControl from "@/components/ui/SortControl";
 import type { DocContent } from "@/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function DocsIndexPage() {
   const { data: docs, loading } = useContentList<DocContent>("doc");
+  const [sort, setSort] = useState<SortKey>("newest");
   usePageMeta({ title: "Docs", description: "Lookup answers: setup references and infrastructure notes. Jump in anywhere." });
   if (loading) {
     return (
@@ -16,7 +20,7 @@ export default function DocsIndexPage() {
       </div>
     );
   }
-  const active = (docs ?? []).filter((d) => !d.archived);
+  const active = sortContent((docs ?? []).filter((d) => !d.archived), sort);
 
   return (
     <div>
@@ -33,6 +37,12 @@ export default function DocsIndexPage() {
             Compressed Q&amp;A, snippets and tables. Written to be scanned and re-read : jump straight to the section you need.
           </p>
         </header>
+
+        {active.length > 1 && (
+          <div className="flex justify-end mb-lg">
+            <SortControl value={sort} onChange={(v) => setSort(v as SortKey)} />
+          </div>
+        )}
 
         {active.length === 0 ? (
           <div className="text-center py-xxl border-2 border-dashed border-border-default rounded-xl">

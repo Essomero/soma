@@ -1,13 +1,17 @@
+import { useState } from "react";
 import { md } from "@/lib/markdown";
 import { Link } from "react-router-dom";
 import { ArrowRight, Loader2, Search, ChevronDown } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
-import { useContentList } from "@/lib/content";
+import { useContentList, sortContent } from "@/lib/content";
+import type { SortKey } from "@/lib/content";
+import SortControl from "@/components/ui/SortControl";
 import type { GuideContent } from "@/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function GuidesIndexPage() {
   const { data: guides, loading } = useContentList<GuideContent>("guide");
+  const [sort, setSort] = useState<SortKey>("newest");
   usePageMeta({ title: "Guides", description: "Step-by-step guides that end somewhere new: self-hosting, drills, launch playbooks." });
   if (loading) {
     return (
@@ -18,8 +22,9 @@ export default function GuidesIndexPage() {
   }
   const allGuides = guides ?? [];
   const featuredGuide = allGuides.find((g) => g.isFeatured);
-  const sidebarGuides = allGuides.filter((g) => !g.isFeatured).slice(0, 2);
-  const gridGuides = allGuides.filter((g) => !g.isFeatured).slice(2);
+  const rest = sortContent(allGuides.filter((g) => !g.isFeatured), sort);
+  const sidebarGuides = rest.slice(0, 2);
+  const gridGuides = rest.slice(2);
   return (
     <div>
       <main className="pt-24 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop">
@@ -31,6 +36,12 @@ export default function GuidesIndexPage() {
             In-depth technical guides and tutorials across the stack.
           </p>
         </header>
+
+        {rest.length > 1 && (
+          <div className="flex justify-end mb-lg">
+            <SortControl value={sort} onChange={(v) => setSort(v as SortKey)} />
+          </div>
+        )}
 
         {/* Featured Section (Bento) */}
         <section className="mb-giant">

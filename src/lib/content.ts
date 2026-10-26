@@ -109,3 +109,43 @@ export function toCard(item: {
     tags: Array.isArray(item.tags) ? (item.tags as string[]) : [],
   };
 }
+
+// ── Client-side sorting ──────────────────────────────────
+// Convention: content recency reads the authored date fields
+// (`added`, then `date`), same as the stories/courses/books indexes
+// always did. Missing or unparsable dates sort as oldest.
+export type SortKey = "newest" | "oldest" | "title";
+
+interface Sortable {
+  added?: unknown;
+  date?: unknown;
+  title?: unknown;
+  position?: unknown;
+}
+
+export function contentTime(item: Sortable): number {
+  const raw = item.added || item.date;
+  const t = typeof raw === "string" || typeof raw === "number" ? Date.parse(String(raw)) : NaN;
+  return Number.isFinite(t) ? t : 0;
+}
+
+function contentPosition(item: Sortable): number {
+  return typeof item.position === "number" ? item.position : 0;
+}
+
+function contentTitle(item: Sortable): string {
+  return typeof item.title === "string" ? item.title : "";
+}
+
+/** Newest first by authored date, seed position breaking ties. */
+export function sortContent<T extends Sortable>(items: readonly T[], sort: SortKey): T[] {
+  const arr = [...items];
+  if (sort === "oldest") {
+    arr.sort((a, b) => contentTime(a) - contentTime(b) || contentPosition(a) - contentPosition(b));
+  } else if (sort === "title") {
+    arr.sort((a, b) => contentTitle(a).localeCompare(contentTitle(b), undefined, { sensitivity: "base" }) || contentPosition(a) - contentPosition(b));
+  } else {
+    arr.sort((a, b) => contentTime(b) - contentTime(a) || contentPosition(a) - contentPosition(b));
+  }
+  return arr;
+}

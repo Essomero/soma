@@ -1,14 +1,18 @@
+import { useState } from "react";
 import { md } from "@/lib/markdown";
 import { Link } from "react-router-dom";
 import { Layers, ArrowRight, Loader2 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import LoadMore from "@/components/ui/LoadMore";
-import { useContentList } from "@/lib/content";
+import { useContentList, sortContent } from "@/lib/content";
+import type { SortKey } from "@/lib/content";
+import SortControl from "@/components/ui/SortControl";
 import type { SeriesContent } from "@/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function SeriesIndexPage() {
   const { data: series, loading } = useContentList<SeriesContent>("series");
+  const [sort, setSort] = useState<SortKey>("newest");
   usePageMeta({ title: "Series", description: "Build logs released over time: episodes that stand alone but gain meaning in sequence." });
   if (loading) {
     return (
@@ -17,9 +21,7 @@ export default function SeriesIndexPage() {
       </div>
     );
   }
-  const active = (series ?? [])
-    .filter((s) => !s.archived)
-    .sort((a, b) => new Date(b.added || b.date).getTime() - new Date(a.added || a.date).getTime());
+  const active = sortContent((series ?? []).filter((s) => !s.archived), sort);
 
   return (
     <div>
@@ -36,6 +38,12 @@ export default function SeriesIndexPage() {
             Deep dives that unfold across multiple articles. Each episode builds on the last : read in sequence or jump to what interests you.
           </p>
         </header>
+
+        {active.length > 1 && (
+          <div className="flex justify-end mb-lg">
+            <SortControl value={sort} onChange={(v) => setSort(v as SortKey)} />
+          </div>
+        )}
 
         {active.length === 0 ? (
           <div className="text-center py-xxl border-2 border-dashed border-border-default rounded-xl">
