@@ -1,3 +1,4 @@
+import { isAuthed } from "./_auth.js";
 import { rateLimit } from "./_limits.js";
 const DB_URL = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").replace("libsql://", "https://");
 const TOKEN = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "";
@@ -80,6 +81,16 @@ export default async function handler(req, res) {
     await ensureTables();
     if (req.method === "GET") {
       const slug = req.query.slug;
+      // Personal-first: anonymous callers see ratings only for public pieces.
+      // Owner session bypasses, same rule as comments and highlights.
+      if (!isAuthed(req)) {
+        if (slug) {
+          const vis = await query("SELECT \"public\" FROM public_pages WHERE slug = ?", [slug]).catch(() => []);
+          if (!(vis.length > 0 && vis[0].public == 1)) return res.status(404).json({ error: "Not found" });
+        } else {
+          return res.json((await query("SELECT r.* FROM ratings r JOIN public_pages pp ON pp.slug = r.story_slug WHERE pp.\"public\" = 1", []))[0] || null);
+        }
+      }
       const result = await query(slug ? "SELECT * FROM ratings WHERE story_slug = ?" : "SELECT * FROM ratings", slug ? [slug] : []);
       return res.json(result[0] || null);
     }
