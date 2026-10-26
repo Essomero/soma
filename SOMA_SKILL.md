@@ -596,7 +596,7 @@ The project uses React for component composition — pages compose sub-component
 ### Step 1: Draft the manuscript (never in git)
 Author the typed object in a staging file outside git (e.g. `drafts/story/my-story.ts`; `drafts/` is gitignored). Unpublished writing MUST NOT touch `src/content/`: the fork is public, and anything committed there is world-readable on push. The `src/content/<type>/` files are the versioned archive of *published* work plus the seed corpus — read-only except when archiving.
 
-### Step 2: Publish it (private, always)
+### Step 2: Land it in the store (private, always)
 ```bash
 npm run publish -- drafts/story/my-story.ts
 # validates schema fields, slug uniqueness, and cross-file references
@@ -622,6 +622,9 @@ The owner never runs commands. Ask any coding assistant for the piece; it stages
 
 ### Step 4: Go public — owner flips the toggle, never a command
 Only the owner shares, and only with the visibility toggle. Open the private piece and flip private → public — the flip is instant, no rebuild, no redeploy. Unpublishing is the same toggle back (reversible, immediate). A course, series, or book toggle flips the whole collection at once: the collection plus every lesson, episode, or chapter in one action. The Studio (`/learn`, bottom of the page) has a global switch that flips *everything* at once, with a count and a confirmation step. There is no CLI flag for going public; putting it in the store and sharing it are separate acts on purpose.
+
+### Visibility debugging — the toggle is never the fix for the owner
+The owner sees every personal row when authed; the toggle answers only "who else sees this." There is no publish step and no draft state: `private` means personal, `published` means visible to anyone. If the owner can't see their own content, the fault is session or deployment, never visibility. NEVER flip a piece public to make it appear for the owner — that exposes personal content to the world. Check in order: right deployment (main vs fork have separate DBs), logged in (`soma_session` alive), right local DB (`soma/` vs `soma-fork/` point at different stores).
 
 ### Step 5: Commit the manuscript (published work only)
 Copy the staged file to its archive home (`src/content/stories/my-story.ts`, matching the slug) and commit:
