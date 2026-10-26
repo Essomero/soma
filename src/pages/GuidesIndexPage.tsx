@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { md } from "@/lib/markdown";
 import { Link } from "react-router-dom";
 import { ArrowRight, Loader2, Search, ChevronDown } from "lucide-react";
@@ -12,6 +12,18 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 export default function GuidesIndexPage() {
   const { data: guides, loading } = useContentList<GuideContent>("guide");
   const [sort, setSort] = useState<SortKey>("newest");
+  const [topic, setTopic] = useState("All");
+  const [topicOpen, setTopicOpen] = useState(false);
+  const topicRef = useRef<HTMLDivElement>(null);
+  const [visibleCount, setVisibleCount] = useState(6);
+  useEffect(() => {
+    if (!topicOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (topicRef.current && !topicRef.current.contains(e.target as Node)) setTopicOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [topicOpen]);
   usePageMeta({ title: "Guides", description: "Step-by-step guides that end somewhere new: self-hosting, drills, launch playbooks." });
   if (loading) {
     return (
@@ -22,9 +34,13 @@ export default function GuidesIndexPage() {
   }
   const allGuides = guides ?? [];
   const featuredGuide = allGuides.find((g) => g.isFeatured);
-  const rest = sortContent(allGuides.filter((g) => !g.isFeatured), sort);
+  const rest = allGuides.filter((g) => !g.isFeatured);
   const sidebarGuides = rest.slice(0, 2);
-  const gridGuides = rest.slice(2);
+  const guideTopics = Array.from(new Set(rest.flatMap((g) => g.tags ?? []))).sort((a, b) => a.localeCompare(b));
+  const gridGuides = sortContent(
+    rest.slice(2).filter((g) => topic === "All" || (g.tags ?? []).includes(topic)),
+    sort,
+  );
   return (
     <div>
       <main className="pt-24 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop">
@@ -36,12 +52,6 @@ export default function GuidesIndexPage() {
             In-depth technical guides and tutorials across the stack.
           </p>
         </header>
-
-        {rest.length > 1 && (
-          <div className="flex justify-end mb-lg">
-            <SortControl value={sort} onChange={(v) => setSort(v as SortKey)} />
-          </div>
-        )}
 
         {/* Featured Section (Bento) */}
         <section className="mb-giant">
@@ -137,18 +147,38 @@ export default function GuidesIndexPage() {
             <h2 className="font-sora text-metadata-tag uppercase tracking-widest text-on-surface">
               Explore All Guides
             </h2>
-            <div className="flex gap-md">
-              <button className="flex items-center gap-xs font-sora text-label-caps uppercase text-on-surface-muted hover:text-on-surface transition-colors">
-                Filter by Topic <ChevronDown className="w-4 h-4" />
-              </button>
-              <button className="flex items-center gap-xs font-sora text-label-caps uppercase text-on-surface-muted hover:text-on-surface transition-colors">
-                Sort: Newest <ChevronDown className="w-4 h-4" />
-              </button>
+            <div className="flex items-center gap-md">
+              <div className="relative" ref={topicRef}>
+                <button
+                  type="button"
+                  onClick={() => setTopicOpen((o) => !o)}
+                  className="flex items-center gap-xs font-sora text-label-caps uppercase text-on-surface-muted hover:text-on-surface transition-colors"
+                >
+                  {topic === "All" ? "Filter by Topic" : topic} <ChevronDown className="w-4 h-4" />
+                </button>
+                {topicOpen && (
+                  <div className="absolute right-0 top-full mt-1 z-50 min-w-52 rounded-lg border border-border-default bg-surface shadow-xl py-xs max-h-80 overflow-y-auto thin-scrollbar">
+                    {["All", ...guideTopics].map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => { setTopic(t); setVisibleCount(6); setTopicOpen(false); }}
+                        className={`w-full text-left px-md py-sm font-sora text-xs uppercase tracking-widest transition-colors ${
+                          t === topic ? "text-brand font-medium" : "text-on-surface hover:bg-surface-container"
+                        }`}
+                      >
+                        {t === "All" ? "All topics" : t}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <SortControl value={sort} onChange={(v) => { setSort(v as SortKey); setVisibleCount(6); }} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-xl">
-            {gridGuides.map((guide) => (
+            {gridGuides.slice(0, visibleCount).map((guide) => (
               <article
                 key={guide.id}
                 className="group border border-border-default bg-surface-container hover:border-outline-variant transition-all duration-300"
@@ -181,12 +211,24 @@ export default function GuidesIndexPage() {
             ))}
           </div>
 
+          {gridGuides.length === 0 && (
+            <div className="text-center py-xxl border-2 border-dashed border-border-default rounded-xl">
+              <p className="font-dm-sans text-body-lg text-on-surface-muted">No guides tagged &ldquo;{topic}&rdquo; yet.</p>
+            </div>
+          )}
+
           {/* More Button */}
-          <div className="mt-xxl flex justify-center">
-            <button className="bg-surface border border-border-default px-xl py-md font-sora text-metadata-tag uppercase tracking-widest hover:bg-surface-container-highest transition-colors active:scale-95 duration-200 text-on-surface">
-              View More Guides
-            </button>
-          </div>
+          {visibleCount < gridGuides.length && (
+            <div className="mt-xxl flex justify-center">
+              <button
+                type="button"
+                onClick={() => setVisibleCount((c) => c + 6)}
+                className="bg-surface border border-border-default px-xl py-md font-sora text-metadata-tag uppercase tracking-widest hover:bg-surface-container-highest transition-colors active:scale-95 duration-200 text-on-surface"
+              >
+                View More Guides
+              </button>
+            </div>
+          )}
         </section>
       </main>
     </div>
