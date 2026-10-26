@@ -23,7 +23,7 @@ export default function PodcastEpisodePage() {
   usePageMeta({ title: episode?.title, description: episode?.summary || episode?.description, image: episode?.coverImage || episode?.image });
 
   // ── Prev / Next ──────────────────────────────────────
-  const sortedByDate = allEpisodes.filter((ep) => ep.slug); // only full episodes
+  const sortedByDate = allEpisodes.filter((ep) => ep.slug).sort((a, b) => (a.position ?? 0) - (b.position ?? 0)); // seed sequence, not list order
   const idx = episode ? sortedByDate.findIndex((ep) => ep.slug === episode.slug) : -1;
   const prev = idx > 0 ? sortedByDate[idx - 1] : null;
   const next = idx >= 0 && idx < sortedByDate.length - 1 ? sortedByDate[idx + 1] : null;

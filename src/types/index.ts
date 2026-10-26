@@ -393,6 +393,7 @@ export interface PodcastEpisodeFull {
   description: string;
   category: string;
   href: string;
+  position?: number;     // Store order (seed position). Detail nav sorts on this, never on list order.
   // Episode detail fields (optional : only full episode pages need these)
   number?: string;        // "Episode 31"
   summary?: string;       // Full episode summary

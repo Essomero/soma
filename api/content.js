@@ -259,18 +259,21 @@ export default async function handler(req, res) {
         : (authed ? null : "published");
       const statusClause = statusValue ? " AND status = ?" : "";
       const baseArgs = (extra) => statusValue ? [req.query.type, statusValue, ...extra] : [req.query.type, ...extra];
+      // New content on top everywhere: last activity first, seed position
+      // breaks ties (fresh databases converge in curated order).
+      const orderBy = "updated_at DESC, position ASC";
       const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
       if (q) {
         const like = "%" + q.replace(/[\\%_]/g, (c) => "\\" + c) + "%";
         const rows = await query(
           `SELECT * FROM content_items WHERE type = ?${statusClause}
            AND (title LIKE ? ESCAPE '\\' OR excerpt LIKE ? ESCAPE '\\' OR body_json LIKE ? ESCAPE '\\')
-           ORDER BY position ASC`,
+           ORDER BY ${orderBy}`,
           baseArgs([like, like, like]));
         return res.json(rows.map(mapRow));
       }
       const rows = await query(
-        `SELECT * FROM content_items WHERE type = ?${statusClause} ORDER BY position ASC`
+        `SELECT * FROM content_items WHERE type = ?${statusClause} ORDER BY ${orderBy}`
         , baseArgs([]));
       return res.json(rows.map(mapRow));
     }
