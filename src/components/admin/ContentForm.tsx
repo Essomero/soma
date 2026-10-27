@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Trash2, GripVertical, X } from "lucide-react";
+import { Plus, Trash2, GripVertical, X, Eye } from "lucide-react";
 import BlockEditor from "./BlockEditor";
 import ContentPreview from "./ContentPreview";
 import type { ContentBlock } from "@/types";
@@ -129,6 +129,7 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
   const [customSlug, setCustomSlug] = useState("");
   const [status, setStatus] = useState<"private" | "published">("private");
   const [reasoning, setReasoning] = useState("");
+  const [mode, setMode] = useState<"edit" | "preview">("edit");
 
   const schema = getSchema(type);
 
@@ -525,6 +526,16 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
 
   // ── Render ──
 
+  // Preview mode replaces the whole editor surface with the rendered page.
+  if (mode === "preview") {
+    return (
+      <ContentPreview
+        draft={previewDraft}
+        onBack={() => setMode("edit")}
+      />
+    );
+  }
+
   return (
     <div className="space-y-xl">
       {/* Reasoning / type suggestion from AI */}
@@ -899,11 +910,16 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
         </label>
       </div>
 
-      {/* Preview */}
-      <ContentPreview draft={previewDraft} />
-
       {/* Actions */}
       <div className="flex items-center gap-md">
+        <button
+          onClick={() => setMode("preview")}
+          disabled={saving || !title}
+          className="inline-flex items-center gap-sm px-xl py-md bg-surface border border-border-default text-on-surface font-sora text-label-caps uppercase tracking-widest hover:border-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <Eye className="w-4 h-4" />
+          Preview
+        </button>
         <button
           onClick={handleSave}
           disabled={saving || !title || !slug}
