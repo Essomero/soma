@@ -11,7 +11,7 @@ function getCookie(name: string): string | null {
 function slugFromPath(pathname: string): string {
   // Print views share the visibility of the page they print.
   const printMatch = pathname.match(
-    /^\/(stories|series|courses|learn|docs|guides|podcast|featured)\/([^/]+)\/print$/
+    /^\/(stories|series|courses|learn|docs|guides|podcast|featured|tests)\/([^/]+)\/print$/
   );
   if (printMatch) return printMatch[2];
   // Article pages: a slug with status=published reads without the cookie.

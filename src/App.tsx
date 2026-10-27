@@ -27,6 +27,7 @@ import LearnEditorPage from "@/pages/LearnEditorPage";
 import LearnArticlePage from "@/pages/LearnArticlePage";
 import TestsIndexPage from "@/pages/TestsIndexPage";
 import TestPage from "@/pages/TestPage";
+import TestPrintPage from "@/pages/TestPrintPage";
 import CollectionPrintPage from "@/pages/CollectionPrintPage";
 import SinglePrintPage from "@/pages/SinglePrintPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
@@ -64,6 +65,10 @@ const router = createBrowserRouter([
   {
     path: "podcast/:slug/print",
     element: (<AuthGuard><SinglePrintPage type="episode" base="podcast" /></AuthGuard>),
+  },
+  {
+    path: "tests/:slug/print",
+    element: (<AuthGuard><TestPrintPage /></AuthGuard>),
   },
   {
     element: <Layout />,
