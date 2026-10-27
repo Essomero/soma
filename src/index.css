@@ -848,42 +848,44 @@
     page-break-inside: avoid;
   }
 
-  /* ── Exam Running Header & Footer ────────────────────────────── */
+  /* ── Exam Running Header & Footer (position:fixed, repeats per page) ── */
   .print-exam-body {
     page: test-exam;
   }
-  .print-exam-header-cell {
-    padding: 0 !important;
-    height: 22mm !important;
-    vertical-align: top !important;
-    box-sizing: border-box !important;
+  .print-exam-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: #fff;
+    padding: 5mm 22mm 0 22mm;
+    border-bottom: 1.5px solid #94a3b8;
   }
-  .print-exam-running-header {
-    height: 11mm !important;
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: flex-end !important;
-    padding-bottom: 3mm !important;
-    border-bottom: 1.5px solid #94a3b8 !important;
-    margin-bottom: 10mm !important;
+  .print-exam-header-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-bottom: 2mm;
   }
-  .print-exam-footer-cell {
-    padding: 0 !important;
-    height: 16mm !important;
-    vertical-align: bottom !important;
-    box-sizing: border-box !important;
+  .print-exam-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: #fff;
+    padding: 0 22mm 3mm 22mm;
+    border-top: 1px solid #cbd5e1;
   }
-  .print-exam-running-footer {
-    height: 8mm !important;
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: flex-start !important;
-    padding-top: 2.5mm !important;
-    border-top: 1px solid #cbd5e1 !important;
-    margin-top: 7mm !important;
+  .print-exam-footer-inner {
+    display: flex;
+    justify-content: center;
+    padding-top: 1.5mm;
   }
-  .print-exam-page-counter::before {
-    content: "Page " counter(page) " / " counter(pages);
+  .print-exam-main {
+    padding-top: 22mm !important;
+    padding-bottom: 16mm !important;
   }
 
   /* ── B/W Print Mode (in-app grayscale) ───────────────────────── */
@@ -951,11 +953,32 @@
   }
 }
 
+/* ── Screen print preview: white paper for both Color and B/W ── */
+.print-exam-body main {
+  background: #fff;
+  color: #000;
+}
+.print-exam-body main .text-on-surface-muted,
+.print-exam-body main .text-on-surface-variant {
+  color: #444;
+}
+.print-exam-body main .bg-surface-container-low,
+.print-exam-body main .bg-surface-container,
+.print-exam-body main .bg-surface,
+.print-exam-body main .bg-primary\/10,
+.print-exam-body main .bg-accent-orange\/15 {
+  background: #f8fafc;
+}
+.print-exam-body main .border-border-default {
+  border-color: #d0d5dd;
+}
+
 /* ── Screen B/W preview toggle ──────────────────────────── */
 .print-bw main {
   background: #fff !important;
   color: #000 !important;
 }
+.print-bw main,
 .print-bw main * {
   color: #000 !important;
   border-color: #ccc !important;
@@ -963,13 +986,15 @@
 .print-bw main .text-primary,
 .print-bw main .text-accent-orange,
 .print-bw main .text-on-surface-muted,
-.print-bw main .text-on-surface-variant {
+.print-bw main .text-on-surface-variant,
+.print-bw main .text-on-surface-muted\/60 {
   color: #000 !important;
 }
 .print-bw main .bg-surface-container-low,
 .print-bw main .bg-surface,
 .print-bw main .bg-surface-container,
 .print-bw main .bg-surface-container-highest,
+.print-bw main .bg-surface-container-lowest,
 .print-bw main .bg-primary,
 .print-bw main .bg-primary\/10,
 .print-bw main .bg-accent-orange\/10,
@@ -979,6 +1004,12 @@
 .print-bw main .text-gradient {
   background: none !important;
   color: #000 !important;
+}
+.print-bw main pre,
+.print-bw main code {
+  background: #f5f5f5 !important;
+  color: #000 !important;
+  border-color: #ccc !important;
 }
 .print-bw main img,
 .print-bw main svg {

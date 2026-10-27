@@ -125,42 +125,29 @@ export default function TestPrintPage() {
         </div>
       </aside>
 
-      {/* ── Printable Exam Paper ─────────────────────────────────── */}
-      <main className="max-w-3xl mx-auto px-6 sm:px-8 py-12 print:py-0">
-        <table className="print-lesson-table">
-          {/* Running header : repeats at the top of every printed page */}
-          <thead className="print-lesson-thead">
-            <tr>
-              <td className="print-exam-header-cell">
-                <div className="print-exam-running-header">
-                  <span className="font-sora font-bold text-[8pt] tracking-widest uppercase text-on-surface-muted">
-                    SOMA // EXAMINATION
-                  </span>
-                  <span className="font-sora font-medium text-[8pt] text-on-surface-muted truncate max-w-[380px]">
-                    {test.title}
-                  </span>
-                </div>
-              </td>
-            </tr>
-          </thead>
+      {/* ── Print running header (repeats on every page) ─────────── */}
+      <header className="print-exam-header">
+        <div className="print-exam-header-inner">
+          <span className="font-sora font-bold text-[8pt] tracking-widest uppercase">
+            SOMA // EXAMINATION
+          </span>
+          <span className="font-sora font-medium text-[8pt] truncate max-w-[380px]">
+            {test.title}
+          </span>
+        </div>
+      </header>
 
-          {/* Running footer : repeats at the bottom of every printed page */}
-          <tfoot className="print-lesson-tfoot">
-            <tr>
-              <td className="print-exam-footer-cell">
-                <div className="print-exam-running-footer">
-                  <span className="font-sora font-medium text-[7.5pt] text-on-surface-muted">
-                    {test.title} : Soma Print Edition
-                  </span>
-                  <span className="print-exam-page-counter font-sora font-medium text-[7.5pt] text-on-surface-muted" />
-                </div>
-              </td>
-            </tr>
-          </tfoot>
+      {/* ── Print running footer (repeats on every page) ─────────── */}
+      <footer className="print-exam-footer">
+        <div className="print-exam-footer-inner">
+          <span className="font-sora text-[7.5pt]">
+            {test.title} : Soma Print Edition
+          </span>
+        </div>
+      </footer>
 
-          <tbody className="print-lesson-tbody">
-            <tr>
-              <td className="print-lesson-body-cell">
+      {/* ── Printable content ──────────────────────────────────── */}
+      <main className="max-w-3xl mx-auto px-6 sm:px-8 py-12 print:py-0 print-exam-main">
         {/* ── Exam Header ───────────────────────────────────────── */}
         <header className="border-b-2 border-on-surface pb-6 mb-8 print:pt-8">
           <div className="flex items-start justify-between mb-4">
@@ -408,10 +395,6 @@ export default function TestPrintPage() {
             {test.title} &middot; Soma Print Edition &middot; {test.questions.length} questions
           </p>
         </footer>
-              </td>
-            </tr>
-          </tbody>
-        </table>
       </main>
     </div>
   );
