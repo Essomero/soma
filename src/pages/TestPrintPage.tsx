@@ -39,13 +39,18 @@ function paperTimeSeconds(q: TestQuestion): number {
 
 /**
  * Adaptive answer-line count for open questions.
- * Longer prompts and higher marks expect longer responses:
- * 2 lines per mark, plus 1 line per 10 words of the prompt, clamped 3-14.
+ * Inferred from the expected answer length (sample answer words,
+ * ~8 words per handwriting line), never from the prompt length - a
+ * long prompt can need a one-word answer (e.g. "write your name").
+ * Falls back to marks (2 lines per mark) when no sample answer is
+ * given. Clamped 1-14.
  */
-function estimateAnswerLines(q: TestQuestion): number {
-  const prompt = (q.question + " " + (q.description ?? "")).trim();
-  const words = prompt.split(/\s+/).filter(Boolean).length;
-  return Math.min(14, Math.max(3, marksFor(q) * 2 + Math.floor(words / 10)));
+function estimateAnswerLines(q: OpenTestQuestion): number {
+  const answerWords = (q.sampleAnswer ?? "").split(/\s+/).filter(Boolean).length;
+  if (answerWords > 0) {
+    return Math.min(14, Math.max(1, Math.ceil(answerWords / 8)));
+  }
+  return Math.min(14, Math.max(1, marksFor(q) * 2));
 }
 
 export default function TestPrintPage() {
@@ -163,7 +168,7 @@ export default function TestPrintPage() {
               <p className="text-[10px] uppercase tracking-wider text-on-surface-muted font-semibold">Format</p>
               <p className="font-bold text-on-surface text-base mt-0.5 flex items-center gap-1.5">
                 <FileText className="w-4 h-4 text-primary" />
-                Written
+                {test.format === "oral" ? "Oral" : "Written"}
               </p>
             </div>
             <div>
@@ -187,8 +192,8 @@ export default function TestPrintPage() {
           </ol>
         </section>
 
-        {/* Section A: Reading Passage */}
-        {test.sources.filter((s) => s.type === "markdown").length > 0 && (
+        {/* Section A: Reading Passage — only written exams carry a passage; oral tests' markdown sources are examiner references */}
+        {test.format !== "oral" && test.sources.filter((s) => s.type === "markdown").length > 0 && (
           <section className="mb-10">
             <h2 className="font-sora text-lg font-bold text-on-surface mb-4 pb-1 border-b border-border-default/50">Section A: Reading Passage</h2>
             {test.sources
@@ -229,9 +234,6 @@ export default function TestPrintPage() {
                           <p className="font-dm-sans text-xs text-on-surface leading-relaxed">{opt.label}</p>
                         </div>
                       ))}
-                    </div>
-                    <div className="ml-8 mt-3 border-b border-dashed border-[#94a3b8] pb-2">
-                      <span className="font-sora text-[10px] text-on-surface-muted italic">Answer: ___</span>
                     </div>
                   </div>
                 );
