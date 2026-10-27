@@ -3,10 +3,10 @@ import { Plus, Trash2, GripVertical, X } from "lucide-react";
 import {
   CONTENT_TYPE_LABELS,
   CONTENT_TYPES,
-  CATEGORY_OPTIONS,
-  TOPIC_OPTIONS,
+  getSchema,
   type ContentType,
-} from "./types";
+  type FieldSchema,
+} from "@/lib/admin-prompts";
 import type { AIDraft } from "./AIDraftPanel";
 
 interface ContentFormProps {
@@ -37,163 +37,171 @@ function slugify(text: string): string {
     .slice(0, 120);
 }
 
+// ── Field value state ────────────────────────────────
+// A single object keyed by field name, initialized from the draft or schema.
+// Complex sub-fields (sections, pullQuotes, etc.) are stored under their
+// field name as arrays of objects.
+
+type FormValues = Record<string, unknown>;
+
+// Type-safe readers for the dynamic form state.
+// These narrow unknown to the expected shape with runtime checks.
+
+function str(v: unknown, fallback = ""): string {
+  return typeof v === "string" ? v : fallback;
+}
+
+function isRecordArray(v: unknown): v is Record<string, unknown>[] {
+  return Array.isArray(v) && v.every((x) => x !== null && typeof x === "object" && !Array.isArray(x));
+}
+
+function recordArray(v: unknown): Record<string, unknown>[] {
+  return isRecordArray(v) ? v : [];
+}
+
+function strArray(v: unknown): string[] {
+  if (Array.isArray(v) && v.every((x) => typeof x === "string")) return v as string[];
+  return [""];
+}
+
+function initFromDraft(draft: AIDraft | null): FormValues {
+  if (!draft) return {};
+  return {
+    title: draft.title || "",
+    excerpt: draft.excerpt || "",
+    category: draft.category || "Engineering",
+    authorName: draft.author?.name || "",
+    authorHandle: draft.author?.handle || "",
+    date: draft.date || new Date().toISOString().split("T")[0],
+    tagsText: (draft.tags || []).join(", "),
+    topics: draft.topics || [],
+    intro: draft.intro || "",
+    body: draft.body?.length ? [...draft.body] : [""],
+    sections: draft.sections || [],
+    pullQuotes: draft.pullQuotes || [],
+    bentoHighlights: draft.bentoHighlights || [],
+    references: draft.references || [],
+    tipCards: draft.tipCards || [],
+    tagline: draft.tagline || "",
+    lessons: draft.lessons || [],
+    chapters: draft.chapters || [],
+    episodes: draft.episodes || [],
+    docSections: draft.docSections || [],
+    format: draft.format || "written",
+    estimatedMinutes: draft.estimatedMinutes || 30,
+    passingScore: draft.passingScore || 70,
+    sources: draft.sources || [],
+    questions: draft.questions || [],
+    episode: draft.episode || "",
+    duration: draft.duration || "",
+    summary: draft.summary || "",
+    segments: draft.segments || [],
+    guests: draft.guests || [],
+    relatedReading: draft.relatedReading || [],
+  };
+}
+
 export default function ContentForm({ initial, onSave, saving }: ContentFormProps) {
   const [type, setType] = useState<ContentType>("story");
-  const [title, setTitle] = useState("");
-  const [excerpt, setExcerpt] = useState("");
-  const [category, setCategory] = useState("Engineering");
-  const [authorName, setAuthorName] = useState("");
-  const [authorHandle, setAuthorHandle] = useState("");
-  const [date, setDate] = useState("");
-  const [tagsText, setTagsText] = useState("");
-  const [topics, setTopics] = useState<string[]>([]);
-  const [intro, setIntro] = useState("");
-  const [body, setBody] = useState<string[]>([""]);
-  const [sections, setSections] = useState<{ heading: string; paragraphs: string[] }[]>([]);
-  const [pullQuotes, setPullQuotes] = useState<{ quote: string; attribution?: string }[]>([]);
-  const [bentoHighlights, setBentoHighlights] = useState<{ label: string; title: string; description: string }[]>([]);
-  const [references, setReferences] = useState<{ title: string; url: string; description?: string }[]>([]);
-  const [tipCards, setTipCards] = useState<{ icon: string; bgClass: string; iconColorClass: string; title: string; description: string }[]>([]);
-  const [tagline, setTagline] = useState("");
-  const [status, setStatus] = useState<"private" | "published">("private");
-  const [customSlug, setCustomSlug] = useState("");
+  const [values, setValues] = useState<FormValues>({});
   const [useCustomSlug, setUseCustomSlug] = useState(false);
+  const [customSlug, setCustomSlug] = useState("");
+  const [status, setStatus] = useState<"private" | "published">("private");
   const [reasoning, setReasoning] = useState("");
 
-  // Fields for doc type
-  const [docSections, setDocSections] = useState<{ number: string; heading: string; anchor: string; items: { question: string; answer: string[] }[] }[]>([]);
-
-  // Fields for test type
-  const [testFormat, setTestFormat] = useState<"written" | "oral" | "hybrid">("written");
-  const [estimatedMinutes, setEstimatedMinutes] = useState(30);
-  const [passingScore, setPassingScore] = useState(70);
-  const [testSources, setTestSources] = useState<{ type: string; storySlug?: string; guideSlug?: string; docSlug?: string; title?: string; url?: string }[]>([]);
-  const [questions, setQuestions] = useState<{ id: string; type: string; question: string; options?: { id: string; label: string }[]; correctOptionIds?: string[]; explanation?: string }[]>([]);
-
-  // Fields for collections (course/book/series)
-  const [collectionItems, setCollectionItems] = useState<{ title: string; storySlug: string; description?: string }[]>([]);
-
-  // Fields for podcast
-  const [episodeLabel, setEpisodeLabel] = useState("");
-  const [duration, setDuration] = useState("");
-  const [podcastSummary, setPodcastSummary] = useState("");
-  const [segments, setSegments] = useState<{ time: string; title: string; description: string }[]>([]);
-  const [guests, setGuests] = useState<{ name: string; role: string; description: string }[]>([]);
-  const [relatedReading, setRelatedReading] = useState<{ tag: string; title: string }[]>([]);
+  const schema = getSchema(type);
 
   // Populate from initial draft
   useEffect(() => {
     if (!initial) return;
     setType(initial.type);
-    setTitle(initial.title || "");
-    setExcerpt(initial.excerpt || "");
-    setCategory(initial.category || "Engineering");
-    setAuthorName(initial.author?.name || "");
-    setAuthorHandle(initial.author?.handle || "");
-    setDate(initial.date || new Date().toISOString().split("T")[0]);
-    setTagsText((initial.tags || []).join(", "));
-    setTopics(initial.topics || []);
-    setIntro(initial.intro || "");
-    setBody(initial.body?.length ? initial.body : [""]);
-    setSections(initial.sections || []);
-    setPullQuotes(initial.pullQuotes || []);
-    setBentoHighlights(initial.bentoHighlights || []);
-    setReferences(initial.references || []);
-    setTipCards(initial.tipCards || []);
-    setTagline(initial.tagline || "");
+    setValues(initFromDraft(initial));
     setReasoning(initial.reasoning || "");
-
-    // Doc-specific
-    if (initial.docSections) setDocSections(initial.docSections);
-
-    // Test-specific
-    if (initial.format) setTestFormat(initial.format);
-    if (initial.estimatedMinutes) setEstimatedMinutes(initial.estimatedMinutes);
-    if (initial.passingScore) setPassingScore(initial.passingScore);
-    if (initial.sources) setTestSources(initial.sources);
-    if (initial.questions) setQuestions(initial.questions);
-
-    // Collection items
-    if (initial.lessons) setCollectionItems(initial.lessons);
-    else if (initial.chapters) setCollectionItems(initial.chapters);
-    else if (initial.episodes) setCollectionItems(initial.episodes);
-    else setCollectionItems([]);
-
-    // Podcast-specific
-    if (initial.episode) setEpisodeLabel(initial.episode);
-    if (initial.duration) setDuration(initial.duration);
-    if (initial.summary) setPodcastSummary(initial.summary);
-    if (initial.segments) setSegments(initial.segments);
-    if (initial.guests) setGuests(initial.guests);
-    if (initial.relatedReading) setRelatedReading(initial.relatedReading);
   }, [initial]);
 
+  const title = str(values.title);
   const slug = useCustomSlug ? customSlug : slugify(title);
 
+  const setVal = useCallback((key: string, value: unknown) => {
+    setValues((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
   const buildBody = useCallback((): Record<string, unknown> => {
-    const base: Record<string, unknown> = {
-      intro,
-      body,
-    };
+    const body: Record<string, unknown> = {};
 
-    if (sections.length > 0) base.sections = sections;
-    if (pullQuotes.length > 0) base.pullQuotes = pullQuotes;
-    if (bentoHighlights.length > 0) base.bentoHighlights = bentoHighlights;
-    if (references.length > 0) base.references = references;
+    body.intro = values.intro;
+    body.body = values.body;
 
-    if (type === "guide" && tipCards.length > 0) base.tipCards = tipCards;
+    const sections = recordArray(values.sections);
+    if (sections.length > 0) body.sections = sections;
 
-    if (type === "doc" && docSections.length > 0) base.sections = docSections;
+    const pullQuotes = recordArray(values.pullQuotes);
+    if (pullQuotes.length > 0) body.pullQuotes = pullQuotes;
 
-    if (type === "test") {
-      base.format = testFormat;
-      base.estimatedMinutes = estimatedMinutes;
-      base.passingScore = passingScore;
-      if (testSources.length > 0) base.sources = testSources;
-      if (questions.length > 0) base.questions = questions;
-    }
+    const bento = recordArray(values.bentoHighlights);
+    if (bento.length > 0) body.bentoHighlights = bento;
 
-    if (type === "course" && collectionItems.length > 0) base.lessons = collectionItems;
-    if (type === "book" && collectionItems.length > 0) base.chapters = collectionItems;
-    if (type === "series" && collectionItems.length > 0) base.episodes = collectionItems;
+    const refs = recordArray(values.references);
+    if (refs.length > 0) body.references = refs;
 
-    if (tagline) base.tagline = tagline;
+    const tipCards = recordArray(values.tipCards);
+    if (tipCards.length > 0) body.tipCards = tipCards;
 
-    if (type === "podcast") {
-      if (episodeLabel) base.episode = episodeLabel;
-      if (duration) base.duration = duration;
-      if (podcastSummary) base.summary = podcastSummary;
-      if (segments.length > 0) base.segments = segments;
-      if (guests.length > 0) base.guests = guests;
-      if (relatedReading.length > 0) base.relatedReading = relatedReading;
-    }
+    const tagline = str(values.tagline);
+    if (tagline) body.tagline = tagline;
 
-    if (type === "featured") {
-      base.tag = "FEATURED ARTICLE // SOMA";
-    }
+    // Doc
+    const docSections = recordArray(values.docSections);
+    if (docSections.length > 0) body.sections = docSections;
 
-    return base;
-  }, [
-    intro, body, sections, pullQuotes, bentoHighlights, references,
-    tipCards, docSections, testFormat, estimatedMinutes, passingScore,
-    testSources, questions, collectionItems, tagline,
-    episodeLabel, duration, podcastSummary, segments, guests, relatedReading, type,
-  ]);
+    // Collection items
+    const lessons = recordArray(values.lessons);
+    if (lessons.length > 0) body.lessons = lessons;
+    const chapters = recordArray(values.chapters);
+    if (chapters.length > 0) body.chapters = chapters;
+    const episodes = recordArray(values.episodes);
+    if (episodes.length > 0) body.episodes = episodes;
+
+    // Test
+    body.format = values.format;
+    body.estimatedMinutes = values.estimatedMinutes;
+    body.passingScore = values.passingScore;
+    const sources = recordArray(values.sources);
+    if (sources.length > 0) body.sources = sources;
+    const questions = recordArray(values.questions);
+    if (questions.length > 0) body.questions = questions;
+
+    // Podcast
+    if (values.episode) body.episode = values.episode;
+    if (values.duration) body.duration = values.duration;
+    if (values.summary) body.summary = values.summary;
+    const segments = recordArray(values.segments);
+    if (segments.length > 0) body.segments = segments;
+    const guests = recordArray(values.guests);
+    if (guests.length > 0) body.guests = guests;
+    const relatedReading = recordArray(values.relatedReading);
+    if (relatedReading.length > 0) body.relatedReading = relatedReading;
+
+    // Featured tag
+    if (type === "featured") body.tag = "FEATURED ARTICLE // SOMA";
+
+    return body;
+  }, [values, type]);
 
   const handleSave = () => {
-    const tags = tagsText
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
+    const tagsText = str(values.tagsText);
+    const tags = tagsText.split(",").map((t) => t.trim()).filter(Boolean);
+    const topicsRaw = values.topics;
+    const topics = strArray(topicsRaw).filter(Boolean);
 
     onSave({
       slug,
       type,
-      title,
-      excerpt,
-      category,
-      author: { name: authorName, handle: authorHandle || undefined },
-      date,
+      title: str(values.title),
+      excerpt: str(values.excerpt),
+      category: str(values.category),
+      author: { name: str(values.authorName), handle: str(values.authorHandle) || undefined },
+      date: str(values.date),
       tags: tags.length > 0 ? tags : undefined,
       topics: topics.length > 0 ? topics : undefined,
       status,
@@ -201,258 +209,250 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
     });
   };
 
-  const isCollection = type === "course" || type === "book" || type === "series";
-  const isRichText = type === "story" || type === "guide" || type === "featured";
+  // ── Schema-driven field renderers ──
 
-  // ── Shared field renderers ──
+  /** Render a simple field (string, markdown, select, boolean) */
+  const renderField = (field: FieldSchema) => {
+    const val = str(values[field.name]);
+    const set = (v: string) => setVal(field.name, v);
 
-  const TextField = ({
-    label,
-    value,
-    onChange,
-    placeholder,
-    multiline,
-    hint,
-  }: {
-    label: string;
-    value: string;
-    onChange: (v: string) => void;
-    placeholder?: string;
-    multiline?: boolean;
-    hint?: string;
-  }) => (
-    <div>
-      <label className="font-sora text-sm text-on-surface block mb-xs">{label}</label>
-      {multiline ? (
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          rows={3}
-          className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm placeholder:text-on-surface-muted focus:outline-none focus:border-primary resize-y"
-        />
-      ) : (
-        <input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm placeholder:text-on-surface-muted focus:outline-none focus:border-primary"
-        />
-      )}
-      {hint && <p className="font-dm-sans text-xs text-on-surface-muted mt-xs">{hint}</p>}
-    </div>
-  );
-
-  // ── Body paragraphs ──
-  const renderBodyEditor = () => (
-    <div className="space-y-sm">
-      <label className="font-sora text-sm text-on-surface block">Body Paragraphs</label>
-      {body.map((p, i) => (
-        <div key={i} className="flex gap-sm items-start">
-          <textarea
-            value={p}
-            onChange={(e) => {
-              const next = [...body];
-              next[i] = e.target.value;
-              setBody(next);
-            }}
-            placeholder="Markdown paragraph..."
-            rows={2}
-            className="flex-1 p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm placeholder:text-on-surface-muted focus:outline-none focus:border-primary resize-y"
-          />
-          {body.length > 1 && (
-            <button
-              onClick={() => setBody(body.filter((_, j) => j !== i))}
-              className="p-sm text-on-surface-muted hover:text-error transition-colors shrink-0"
-              title="Remove paragraph"
+    if (field.type === "select" && field.options) {
+      return (
+        <div key={field.name}>
+          <label className="font-sora text-sm text-on-surface block mb-xs">
+            {field.label || field.name}
+            {field.required && <span className="text-error ml-xs">*</span>}
+          </label>
+          {field.options.length <= 8 ? (
+            <div className="flex flex-wrap gap-sm">
+              {field.options.map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => set(opt)}
+                  className={`px-md py-sm font-sora text-xs uppercase tracking-widest border transition-colors ${
+                    val === opt
+                      ? "bg-primary text-on-primary border-primary"
+                      : "bg-surface text-on-surface-muted border-border-default hover:border-outline"
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <select
+              value={val || ""}
+              onChange={(e) => set(e.target.value)}
+              className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary"
             >
-              <X className="w-4 h-4" />
-            </button>
+              {field.options.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
           )}
         </div>
-      ))}
-      <button
-        onClick={() => setBody([...body, ""])}
-        className="inline-flex items-center gap-sm text-sm text-primary hover:text-primary-hover font-dm-sans"
-      >
-        <Plus className="w-4 h-4" /> Add paragraph
-      </button>
-    </div>
-  );
+      );
+    }
 
-  // ── Sections ──
-  const renderSectionsEditor = () => (
-    <div className="space-y-lg">
-      <label className="font-sora text-sm text-on-surface block">Sections</label>
-      {sections.map((sec, i) => (
-        <div key={i} className="p-lg bg-surface-container border border-border-default">
-          <div className="flex items-center gap-sm mb-sm">
-            <GripVertical className="w-4 h-4 text-on-surface-muted shrink-0" />
-            <input
-              value={sec.heading}
-              onChange={(e) => {
-                const next = [...sections];
-                next[i] = { ...next[i], heading: e.target.value };
-                setSections(next);
-              }}
-              placeholder="Section heading"
-              className="flex-1 p-sm bg-surface border border-border-default text-on-surface font-sora text-sm focus:outline-none focus:border-primary"
-            />
-            <button
-              onClick={() => setSections(sections.filter((_, j) => j !== i))}
-              className="p-sm text-on-surface-muted hover:text-error transition-colors"
-              title="Remove section"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-          {sec.paragraphs.map((p, j) => (
-            <div key={j} className="flex gap-sm items-start ml-md mb-sm">
-              <textarea
-                value={p}
-                onChange={(e) => {
-                  const next = [...sections];
-                  const pars = [...next[i].paragraphs];
-                  pars[j] = e.target.value;
-                  next[i] = { ...next[i], paragraphs: pars };
-                  setSections(next);
-                }}
-                placeholder="Paragraph (markdown)..."
-                rows={2}
-                className="flex-1 p-sm bg-surface border border-border-default text-on-surface font-dm-sans text-sm placeholder:text-on-surface-muted focus:outline-none focus:border-primary resize-y"
-              />
-              {sec.paragraphs.length > 1 && (
-                <button
-                  onClick={() => {
-                    const next = [...sections];
-                    next[i] = { ...next[i], paragraphs: next[i].paragraphs.filter((_, k) => k !== j) };
-                    setSections(next);
-                  }}
-                  className="p-sm text-on-surface-muted hover:text-error transition-colors shrink-0"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </div>
-          ))}
-          <button
-            onClick={() => {
-              const next = [...sections];
-              next[i] = { ...next[i], paragraphs: [...next[i].paragraphs, ""] };
-              setSections(next);
-            }}
-            className="ml-md text-xs text-primary hover:text-primary-hover font-dm-sans"
-          >
-            + Add paragraph
-          </button>
+    if (field.type === "boolean") {
+      return (
+        <div key={field.name} className="flex items-center gap-sm">
+          <input
+            type="checkbox"
+            checked={!!val}
+            onChange={(e) => set(e.target.checked ? "true" : "")}
+            className="accent-primary"
+          />
+          <label className="font-sora text-sm text-on-surface">
+            {field.label || field.name}
+          </label>
         </div>
-      ))}
-      <button
-        onClick={() => setSections([...sections, { heading: "", paragraphs: [""] }])}
-        className="inline-flex items-center gap-sm text-sm text-primary hover:text-primary-hover font-dm-sans"
-      >
-        <Plus className="w-4 h-4" /> Add section
-      </button>
-    </div>
-  );
+      );
+    }
 
-  // ── Pull Quotes ──
-  const renderPullQuotes = () => (
-    <div className="space-y-md">
-      <label className="font-sora text-sm text-on-surface block">Pull Quotes</label>
-      {pullQuotes.map((pq, i) => (
-        <div key={i} className="p-md bg-surface-container border border-border-default flex gap-sm items-start">
-          <div className="flex-1 space-y-sm">
-            <textarea
-              value={pq.quote}
-              onChange={(e) => {
-                const next = [...pullQuotes];
-                next[i] = { ...next[i], quote: e.target.value };
-                setPullQuotes(next);
-              }}
-              placeholder="Quote text..."
-              rows={2}
-              className="w-full p-sm bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary resize-y"
-            />
-            <input
-              value={pq.attribution || ""}
-              onChange={(e) => {
-                const next = [...pullQuotes];
-                next[i] = { ...next[i], attribution: e.target.value || undefined };
-                setPullQuotes(next);
-              }}
-              placeholder="Attribution (optional)"
-              className="w-full p-sm bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary"
-            />
-          </div>
-          <button
-            onClick={() => setPullQuotes(pullQuotes.filter((_, j) => j !== i))}
-            className="p-sm text-on-surface-muted hover:text-error transition-colors shrink-0"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+    if (field.type === "markdown") {
+      return (
+        <div key={field.name}>
+          <label className="font-sora text-sm text-on-surface block mb-xs">
+            {field.label || field.name}
+            {field.required && <span className="text-error ml-xs">*</span>}
+          </label>
+          <textarea
+            value={val || ""}
+            onChange={(e) => set(e.target.value)}
+            placeholder={field.placeholder || field.description}
+            rows={3}
+            className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm placeholder:text-on-surface-muted focus:outline-none focus:border-primary resize-y"
+          />
         </div>
-      ))}
-      <button
-        onClick={() => setPullQuotes([...pullQuotes, { quote: "", attribution: "" }])}
-        className="inline-flex items-center gap-sm text-sm text-primary hover:text-primary-hover font-dm-sans"
-      >
-        <Plus className="w-4 h-4" /> Add pull quote
-      </button>
-    </div>
-  );
+      );
+    }
 
-  // ── Collection items (lessons/chapters/episodes) ──
-  const renderCollectionItems = () => {
-    const label = type === "course" ? "Lessons" : type === "book" ? "Chapters" : "Episodes";
+    if (field.type === "string[]") {
+      return (
+        <div key={field.name}>
+          <label className="font-sora text-sm text-on-surface block mb-xs">
+            {field.label || field.name}
+          </label>
+          <input
+            value={val || ""}
+            onChange={(e) => set(e.target.value)}
+            placeholder={field.placeholder || "comma-separated values"}
+            className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary"
+          />
+        </div>
+      );
+    }
+
+    // Default: string input
     return (
-      <div className="space-y-md">
+      <div key={field.name}>
+        <label className="font-sora text-sm text-on-surface block mb-xs">
+          {field.label || field.name}
+          {field.required && <span className="text-error ml-xs">*</span>}
+        </label>
+        <input
+          value={val || ""}
+          onChange={(e) => set(e.target.value)}
+          placeholder={field.placeholder || field.description}
+          className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary"
+        />
+      </div>
+    );
+  };
+
+  // ── Complex array editors ──
+  // These handle the rich object[] fields that are too complex for generic rendering.
+
+  const renderArrayEditor = (key: string, label: string, fields: FieldSchema[], initialItem: Record<string, unknown>) => {
+    const items = recordArray(values[key]);
+    const setItems = (next: Record<string, unknown>[]) => setVal(key, next);
+
+    return (
+      <div className="space-y-md" key={key}>
         <label className="font-sora text-sm text-on-surface block">{label}</label>
-        {collectionItems.map((item, i) => (
-          <div key={i} className="p-md bg-surface-container border border-border-default space-y-sm">
+        {items.map((item: Record<string, unknown>, i: number) => (
+          <div key={i} className="p-lg bg-surface-container border border-border-default space-y-sm">
             <div className="flex items-center gap-sm">
               <GripVertical className="w-4 h-4 text-on-surface-muted shrink-0" />
-              <input
-                value={item.title}
-                onChange={(e) => {
-                  const next = [...collectionItems];
-                  next[i] = { ...next[i], title: e.target.value };
-                  setCollectionItems(next);
-                }}
-                placeholder="Title"
-                className="flex-1 p-sm bg-surface border border-border-default text-on-surface font-sora text-sm focus:outline-none focus:border-primary"
-              />
+              {fields.map((f) => {
+                if (f.type === "string" || f.type === "select") {
+                  return f.type === "select" && f.options && f.options.length <= 8 ? (
+                    <div key={f.name} className="flex flex-wrap gap-sm">
+                      {f.options.map((opt) => (
+                        <button
+                          key={opt}
+                          onClick={() => {
+                            const next = [...items];
+                            next[i] = { ...next[i], [f.name]: opt };
+                            setItems(next);
+                          }}
+                          className={`px-sm py-xs font-sora text-xs uppercase tracking-widest border transition-colors ${
+                            item[f.name] === opt
+                              ? "bg-primary text-on-primary border-primary"
+                              : "bg-surface text-on-surface-muted border-border-default"
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <input
+                      key={f.name}
+                      value={str(item[f.name])}
+                      onChange={(e) => {
+                        const next = [...items];
+                        next[i] = { ...next[i], [f.name]: e.target.value };
+                        setItems(next);
+                      }}
+                      placeholder={f.placeholder || f.name}
+                      className="flex-1 p-sm bg-surface border border-border-default text-on-surface font-sora text-sm focus:outline-none focus:border-primary"
+                    />
+                  );
+                }
+                return null;
+              })}
               <button
-                onClick={() => setCollectionItems(collectionItems.filter((_, j) => j !== i))}
-                className="p-sm text-on-surface-muted hover:text-error transition-colors"
+                onClick={() => setItems(items.filter((_, j) => j !== i))}
+                className="p-sm text-on-surface-muted hover:text-error transition-colors shrink-0"
+                title={`Remove ${label.slice(0, -1)}`}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
-            <input
-              value={item.storySlug}
-              onChange={(e) => {
-                const next = [...collectionItems];
-                next[i] = { ...next[i], storySlug: e.target.value };
-                setCollectionItems(next);
-              }}
-              placeholder="Story slug (e.g. fs-1-why-this-type-error)"
-              className="w-full p-sm bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary"
-            />
-            <input
-              value={item.description || ""}
-              onChange={(e) => {
-                const next = [...collectionItems];
-                next[i] = { ...next[i], description: e.target.value || undefined };
-                setCollectionItems(next);
-              }}
-              placeholder="Description (optional)"
-              className="w-full p-sm bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary"
-            />
+            {fields.map((f) => {
+              if (f.type === "markdown") {
+                const itemVal = str(item[f.name]);
+                return (
+                  <textarea
+                    key={f.name}
+                    value={itemVal}
+                    onChange={(e) => {
+                      const next = [...items];
+                      next[i] = { ...next[i], [f.name]: e.target.value };
+                      setItems(next);
+                    }}
+                    placeholder={f.placeholder || f.description}
+                    rows={2}
+                    className="w-full p-sm bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary resize-y"
+                  />
+                );
+              }
+              if (f.type === "markdown[]") {
+                const pars = strArray(item[f.name]);
+                return (
+                  <div key={f.name} className="space-y-sm ml-md">
+                    {pars.map((p: string, j: number) => (
+                      <div key={j} className="flex gap-sm items-start">
+                        <textarea
+                          value={p}
+                          onChange={(e) => {
+                            const next = [...items];
+                            const itemPars = strArray(next[i][f.name]);
+                            itemPars[j] = e.target.value;
+                            next[i] = { ...next[i], [f.name]: itemPars };
+                            setItems(next);
+                          }}
+                          placeholder={f.placeholder || "Paragraph (markdown)..."}
+                          rows={2}
+                          className="flex-1 p-sm bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary resize-y"
+                        />
+                        {pars.length > 1 && (
+                          <button
+                            onClick={() => {
+                              const next = [...items];
+                              const itemPars = strArray(next[i][f.name]);
+                              next[i] = { ...next[i], [f.name]: itemPars.filter((_, k) => k !== j) };
+                              setItems(next);
+                            }}
+                            className="p-sm text-on-surface-muted hover:text-error transition-colors shrink-0"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => {
+                        const next = [...items];
+                        const itemPars = [...strArray(next[i][f.name]), ""];
+                        next[i] = { ...next[i], [f.name]: itemPars };
+                        setItems(next);
+                      }}
+                      className="text-xs text-primary hover:text-primary-hover font-dm-sans"
+                    >
+                      + Add paragraph
+                    </button>
+                  </div>
+                );
+              }
+              return null;
+            })}
           </div>
         ))}
         <button
-          onClick={() => setCollectionItems([...collectionItems, { title: "", storySlug: "" }])}
+          onClick={() => setItems([...items, { ...initialItem }])}
           className="inline-flex items-center gap-sm text-sm text-primary hover:text-primary-hover font-dm-sans"
         >
           <Plus className="w-4 h-4" /> Add {label.slice(0, -1)}
@@ -461,9 +461,14 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
     );
   };
 
+  const isRichText = type === "story" || type === "guide" || type === "featured";
+  const isCollection = type === "course" || type === "book" || type === "series";
+
+  // ── Render ──
+
   return (
     <div className="space-y-xl">
-      {/* Reasoning / type suggestion */}
+      {/* Reasoning / type suggestion from AI */}
       {reasoning && (
         <div className="p-lg bg-surface-container border border-border-default border-l-4 border-l-primary">
           <p className="font-sora text-xs text-primary uppercase tracking-widest mb-xs">AI SUGGESTION</p>
@@ -489,60 +494,44 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
         ))}
       </div>
 
-      {/* Core metadata */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
-        <TextField label="Title" value={title} onChange={setTitle} placeholder="Article title" />
-        <TextField label="Excerpt" value={excerpt} onChange={setExcerpt} placeholder="Card summary" />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-lg">
-        <div>
-          <label className="font-sora text-sm text-on-surface block mb-xs">Category</label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary"
-          >
-            {CATEGORY_OPTIONS.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        </div>
-
-        <TextField label="Date" value={date} onChange={setDate} placeholder="YYYY-MM-DD" />
-        <TextField label="Tags (comma-separated)" value={tagsText} onChange={setTagsText} placeholder="TypeScript, Cloudflare" />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
-        <TextField label="Author Name" value={authorName} onChange={setAuthorName} placeholder="Benjamin Mayanja" />
-        <TextField label="Author Handle" value={authorHandle} onChange={setAuthorHandle} placeholder="@Essomero" />
-      </div>
-
-      {/* Topics */}
-      <div>
-        <label className="font-sora text-sm text-on-surface block mb-xs">Topics</label>
-        <div className="flex flex-wrap gap-sm">
-          {TOPIC_OPTIONS.map((t) => (
-            <button
-              key={t.slug}
-              onClick={() =>
-                setTopics(
-                  topics.includes(t.slug)
-                    ? topics.filter((s) => s !== t.slug)
-                    : [...topics, t.slug]
-                )
-              }
-              className={`px-md py-sm font-sora text-xs border transition-colors ${
-                topics.includes(t.slug)
-                  ? "bg-primary text-on-primary border-primary"
-                  : "bg-surface text-on-surface-muted border-border-default hover:border-outline"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Schema-driven metadata fields */}
+      {schema.fields
+        .filter((f) => ["title", "excerpt", "category", "author", "date", "tags", "topics", "tagline", "format", "estimatedMinutes", "passingScore", "episode", "duration", "summary"].includes(f.name))
+        .map((f) => {
+          // Special handling for fields that use sub-keys
+          if (f.name === "author") {
+            return (
+              <div key="author" className="grid grid-cols-1 md:grid-cols-2 gap-lg">
+                {f.children?.map((child) => renderField({
+                  ...child,
+                  name: child.name === "name" ? "authorName" : "authorHandle",
+                  label: child.name === "name" ? "Author Name" : "Author Handle",
+                }))}
+              </div>
+            );
+          }
+          if (f.name === "tags") {
+            return renderField({
+              ...f,
+              name: "tagsText",
+              type: "string[]",
+              label: "Tags (comma-separated)",
+            });
+          }
+          if (f.name === "topics") {
+            return renderField(f);
+          }
+          if (f.name === "format" || f.name === "category") {
+            return renderField(f);
+          }
+          if (["tagline", "episode", "duration", "summary"].includes(f.name)) {
+            return renderField(f);
+          }
+          if (["estimatedMinutes", "passingScore"].includes(f.name)) {
+            return renderField(f);
+          }
+          return renderField(f);
+        })}
 
       {/* Custom slug */}
       <div className="flex items-center gap-md">
@@ -555,274 +544,169 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
           />
           <span className="font-sora text-sm text-on-surface">Custom slug</span>
         </label>
-        {useCustomSlug && (
+        {useCustomSlug ? (
           <input
             value={customSlug}
             onChange={(e) => setCustomSlug(e.target.value)}
             placeholder={slugify(title) || "custom-slug"}
             className="flex-1 p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary"
           />
-        )}
-        {!useCustomSlug && (
+        ) : (
           <span className="font-dm-sans text-xs text-on-surface-muted">
             Slug: <code className="bg-surface-container px-sm py-xs">{slug || "auto"}</code>
           </span>
         )}
       </div>
 
-      {/* Intro */}
-      <TextField
-        label="Intro"
-        value={intro}
-        onChange={setIntro}
-        placeholder="Opening hook (markdown)..."
-        multiline
-      />
-
-      {/* Type-specific fields */}
+      {/* Intro (for rich-text types) */}
       {isRichText && (
-        <>
-          {renderBodyEditor()}
-          {renderSectionsEditor()}
-          {renderPullQuotes()}
-
-          {/* Bento highlights */}
-          <div className="space-y-md">
-            <label className="font-sora text-sm text-on-surface block">Bento Highlights</label>
-            {bentoHighlights.map((bh, i) => (
-              <div key={i} className="p-md bg-surface-container border border-border-default space-y-sm">
-                <div className="flex items-center gap-sm">
-                  <input
-                    value={bh.label}
-                    onChange={(e) => {
-                      const next = [...bentoHighlights];
-                      next[i] = { ...next[i], label: e.target.value };
-                      setBentoHighlights(next);
-                    }}
-                    placeholder="Label (e.g. 01 // CONCEPT)"
-                    className="flex-1 p-sm bg-surface border border-border-default text-on-surface font-sora text-xs focus:outline-none focus:border-primary"
-                  />
-                  <button
-                    onClick={() => setBentoHighlights(bentoHighlights.filter((_, j) => j !== i))}
-                    className="p-sm text-on-surface-muted hover:text-error transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-                <input
-                  value={bh.title}
-                  onChange={(e) => {
-                    const next = [...bentoHighlights];
-                    next[i] = { ...next[i], title: e.target.value };
-                    setBentoHighlights(next);
-                  }}
-                  placeholder="Title"
-                  className="w-full p-sm bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary"
-                />
-                <textarea
-                  value={bh.description}
-                  onChange={(e) => {
-                    const next = [...bentoHighlights];
-                    next[i] = { ...next[i], description: e.target.value };
-                    setBentoHighlights(next);
-                  }}
-                  placeholder="Description"
-                  rows={2}
-                  className="w-full p-sm bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary resize-y"
-                />
-              </div>
-            ))}
-            <button
-              onClick={() => setBentoHighlights([...bentoHighlights, { label: "", title: "", description: "" }])}
-              className="inline-flex items-center gap-sm text-sm text-primary hover:text-primary-hover font-dm-sans"
-            >
-              <Plus className="w-4 h-4" /> Add highlight
-            </button>
-          </div>
-
-          {/* References */}
-          <div className="space-y-md">
-            <label className="font-sora text-sm text-on-surface block">References</label>
-            {references.map((ref, i) => (
-              <div key={i} className="p-md bg-surface-container border border-border-default space-y-sm">
-                <div className="flex items-center gap-sm">
-                  <input
-                    value={ref.title}
-                    onChange={(e) => {
-                      const next = [...references];
-                      next[i] = { ...next[i], title: e.target.value };
-                      setReferences(next);
-                    }}
-                    placeholder="Reference title"
-                    className="flex-1 p-sm bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary"
-                  />
-                  <button
-                    onClick={() => setReferences(references.filter((_, j) => j !== i))}
-                    className="p-sm text-on-surface-muted hover:text-error transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-                <input
-                  value={ref.url}
-                  onChange={(e) => {
-                    const next = [...references];
-                    next[i] = { ...next[i], url: e.target.value };
-                    setReferences(next);
-                  }}
-                  placeholder="URL"
-                  className="w-full p-sm bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary"
-                />
-                <input
-                  value={ref.description || ""}
-                  onChange={(e) => {
-                    const next = [...references];
-                    next[i] = { ...next[i], description: e.target.value || undefined };
-                    setReferences(next);
-                  }}
-                  placeholder="Description (optional)"
-                  className="w-full p-sm bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary"
-                />
-              </div>
-            ))}
-            <button
-              onClick={() => setReferences([...references, { title: "", url: "" }])}
-              className="inline-flex items-center gap-sm text-sm text-primary hover:text-primary-hover font-dm-sans"
-            >
-              <Plus className="w-4 h-4" /> Add reference
-            </button>
-          </div>
-        </>
+        <div>
+          <label className="font-sora text-sm text-on-surface block mb-xs">Intro *</label>
+          <textarea
+            value={str(values.intro)}
+            onChange={(e) => setVal("intro", e.target.value)}
+            placeholder="Opening hook (markdown)..."
+            rows={3}
+            className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm placeholder:text-on-surface-muted focus:outline-none focus:border-primary resize-y"
+          />
+        </div>
       )}
 
-      {/* Tip cards (guide only) */}
-      {type === "guide" && (
-        <div className="space-y-md">
-          <label className="font-sora text-sm text-on-surface block">Tip Cards</label>
-          {tipCards.map((tc, i) => (
-            <div key={i} className="p-md bg-surface-container border border-border-default space-y-sm">
-              <div className="flex items-center gap-sm">
-                <input
-                  value={tc.icon}
-                  onChange={(e) => {
-                    const next = [...tipCards];
-                    next[i] = { ...next[i], icon: e.target.value };
-                    setTipCards(next);
-                  }}
-                  placeholder="Icon (e.g. terminal, lightbulb)"
-                  className="flex-1 p-sm bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary"
-                />
-                <button
-                  onClick={() => setTipCards(tipCards.filter((_, j) => j !== i))}
-                  className="p-sm text-on-surface-muted hover:text-error transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-              <input
-                value={tc.title}
-                onChange={(e) => {
-                  const next = [...tipCards];
-                  next[i] = { ...next[i], title: e.target.value };
-                  setTipCards(next);
-                }}
-                placeholder="Title"
-                className="w-full p-sm bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary"
-              />
+      {/* Body paragraphs (for rich-text types) */}
+      {isRichText && (
+        <div className="space-y-sm">
+          <label className="font-sora text-sm text-on-surface block">Body Paragraphs *</label>
+          {strArray(values.body).map((p: string, i: number) => (
+            <div key={i} className="flex gap-sm items-start">
               <textarea
-                value={tc.description}
+                value={p}
                 onChange={(e) => {
-                  const next = [...tipCards];
-                  next[i] = { ...next[i], description: e.target.value };
-                  setTipCards(next);
+                  const next = [...strArray(values.body)];
+                  next[i] = e.target.value;
+                  setVal("body", next);
                 }}
-                placeholder="Description"
+                placeholder="Markdown paragraph..."
                 rows={2}
-                className="w-full p-sm bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary resize-y"
+                className="flex-1 p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm placeholder:text-on-surface-muted focus:outline-none focus:border-primary resize-y"
               />
+              {strArray(values.body).length > 1 && (
+                <button
+                  onClick={() => setVal("body", strArray(values.body).filter((_, j) => j !== i))}
+                  className="p-sm text-on-surface-muted hover:text-error transition-colors shrink-0"
+                  title="Remove paragraph"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
           ))}
           <button
-            onClick={() => setTipCards([...tipCards, { icon: "", bgClass: "", iconColorClass: "", title: "", description: "" }])}
+            onClick={() => setVal("body", [...strArray(values.body), ""])}
             className="inline-flex items-center gap-sm text-sm text-primary hover:text-primary-hover font-dm-sans"
           >
-            <Plus className="w-4 h-4" /> Add tip card
+            <Plus className="w-4 h-4" /> Add paragraph
           </button>
         </div>
       )}
 
-      {/* Tagline (featured, course, book, series) */}
-      {(type === "featured" || isCollection) && (
-        <TextField label="Tagline" value={tagline} onChange={setTagline} placeholder="Short subtitle" />
-      )}
+      {/* Sections (rich-text types) */}
+      {isRichText && renderArrayEditor("sections", "Sections", [
+        { name: "heading", type: "string", required: true, description: "Section heading" },
+      ] satisfies FieldSchema[], { heading: "", paragraphs: [""] })}
 
-      {/* Collections */}
-      {isCollection && renderCollectionItems()}
+      {/* Pull quotes (rich-text types) */}
+      {isRichText && renderArrayEditor("pullQuotes", "Pull Quotes", [
+        { name: "quote", type: "markdown", required: true, description: "Quote text" },
+        { name: "attribution", type: "string", required: false, description: "Attribution" },
+      ] satisfies FieldSchema[], { quote: "", attribution: "" })}
+
+      {/* Bento highlights (rich-text types) */}
+      {isRichText && renderArrayEditor("bentoHighlights", "Bento Highlights", [
+        { name: "label", type: "string", required: true, description: "Card label" },
+        { name: "title", type: "string", required: true, description: "Card title" },
+        { name: "description", type: "markdown", required: true, description: "Card content" },
+      ] satisfies FieldSchema[], { label: "", title: "", description: "" })}
+
+      {/* References (rich-text types) */}
+      {isRichText && renderArrayEditor("references", "References", [
+        { name: "title", type: "string", required: true, description: "Reference title" },
+        { name: "url", type: "string", required: true, description: "URL" },
+        { name: "description", type: "string", required: false, description: "Optional note" },
+      ] satisfies FieldSchema[], { title: "", url: "", description: "" })}
+
+      {/* Tip cards (guide only) */}
+      {type === "guide" && renderArrayEditor("tipCards", "Tip Cards", [
+        { name: "icon", type: "string", required: true, description: "Icon identifier" },
+        { name: "title", type: "string", required: true, description: "Tip card title" },
+        { name: "description", type: "markdown", required: true, description: "Tip content" },
+        { name: "bgClass", type: "string", required: false, description: "Background class" },
+        { name: "iconColorClass", type: "string", required: false, description: "Icon color class" },
+      ] satisfies FieldSchema[], { icon: "", bgClass: "", iconColorClass: "", title: "", description: "" })}
 
       {/* Doc sections */}
       {type === "doc" && (
         <div className="space-y-lg">
           <label className="font-sora text-sm text-on-surface block">Doc Sections</label>
-          {docSections.map((sec, i) => (
+          {recordArray(values.docSections).map((sec: Record<string, unknown>, i: number) => (
             <div key={i} className="p-lg bg-surface-container border border-border-default">
               <div className="flex items-center gap-sm mb-sm">
                 <input
-                  value={sec.number}
+                  value={str(sec.number)}
                   onChange={(e) => {
-                    const next = [...docSections];
+                    const next = [...recordArray(values.docSections)];
                     next[i] = { ...next[i], number: e.target.value };
-                    setDocSections(next);
+                    setVal("docSections", next);
                   }}
-                  placeholder="Section number (e.g. A, B, C)"
+                  placeholder="Section number (e.g. A, B)"
                   className="w-20 p-sm bg-surface border border-border-default text-on-surface font-sora text-sm focus:outline-none focus:border-primary"
                 />
                 <input
-                  value={sec.heading}
+                  value={str(sec.heading)}
                   onChange={(e) => {
-                    const next = [...docSections];
+                    const next = [...recordArray(values.docSections)];
                     next[i] = { ...next[i], heading: e.target.value };
-                    setDocSections(next);
+                    setVal("docSections", next);
                   }}
                   placeholder="Section heading"
                   className="flex-1 p-sm bg-surface border border-border-default text-on-surface font-sora text-sm focus:outline-none focus:border-primary"
                 />
                 <input
-                  value={sec.anchor}
+                  value={str(sec.anchor)}
                   onChange={(e) => {
-                    const next = [...docSections];
+                    const next = [...recordArray(values.docSections)];
                     next[i] = { ...next[i], anchor: e.target.value };
-                    setDocSections(next);
+                    setVal("docSections", next);
                   }}
                   placeholder="Anchor id"
                   className="w-40 p-sm bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary"
                 />
                 <button
-                  onClick={() => setDocSections(docSections.filter((_, j) => j !== i))}
+                  onClick={() => setVal("docSections", recordArray(values.docSections).filter((_, j) => j !== i))}
                   className="p-sm text-on-surface-muted hover:text-error transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
-              {sec.items.map((item, j) => (
+              {recordArray(sec.items).map((item: Record<string, unknown>, j: number) => (
                 <div key={j} className="ml-md mb-sm p-sm bg-surface border border-border-default">
                   <div className="flex items-center gap-sm mb-xs">
                     <input
-                      value={item.question}
+                      value={str(item.question)}
                       onChange={(e) => {
-                        const next = [...docSections];
-                        const items = [...next[i].items];
+                        const next = [...recordArray(values.docSections)];
+                        const items = [...recordArray(next[i].items)];
                         items[j] = { ...items[j], question: e.target.value };
                         next[i] = { ...next[i], items };
-                        setDocSections(next);
+                        setVal("docSections", next);
                       }}
                       placeholder="Question"
                       className="flex-1 p-sm bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary"
                     />
                     <button
                       onClick={() => {
-                        const next = [...docSections];
-                        next[i] = { ...next[i], items: next[i].items.filter((_, k) => k !== j) };
-                        setDocSections(next);
+                        const next = [...recordArray(values.docSections)];
+                        next[i] = { ...next[i], items: recordArray(next[i].items).filter((_, k) => k !== j) };
+                        setVal("docSections", next);
                       }}
                       className="p-sm text-on-surface-muted hover:text-error transition-colors"
                     >
@@ -830,13 +714,13 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
                     </button>
                   </div>
                   <textarea
-                    value={item.answer.join("\n\n")}
+                    value={strArray(item.answer).join("\n\n")}
                     onChange={(e) => {
-                      const next = [...docSections];
-                      const items = [...next[i].items];
+                      const next = [...recordArray(values.docSections)];
+                      const items = [...recordArray(next[i].items)];
                       items[j] = { ...items[j], answer: e.target.value.split("\n\n") };
                       next[i] = { ...next[i], items };
-                      setDocSections(next);
+                      setVal("docSections", next);
                     }}
                     placeholder="Answer (separate blocks with blank lines)"
                     rows={3}
@@ -846,9 +730,9 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
               ))}
               <button
                 onClick={() => {
-                  const next = [...docSections];
-                  next[i] = { ...next[i], items: [...next[i].items, { question: "", answer: [""] }] };
-                  setDocSections(next);
+                  const next = [...recordArray(values.docSections)];
+                  next[i] = { ...next[i], items: [...recordArray(next[i].items), { question: "", answer: [""] }] };
+                  setVal("docSections", next);
                 }}
                 className="ml-md text-xs text-primary hover:text-primary-hover font-dm-sans"
               >
@@ -857,7 +741,7 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
             </div>
           ))}
           <button
-            onClick={() => setDocSections([...docSections, { number: "", heading: "", anchor: "", items: [{ question: "", answer: [""] }] }])}
+            onClick={() => setVal("docSections", [...recordArray(values.docSections), { number: "", heading: "", anchor: "", items: [{ question: "", answer: [""] }] }])}
             className="inline-flex items-center gap-sm text-sm text-primary hover:text-primary-hover font-dm-sans"
           >
             <Plus className="w-4 h-4" /> Add section
@@ -865,38 +749,31 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
         </div>
       )}
 
-      {/* Test-specific fields */}
-      {type === "test" && (
-        <div className="space-y-lg">
-          <div className="grid grid-cols-3 gap-lg">
-            <div>
-              <label className="font-sora text-sm text-on-surface block mb-xs">Format</label>
-              <select
-                value={testFormat}
-                onChange={(e) => setTestFormat(e.target.value as "written" | "oral" | "hybrid")}
-                className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary"
-              >
-                <option value="written">Written</option>
-                <option value="oral">Oral</option>
-                <option value="hybrid">Hybrid</option>
-              </select>
-            </div>
-            <TextField label="Est. Minutes" value={String(estimatedMinutes)} onChange={(v) => setEstimatedMinutes(Number(v))} />
-            <TextField label="Passing Score" value={String(passingScore)} onChange={(v) => setPassingScore(Number(v))} />
-          </div>
-        </div>
+      {/* Collection items (course/book/series) */}
+      {isCollection && renderArrayEditor(
+        type === "course" ? "lessons" : type === "book" ? "chapters" : "episodes",
+        type === "course" ? "Lessons" : type === "book" ? "Chapters" : "Episodes",
+        [
+          { name: "title", type: "string", required: true, description: "Title" },
+          { name: "storySlug", type: "string", required: true, description: "Story slug" },
+          { name: "description", type: "string", required: false, description: "Optional description" },
+        ] satisfies FieldSchema[],
+        { title: "", storySlug: "", description: "" },
       )}
 
-      {/* Podcast-specific fields */}
-      {type === "podcast" && (
-        <div className="space-y-lg">
-          <div className="grid grid-cols-2 gap-lg">
-            <TextField label="Episode Label" value={episodeLabel} onChange={setEpisodeLabel} placeholder="EPISODE 1 // JAN 24" />
-            <TextField label="Duration" value={duration} onChange={setDuration} placeholder="30 MIN" />
-          </div>
-          <TextField label="Summary" value={podcastSummary} onChange={setPodcastSummary} placeholder="Full episode summary" multiline />
-        </div>
-      )}
+      {/* Podcast segments */}
+      {type === "podcast" && renderArrayEditor("segments", "Segments", [
+        { name: "time", type: "string", required: true, description: "Timestamp" },
+        { name: "title", type: "string", required: true, description: "Segment title" },
+        { name: "description", type: "string", required: true, description: "Segment description" },
+      ] satisfies FieldSchema[], { time: "", title: "", description: "" })}
+
+      {/* Podcast guests */}
+      {type === "podcast" && renderArrayEditor("guests", "Guests", [
+        { name: "name", type: "string", required: true, description: "Guest name" },
+        { name: "role", type: "string", required: false, description: "Role/title" },
+        { name: "description", type: "string", required: false, description: "Bio" },
+      ] satisfies FieldSchema[], { name: "", role: "", description: "" })}
 
       {/* Visibility */}
       <div className="flex items-center gap-lg pt-lg border-t border-border-default">

@@ -7,8 +7,8 @@ import AccentBar from "@/components/ui/AccentBar";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import type { AIDraft } from "@/components/admin/AIDraftPanel";
 import type { SavePayload } from "@/components/admin/ContentForm";
-import type { ContentType } from "@/components/admin/types";
-import { CONTENT_TYPE_LABELS, ROUTE_BASE } from "@/components/admin/types";
+import type { ContentType } from "@/lib/admin-prompts";
+import { CONTENT_TYPE_LABELS, ROUTE_BASE } from "@/lib/admin-prompts";
 
 export default function AdminNewPage() {
   const navigate = useNavigate();

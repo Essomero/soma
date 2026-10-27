@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Loader2, Sparkles, ArrowRight, AlertCircle } from "lucide-react";
-import { SYSTEM_PROMPT } from "@/lib/admin-prompts";
-import type { ContentType } from "./types";
+import { buildSystemPrompt } from "@/lib/admin-prompts";
+import type { ContentType } from "@/lib/admin-prompts";
 
 interface AIDraftPanelProps {
   onDraft: (draft: AIDraft) => void;
@@ -68,7 +68,7 @@ export default function AIDraftPanel({ onDraft, disabled }: AIDraftPanelProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          systemPrompt: SYSTEM_PROMPT,
+          systemPrompt: buildSystemPrompt(),
           userMessage: `Create content based on this idea:\n\n${input.trim()}\n\nRespond with the JSON object only.`,
           model: "straitly/deepseek/deepseek-v4-1-flash",
           stream: true,
