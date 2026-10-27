@@ -10,6 +10,7 @@ import { useContentList, toCard } from "@/lib/content";
 import type { StoryContent, GuideContent, FeaturedContent, PodcastEpisodeFull } from "@/types";
 import { Link } from "react-router-dom";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { coverUrl } from "@/lib/utils";
 
 export default function HomePage() {
   const storiesQ = useContentList<StoryContent>("story");
@@ -146,7 +147,7 @@ export default function HomePage() {
               <img
                 alt={secondaryGuide.imageAlt}
                 className="w-full h-full object-cover"
-                src={secondaryGuide.image}
+                src={coverUrl(secondaryGuide?.image)}
               />
             </div>
           </article>
@@ -159,7 +160,7 @@ export default function HomePage() {
                   <img
                     alt={story.imageAlt}
                     className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                    src={story.image}
+                    src={coverUrl(story?.image)}
                   />
                 </div>
                 <Tag variant="primary">{story.category}</Tag>
@@ -222,7 +223,7 @@ export default function HomePage() {
                 <img
                   alt="Testing"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  src={featuredGuide.image}
+                  src={coverUrl(featuredGuide?.image)}
                 />
                 <div className="absolute bottom-4 left-4 right-4 p-4 bg-surface/90 backdrop-blur rounded border border-surface-bright">
                   <span className="text-[10px] font-bold uppercase text-brand">

@@ -7,6 +7,7 @@ import { useContentList, sortContent } from "@/lib/content";
 import type { SortKey } from "@/lib/content";
 import SortControl from "@/components/ui/SortControl";
 import type { GuideContent } from "@/types";
+import { coverUrl } from "@/lib/utils";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function GuidesIndexPage() {
@@ -64,7 +65,7 @@ export default function GuidesIndexPage() {
                     <img
                       alt={featuredGuide.imageAlt}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      src={featuredGuide.image}
+                      src={coverUrl(featuredGuide?.image)}
                     />
                     <div className="absolute top-md left-md">
                       <span className="bg-primary text-on-primary font-sora text-label-caps px-sm py-xs uppercase">
@@ -111,7 +112,7 @@ export default function GuidesIndexPage() {
                       <img
                         alt={guide.imageAlt}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        src={guide.image}
+                        src={coverUrl(guide.image)}
                       />
                     </div>
                     <div className="flex flex-col gap-xs">

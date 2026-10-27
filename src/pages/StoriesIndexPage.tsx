@@ -12,6 +12,7 @@ import type { StoryContent } from "@/types";
 import { useAllReadSlugs } from "@/lib/useProgress";
 import { md } from "@/lib/markdown";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { coverUrl } from "@/lib/utils";
 
 const trendingItems = [
   { label: "01 // RECENT", title: "Why Does This Type Error?", href: "/stories/fs-1-why-this-type-error" },
@@ -90,7 +91,7 @@ export default function StoriesIndexPage() {
                   <img
                     alt={featured?.imageAlt ?? ""}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    src={featured?.image}
+                    src={coverUrl(featured?.image)}
                   />
                 </div>
                 <div className="p-lg md:p-xl">

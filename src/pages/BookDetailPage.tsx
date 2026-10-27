@@ -9,6 +9,7 @@ import { useProgress } from "@/lib/useProgress";
 import { getTotalReadingTime } from "@/lib/readingTime";
 import { md } from "@/lib/markdown";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { coverUrl } from "@/lib/utils";
 
 export default function BookDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -44,7 +45,7 @@ export default function BookDetailPage() {
     <div>
       <section className="relative overflow-hidden border-b border-border-default">
         <div className="absolute inset-0 z-0">
-          <img alt={book.imageAlt} className="w-full h-full object-cover opacity-30" src={book.image} />
+          <img alt={book.imageAlt} className="w-full h-full object-cover opacity-30" src={coverUrl(book?.image)} />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
         </div>
         <div className="relative z-10 max-w-readme mx-auto px-gutter md:px-margin-desktop pt-32 pb-giant">

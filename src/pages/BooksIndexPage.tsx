@@ -9,6 +9,7 @@ import type { SortKey } from "@/lib/content";
 import SortControl from "@/components/ui/SortControl";
 import type { BookContent } from "@/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { coverUrl } from "@/lib/utils";
 
 export default function BooksIndexPage() {
   const { data: books, loading } = useContentList<BookContent>("book");
@@ -61,7 +62,7 @@ export default function BooksIndexPage() {
                     className="group block bg-surface-container-low border border-border-default rounded-xl overflow-hidden hover:border-primary/50 hover:-translate-y-1 transition-all"
                   >
                     <div className="aspect-video overflow-hidden">
-                      <img alt={book.imageAlt} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src={book.image} />
+                      <img alt={book.imageAlt} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src={coverUrl(book?.image)} />
                     </div>
                     <div className="p-xl">
                       <span className="font-sora text-metadata-tag text-primary uppercase tracking-widest">

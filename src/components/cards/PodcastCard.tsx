@@ -1,4 +1,5 @@
 import { Play } from "lucide-react";
+import { coverUrl } from "@/lib/utils";
 import type { PodcastEpisode } from "@/types";
 
 interface PodcastCardProps {
@@ -11,7 +12,7 @@ export default function PodcastCard({ episode }: PodcastCardProps) {
       <img
         alt={episode.imageAlt}
         className="w-full h-full object-cover"
-        src={episode.image}
+        src={coverUrl(episode.image)}
       />
       <div className="absolute inset-0 bg-brand/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
         <button className="bg-white text-surface p-4 rounded-full shadow-lg hover:scale-110 transition-transform">

@@ -8,6 +8,7 @@ import type { SortKey } from "@/lib/content";
 import SortControl from "@/components/ui/SortControl";
 import type { DocContent } from "@/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { coverUrl } from "@/lib/utils";
 
 export default function DocsIndexPage() {
   const { data: docs, loading } = useContentList<DocContent>("doc");
@@ -63,7 +64,7 @@ export default function DocsIndexPage() {
                       <img
                         alt={doc.imageAlt}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        src={doc.image}
+                        src={coverUrl(doc?.image)}
                       />
                     </div>
                     <div className="p-xl">

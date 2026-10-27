@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { cn, coverUrl } from "@/lib/utils";
 import type { ArticleCardData } from "@/types";
 import { md } from "@/lib/markdown";
 
@@ -20,7 +20,7 @@ export default function StoryCard({ article, className }: StoryCardProps) {
         <img
           alt={article.imageAlt}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          src={article.image}
+          src={coverUrl(article.image)}
         />
         <div className="absolute top-4 left-4 bg-background/60 backdrop-blur-md px-sm py-xs rounded font-sora text-[10px] uppercase text-on-surface">
           {article.category}

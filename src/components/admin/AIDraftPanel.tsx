@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Loader2, Sparkles, ArrowRight, AlertCircle, ChevronDown, Lightbulb } from "lucide-react";
 import { buildSystemPrompt } from "@/lib/admin-prompts";
+import { FALLBACK_COVER } from "@/lib/utils";
 import type { ContentType } from "@/lib/admin-prompts";
 
 interface ModelInfo {
@@ -195,6 +196,15 @@ export default function AIDraftPanel({ onDraft, disabled }: AIDraftPanelProps) {
       if (!draft.type || !draft.title) {
         throw new Error("AI response missing required fields (type, title)");
       }
+      // Models sometimes put an image *description* instead of a URL (or
+      // omit image entirely). Never let that reach the page: swap in the
+      // fallback cover so cards render, and keep a real alt description.
+      if (!/^https?:\/\//i.test(draft.image || "")) {
+        draft.image = FALLBACK_COVER;
+      }
+      if (!draft.imageAlt || draft.imageAlt.length > 80 || /^https?:\/\//i.test(draft.imageAlt)) {
+        draft.imageAlt = "Article cover image";
+      }
       setStatus("done");
       onDraft(draft);
     } catch (err) {
@@ -313,12 +323,20 @@ export default function AIDraftPanel({ onDraft, disabled }: AIDraftPanelProps) {
           </div>
 
           {reasoning && (
-            <div className="flex items-start gap-md p-md bg-surface border border-border-default border-l-4 border-l-primary">
-              <Lightbulb className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-              <p className="font-dm-sans text-xs text-on-surface-muted whitespace-pre-wrap leading-relaxed">
-                {reasoning}
-              </p>
-            </div>
+            <details className="group">
+              <summary className="flex items-center gap-md cursor-pointer list-none p-md bg-surface border border-border-default border-l-4 border-l-primary hover:bg-surface-container transition-colors">
+                <Lightbulb className="w-4 h-4 text-primary shrink-0" />
+                <span className="font-sora text-xs text-on-surface-muted uppercase tracking-widest flex-1">
+                  Thinking
+                </span>
+                <ChevronDown className="w-4 h-4 text-on-surface-muted transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="max-h-48 overflow-y-auto p-md border-x border-b border-border-default bg-surface">
+                <p className="font-dm-sans text-xs text-on-surface-muted whitespace-pre-wrap leading-relaxed">
+                  {reasoning}
+                </p>
+              </div>
+            </details>
           )}
         </div>
       )}

@@ -22,6 +22,7 @@ import { type HighlightData } from "@/lib/highlights";
 
 import type { BentoCardData, PullQuoteData } from "@/types";
 import type { LucideIcon } from "lucide-react";
+import { cn, coverUrl } from "@/lib/utils";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 // Icon map for tip cards (matches ship-soma pattern)
@@ -127,7 +128,7 @@ export default function GuideContentPage() {
           <img
             alt={guide.imageAlt}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            src={guide.image}
+            src={coverUrl(guide.image)}
           />
         </div>
 

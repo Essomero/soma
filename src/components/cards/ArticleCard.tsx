@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { cn, coverUrl } from "@/lib/utils";
 import Tag from "@/components/ui/Tag";
 import type { ArticleCardData } from "@/types";
 import { md } from "@/lib/markdown";
@@ -22,7 +22,7 @@ export default function ArticleCard({
           <img
             alt={article.imageAlt}
             className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
-            src={article.image}
+            src={coverUrl(article.image)}
           />
         </div>
       </Link>

@@ -119,8 +119,8 @@ const COMMON_META: FieldSchema[] = [
     { name: "handle", type: "string", required: false, description: "Social handle (optional).", placeholder: "@Essomero" },
   ]},
   { name: "date", type: "string", required: true, description: "Display date. Use YYYY-MM-DD format.", constraints: "Must be a real date, not a placeholder.", placeholder: "2026-08-16" },
-  { name: "image", type: "string", required: false, description: "Hero image URL shown in listings and at the top of the page.", placeholder: "https://images.unsplash.com/photo-..." },
-  { name: "imageAlt", type: "string", required: false, description: "Accessible alt text for the hero image. Describe what the image shows.", placeholder: "Code editor displaying a compile error overlay" },
+  { name: "image", type: "string", required: true, description: "Hero image URL shown in listings and at the top of the page. MUST be an actual image URL (https://images.unsplash.com/... or similar) — an absolute requirement, never a description of an image.", constraints: "Must start with http:// or https:// and point to a real image file. NEVER fill this with prose like 'a terminal window showing...' — if no real URL is available use https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=675&fit=crop as a safe default.", placeholder: "https://images.unsplash.com/photo-..." },
+  { name: "imageAlt", type: "string", required: false, description: "Accessible alt text for the hero image — a SHORT description of what the image actually shows. Never a longer caption or title.", constraints: "1-8 words. Describes the picture itself, not the article's topic.", placeholder: "Code editor displaying a compile error overlay" },
   { name: "tags", type: "string[]", required: false, description: "2-5 tags for filtering and discovery. Short, lowercase, hyphenated.", constraints: "Tags should be specific but not overly niche.", placeholder: "full-stack-prep, typescript" },
   { name: "topics", type: "select", required: false, description: "Topic classification for browse-by-topic pages.", options: TOPIC_OPTIONS.map(t => t.slug) },
 ];
