@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Plus, Trash2, GripVertical, X, Eye } from "lucide-react";
 import BlockEditor from "./BlockEditor";
 import ContentPreview from "./ContentPreview";
@@ -130,6 +130,9 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
   const [status, setStatus] = useState<"private" | "published">("private");
   const [reasoning, setReasoning] = useState("");
   const [mode, setMode] = useState<"edit" | "preview">("edit");
+  // Shared drag state for array editors (sections, items, etc.)
+  const [dragFrom, setDragFrom] = useState<number | null>(null);
+  const dragToRef = useRef<number | null>(null);
 
   const schema = getSchema(type);
 
@@ -388,11 +391,44 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
     const items = recordArray(values[key]);
     const setItems = (next: Record<string, unknown>[]) => setVal(key, next);
 
+    const onDragStart = (i: number, e: React.DragEvent) => {
+      setDragFrom(i);
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", String(i));
+    };
+    const onDragOver = (i: number, e: React.DragEvent) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      dragToRef.current = i;
+    };
+    const onDrop = () => {
+      const from = dragFrom;
+      const to = dragToRef.current;
+      if (from === null || to === null || from === to) { setDragFrom(null); dragToRef.current = null; return; }
+      const next = [...items];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      setItems(next);
+      setDragFrom(null); dragToRef.current = null;
+    };
+    const onDragEnd = () => { setDragFrom(null); dragToRef.current = null; };
+
     return (
       <div className="space-y-md" key={key}>
         <label className="font-sora text-sm text-on-surface block">{label}</label>
         {items.map((item: Record<string, unknown>, i: number) => (
-          <div key={i} className="p-lg bg-surface-container border border-border-default space-y-sm">
+          <div
+            key={i}
+            draggable
+            onDragStart={(e) => onDragStart(i, e)}
+            onDragOver={(e) => onDragOver(i, e)}
+            onDragLeave={() => { if (dragToRef.current === i) dragToRef.current = null; }}
+            onDrop={onDrop}
+            onDragEnd={onDragEnd}
+            className={`p-lg bg-surface-container border space-y-sm transition-colors cursor-grab active:cursor-grabbing ${
+              dragFrom === i ? "opacity-40 border-primary" : "border-border-default"
+            }`}
+          >
             <div className="flex items-center gap-sm">
               <GripVertical className="w-4 h-4 text-on-surface-muted shrink-0" />
               {fields.map((f) => {
@@ -696,7 +732,26 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
         <div className="space-y-lg">
           <label className="font-sora text-sm text-on-surface block">Sections</label>
           {recordArray(values.sections).map((sec, i) => (
-            <div key={i} className="p-lg bg-surface-container border border-border-default">
+            <div
+              key={i}
+              draggable
+              onDragStart={(e) => { setDragFrom(i); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(i)); }}
+              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; dragToRef.current = i; }}
+              onDragLeave={() => { if (dragToRef.current === i) dragToRef.current = null; }}
+              onDrop={() => {
+                const from = dragFrom; const to = dragToRef.current;
+                if (from === null || to === null || from === to) { setDragFrom(null); dragToRef.current = null; return; }
+                const next = [...recordArray(values.sections)];
+                const [moved] = next.splice(from, 1);
+                next.splice(to, 0, moved);
+                setVal("sections", next);
+                setDragFrom(null); dragToRef.current = null;
+              }}
+              onDragEnd={() => { setDragFrom(null); dragToRef.current = null; }}
+              className={`p-lg bg-surface-container border transition-colors cursor-grab active:cursor-grabbing ${
+                dragFrom === i ? "opacity-40 border-primary" : "border-border-default"
+              }`}
+            >
               <div className="flex items-center gap-sm mb-md">
                 <GripVertical className="w-4 h-4 text-on-surface-muted shrink-0" />
                 <input
