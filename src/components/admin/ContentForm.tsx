@@ -565,10 +565,36 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
   // Preview mode replaces the whole editor surface with the rendered page.
   if (mode === "preview") {
     return (
-      <ContentPreview
-        draft={previewDraft}
-        onBack={() => setMode("edit")}
-      />
+      <div className="space-y-xl">
+        {/* Sticky save bar : preview is the final check, so saving must
+            not require a round trip back through edit fields. */}
+        <div className="sticky top-0 z-20 bg-surface/95 backdrop-blur border border-border-default px-md py-sm flex flex-wrap items-center justify-between gap-md">
+          <div className="flex items-center gap-md">
+            <button
+              onClick={() => setMode("edit")}
+              className="inline-flex items-center gap-sm px-xl py-md bg-surface border border-border-default text-on-surface font-sora text-label-caps uppercase tracking-widest hover:border-primary transition-colors"
+            >
+              <Pencil className="w-4 h-4" />
+              Back to Edit
+            </button>
+            <span className="hidden md:inline font-sora text-xs text-on-surface-muted">
+              {status === "published" ? "Will save &amp; publish" : "Will save as private"}
+            </span>
+          </div>
+          <button
+            onClick={handleSave}
+            disabled={saving || !title || !slug}
+            className="px-xl py-md bg-primary text-on-primary font-sora text-label-caps uppercase tracking-widest hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {saving ? "Saving..." : status === "published" ? "Publish" : "Save Private"}
+          </button>
+        </div>
+
+        <ContentPreview
+          draft={previewDraft}
+          onBack={() => setMode("edit")}
+        />
+      </div>
     );
   }
 
