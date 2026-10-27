@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Printer, FileText, Palette, Monitor } from "lucide-react";
+import { ArrowLeft, Printer, FileText, Palette, Monitor, Edit3 } from "lucide-react";
 import { useContentItem } from "@/lib/content";
 import { mdBlock } from "@/lib/markdown";
 import type {
@@ -113,6 +113,11 @@ export default function TestPrintPage() {
               {bw ? <Monitor className="w-3.5 h-3.5" /> : <Palette className="w-3.5 h-3.5" />}
               <span>{bw ? "B/W" : "Color"}</span>
             </button>
+            <Link to={`/admin/test/${test.slug}/edit`}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg font-sora text-xs font-semibold border border-border-default bg-surface-container text-on-surface hover:border-primary/50 hover:text-primary transition-all print:hidden">
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>Edit</span>
+            </Link>
             <span className="text-xs text-on-surface-muted hidden sm:inline">
               Tip: Set margins to Narrow &amp; enable Background graphics
             </span>
