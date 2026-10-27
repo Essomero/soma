@@ -119,6 +119,8 @@ const COMMON_META: FieldSchema[] = [
     { name: "handle", type: "string", required: false, description: "Social handle (optional).", placeholder: "@Essomero" },
   ]},
   { name: "date", type: "string", required: true, description: "Display date. Use YYYY-MM-DD format.", constraints: "Must be a real date, not a placeholder.", placeholder: "2026-08-16" },
+  { name: "image", type: "string", required: false, description: "Hero image URL shown in listings and at the top of the page.", placeholder: "https://images.unsplash.com/photo-..." },
+  { name: "imageAlt", type: "string", required: false, description: "Accessible alt text for the hero image. Describe what the image shows.", placeholder: "Code editor displaying a compile error overlay" },
   { name: "tags", type: "string[]", required: false, description: "2-5 tags for filtering and discovery. Short, lowercase, hyphenated.", constraints: "Tags should be specific but not overly niche.", placeholder: "full-stack-prep, typescript" },
   { name: "topics", type: "select", required: false, description: "Topic classification for browse-by-topic pages.", options: TOPIC_OPTIONS.map(t => t.slug) },
 ];

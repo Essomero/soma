@@ -32,6 +32,7 @@ import CollectionPrintPage from "@/pages/CollectionPrintPage";
 import SinglePrintPage from "@/pages/SinglePrintPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import AdminNewPage from "@/pages/AdminNewPage";
+import AdminEditPage from "@/pages/AdminEditPage";
 import AuthGuard from "@/components/auth/AuthGuard";
 const router = createBrowserRouter([
   {
@@ -212,6 +213,10 @@ const router = createBrowserRouter([
       {
         path: "admin/new",
         element: <AdminNewPage />,
+      },
+      {
+        path: "admin/:type/:slug/edit",
+        element: <AdminEditPage />,
       },
 
       // Learn (user-authored notes: index login-gated; article public if toggled)

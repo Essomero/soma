@@ -23,6 +23,8 @@ export interface SavePayload {
   category: string;
   author: { name: string; handle?: string };
   date: string;
+  image?: string;
+  imageAlt?: string;
   tags?: string[];
   topics?: string[];
   status: "private" | "published";
@@ -73,6 +75,8 @@ function initFromDraft(draft: AIDraft | null): FormValues {
     authorName: draft.author?.name || "",
     authorHandle: draft.author?.handle || "",
     date: draft.date || new Date().toISOString().split("T")[0],
+    image: draft.image || "",
+    imageAlt: draft.imageAlt || "",
     tagsText: (draft.tags || []).join(", "),
     topics: draft.topics || [],
     intro: draft.intro || "",
@@ -150,6 +154,11 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
     const tagline = str(values.tagline);
     if (tagline) body.tagline = tagline;
 
+    const image = str(values.image);
+    if (image) body.image = image;
+    const imageAlt = str(values.imageAlt);
+    if (imageAlt) body.imageAlt = imageAlt;
+
     // Doc
     const docSections = recordArray(values.docSections);
     if (docSections.length > 0) body.sections = docSections;
@@ -202,6 +211,8 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
       category: str(values.category),
       author: { name: str(values.authorName), handle: str(values.authorHandle) || undefined },
       date: str(values.date),
+      image: str(values.image) || undefined,
+      imageAlt: str(values.imageAlt) || undefined,
       tags: tags.length > 0 ? tags : undefined,
       topics: topics.length > 0 ? topics : undefined,
       status,
@@ -496,7 +507,7 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
 
       {/* Schema-driven metadata fields */}
       {schema.fields
-        .filter((f) => ["title", "excerpt", "category", "author", "date", "tags", "topics", "tagline", "format", "estimatedMinutes", "passingScore", "episode", "duration", "summary"].includes(f.name))
+        .filter((f) => ["title", "excerpt", "category", "author", "date", "image", "imageAlt", "tags", "topics", "tagline", "format", "estimatedMinutes", "passingScore", "episode", "duration", "summary"].includes(f.name))
         .map((f) => {
           // Special handling for fields that use sub-keys
           if (f.name === "author") {

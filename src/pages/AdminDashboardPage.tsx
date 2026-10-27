@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Loader2, Eye, EyeOff, Search } from "lucide-react";
+import { Plus, Loader2, Eye, EyeOff, Search, Pencil, Trash2, Globe } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { CONTENT_TYPES, CONTENT_TYPE_LABELS, type ContentType } from "@/lib/admin-prompts";
-import { ROUTE_BASE } from "@/lib/content-schema";
+import { CONTENT_TYPES, CONTENT_TYPE_LABELS, ROUTE_BASE, type ContentType } from "@/lib/admin-prompts";
 
 interface ContentItem {
   slug: string;
@@ -40,12 +39,12 @@ function useContentList() {
     }
   };
 
-  return { data, loading, error, fetchAll };
+  return { data, loading, error, fetchAll, setData, setError };
 }
 
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
-  const { data, loading, error, fetchAll } = useContentList();
+  const { data, loading, error, fetchAll, setData, setError } = useContentList();
   const [filterType, setFilterType] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<string>("");
   const [search, setSearch] = useState("");
@@ -75,6 +74,70 @@ export default function AdminDashboardPage() {
     total: data?.length || 0,
     published: data?.filter((i) => i.status === "published").length || 0,
     private: data?.filter((i) => i.status === "private").length || 0,
+  };
+
+  // Immediate toggle of a row's visibility: content_items.status is the
+  // single gate, so the next GET reflects the flip.
+  const [busySlug, setBusySlug] = useState<string | null>(null);
+
+  const toggleStatus = async (item: ContentItem) => {
+    setBusySlug(item.slug);
+    setError("");
+    try {
+      const next = item.status === "published" ? "private" : "published";
+      // The upsert overwrites body_json on conflict, so the full authored
+      // object must be re-sent. The list row already carries it flattened
+      // (mapRow spreads body_json); strip the computed columns.
+      const COMPUTED: Record<string, true> = {
+        slug: true, type: true, status: true, title: true, excerpt: true,
+        meta: true, isFeatured: true, position: true, updatedAt: true,
+        id: true, href: true,
+      };
+      const body = Object.fromEntries(
+        Object.entries(item).filter(([k]) => !COMPUTED[k])
+      );
+      const r = await fetch("/api/content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: item.slug,
+          type: item.type,
+          title: item.title,
+          excerpt: item.excerpt,
+          meta: {},
+          body,
+          status: next,
+        }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const rows = (data || []).map((it) =>
+        it.slug === item.slug ? { ...it, status: next } : it
+      );
+      setData(rows);
+    } catch (err) {
+      setError(`Toggle failed: ${err instanceof Error ? err.message : "unknown"}`);
+    } finally {
+      setBusySlug(null);
+    }
+  };
+
+  const deleteItem = async (item: ContentItem) => {
+    const ok = window.confirm(`Delete /${item.type}/${item.slug}? This is the hard path (unpublishing keeps the row).`);
+    if (!ok) return;
+    setBusySlug(item.slug);
+    setError("");
+    try {
+      const r = await fetch(`/api/content?slug=${encodeURIComponent(item.slug)}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      setData((data || []).filter((it) => it.slug !== item.slug));
+    } catch (err) {
+      setError(`Delete failed: ${err instanceof Error ? err.message : "unknown"}`);
+    } finally {
+      setBusySlug(null);
+    }
   };
 
   return (
@@ -246,11 +309,35 @@ export default function AdminDashboardPage() {
                     <td className="p-md text-right">
                       <div className="flex items-center justify-end gap-sm">
                         <Link
-                          to={`/${baseRoute}/${item.slug}`}
-                          className="px-md py-sm text-xs text-on-surface-muted hover:text-primary font-dm-sans transition-colors"
+                          to={`/admin/${item.type}/${item.slug}/edit`}
+                          className="inline-flex items-center gap-xs px-md py-sm text-xs text-on-surface-muted hover:text-primary font-dm-sans transition-colors border border-border-default hover:border-primary"
+                          title={`Edit ${item.slug}`}
                         >
-                          View
+                          <Pencil className="w-3 h-3" />
+                          Edit
                         </Link>
+                        <button
+                          onClick={() => toggleStatus(item)}
+                          disabled={busySlug === item.slug}
+                          className={`inline-flex items-center gap-xs px-md py-sm text-xs font-dm-sans transition-colors border disabled:opacity-50 ${
+                            item.status === "published"
+                              ? "text-warning border-border-default hover:border-warning"
+                              : "text-success border-border-default hover:border-success"
+                          }`}
+                          title={item.status === "published" ? "Make private" : "Publish"}
+                        >
+                          <Globe className="w-3 h-3" />
+                          {busySlug === item.slug ? "..." : item.status === "published" ? "Unpublish" : "Publish"}
+                        </button>
+                        <button
+                          onClick={() => deleteItem(item)}
+                          disabled={busySlug === item.slug}
+                          className="inline-flex items-center gap-xs px-md py-sm text-xs text-on-surface-muted hover:text-error font-dm-sans transition-colors border border-border-default hover:border-error disabled:opacity-50"
+                          title={`Delete ${item.slug}`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          Delete
+                        </button>
                       </div>
                     </td>
                   </tr>

@@ -30,6 +30,18 @@ export default function AdminNewPage() {
     setSuccess("");
 
     try {
+      // Pages read category/author/date/tags/topics from the spread body
+      // (mapRow flattens body_json at the top level). meta carries only
+      // the featured flag, matching publish-all.ts.
+      const bodyPayload = {
+        ...data.body,
+        category: data.category,
+        author: data.author,
+        date: data.date,
+        tags: data.tags,
+        topics: data.topics,
+      };
+
       const res = await fetch("/api/content", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -38,14 +50,8 @@ export default function AdminNewPage() {
           type: data.type,
           title: data.title,
           excerpt: data.excerpt,
-          meta: {
-            category: data.category,
-            author: data.author,
-            date: data.date,
-            tags: data.tags,
-            topics: data.topics,
-          },
-          body: data.body,
+          meta: {},
+          body: bodyPayload,
           status: data.status,
         }),
       });
