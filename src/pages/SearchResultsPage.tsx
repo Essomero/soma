@@ -29,7 +29,7 @@ export default function SearchResultsPage() {
   const [activeFilter, setActiveFilter] = useState("All Results");
   usePageMeta({ title: query ? `Search: ${query}` : "Search" });
   // Stories + guides come from the server search endpoint, which enforces
-  // published-or-owner visibility : drafts never reach the client.
+  // published-or-owner visibility : private rows never reach the client.
   const [storyResults, setStoryResults] = useState<StoryContent[]>([]);
   const [guideResults, setGuideResults] = useState<GuideContent[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);

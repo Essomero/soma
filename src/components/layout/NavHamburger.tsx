@@ -8,9 +8,11 @@ import Tooltip from "@/components/ui/Tooltip";
 interface NavHamburgerProps {
   /** All nav items shown in the popover (the header shows only a few inline). */
   links: NavItem[];
+  /** When true, show an Admin link at the bottom of the menu. */
+  authed?: boolean;
 }
 
-export default function NavHamburger({ links }: NavHamburgerProps) {
+export default function NavHamburger({ links, authed }: NavHamburgerProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const location = useLocation();
@@ -76,6 +78,14 @@ export default function NavHamburger({ links }: NavHamburgerProps) {
             </Link>
           );
         })}
+        {authed && (
+          <Link
+            to="/admin"
+            className="block px-lg py-sm font-sora text-sm uppercase tracking-widest transition-colors text-on-surface-variant hover:text-on-surface hover:bg-surface-container border-t border-border-default mt-sm pt-sm"
+          >
+            Admin
+          </Link>
+        )}
       </div>
     </div>
   );

@@ -170,7 +170,7 @@ export default function AIDraftPanel({ onDraft, disabled }: AIDraftPanelProps) {
         <div className="flex items-start gap-md p-lg bg-surface-container border border-border-default">
           <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <p className="font-sora text-sm text-on-surface mb-sm">Generating draft...</p>
+            <p className="font-sora text-sm text-on-surface mb-sm">Generating content...</p>
             {partial && (
               <pre className="font-dm-sans text-xs text-on-surface-muted whitespace-pre-wrap line-clamp-6 overflow-hidden">
                 {partial}
@@ -212,7 +212,7 @@ export default function AIDraftPanel({ onDraft, disabled }: AIDraftPanelProps) {
           className="inline-flex items-center gap-sm px-xl py-md bg-primary text-on-primary font-sora text-label-caps uppercase tracking-widest hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Sparkles className="w-4 h-4" />
-          Generate Draft
+          Generate Content
           <ArrowRight className="w-4 h-4" />
         </button>
       )}

@@ -874,7 +874,7 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
           disabled={saving || !title || !slug}
           className="px-xl py-md bg-primary text-on-primary font-sora text-label-caps uppercase tracking-widest hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {saving ? "Saving..." : status === "published" ? "Publish" : "Save Draft"}
+          {saving ? "Saving..." : status === "published" ? "Publish" : "Save Private"}
         </button>
       </div>
     </div>

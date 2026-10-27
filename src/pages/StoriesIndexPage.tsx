@@ -77,7 +77,7 @@ export default function StoriesIndexPage() {
         {sorted.length === 0 ? (
           <div className="py-xxl text-center border border-dashed border-border-default rounded-none">
             <p className="font-dm-sans text-sm text-on-surface-muted mb-md">
-              No stories yet. Publish your first draft to see it here.
+              No stories yet. Publish your first private piece to see it here.
             </p>
           </div>
         ) : (
