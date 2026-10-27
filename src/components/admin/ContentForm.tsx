@@ -910,7 +910,7 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
         </label>
       </div>
 
-      {/* Actions */}
+      {/* Actions: Preview at top, Save at bottom */}
       <div className="flex items-center gap-md">
         <button
           onClick={() => setMode("preview")}
@@ -920,6 +920,10 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
           <Eye className="w-4 h-4" />
           Preview
         </button>
+      </div>
+
+      {/* Save */}
+      <div className="flex items-center gap-md">
         <button
           onClick={handleSave}
           disabled={saving || !title || !slug}
