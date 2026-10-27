@@ -7,6 +7,9 @@ dist
 tsconfig.tsbuildinfo
 venv/
 
+# Local agent sidecar token (regenerated on demand, machine-local)
+.local-agent-token
+
 # Screenshots downloaded by browsers during testing — clean up after use
 .claude/*.png
 drafts/

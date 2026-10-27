@@ -1167,6 +1167,12 @@ export default defineConfig(({ mode }) => {
           target: env.LOCAL_API ? "http://localhost:3001" : "https://soma.mayanja.dev",
           changeOrigin: true,
         },
+        // Local agent sidecar (shell/git/build): only reachable in local dev.
+        // Production never proxies /agent — there is no sidecar on Vercel.
+        "/agent": {
+          target: "http://localhost:8765",
+          changeOrigin: true,
+        },
       },
     },
   };

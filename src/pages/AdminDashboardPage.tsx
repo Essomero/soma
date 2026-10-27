@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Plus, Loader2, Eye, EyeOff, Search, Pencil, Trash2, Globe } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
+import LocalAgentPanel from "@/components/admin/LocalAgentPanel";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { CONTENT_TYPES, CONTENT_TYPE_LABELS, ROUTE_BASE, type ContentType } from "@/lib/admin-prompts";
 
@@ -347,6 +348,10 @@ export default function AdminDashboardPage() {
           </table>
         </div>
       )}
+    {/* Local agent (shell/git/build sidecar — local dev only) */}
+      <div className="mt-xxl space-y-lg">
+        <LocalAgentPanel />
+      </div>
     </div>
   );
 }

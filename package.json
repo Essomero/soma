@@ -13,6 +13,7 @@
     "rss": "npx tsx scripts/generate-rss.ts",
     "preview": "vite preview",
     "server": "node server/api-dev.mjs",
+    "agent": "node server/local-agent.mjs",
     "publish": "npx tsx scripts/publish-content.ts",
     "publish-all": "npx tsx scripts/publish-all.ts",
     "sitemap": "npx tsx scripts/generate-sitemap.ts"
