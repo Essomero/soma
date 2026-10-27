@@ -543,17 +543,6 @@
   margin-top: 20mm;
 }
 
-@page test-exam {
-  size: A4;
-  margin-top: 28mm;
-  margin-bottom: 24mm;
-  margin-left: 20mm;
-  margin-right: 20mm;
-}
-@page test-exam:first {
-  margin-top: 28mm;
-}
-
 /* ── Print Lesson Table (Guaranteed Headers & Footers on Intermediate Pages) ── */
 .print-lesson-table {
   width: 100%;
@@ -848,17 +837,7 @@
     page-break-inside: avoid;
   }
 
-  /* ── Exam Running Header & Footer (@page margin boxes) ──── */
-  .print-exam-body {
-    page: test-exam;
-  }
-  /* .print-exam-header / .print-exam-footer hide if any leftover DOM elements */
-  .print-exam-header,
-  .print-exam-footer {
-    display: none !important;
-  }
-
-  /* ── B/W Print Mode (in-app grayscale) ───────────────────────── */
+  /* ── B/W Print Mode ──────────────────────────────────────────── */
   .print-bw,
   .print-bw * {
     color: #000 !important;
@@ -899,22 +878,19 @@
   }
 }
 
-/* ── Screen print preview: white paper for both Color and B/W ── */
-.print-exam-body {
-  --color-on-surface: 15 23 42 !important;
-  --color-on-surface-muted: 100 116 139 !important;
-  --color-on-surface-variant: 51 65 85 !important;
-  --color-primary: 37 99 235 !important;
-  --color-accent-orange: 217 119 6 !important;
-  --color-border-default: 226 232 240 !important;
-  --color-surface-container-low: 248 250 252 !important;
-  --color-surface-container: 241 245 249 !important;
-  --color-surface: 255 255 255 !important;
-}
-.print-exam-body main {
+/* ── Screen print preview: light theme for both Color and B/W ── */
+.print-preview main {
   background: #fff;
   color: #0f172a;
 }
+.print-preview main .text-on-surface { color: #0f172a !important; }
+.print-preview main .text-primary { color: #2563eb !important; }
+.print-preview main .text-on-surface-muted { color: #64748b !important; }
+.print-preview main .text-on-surface-variant { color: #334155 !important; }
+.print-preview main .bg-surface-container-low { background: #f8fafc !important; }
+.print-preview main .border-border-default { border-color: #e2e8f0 !important; }
+.print-preview main .border-on-surface { border-color: #0f172a !important; }
+.print-preview main .text-gradient { background: none !important; color: #0f172a !important; }
 
 /* ── Screen B/W preview toggle ──────────────────────────── */
 .print-bw main {
