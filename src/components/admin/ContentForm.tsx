@@ -538,6 +538,18 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
 
   return (
     <div className="space-y-xl">
+      {/* Preview — above all fields so clicking it sees content from the top */}
+      <div className="flex items-center gap-md">
+        <button
+          onClick={() => setMode("preview")}
+          disabled={saving || !title}
+          className="inline-flex items-center gap-sm px-xl py-md bg-surface border border-border-default text-on-surface font-sora text-label-caps uppercase tracking-widest hover:border-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <Eye className="w-4 h-4" />
+          Preview
+        </button>
+      </div>
+
       {/* Reasoning / type suggestion from AI */}
       {reasoning && (
         <div className="p-lg bg-surface-container border border-border-default border-l-4 border-l-primary">
@@ -910,19 +922,7 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
         </label>
       </div>
 
-      {/* Actions: Preview at top, Save at bottom */}
-      <div className="flex items-center gap-md">
-        <button
-          onClick={() => setMode("preview")}
-          disabled={saving || !title}
-          className="inline-flex items-center gap-sm px-xl py-md bg-surface border border-border-default text-on-surface font-sora text-label-caps uppercase tracking-widest hover:border-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <Eye className="w-4 h-4" />
-          Preview
-        </button>
-      </div>
-
-      {/* Save */}
+      {/* Save — at the bottom after all fields */}
       <div className="flex items-center gap-md">
         <button
           onClick={handleSave}
