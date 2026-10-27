@@ -37,6 +37,17 @@ function paperTimeSeconds(q: TestQuestion): number {
   return marksFor(q) * TIME_PER_MARK_SECONDS;
 }
 
+/**
+ * Adaptive answer-line count for open questions.
+ * Longer prompts and higher marks expect longer responses:
+ * 2 lines per mark, plus 1 line per 10 words of the prompt, clamped 3-14.
+ */
+function estimateAnswerLines(q: TestQuestion): number {
+  const prompt = (q.question + " " + (q.description ?? "")).trim();
+  const words = prompt.split(/\s+/).filter(Boolean).length;
+  return Math.min(14, Math.max(3, marksFor(q) * 2 + Math.floor(words / 10)));
+}
+
 export default function TestPrintPage() {
   const { slug } = useParams<{ slug: string }>();
   const { data: test, loading } = useContentItem<TestContent>("test", slug);
@@ -237,7 +248,7 @@ export default function TestPrintPage() {
             <div className="space-y-12">
               {test.questions.filter((q): q is OpenTestQuestion => q.type === "open").map((q) => {
                 const qNum = test.questions.indexOf(q) + 1;
-                const lineCount = (q.timeLimitSeconds ?? 120) >= 120 ? 14 : 10;
+                const lineCount = estimateAnswerLines(q);
                 return (
                   <div key={q.id} className="avoid-break">
                     <div className="flex items-start gap-3 mb-3">
