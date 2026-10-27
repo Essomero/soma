@@ -90,7 +90,7 @@ export const p1SchoolAndHomeTest: TestContent = {
         "Uses 'My name is' structure",
         "States their name clearly",
       ],
-      sampleAnswer: "My name is Achieng.",
+      sampleAnswer: "My name is Nakato.",
     },
     {
       id: "q3-boy-or-girl",

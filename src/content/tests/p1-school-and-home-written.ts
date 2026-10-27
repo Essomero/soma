@@ -4,7 +4,7 @@ export const p1SchoolAndHomeWrittenTest: TestContent = {
   slug: "p1-school-and-home-written",
   title: "P1 Written Paper: Our School & Our Home",
   description:
-    "A short written paper for Primary 1 learners. Read the little story about Achieng, then answer the questions. The paper covers people, things, and activities at school and at home.",
+    "A short written paper for Primary 1 learners. Read the little story about Nakato, then answer the questions. The paper covers people, things, and activities at school and at home.",
   category: "P1 Assessment",
   subcategory: "Literacy // Written",
   format: "written",
@@ -24,8 +24,8 @@ export const p1SchoolAndHomeWrittenTest: TestContent = {
     {
       type: "markdown",
       title: "Reading Passage: My School and My Home",
-      description: "A little story about Achieng, her school, and her home.",
-      content: `I am Achieng. I am six years old.
+      description: "A little story about Nakato, her school, and her home.",
+      content: `I am Nakato. I am six years old.
 
 I go to school in the morning. My teacher is Madam Grace.
 
@@ -53,7 +53,7 @@ We sweep the home. I love my school and my home.`,
     {
       id: "q1",
       type: "multiple-choice",
-      question: "How old is Achieng?",
+      question: "How old is Nakato?",
       timeLimitSeconds: 30,
       options: [
         { id: "a", label: "Five" },
@@ -67,7 +67,7 @@ We sweep the home. I love my school and my home.`,
     {
       id: "q2",
       type: "multiple-choice",
-      question: "Who is Achieng's teacher?",
+      question: "Who is Nakato's teacher?",
       timeLimitSeconds: 30,
       options: [
         { id: "a", label: "Madam Grace" },
@@ -81,7 +81,7 @@ We sweep the home. I love my school and my home.`,
     {
       id: "q3",
       type: "multiple-choice",
-      question: "What does Achieng do at school?",
+      question: "What does Nakato do at school?",
       timeLimitSeconds: 30,
       options: [
         { id: "a", label: "She reads and writes." },
@@ -95,7 +95,7 @@ We sweep the home. I love my school and my home.`,
     {
       id: "q4",
       type: "multiple-choice",
-      question: "Who does Achieng help at home?",
+      question: "Who does Nakato help at home?",
       timeLimitSeconds: 30,
       options: [
         { id: "a", label: "Her father" },
@@ -109,7 +109,7 @@ We sweep the home. I love my school and my home.`,
     {
       id: "q5",
       type: "multiple-choice",
-      question: "Achieng goes to ______ in the morning.",
+      question: "Nakato goes to ______ in the morning.",
       timeLimitSeconds: 30,
       options: [
         { id: "a", label: "school" },
@@ -134,7 +134,7 @@ We sweep the home. I love my school and my home.`,
         "Writes their own name",
         "Letters are recognisable",
       ],
-      sampleAnswer: "Achieng.",
+      sampleAnswer: "Nakato.",
     },
     {
       id: "q7",
