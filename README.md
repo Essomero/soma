@@ -66,11 +66,14 @@ Soma is written in the **Grokking Algorithms tone**:
 
 ## Core Capabilities
 
-### 1. Agent-Powered Content & Architecture (Ships with Bundled Skills)
-Soma is designed from the ground up to collaborate with AI coding agents. The repository ships with two dedicated agent skills:
-- **Content Skill (`.claude/skills/soma`, `.agents/skills/soma`, `SOMA_SKILL.md`)**: Instructs any AI agent (Claude Code, Cursor, Windsurf, Cline, Aider, omp) to draft, type-check, and publish courses, stories, guides, books, and diagnostic tests in the *Grokking Algorithms* voice.
-- **Opinionation Skill (`.claude/skills/opinionation`, `.agents/skills/opinionation`, `OPINIONATION_SKILL.md`)**: Enforces minimal dependencies, explicit prerequisites, automated install setup, and self-contained README standards across code and companion labs.
-
+### 1. Author, Create & Edit Content In-App (or with Agents)
+Soma ships a full content studio at **`/admin`** (owner login required). Every content type can be created and edited directly in the browser: stories, guides, docs, featured articles, courses, books, series, tests, and podcast episodes.
+- **Type-aware forms**: Each type gets its own field set (intro, body, sections, pull quotes, bento highlights, tip cards, lessons/chapters/episodes, doc sections, test sources and questions, podcast segments and guests).
+- **Every block mapped**: The block editor handles all 12 content block types — paragraph, image, horizontal rule, video callout, callout, code, math (KaTeX), Mermaid, YouTube, chart, 3D scene, and lab — plus free-form JSON editing for the complex ones.
+- **Edit / Preview / Save**: Switch between editing and a live page preview, then save as private or publish in one click. Cancel returns you to wherever you came from.
+- **Agent-Powered Publishing**: The repository ships two dedicated agent skills:
+  - **Content Skill (`.claude/skills/soma`, `.agents/skills/soma`, `SOMA_SKILL.md`)**: Instructs any AI agent (Claude Code, Cursor, Windsurf, Cline, Aider, omp) to draft, type-check, and publish courses, stories, guides, books, and diagnostic tests in the *Grokking Algorithms* voice.
+  - **Opinionation Skill (`.claude/skills/opinionation`, `.agents/skills/opinionation`, `OPINIONATION_SKILL.md`)**: Enforces minimal dependencies, explicit prerequisites, automated install setup, and self-contained README standards across code and companion labs.
 - **Zero-friction publishing pipeline**: Ask your agent: *"Write a 4-lesson guide on WebSockets with companion drills."* The agent creates typed TypeScript schema files under `src/content/`, links companion lab folders, verifies `npm run build`, and your git push deploys it to the world. Got an existing book, essay, or leisure read? Ask the agent to convert it: any markdown-style source becomes a Soma page.
 ### 2. Think on Paper, but Digital
 - **Tactile typography**: Built with Sora (display), DM Sans (body), and KaTeX (mathematics) with wide reading margins.
@@ -89,7 +92,7 @@ Soma is designed from the ground up to collaborate with AI coding agents. The re
 - **Son is optional and independent**: Soma works fully without it. When Son is unreachable at `http://localhost:7860`, tests fall back to silent text mode. Son itself runs standalone and never needs Soma.
 
 ### 5. Your Library, Anywhere
-- **Private notebook (`/learn`)**: A distraction-free markdown studio with instant KaTeX math, tables, callouts, and Mermaid diagrams. Draft notes, import books, or keep leisure reads. Accessible on mobile, tablet, or desktop.
+- **Private notebook (`/learn`)**: A distraction-free markdown studio with instant KaTeX math, tables, callouts, and Mermaid diagrams. Draft notes, import books, or keep leisure reads. Accessible on mobile, tablet, or desktop. For full typed content (stories, guides, courses, tests, podcasts), use the `/admin` studio instead.
 - **In your own infrastructure**: Powered by Vercel Serverless Functions and Turso (libSQL / edge SQLite). 100% sovereign data. Free tier forever, zero telemetry, and zero tracking scripts.
 - **Make public what you wish**: Private by default behind your site password. A single click on the margin lock/globe toggle publishes any note, book, story, or entire course to the public web.
 
@@ -157,6 +160,17 @@ When we ship fixes, open your fork on GitHub. If it shows "This branch is behind
 One habit keeps merges clean forever: published manuscripts get archived as new files under `src/content/` with new slugs — never edit the seed files in place. Everything you write in `/learn` or publish as private is already safe in your database either way.
 
 ---
+
+## How to Create and Edit Content In-App
+
+No terminal required. Log in as owner and open **`/admin`**:
+
+1. **Create**: Hit "New" in the top bar, pick a content type (story, guide, course, book, series, doc, featured, test, podcast), and fill the type-aware form. Complex structures have dedicated editors: sections get the full block editor, courses/books/series get lesson/chapter/episode editors, tests get a source and question editor, docs get section/Q&A editors.
+2. **Preview before saving**: Switch to Preview to see the page as readers will, then save from preview directly — no need to go back through edit mode.
+3. **Edit existing content**: Any published or private row in `/admin` opens for editing. Public pages also show an owner-only **Edit** button when you're logged in.
+4. **Save as Private or Publish**: Private rows are visible only to you behind the site password. Flip to published to make the row public instantly — no rebuild, no redeploy. Cancel returns you to the page you came from.
+
+From any content page, the same flow is one click away: an owner-only Edit button (and Print Edition link) appears in the page actions when you are logged in.
 
 ## How AI Agents Generate and Publish Content
 
