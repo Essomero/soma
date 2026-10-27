@@ -869,11 +869,29 @@
     background: none !important;
     color: #000 !important;
   }
+  .print-bw .bg-error\/40,
+  .print-bw .bg-accent-orange\/40,
+  .print-bw .bg-secondary\/40 {
+    display: none !important;
+  }
   .print-bw .print-passage .hljs-keyword,
   .print-bw .print-passage .hljs-string,
   .print-bw .print-passage .hljs-number,
   .print-bw .print-passage .hljs-comment,
-  .print-bw .print-passage .hljs-function {
+  .print-bw .print-passage .hljs-function,
+  .print-bw .print-passage .hljs-literal,
+  .print-bw .print-passage .hljs-built_in,
+  .print-bw .print-passage .hljs-type,
+  .print-bw .print-passage .hljs-title,
+  .print-bw .print-passage .hljs-title\.class_,
+  .print-bw .print-passage .hljs-attr,
+  .print-bw .print-passage .hljs-selector-class,
+  .print-bw .print-passage .hljs-selector-tag,
+  .print-bw .print-passage .hljs-section,
+  .print-bw .print-passage .hljs-quote,
+  .print-bw .print-passage .hljs-variable,
+  .print-bw .print-passage .hljs-addition,
+  .print-bw .print-passage .hljs-deletion {
     color: #000 !important;
   }
 }
@@ -892,7 +910,7 @@
 .print-preview main .border-on-surface { border-color: #0f172a !important; }
 .print-preview main .text-gradient { background: none !important; color: #0f172a !important; }
 
-/* ── Screen B/W preview toggle ──────────────────────────── */
+/* ── Screen B/W preview toggle ─────���────────────────────── */
 .print-bw main {
   background: #fff !important;
 }
@@ -900,10 +918,39 @@
 .print-bw main * {
   color: #000 !important;
 }
+.print-bw main .text-primary {
+  color: #000 !important;
+}
 .print-bw main pre,
 .print-bw main code {
   background: #f5f5f5 !important;
   border-color: #ccc !important;
+}
+.print-bw main .bg-error\/40,
+.print-bw main .bg-accent-orange\/40,
+.print-bw main .bg-secondary\/40 {
+  display: none !important;
+}
+.print-bw main .hljs-keyword,
+.print-bw main .hljs-string,
+.print-bw main .hljs-number,
+.print-bw main .hljs-literal,
+.print-bw main .hljs-built_in,
+.print-bw main .hljs-type,
+.print-bw main .hljs-title,
+.print-bw main .hljs-title\.class_,
+.print-bw main .hljs-title\.function_,
+.print-bw main .hljs-attr,
+.print-bw main .hljs-selector-class,
+.print-bw main .hljs-selector-tag,
+.print-bw main .hljs-section,
+.print-bw main .hljs-function,
+.print-bw main .hljs-comment,
+.print-bw main .hljs-quote,
+.print-bw main .hljs-variable,
+.print-bw main .hljs-addition,
+.print-bw main .hljs-deletion {
+  color: #000 !important;
 }
 .print-bw main img,
 .print-bw main svg {
