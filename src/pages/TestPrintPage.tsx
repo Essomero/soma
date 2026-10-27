@@ -39,13 +39,18 @@ function paperTimeSeconds(q: TestQuestion): number {
 
 /**
  * Adaptive answer-line count for open questions.
- * Longer prompts and higher marks expect longer responses:
- * 2 lines per mark, plus 1 line per 10 words of the prompt, clamped 3-14.
+ * Inferred from the expected answer length (sample answer words,
+ * ~8 words per handwriting line), never from the prompt length - a
+ * long prompt can need a one-word answer (e.g. "write your name").
+ * Falls back to marks (2 lines per mark) when no sample answer is
+ * given. Clamped 1-14.
  */
-function estimateAnswerLines(q: TestQuestion): number {
-  const prompt = (q.question + " " + (q.description ?? "")).trim();
-  const words = prompt.split(/\s+/).filter(Boolean).length;
-  return Math.min(14, Math.max(3, marksFor(q) * 2 + Math.floor(words / 10)));
+function estimateAnswerLines(q: OpenTestQuestion): number {
+  const answerWords = (q.sampleAnswer ?? "").split(/\s+/).filter(Boolean).length;
+  if (answerWords > 0) {
+    return Math.min(14, Math.max(1, Math.ceil(answerWords / 8)));
+  }
+  return Math.min(14, Math.max(1, marksFor(q) * 2));
 }
 
 export default function TestPrintPage() {
