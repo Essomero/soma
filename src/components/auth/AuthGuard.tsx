@@ -14,7 +14,7 @@ function slugFromPath(pathname: string): string {
     /^\/(stories|series|courses|learn|docs|guides|podcast|featured)\/([^/]+)\/print$/
   );
   if (printMatch) return printMatch[2];
-  // Article pages: a slug with a public_pages row reads without the cookie.
+  // Article pages: a slug with status=published reads without the cookie.
   // Index, editor, and print-index paths never match, so they stay login-gated.
   const pageMatch = pathname.match(
     /^\/(stories|series|courses|learn|docs|guides|podcast|featured)\/([^/]+)$/

@@ -857,7 +857,7 @@ The dark editorial theme uses these Tailwind classes:
 4. **Validation lives in `npm run publish`** (schema, slug uniqueness, cross-references). `npm run build` must still pass, but it only type-checks app code now — content ships through the store, not the bundle.
 5. **Slugs must be unique** across all content types.
 6. **Images must use verified Unsplash numeric IDs** (never Picsum seeds or guessed IDs). If stuck, reuse a known working ID.
-7. **Never touch `src/content/` aggregators or seed files.** The `index.ts` files and seed corpus are read-only (`npm run seed` owns them). The only file you add under `src/content/` is the archive copy of a *published* manuscript, with owner approval.
+7. **Never touch `src/content/` aggregators or seed files.** The `index.ts` files and seed corpus are read-only (`npm run publish-all` owns them). The only file you add under `src/content/` is the archive copy of a *published* manuscript, with owner approval.
 8. **Use the existing components** (don't create new ones unless the design requires it).
 9. **Match the tone: plain, direct, concrete (Grokking Algorithms voice).** Rule 17 in `CLAUDE.md` / `AGENTS.md` is mandatory across ALL content types (guides, stories, featured, courses, docs):
    - **Audience and posture:** You are not writing to sound smart, and you are not writing for elite graduates or an academic club. You are writing for the curious mind that is still meek yet capable. Meet the reader where they are with complete respect. Never talk down to them; never patronize.

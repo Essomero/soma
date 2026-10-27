@@ -62,39 +62,32 @@ async function query(sql, args) {
 
 export default async function handler(req, res) {
   try {
-    // Ensure the table exists (self-healing : no manual migration needed)
-    await query("CREATE TABLE IF NOT EXISTS public_pages (slug TEXT PRIMARY KEY, public INTEGER NOT NULL DEFAULT 0, set_at TEXT)", []);
-
-    // GET /api/public?slug=... : check if a slug is public
+    // GET /api/public?slug=... : check if a slug is visible to the public.
+    // Reads content_items.status directly — the single visibility gate.
     if (req.method === "GET") {
       const slug = req.query.slug;
       if (!slug) return res.status(400).json({ error: "Missing slug param" });
 
-      const rows = await query("SELECT \"public\" FROM public_pages WHERE slug = ?", [slug]);
-      // Turso returns INTEGER columns as strings : use == not ===
-      const isPublic = rows.length > 0 && rows[0].public == 1;
+      const rows = await query("SELECT status FROM content_items WHERE slug = ?", [slug]);
+      const isPublic = rows.length > 0 && rows[0].status === "published";
       return res.json({ public: isPublic });
     }
 
-    // POST /api/public : set public state for one or more slugs (owner only).
-    // GET stays open: AuthGuard calls it to decide whether a slug renders.
+    // POST /api/public : set public/private state for one or more slugs (owner only).
+    // Updates content_items.status directly.
     if (req.method === "POST") {
       if (!requireAuth(req, res)) return;
       const { slugs, public: isPublic } = req.body || {};
       const slugList = slugs || (req.body.slug ? [req.body.slug] : []);
       if (!slugList.length) return res.status(400).json({ error: "Missing slugs" });
       const now = new Date().toISOString();
-      const val = isPublic ? 1 : 0;
+      const newStatus = isPublic ? "published" : "private";
 
       for (const slug of slugList) {
         await query(
-          "INSERT INTO public_pages (slug, \"public\", set_at) VALUES (?, ?, ?) ON CONFLICT(slug) DO UPDATE SET \"public\" = excluded.\"public\", set_at = excluded.set_at",
-          [slug, val, now]
+          "UPDATE content_items SET status = ?, updated_at = ? WHERE slug = ?",
+          [newStatus, now, slug]
         );
-        // Content rows carry their own status column (read by /api/content);
-        // the toggle writes both stores so route gate and data gate agree.
-        // No content_items table yet (fresh DB, learn-only notes) → no-op.
-        await query("UPDATE content_items SET status = ?, updated_at = ? WHERE slug = ?", [isPublic ? "published" : "private", now, slug]);
       }
 
       return res.json({ success: true });

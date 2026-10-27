@@ -35,109 +35,8 @@ const ROUTE_BASE = {
 
 const STATUSES = new Set(["private", "published"]);
 
-// Runtime self-heal: the seed corpus is the always-present baseline. Any
-// seed slug missing from the store is inserted on first read (private unless
-// public_pages says public). One redeploy picks this up; after that no CLI
-// or rebuild is ever needed.
-const CREATE_PUBLIC_PAGES = `CREATE TABLE IF NOT EXISTS public_pages (slug TEXT PRIMARY KEY, "public" INTEGER NOT NULL DEFAULT 0, set_at TEXT)`;
-
-function toArg(a) {
-  if (a === null || a === undefined) return { type: "null" };
-  if (typeof a === "number") return { type: "integer", value: String(a) };
-  return { type: "text", value: String(a) };
-}
-
-async function pipeline(requests) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20000);
-  try {
-    const r = await fetch(DB_URL + "/v2/pipeline", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
-      body: JSON.stringify({ requests }),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-    if (!r.ok) return null;
-    return await r.json();
-  } catch {
-    clearTimeout(timeout);
-    return null;
-  }
-}
-
-function rowsOf(data, i) {
-  try {
-    const result = data.results[i].response.result;
-    const cols = (result.cols || []).map(function(c) { return c.name || c; });
-    return (result.rows || []).map(function(row) {
-      const obj = {};
-      cols.forEach(function(c, j) {
-        const cell = row[j];
-        obj[c] = (cell && typeof cell === "object") ? (cell.type === "null" ? null : (cell.value !== undefined ? cell.value : null)) : cell;
-      });
-      return obj;
-    });
-  } catch {
-    return [];
-  }
-}
-
-async function loadCorpusRows() {
-  try {
-    const mod = await import("./_corpus.js");
-    const raw = typeof mod.CORPUS_JSON === "string" ? JSON.parse(mod.CORPUS_JSON) : [];
-    return Array.isArray(raw) ? raw : [];
-  } catch {
-    return [];
-  }
-}
-
-// Baseline sync: the seed corpus is the always-present baseline. Any seed
-// slug missing from the store is inserted (private unless public_pages says
-// otherwise). Runs once per cold start, before any GET below, so fresh,
-// pre-seed, and partially-seeded databases all converge with no CLI step
-// and no rebuild. INSERT OR IGNORE keeps concurrent requests from doubling.
-// Deliberately deleted seed rows come back as private on next cold start.
-let baselinePromise = null;
-function ensureSeedBaseline() {
-  if (!baselinePromise) baselinePromise = syncSeedBaseline().catch(() => {});
-  return baselinePromise;
-}
-
-async function syncSeedBaseline() {
-  const check = await pipeline([
-    { type: "execute", stmt: { sql: CREATE_TABLE } },
-    { type: "execute", stmt: { sql: CREATE_PUBLIC_PAGES } },
-    { type: "execute", stmt: { sql: "SELECT slug FROM content_items", args: [] } },
-  ]);
-  if (!check) return;
-  const have = new Set(rowsOf(check, 2).map((r) => r.slug));
-  const corpus = await loadCorpusRows();
-  if (!corpus.length) {
-    console.warn("content baseline: no bundled corpus snapshot, skipping");
-    return;
-  }
-  const missing = corpus.filter((e) => e && typeof e.slug === "string" && !have.has(e.slug));
-  if (!missing.length) return;
-  const vis = await pipeline([
-    { type: "execute", stmt: { sql: 'SELECT slug FROM public_pages WHERE "public" = 1', args: [] } },
-  ]);
-  const publicSlugs = new Set(rowsOf(vis || { results: [] }, 0).map((r) => r.slug));
-  const now = new Date().toISOString();
-  const inserts = [];
-  for (const e of missing) {
-    const published = publicSlugs.has(e.slug);
-    inserts.push(
-      { type: "execute", stmt: { sql: `INSERT OR IGNORE INTO content_items (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, args: [e.slug, e.type || "story", published ? "published" : "private", e.title || "", e.excerpt || "", JSON.stringify(e.body || {}), JSON.stringify(e.meta || {}), Number(e.position) || 0, now].map(toArg) } },
-      { type: "execute", stmt: { sql: `INSERT OR IGNORE INTO public_pages (slug, "public", set_at) VALUES (?, ?, ?)`, args: [e.slug, published ? 1 : 0, now].map(toArg) } },
-    );
-  }
-  for (let i = 0; i < inserts.length; i += 40) {
-    await pipeline(inserts.slice(i, i + 40));
-  }
-  console.log(`content baseline: seeded ${missing.length} missing rows`);
-}
+// No baseline sync: content is published deliberately via npm run publish-all
+// or the studio UI. The database is the only source the GET path reads.
 
 async function query(sql, args) {
   args = args || [];
@@ -228,11 +127,6 @@ function mapRow(r) {
 
 export default async function handler(req, res) {
   try {
-    // Baseline first: missing seed rows are backfilled before any read,
-    // so partially-seeded and pre-seed databases converge with no action.
-    // Once per cold start; later GETs reuse the settled promise.
-    if (req.method === "GET") await ensureSeedBaseline();
-
     // GET ?slug= : single item. Unauthenticated callers see it only when published.
     // When ?type= is also given, the row must match it (slugs are unique per
     // type, not globally).

@@ -3,8 +3,7 @@ import { requireAuth } from "./_auth.js";
 // GET /api/diag — owner-only deployment health check.
 // Returns booleans and counts only; secret values never leave the server.
 // Use it when a deployment shows no content: it tells you whether the
-// database is reachable, what the store holds, and whether the bundled
-// seed corpus made it into the function bundle.
+// database is reachable and what the store holds.
 const DB_URL = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").replace("libsql://", "https://");
 const TOKEN = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "";
 
@@ -49,7 +48,6 @@ export default async function handler(req, res) {
     },
     db: { reachable: false, latencyMs: null },
     store: {},
-    corpus: { bundled: false, rows: 0 },
   };
 
   const ping = await run("SELECT 1 AS one", []);
@@ -67,19 +65,8 @@ export default async function handler(req, res) {
   } else {
     report.store.content_items = "missing-or-unreadable";
   }
-  const pub = await run('SELECT COUNT(*) AS n FROM public_pages WHERE "public" = 1', []);
-  if (pub.ok) report.store.publicPages = Number(pub.rows[0] && pub.rows[0].n);
   const learn = await run("SELECT COUNT(*) AS n FROM learn_articles", []);
   if (learn.ok) report.store.learnArticles = Number(learn.rows[0] && learn.rows[0].n);
-
-  try {
-    const mod = await import("./_corpus.js");
-    const rows = JSON.parse(mod.CORPUS_JSON);
-    report.corpus.bundled = true;
-    report.corpus.rows = Array.isArray(rows) ? rows.length : 0;
-  } catch {
-    report.corpus.bundled = false;
-  }
 
   return res.json(report);
 }

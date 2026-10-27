@@ -9,7 +9,6 @@ venv/
 
 # Screenshots downloaded by browsers during testing — clean up after use
 .claude/*.png
-api/_corpus.js
 drafts/
 graphify-out/cache/
 
