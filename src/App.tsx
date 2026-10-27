@@ -29,6 +29,8 @@ import TestsIndexPage from "@/pages/TestsIndexPage";
 import TestPage from "@/pages/TestPage";
 import CollectionPrintPage from "@/pages/CollectionPrintPage";
 import SinglePrintPage from "@/pages/SinglePrintPage";
+import AdminDashboardPage from "@/pages/AdminDashboardPage";
+import AdminNewPage from "@/pages/AdminNewPage";
 import AuthGuard from "@/components/auth/AuthGuard";
 const router = createBrowserRouter([
   {
@@ -195,6 +197,16 @@ const router = createBrowserRouter([
       {
         path: "archive",
         element: <ArchivePage />,
+      },
+
+      // Admin (content management)
+      {
+        path: "admin",
+        element: <AdminDashboardPage />,
+      },
+      {
+        path: "admin/new",
+        element: <AdminNewPage />,
       },
 
       // Learn (user-authored notes: index login-gated; article public if toggled)
