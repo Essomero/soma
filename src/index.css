@@ -543,6 +543,17 @@
   margin-top: 20mm;
 }
 
+@page test-exam {
+  size: A4;
+  margin-top: 28mm;
+  margin-bottom: 24mm;
+  margin-left: 20mm;
+  margin-right: 20mm;
+}
+@page test-exam:first {
+  margin-top: 28mm;
+}
+
 /* ── Print Lesson Table (Guaranteed Headers & Footers on Intermediate Pages) ── */
 .print-lesson-table {
   width: 100%;
@@ -741,8 +752,8 @@
 
   /* Code block wrapping and border for paper */
   pre {
-    border: 1px solid #cbd5e1 !important;
-    background-color: #f8fafc !important;
+    border: none !important;
+    background-color: #f1f5f9 !important;
     white-space: pre-wrap !important;
     word-break: break-all !important;
     overflow-x: visible !important;
@@ -761,4 +772,186 @@
   a[href^="http"]::after {
     content: "" !important;
   }
+
+  /* ── Print Exam / Test Paper ──────────────────────────────────── */
+  .print-passage h1,
+  .print-passage h2,
+  .print-passage h3,
+  .print-passage h4 {
+    color: #0f172a !important;
+    break-after: avoid;
+  }
+  .print-passage p,
+  .print-passage li {
+    orphans: 3;
+    widows: 3;
+  }
+  .print-passage code {
+    font-size: 8.5pt !important;
+    background: #f1f5f9 !important;
+    padding: 0 3px !important;
+    border-radius: 2px !important;
+  }
+  .print-passage pre {
+    font-size: 8pt !important;
+    background: #f1f5f9 !important;
+    border: none !important;
+    padding: 8px !important;
+    border-radius: 0 !important;
+  }
+  .print-passage pre code {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    font-size: 8pt !important;
+    color: #1e293b !important;
+  }
+  /* Syntax highlighting for print: dark enough to read on white */
+  .print-passage .hljs-keyword,
+  .print-passage .hljs-selector-tag,
+  .print-passage .hljs-built_in,
+  .print-passage .hljs-type,
+  .print-passage .hljs-literal {
+    color: #b91c1c !important;
+    font-weight: 600 !important;
+  }
+  .print-passage .hljs-string,
+  .print-passage .hljs-title,
+  .print-passage .hljs-section,
+  .print-passage .hljs-attribute,
+  .print-passage .hljs-addition {
+    color: #166534 !important;
+  }
+  .print-passage .hljs-number,
+  .print-passage .hljs-selector-id {
+    color: #1d4ed8 !important;
+  }
+  .print-passage .hljs-comment,
+  .print-passage .hljs-quote {
+    color: #64748b !important;
+    font-style: italic !important;
+  }
+  .print-passage .hljs-function,
+  .print-passage .hljs-title.class_ {
+    color: #7c3aed !important;
+  }
+  .print-passage .hljs-attr,
+  .print-passage .hljs-variable {
+    color: #0369a1 !important;
+  }
+  .print-passage .hljs-selector-class,
+  .print-passage .hljs-selector-pseudo {
+    color: #b45309 !important;
+  }
+  .avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* ── Exam Running Header & Footer ────────────────────────────── */
+  .print-exam-body {
+    page: test-exam;
+  }
+  .print-exam-header-cell {
+    padding: 0 !important;
+    height: 22mm !important;
+    vertical-align: top !important;
+    box-sizing: border-box !important;
+  }
+  .print-exam-running-header {
+    height: 11mm !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-end !important;
+    padding-bottom: 3mm !important;
+    border-bottom: 1.5px solid #94a3b8 !important;
+    margin-bottom: 10mm !important;
+  }
+  .print-exam-footer-cell {
+    padding: 0 !important;
+    height: 16mm !important;
+    vertical-align: bottom !important;
+    box-sizing: border-box !important;
+  }
+  .print-exam-running-footer {
+    height: 8mm !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    padding-top: 2.5mm !important;
+    border-top: 1px solid #cbd5e1 !important;
+    margin-top: 7mm !important;
+  }
+  .print-exam-page-counter::before {
+    content: "Page " counter(page) " / " counter(pages);
+  }
+
+  /* ── B/W Print Mode (in-app grayscale) ───────────────────────── */
+  .print-bw,
+  .print-bw * {
+    color: #000 !important;
+  }
+  .print-bw .text-primary,
+  .print-bw .text-accent-orange,
+  .print-bw .text-brand-green,
+  .print-bw .text-secondary,
+  .print-bw .text-error {
+    color: #000 !important;
+  }
+  .print-bw .text-on-surface-muted,
+  .print-bw .text-on-surface-variant,
+  .print-bw .text-on-surface-muted\/60 {
+    color: #333 !important;
+  }
+  .print-bw img {
+    display: none !important;
+  }
+  .print-bw .border-primary,
+  .print-bw .border-accent-orange,
+  .print-bw .border-error,
+  .print-bw .border-secondary,
+  .print-bw .border-brand-green {
+    border-color: #ccc !important;
+  }
+  .print-bw .bg-primary,
+  .print-bw .bg-primary\/10,
+  .print-bw .bg-primary\/20,
+  .print-bw .bg-accent-orange\/10,
+  .print-bw .bg-accent-orange\/15,
+  .print-bw .bg-accent-orange\/20,
+  .print-bw .bg-error\/10,
+  .print-bw .bg-secondary\/15,
+  .print-bw .bg-brand-green\/10 {
+    background-color: #eee !important;
+  }
+  .print-bw .bg-surface,
+  .print-bw .bg-surface-container,
+  .print-bw .bg-surface-container-low,
+  .print-bw .bg-surface-container-highest {
+    background-color: #fff !important;
+  }
+  .print-bw .text-gradient {
+    background: none !important;
+    color: #000 !important;
+  }
+  /* Syntax highlighting in B/W mode */
+  .print-bw .print-passage .hljs-keyword,
+  .print-bw .print-passage .hljs-selector-tag,
+  .print-bw .print-passage .hljs-built_in,
+  .print-bw .print-passage .hljs-type,
+  .print-bw .print-passage .hljs-literal,
+  .print-bw .print-passage .hljs-string,
+  .print-bw .print-passage .hljs-title,
+  .print-bw .print-passage .hljs-number,
+  .print-bw .print-passage .hljs-comment,
+  .print-bw .print-passage .hljs-function,
+  .print-bw .print-passage .hljs-attr,
+  .print-bw .print-passage .hljs-selector-class {
+    color: #000 !important;
+  }
+}
+
+/* ── Screen B/W preview toggle ──────────────────────────── */
+.print-bw {
+  filter: grayscale(100%);
 }
