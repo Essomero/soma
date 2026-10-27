@@ -2,259 +2,319 @@ import type { TestContent } from "@/types";
 
 export const p1SchoolAndHomeTest: TestContent = {
   slug: "p1-school-and-home",
-  title: "Paper 1: School and Home",
+  title: "P1 Oral Exercise: Our School & Our Home",
   description:
-    "A written examination on the relationship between formal schooling and home-based learning. Answer all questions on the printed paper within the time allowed.",
-  category: "Education",
-  subcategory: "Foundations of Learning",
-  format: "written",
-  image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1200&h=675&fit=crop",
-  imageAlt: "Stack of books on a wooden desk beside a window with natural light",
+    "A friendly oral exercise for Primary 1 learners covering people, things, and activities at school and at home. Built from the Uganda National Primary Curriculum (Themes 1 and 2).",
+  category: "P1 Assessment",
+  subcategory: "Literacy & Numeracy // Oral",
+  format: "oral",
+  oralConfig: {
+    voice: "am_michael",
+    provider: "kokoro",
+    examinerName: "Teacher Michael",
+    examinerTitle: "Primary 1 Examiner",
+    welcomeMessage:
+      "Hello! I am Teacher Michael. Welcome to your P1 exercise. I am going to ask you some questions about school and home. Listen carefully to each question, and then tell me your answer. You can take your time. There are no wrong answers, only chances to show what you know. Are you ready? Let us begin!",
+  },
+  image: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=1200&h=675&fit=crop",
+  imageAlt: "A bright primary school classroom with wooden desks and a chalkboard",
   author: {
-    name: "Benjamin Mayanja",
-    handle: "@Essomero",
+    name: "Teacher Michael",
+    handle: "@teacher-michael",
   },
   date: "October 2026",
-  tags: ["Education", "School", "Home Learning", "Pedagogy", "Reading Comprehension"],
-  topics: ["philosophy"],
-  storySlug: "prophet-3-on-children",
-  estimatedMinutes: 45,
-  defaultTimeLimitSeconds: 60,
+  tags: ["P1", "Primary School", "Uganda", "Oral Assessment", "Literacy", "Numeracy", "Life Skills"],
+  topics: ["education"],
+  estimatedMinutes: 15,
+  defaultTimeLimitSeconds: 45,
   passingScore: 70,
   sources: [
     {
-      type: "story",
-      storySlug: "prophet-3-on-children",
-      title: "On Children",
-      description: "Kahlil Gibran's prose poem on the relationship between parent and child, and what it means to raise a learner.",
+      type: "markdown",
+      title: "P1 Curriculum Reference: Themes 1 & 2",
+      content: `# P1 Thematic Curriculum: Our School & Our Home
+
+## Theme 1: Our School
+**Sub-themes:**
+1.1 People in Our School — Titles and names (Sir, Madam, Teacher, Nurse, Mr., Miss)
+1.2 Things in Our School — Buildings, classroom objects, play objects, sign posts
+1.3 Activities in Our School — Sweeping, gardening, reading, writing, playing, praying, cleaning, teaching, learning
+
+**Key Mathematics Competences:** Sorting, comparing, matching, counting 1-5, adding 1 more
+**Key Literacy Competences:** Naming, identifying, describing pictures, listening to stories, reciting rhymes, role-playing greetings
+**Key English Competences:** Greetings, naming people by title, "What's your name?", "My name is ...", "I am a boy/girl"
+
+## Theme 2: Our Home
+**Sub-themes:**
+2.1 People in Our Home — Father, mother, children (nuclear family)
+2.2 Roles/Responsibilities — Cooking, cleaning, milking, washing, pounding, grinding, digging, peeling, sweeping
+2.3 Things Found in Our Home and Their Uses — Objects, rooms, animals, birds, plants
+
+**Key Mathematics Competences:** Forming sets, comparing (bigger/smaller), counting 1-10, adding up to 5, measuring height, number symbols 1-5
+**Key Literacy Competences:** Listening to stories, naming, grouping, reciting rhymes, matching, sequencing, scribbling, tracing, drawing
+**Key English Competences:** "This is my ...", "Show me a ...", "What is this/that?"`,
     },
     {
-      type: "markdown",
-      title: "Reading Passage: The School at Home",
-      description: "A passage on the evolving boundary between formal schooling and home-based learning.",
-      content: `### The School at Home
-
-The boundary between school and home has never been a wall. It is a garden gate.
-
-For most of history, the home was the first classroom. Children learned language at the kitchen table, numbers from the market, and craft from parents who worked beside them. School, when it arrived, was a supplement not a replacement. It taught what the home could not: history from a stranger, chemistry in a shared lab, the discipline of a fixed schedule among peers.
-
-In the past century, that relationship inverted. School became primary. Home became the place where homework happened and report cards were signed. Parents were cast as assistants to the school's curriculum, not partners in a shared project. The garden gate became a delivery window.
-
-A growing body of evidence suggests this inversion was a mistake. Children whose home environment actively reinforces what school teaches retain information longer, develop stronger metacognitive habits, and report higher academic confidence. The mechanism is not tutoring or enrichment. It is the signal that learning does not switch off at the school gate. When a child sees a parent read for pleasure, discuss ideas, or admit ignorance and look up an answer, the child internalizes that school is not the source of knowledge but one room in a larger house.
-
-The effective home does not mirror the school. It complements it. School provides sequence and standards; home provides depth and permission to wander. A child who studies the water cycle at school and then helps fix a leaky faucet at home does not learn the water cycle twice. They learn that the water cycle has a shape beyond the textbook diagram.
-
-This is hard for parents who were raised on the inverted model. They feel underqualified to teach and overeager to outsource. But the home's job is not to teach. It is to make learning visible as a normal, unfinished, adult activity. That requires no lesson plan. It requires only that the adult does not hide their own confusion.
-
-The garden gate swings both ways. What a child learns at home determines whether what they learn at school takes root.`,
-    },
-    {
-      type: "markdown",
-      title: "Key Vocabulary",
-      description: "Terms used in the examination passage.",
-      content: `**metacognitive:** awareness and understanding of one's own thought processes.
-**pedagogy:** the method and practice of teaching.
-**inversion:** a reversal of normal order or position.
-**supplement:** something added to complete or enhance.
-**internalize:** to make an attitude or behaviour part of one's nature.`,
+      type: "link",
+      title: "Uganda National Primary Curriculum — P1",
+      url: "https://www.ncdc.go.ug",
+      description: "Official curriculum from the National Curriculum Development Centre",
     },
   ],
-
   questions: [
+    // ── SECTION 1: PEOPLE AT SCHOOL ────────────────────
     {
-      id: "q1",
-      type: "multiple-choice",
-      question:
-        "According to the passage, what was the historical relationship between school and home?",
+      id: "q1-greeting",
+      type: "open",
       timeLimitSeconds: 30,
+      question:
+        "Good morning! How do you greet your teacher when you arrive at school in the morning?",
+      rubric:
+        "P1 competence: Uses appropriate language in welcoming and greeting. Learner should produce a recognisable morning greeting addressed to a teacher or adult.",
+      keyPoints: [
+        "Uses the phrase 'Good morning'",
+        "Addresses the teacher (teacher, Madam, Sir)",
+        "Greets with appropriate tone and respect",
+      ],
+      sampleAnswer: "Good morning, Teacher.",
+    },
+    {
+      id: "q2-name-introduction",
+      type: "open",
+      timeLimitSeconds: 30,
+      question:
+        "Can you tell me your name? Say: 'My name is ...'",
+      rubric:
+        "P1 English competence: 'My name is ...'. Learner should produce a complete sentence introducing themselves.",
+      keyPoints: [
+        "Uses 'My name is' structure",
+        "States their name clearly",
+      ],
+      sampleAnswer: "My name is Achieng.",
+    },
+    {
+      id: "q3-boy-or-girl",
+      type: "multiple-choice",
+      timeLimitSeconds: 20,
+      question:
+        "Are you a boy or a girl? Say: 'I am a boy' or 'I am a girl'.",
       options: [
-        {
-          id: "a",
-          label: "School and home were entirely separate, with no overlap in a child's education.",
-        },
-        {
-          id: "b",
-          label: "Home was the primary classroom and school was a supplement that taught what home could not.",
-        },
-        {
-          id: "c",
-          label: "School replaced home education entirely once formal schooling arrived.",
-        },
-        {
-          id: "d",
-          label: "Home and school taught the exact same subjects in the same way.",
-        },
+        { id: "a", label: "I am a boy." },
+        { id: "b", label: "I am a girl." },
       ],
       allowMultiple: false,
-      correctOptionIds: ["b"],
+      correctOptionIds: [], // Either is correct; scored by gender match
       explanation:
-        "The passage states that 'home was the first classroom' and school 'was a supplement not a replacement' teaching what home could not.",
+        "Both answers are correct. The competence is using the structure 'I am a ...' to identify themselves.",
     },
     {
-      id: "q2",
+      id: "q4-people-at-school",
       type: "multiple-choice",
-      question:
-        'The passage describes the current relationship between school and home as "inverted." What does this mean?',
       timeLimitSeconds: 30,
+      question: "Who teaches you lessons at school? Is it a teacher, a nurse, or a shopkeeper?",
       options: [
-        {
-          id: "a",
-          label: "Children now learn more at home than at school.",
-        },
-        {
-          id: "b",
-          label: "Parents are now the main teachers and schools play a supporting role.",
-        },
-        {
-          id: "c",
-          label: "School became the primary educator and home was reduced to a supporting role.",
-        },
-        {
-          id: "d",
-          label: "Schools now teach subjects that used to be taught only at home.",
-        },
+        { id: "a", label: "A teacher" },
+        { id: "b", label: "A nurse" },
+        { id: "c", label: "A shopkeeper" },
       ],
       allowMultiple: false,
-      correctOptionIds: ["c"],
+      correctOptionIds: ["a"],
       explanation:
-        "The passage says school became primary and home became 'the place where homework happened and report cards were signed' and parents were 'assistants to the school's curriculum.'",
+        "A teacher teaches you lessons at school. 'Teacher' is the correct title. P1 learners should name people at school by their titles.",
     },
+
+    // ── SECTION 2: THINGS AT SCHOOL ────────────────────
     {
-      id: "q3",
+      id: "q5-classroom-objects",
       type: "open",
-      question:
-        'Explain the metaphor "The garden gate swings both ways" as used in the final paragraph of the passage. What does it reveal about the relationship between school and home?',
-      description: "Write a short paragraph explaining the metaphor and its significance.",
-      timeLimitSeconds: 90,
-      placeholder:
-        "Analyse the metaphor: what does the garden gate represent? What does swinging both ways imply about the flow of learning?",
-      rubric:
-        "The candidate must explain: (1) The garden gate represents the boundary between school and home. (2) 'Swings both ways' means influence and reinforcement flow in both directions, not just from school to home. (3) Learning at home determines whether school learning 'takes root,' so the gate is a two-way connection, not a one-way delivery system.",
-      keyPoints: [
-        "Gate as boundary between school and home",
-        "Two-way influence: both directions matter",
-        "Home learning enables school learning to take root",
-      ],
-      sampleAnswer:
-        'The garden gate is the boundary between school and home. Saying it "swings both ways" means the relationship is reciprocal. School sends assignments and standards home, but what happens at home whether a child sees adults reading, discussing, and asking questions determines whether formal schooling sinks in. The gate is not a one-way delivery hatch from school to home. It is a shared passage where both sides shape the child\'s learning.',
-    },
-    {
-      id: "q4",
-      type: "multiple-choice",
-      question:
-        "According to the passage, what is the most important thing a parent can do to support their child's education at home?",
-      timeLimitSeconds: 30,
-      options: [
-        {
-          id: "a",
-          label: "Hire a tutor to reinforce school lessons.",
-        },
-        {
-          id: "b",
-          label: "Make learning visible as a normal, unfinished, adult activity.",
-        },
-        {
-          id: "c",
-          label: "Create a strict homework schedule that mirrors the school day.",
-        },
-        {
-          id: "d",
-          label: "Purchase educational materials that match the school curriculum.",
-        },
-      ],
-      allowMultiple: false,
-      correctOptionIds: ["b"],
-      explanation:
-        'The passage states: "the home\'s job is not to teach. It is to make learning visible as a normal, unfinished, adult activity."',
-    },
-    {
-      id: "q5",
-      type: "open",
-      question:
-        "The passage says: 'School provides sequence and standards; home provides depth and permission to wander.' Do you agree with this division of roles? Write a short argument supporting your position, referring to specific claims from the passage.",
-      description: "Construct a short argumentative response (2-3 paragraphs).",
-      timeLimitSeconds: 120,
-      placeholder:
-        "State your position clearly. Reference the passage: the water cycle example, the garden gate metaphor, the evidence about metacognitive habits. Explain why you agree or disagree with the division.",
-      rubric:
-        "The candidate must: (1) State a clear position (agree or disagree). (2) Reference at least two specific claims from the passage (water cycle example, garden gate metaphor, metacognition evidence, adult confusion as a teaching tool). (3) Explain their reasoning beyond simple agreement. A stronger answer acknowledges a counterargument or nuance.",
-      keyPoints: [
-        "Clear position stated",
-        "At least two passage references",
-        "Reasoned argument beyond agreement",
-        "Nuance or counterargument acknowledged",
-      ],
-      sampleAnswer:
-        "I agree with the division. The passage's water cycle example is convincing: a child who studies evaporation at school and then helps fix a faucet at home does not just reinforce the fact. They understand that the water cycle operates in real plumbing, not only in diagrams. School cannot provide that depth because it cannot replicate every home's specific context.\n\nAt the same time, the division does not mean parents should simply let children wander without direction. Permission to wander only works when there is a sequence to return to. The passage acknowledges this by saying school provides 'sequence and standards.' A child who wanders too far without returning to a structured curriculum may develop curiosity without competence.\n\nThe strongest implication of the passage is that the division is not a fixed line but a negotiated boundary. The garden gate swings both ways. Some children need more structure at home, and some need more freedom at school. The principle is right, but the proportions depend on the child.",
-    },
-    {
-      id: "q6",
-      type: "open",
-      question:
-        'In "On Children," Kahlil Gibran writes: "Your children are not your children. They are the sons and daughters of Life\'s longing for itself." How does this idea connect to the passage\'s argument about the role of the home in education?',
-      description: "Connect Gibran's poem to the passage in a short essay (2-3 paragraphs).",
-      timeLimitSeconds: 120,
-      placeholder:
-        "Consider: Gibran says parents do not own their children. The passage says the home's job is not to teach. How do these two ideas reinforce each other? What does 'Life's longing' have to do with learning?",
-      rubric:
-        "The candidate must: (1) Explain Gibran's claim: parents are custodians, not owners; children belong to their own future. (2) Connect this to the passage's argument that parents should not try to 'teach' the school curriculum but should make learning visible. (3) Show how both texts argue that the adult's role is to create conditions for growth, not to control the outcome.",
-      keyPoints: [
-        "Gibran's claim: children are not possessions",
-        "Parallel to passage: home's job is not to teach",
-        "Both argue for creating conditions, not controlling outcomes",
-        "'Life's longing' as intrinsic motivation to learn",
-      ],
-      sampleAnswer:
-        "Gibran's line is about authorship. The parent does not own the child any more than an author owns how a reader interprets the text. This connects directly to the passage's central claim: the home's job is not to teach. A parent who tries to control what a child learns at home is repeating the same mistake Gibran warns against treating the child as a project rather than a person.\n\nThe passage argues that the most powerful thing a home can do is make learning visible as an adult activity. Reading for pleasure, admitting ignorance, discussing ideas: these are not acts of teaching but acts of living. Gibran would recognize this. The arrow does not ask the bow for directions. It trusts the archer's aim and flies toward a target the bow will never see.\n\n'Life's longing for itself' could be read as the intrinsic motivation to learn. The child does not need to be pushed toward knowledge any more than a seed needs to be pulled toward the sun. The home's job is to remove obstacles and model what a learning life looks like. That is not a curriculum. It is a way of being in the world.",
-    },
-    {
-      id: "q7",
-      type: "multiple-choice",
-      question:
-        "Based on the passage, why does a child whose home environment reinforces school learning develop stronger metacognitive habits?",
       timeLimitSeconds: 45,
+      question:
+        "Can you name three things you can see in a classroom? For each one, say: 'This is a ...'",
+      rubric:
+        "P1 competence: Name items in the classroom. Learner should produce at least 3 items using 'This is a ...' structure.",
+      keyPoints: [
+        "Names at least 3 classroom objects",
+        "Uses 'This is a ...' structure",
+        "Pronounces words clearly",
+      ],
+      sampleAnswer: "This is a chalkboard. This is a desk. This is a book.",
+    },
+    {
+      id: "q6-counting",
+      type: "multiple-choice",
+      timeLimitSeconds: 30,
+      question:
+        "How many fingers are on one hand? Count your fingers and tell me how many there are.",
       options: [
-        {
-          id: "a",
-          label: "Because the parent explicitly teaches study techniques from the school curriculum.",
-        },
-        {
-          id: "b",
-          label: "Because the child receives tutoring that accelerates their school progress.",
-        },
-        {
-          id: "c",
-          label: "Because the child internalizes that learning does not switch off at the school gate.",
-        },
-        {
-          id: "d",
-          label: "Because the school provides more homework when it sees parental involvement.",
-        },
+        { id: "a", label: "Two" },
+        { id: "b", label: "Three" },
+        { id: "c", label: "Five" },
       ],
       allowMultiple: false,
       correctOptionIds: ["c"],
       explanation:
-        "The passage states the mechanism is 'the signal that learning does not switch off at the school gate.' This develops metacognition because the child sees learning as a continuous life activity, not a school-period task.",
+        "Most children have five fingers on one hand. P1 learners should count objects from 1 to 5 confidently.",
     },
     {
-      id: "q8",
+      id: "q7-school-activities",
       type: "open",
+      timeLimitSeconds: 40,
       question:
-        "The passage mentions parents who 'feel underqualified to teach and overeager to outsource.' Write a response to such a parent, using the passage's argument to explain why they do not need to be a teacher.",
-      description: "Write a compassionate but evidence-based response (1-2 paragraphs).",
-      timeLimitSeconds: 90,
-      placeholder:
-        "Address the parent's anxiety directly. Reference the passage's claim that the home's job is not to teach. Explain what the home's actual job is (making learning visible). Use the garden gate metaphor or the water cycle example.",
+        "What do you do at school? Tell me two things you do at school. For example, 'I read' or 'I play'.",
       rubric:
-        "The candidate must: (1) Acknowledge the parent's feeling of being underqualified. (2) Reframe the role using the passage: no teaching required, only visible adult learning. (3) Use at least one specific metaphor or example from the passage. (4) End with a concrete, simple action the parent could take.",
+        "P1 competence: Talk about activities at school. Learner should name at least 2 activities using 'I ...' structure.",
       keyPoints: [
-        "Address parent anxiety directly",
-        "Reframe: home's job is not to teach",
-        "Use passage metaphor or example",
-        "Concrete actionable advice",
+        "Names at least 2 school activities",
+        "Uses 'I' structure (e.g. 'I play', 'I read')",
+        "Activities are school-appropriate",
       ],
-      sampleAnswer:
-        "You do not need to be a teacher. The passage argues that the home's most important job is not instruction but demonstration. When you read a book for pleasure, look up something you do not know, or talk through a problem aloud, you are not teaching your child curriculum. You are showing them that learning is what adults do all the time.\n\nThe water cycle example in the passage illustrates this. You do not need to explain evaporation. You just need to fix the leaky faucet while your child watches and ask: 'I wonder where all that water goes?' That wondering is what sticks. That is the garden gate swinging both ways.\n\nStart small. Read something you enjoy where your child can see you. When you hit a word you do not know, look it up out loud. That is not teaching. It is living like a learner. And it works better than any lesson plan.",
+      sampleAnswer: "I read. I play with my friends.",
+    },
+
+    // ── SECTION 3: PEOPLE AT HOME ────────────────────
+    {
+      id: "q8-family-members",
+      type: "open",
+      timeLimitSeconds: 40,
+      question:
+        "Tell me about your family. Who lives in your home? Say: 'This is my mother', 'This is my father'.",
+      rubric:
+        "P1 competence: Name close family members. Learner should produce at least 2 using 'This is my ...' structure.",
+      keyPoints: [
+        "Names at least 2 family members",
+        "Uses 'This is my ...' structure",
+        "Uses correct titles (mother, father, sister, brother)",
+      ],
+      sampleAnswer: "This is my mother. This is my father. This is my baby sister.",
+    },
+    {
+      id: "q9-family-roles",
+      type: "multiple-choice",
+      timeLimitSeconds: 30,
+      question:
+        "Who cooks food in your home? Is it mother, father, or baby?",
+      options: [
+        { id: "a", label: "Mother" },
+        { id: "b", label: "Father" },
+        { id: "c", label: "Baby" },
+      ],
+      allowMultiple: false,
+      correctOptionIds: ["a"],
+      explanation:
+        "In many homes, mother cooks food. P1 learners should identify roles of different family members. All respectful answers naming a family member who cooks are acceptable in practice.",
+    },
+    {
+      id: "q10-things-in-home",
+      type: "open",
+      timeLimitSeconds: 40,
+      question:
+        "Name two things you can find in a kitchen. Say: 'This is a ...'",
+      rubric:
+        "P1 competence: Name things found in the home. Learner should name at least 2 items using correct structure.",
+      keyPoints: [
+        "Names appropriate kitchen items",
+        "Uses 'This is a ...' structure",
+        "Pronounces words clearly",
+      ],
+      sampleAnswer: "This is a spoon. This is a cup.",
+    },
+
+    // ── SECTION 4: ANIMALS AND PLANTS ──────────────────
+    {
+      id: "q11-animals",
+      type: "open",
+      timeLimitSeconds: 30,
+      question:
+        "Tell me one animal that lives in your home. What sound does it make?",
+      rubric:
+        "P1 competence: Name animals found in the home and imitate their sounds. Learner should produce at least one animal name and an attempt at its sound.",
+      keyPoints: [
+        "Names a domestic animal",
+        "Imitates the animal sound",
+        "Animal is appropriate (home/farm animal)",
+      ],
+      sampleAnswer: "A cow. Moo!",
+    },
+    {
+      id: "q12-plant",
+      type: "multiple-choice",
+      timeLimitSeconds: 25,
+      question:
+        "Which of these is a plant you can find at home? Is it a banana plant, a stone, or a spoon?",
+      options: [
+        { id: "a", label: "A banana plant" },
+        { id: "b", label: "A stone" },
+        { id: "c", label: "A spoon" },
+      ],
+      allowMultiple: false,
+      correctOptionIds: ["a"],
+      explanation:
+        "A banana plant is a plant you can find at home. Stones and spoons are not plants. P1 learners should identify common plants in their environment.",
+    },
+
+    // ── SECTION 5: SIMPLE ADDITION ─────────────────────
+    {
+      id: "q13-addition",
+      type: "multiple-choice",
+      timeLimitSeconds: 35,
+      question:
+        "If you have 2 mangoes and I give you 1 more mango, how many mangoes do you have altogether?",
+      options: [
+        { id: "a", label: "Two" },
+        { id: "b", label: "Three" },
+        { id: "c", label: "Four" },
+      ],
+      allowMultiple: false,
+      correctOptionIds: ["b"],
+      explanation:
+        "2 mangoes plus 1 more mango makes 3 mangoes. P1 learners should add '1 more' to numbers up to 5 using concrete objects.",
+    },
+    {
+      id: "q14-size-comparison",
+      type: "multiple-choice",
+      timeLimitSeconds: 25,
+      question:
+        "Which is bigger: a cup or a cooking pot? The cup or the cooking pot?",
+      options: [
+        { id: "a", label: "The cup" },
+        { id: "b", label: "The cooking pot" },
+      ],
+      allowMultiple: false,
+      correctOptionIds: ["b"],
+      explanation:
+        "A cooking pot is bigger than a cup. P1 learners should compare objects by size using words like bigger and smaller.",
+    },
+
+    // ── SECTION 6: RHYMES AND STORIES ──────────────────
+    {
+      id: "q15-rhyme",
+      type: "open",
+      timeLimitSeconds: 45,
+      question:
+        "Can you recite a short rhyme or sing a song that you learned at school? Any song is fine. Take your time.",
+      rubric:
+        "P1 competence: Recite rhymes and sing songs. Learner should produce at least 2-4 lines of a recognisable rhyme or song with reasonable recall.",
+      keyPoints: [
+        "Recites or sings a rhyme/song",
+        "Shows reasonable memory and recall",
+        "Attempts correct words and rhythm",
+      ],
+      sampleAnswer: "Twinkle, twinkle, little star, how I wonder what you are!",
+    },
+    {
+      id: "q16-story",
+      type: "open",
+      timeLimitSeconds: 60,
+      question:
+        "Tell me a short story about something you did at home yesterday. What did you do? Who was with you?",
+      rubric:
+        "P1 competence: Tell a simple story about home. Learner should produce a coherent 2-3 sentence narrative about a home activity.",
+      keyPoints: [
+        "Describes an activity at home",
+        "Mentions at least one person or detail",
+        "Story is reasonably coherent",
+      ],
+      sampleAnswer: "Yesterday I helped my mother sweep the compound. My sister played with me. We were happy.",
     },
   ],
 };
