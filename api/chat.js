@@ -177,7 +177,7 @@ export default async function handler(req, res) {
         model: selectedModel,
         messages,
         temperature: 0.7,
-        max_tokens: Math.min(Math.max(Number(req.body?.max_tokens) || 3500, 1), 4000),
+        max_tokens: Math.min(Math.max(Number(req.body?.max_tokens) || 3500, 1), 8000),
         stream: shouldStream,
       }),
       signal: controller.signal,
