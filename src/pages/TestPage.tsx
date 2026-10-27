@@ -26,6 +26,7 @@ import {
   Pause,
   Eye,
   Edit3,
+  Printer,
 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
@@ -1276,6 +1277,14 @@ export default function TestPage() {
               </div>
 
               <div className="flex items-center gap-sm">
+                <Button
+                  variant="outline"
+                  href={`/tests/${test.slug}/print`}
+                  className="print:hidden"
+                  icon={<Printer className="w-4 h-4" />}
+                >
+                  Print Version
+                </Button>
                 {savedEvaluation && (
                   <Button
                     variant="outline"
