@@ -18,7 +18,14 @@ export default function Header() {
   const { setOpen } = useSearch();
   const { theme, toggleTheme } = useTheme();
   useEffect(() => {
-    setAuthed(document.cookie.includes("soma_auth="));
+    // In local dev AuthGuard bypasses login but doesn't set the cookie.
+    // The rest of the app relies on the cookie only for the "create" and
+    // "admin" nav hints, so apply the same bypass here.
+    if (import.meta.env.DEV) {
+      setAuthed(true);
+    } else {
+      setAuthed(document.cookie.includes("soma_auth="));
+    }
   }, []);
 
   useEffect(() => {
@@ -84,7 +91,7 @@ export default function Header() {
           {authed && (
             <Link
               to="/admin/new"
-              className="hidden md:inline-flex items-center gap-sm px-xl py-md bg-primary text-on-primary font-sora text-sm uppercase tracking-widest hover:bg-primary-hover transition-colors"
+              className="inline-flex items-center gap-sm px-xl py-md bg-primary text-on-primary font-sora text-sm uppercase tracking-widest hover:bg-primary-hover transition-colors"
             >
               <Plus className="w-4 h-4" />
               Create
