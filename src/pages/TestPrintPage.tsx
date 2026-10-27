@@ -79,7 +79,46 @@ export default function TestPrintPage() {
   const marksTotal = qCount; // 1 mark per question for simplicity
 
   return (
-    <div className={`min-h-screen bg-background text-on-surface print-exam-body${bw ? " print-bw" : ""}`}>
+    <div
+      className={`min-h-screen bg-background text-on-surface print-exam-body${bw ? " print-bw" : ""}`}
+      style={{ "--exam-title": test.title } as React.CSSProperties}
+    >
+      <style>{`@media print {
+  @page test-exam {
+    @top-left {
+      content: "SOMA // EXAMINATION";
+      font-family: system-ui, sans-serif;
+      font-size: 8pt;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #64748b;
+      white-space: nowrap;
+    }
+    @top-right {
+      content: var(--exam-title);
+      font-family: system-ui, sans-serif;
+      font-size: 8pt;
+      color: #64748b;
+      max-width: 380px;
+      white-space: nowrap;
+    }
+    @bottom-left {
+      content: var(--exam-title) " : Soma Print Edition";
+      font-family: system-ui, sans-serif;
+      font-size: 7.5pt;
+      color: #94a3b8;
+    }
+    @bottom-right {
+      content: "Page " counter(page);
+      font-family: system-ui, sans-serif;
+      font-size: 7.5pt;
+      color: #94a3b8;
+    }
+  }
+  .print-exam-header { display: none !important; }
+  .print-exam-footer { display: none !important; }
+}`}</style>
       {/* Controls bar : hidden in print */}
       <aside
         aria-label="Print controls"
@@ -124,27 +163,6 @@ export default function TestPrintPage() {
           </div>
         </div>
       </aside>
-
-      {/* ── Print running header (repeats on every page) ─────────── */}
-      <header className="print-exam-header">
-        <div className="print-exam-header-inner">
-          <span className="font-sora font-bold text-[8pt] tracking-widest uppercase">
-            SOMA // EXAMINATION
-          </span>
-          <span className="font-sora font-medium text-[8pt] truncate max-w-[380px]">
-            {test.title}
-          </span>
-        </div>
-      </header>
-
-      {/* ── Print running footer (repeats on every page) ─────────── */}
-      <footer className="print-exam-footer">
-        <div className="print-exam-footer-inner">
-          <span className="font-sora text-[7.5pt]">
-            {test.title} : Soma Print Edition
-          </span>
-        </div>
-      </footer>
 
       {/* ── Printable content ──────────────────────────────────── */}
       <main className="max-w-3xl mx-auto px-6 sm:px-8 py-12 print:py-0 print-exam-main">

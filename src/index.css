@@ -848,44 +848,14 @@
     page-break-inside: avoid;
   }
 
-  /* ── Exam Running Header & Footer (position:fixed, repeats per page) ── */
+  /* ── Exam Running Header & Footer (@page margin boxes) ──── */
   .print-exam-body {
     page: test-exam;
   }
-  .print-exam-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-    background: #fff;
-    padding: 5mm 22mm 0 22mm;
-    border-bottom: 1.5px solid #94a3b8;
-  }
-  .print-exam-header-inner {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    padding-bottom: 2mm;
-  }
+  /* .print-exam-header / .print-exam-footer hide if any leftover DOM elements */
+  .print-exam-header,
   .print-exam-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-    background: #fff;
-    padding: 0 22mm 3mm 22mm;
-    border-top: 1px solid #cbd5e1;
-  }
-  .print-exam-footer-inner {
-    display: flex;
-    justify-content: center;
-    padding-top: 1.5mm;
-  }
-  .print-exam-main {
-    padding-top: 22mm !important;
-    padding-bottom: 16mm !important;
+    display: none !important;
   }
 
   /* ── B/W Print Mode (in-app grayscale) ───────────────────────── */
@@ -893,122 +863,70 @@
   .print-bw * {
     color: #000 !important;
   }
-  .print-bw .text-primary,
-  .print-bw .text-accent-orange,
-  .print-bw .text-brand-green,
-  .print-bw .text-secondary,
-  .print-bw .text-error {
-    color: #000 !important;
-  }
-  .print-bw .text-on-surface-muted,
-  .print-bw .text-on-surface-variant,
-  .print-bw .text-on-surface-muted\/60 {
-    color: #333 !important;
-  }
   .print-bw img {
     display: none !important;
   }
+  .print-bw pre,
+  .print-bw code {
+    background: #f5f5f5 !important;
+    color: #000 !important;
+  }
   .print-bw .border-primary,
-  .print-bw .border-accent-orange,
-  .print-bw .border-error,
-  .print-bw .border-secondary,
-  .print-bw .border-brand-green {
+  .print-bw .border-accent-orange {
     border-color: #ccc !important;
   }
   .print-bw .bg-primary,
   .print-bw .bg-primary\/10,
-  .print-bw .bg-primary\/20,
   .print-bw .bg-accent-orange\/10,
-  .print-bw .bg-accent-orange\/15,
-  .print-bw .bg-accent-orange\/20,
-  .print-bw .bg-error\/10,
-  .print-bw .bg-secondary\/15,
-  .print-bw .bg-brand-green\/10 {
-    background-color: #eee !important;
+  .print-bw .bg-accent-orange\/15 {
+    background: #eee !important;
   }
   .print-bw .bg-surface,
   .print-bw .bg-surface-container,
-  .print-bw .bg-surface-container-low,
-  .print-bw .bg-surface-container-highest {
-    background-color: #fff !important;
+  .print-bw .bg-surface-container-low {
+    background: #fff !important;
   }
   .print-bw .text-gradient {
     background: none !important;
     color: #000 !important;
   }
-  /* Syntax highlighting in B/W mode */
   .print-bw .print-passage .hljs-keyword,
-  .print-bw .print-passage .hljs-selector-tag,
-  .print-bw .print-passage .hljs-built_in,
-  .print-bw .print-passage .hljs-type,
-  .print-bw .print-passage .hljs-literal,
   .print-bw .print-passage .hljs-string,
-  .print-bw .print-passage .hljs-title,
   .print-bw .print-passage .hljs-number,
   .print-bw .print-passage .hljs-comment,
-  .print-bw .print-passage .hljs-function,
-  .print-bw .print-passage .hljs-attr,
-  .print-bw .print-passage .hljs-selector-class {
+  .print-bw .print-passage .hljs-function {
     color: #000 !important;
   }
 }
 
 /* ── Screen print preview: white paper for both Color and B/W ── */
+.print-exam-body {
+  --color-on-surface: 15 23 42 !important;
+  --color-on-surface-muted: 100 116 139 !important;
+  --color-on-surface-variant: 51 65 85 !important;
+  --color-primary: 37 99 235 !important;
+  --color-accent-orange: 217 119 6 !important;
+  --color-border-default: 226 232 240 !important;
+  --color-surface-container-low: 248 250 252 !important;
+  --color-surface-container: 241 245 249 !important;
+  --color-surface: 255 255 255 !important;
+}
 .print-exam-body main {
   background: #fff;
-  color: #000;
-}
-.print-exam-body main .text-on-surface-muted,
-.print-exam-body main .text-on-surface-variant {
-  color: #444;
-}
-.print-exam-body main .bg-surface-container-low,
-.print-exam-body main .bg-surface-container,
-.print-exam-body main .bg-surface,
-.print-exam-body main .bg-primary\/10,
-.print-exam-body main .bg-accent-orange\/15 {
-  background: #f8fafc;
-}
-.print-exam-body main .border-border-default {
-  border-color: #d0d5dd;
+  color: #0f172a;
 }
 
 /* ── Screen B/W preview toggle ──────────────────────────── */
 .print-bw main {
   background: #fff !important;
-  color: #000 !important;
 }
 .print-bw main,
 .print-bw main * {
-  color: #000 !important;
-  border-color: #ccc !important;
-}
-.print-bw main .text-primary,
-.print-bw main .text-accent-orange,
-.print-bw main .text-on-surface-muted,
-.print-bw main .text-on-surface-variant,
-.print-bw main .text-on-surface-muted\/60 {
-  color: #000 !important;
-}
-.print-bw main .bg-surface-container-low,
-.print-bw main .bg-surface,
-.print-bw main .bg-surface-container,
-.print-bw main .bg-surface-container-highest,
-.print-bw main .bg-surface-container-lowest,
-.print-bw main .bg-primary,
-.print-bw main .bg-primary\/10,
-.print-bw main .bg-accent-orange\/10,
-.print-bw main .bg-accent-orange\/15 {
-  background: #fff !important;
-}
-.print-bw main .text-gradient {
-  background: none !important;
   color: #000 !important;
 }
 .print-bw main pre,
 .print-bw main code {
   background: #f5f5f5 !important;
-  color: #000 !important;
   border-color: #ccc !important;
 }
 .print-bw main img,
