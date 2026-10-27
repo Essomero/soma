@@ -163,7 +163,7 @@ export default function TestPrintPage() {
           <ol className="font-dm-sans text-sm text-on-surface-muted space-y-1.5 ml-5 list-decimal">
             <li>Write your name and candidate number at the top of this paper.</li>
             <li>Answer <strong>all</strong> questions in the spaces provided.</li>
-            <li>Suggested times per question are answering times only, in addition to reading time for the passage: {mcCount} multiple-choice questions ({formatLabel(test.defaultTimeLimitSeconds ?? 60)} each) and {openCount} open questions (varying lengths).</li>
+            <li>Total time allowed is {formatExamTime(totalSeconds)} across all {qCount} questions, about {formatExamTime(Math.round(totalSeconds / qCount))} each on average, including reading.</li>
             <li>Read each passage and question carefully before writing your answer.</li>
             <li>Marks for each question are shown in brackets.</li>
           </ol>
