@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Loader2, Sparkles, ArrowRight, AlertCircle, ChevronDown } from "lucide-react";
+import { Loader2, Sparkles, ArrowRight, AlertCircle, ChevronDown, Lightbulb } from "lucide-react";
 import { buildSystemPrompt } from "@/lib/admin-prompts";
 import type { ContentType } from "@/lib/admin-prompts";
 
@@ -56,7 +56,8 @@ export default function AIDraftPanel({ onDraft, disabled }: AIDraftPanelProps) {
   const [input, setInput] = useState("");
   const [status, setStatus] = useState<"idle" | "generating" | "done" | "error">("idle");
   const [error, setError] = useState("");
-  const [partial, setPartial] = useState("");
+  const [reasoning, setReasoning] = useState("");
+  const [preview, setPreview] = useState<{ type?: string; title?: string } | null>(null);
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [modelsReady, setModelsReady] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>("");
@@ -101,7 +102,8 @@ export default function AIDraftPanel({ onDraft, disabled }: AIDraftPanelProps) {
     if (!input.trim() || disabled || aiUnavailable) return;
     setStatus("generating");
     setError("");
-    setPartial("");
+    setReasoning("");
+    setPreview(null);
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -135,6 +137,8 @@ export default function AIDraftPanel({ onDraft, disabled }: AIDraftPanelProps) {
       const decoder = new TextDecoder();
       let buffer = "";
       let accumulated = "";
+      let accumulatedReasoning = "";
+      let previewed = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -149,16 +153,38 @@ export default function AIDraftPanel({ onDraft, disabled }: AIDraftPanelProps) {
           if (data === "[DONE]") continue;
           try {
             const parsed = JSON.parse(data);
-            const content = parsed.choices?.[0]?.delta?.content || "";
+            const delta = parsed.choices?.[0]?.delta;
+            const rc = delta?.reasoning_content;
+            if (rc) {
+              accumulatedReasoning += rc;
+              setReasoning(accumulatedReasoning);
+            }
+            const content = delta?.content || "";
             accumulated += content;
-            setPartial(accumulated);
+            // Attempt to parse the full structure as fields arrive.
+            // Once parsed, show live type/title preview without raw JSON.
+            if (!previewed) {
+              const js = accumulated.indexOf("{");
+              const je = accumulated.lastIndexOf("}");
+              if (js >= 0 && je > js) {
+                try {
+                  const partial = JSON.parse(accumulated.slice(js, je + 1));
+                  if (partial.type || partial.title) {
+                    setPreview({ type: partial.type, title: partial.title });
+                    previewed = true; // one shot: first valid parse captures the preview
+                  }
+                } catch {
+                  // incomplete JSON — keep streaming
+                }
+              }
+            }
           } catch {
-            // incomplete frame
+            // incomplete SSE frame
           }
         }
       }
 
-      // Parse accumulated JSON
+      // Parse final accumulated JSON
       const jsonStart = accumulated.indexOf("{");
       const jsonEnd = accumulated.lastIndexOf("}");
       if (jsonStart === -1 || jsonEnd === -1) {
@@ -259,25 +285,41 @@ export default function AIDraftPanel({ onDraft, disabled }: AIDraftPanelProps) {
 
       {/* Generating progress */}
       {status === "generating" && (
-        <div className="flex items-start gap-md p-lg bg-surface-container border border-border-default">
-          <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <p className="font-sora text-sm text-on-surface mb-sm">Generating content...</p>
-            {partial && (
-              <pre className="font-dm-sans text-xs text-on-surface-muted whitespace-pre-wrap line-clamp-6 overflow-hidden">
-                {partial}
-              </pre>
-            )}
+        <div className="p-lg bg-surface-container border border-border-default space-y-md">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-md">
+              <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="font-sora text-sm text-on-surface">Generating content...</p>
+                {preview && (
+                  <p className="font-dm-sans text-xs text-on-surface-muted mt-xs">
+                    {preview.type && <span className="uppercase tracking-widest mr-sm">{preview.type}</span>}
+                    {preview.title && <span>{preview.title}</span>}
+                  </p>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                abortRef.current?.abort();
+                setStatus("idle");
+                setReasoning("");
+                setPreview(null);
+              }}
+              className="font-sora text-xs text-on-surface-muted hover:text-on-surface underline"
+            >
+              Cancel
+            </button>
           </div>
-          <button
-            onClick={() => {
-              abortRef.current?.abort();
-              setStatus("idle");
-            }}
-            className="font-sora text-xs text-on-surface-muted hover:text-on-surface underline"
-          >
-            Cancel
-          </button>
+
+          {reasoning && (
+            <div className="flex items-start gap-md p-md bg-surface border border-border-default border-l-4 border-l-primary">
+              <Lightbulb className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+              <p className="font-dm-sans text-xs text-on-surface-muted whitespace-pre-wrap leading-relaxed">
+                {reasoning}
+              </p>
+            </div>
+          )}
         </div>
       )}
 
