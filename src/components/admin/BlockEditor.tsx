@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useCallback } from "react";
+import { useRef } from "react";
 import {
   Plus, Trash2, GripVertical, ChevronUp, ChevronDown,
   Type, ImageIcon, Minus, MessageSquareQuote, Code2, Sigma,
@@ -282,6 +284,8 @@ function BlockBody({ block, update }: { block: ContentBlock; update: (b: Content
 
 export default function BlockEditor({ blocks, onChange }: BlockItemEditorProps) {
   const [adding, setAdding] = useState<SimpleBlock | JsonBlock | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const dragOverIndex = useRef<number | null>(null);
 
   const updateAt = (i: number, block: string | ContentBlock) => {
     const next = [...blocks];
@@ -306,6 +310,41 @@ export default function BlockEditor({ blocks, onChange }: BlockItemEditorProps) 
     setAdding(null);
   };
 
+  // ── Drag-and-drop ──
+  const handleDragStart = useCallback((i: number, e: React.DragEvent) => {
+    setDragIndex(i);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(i));
+  }, []);
+
+  const handleDragOver = useCallback((i: number, e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    dragOverIndex.current = i;
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const from = dragIndex;
+    const to = dragOverIndex.current;
+    if (from === null || to === null || from === to) {
+      setDragIndex(null);
+      dragOverIndex.current = null;
+      return;
+    }
+    const next = [...blocks];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    onChange(next);
+    setDragIndex(null);
+    dragOverIndex.current = null;
+  }, [blocks, dragIndex, onChange]);
+
+  const handleDragEnd = useCallback(() => {
+    setDragIndex(null);
+    dragOverIndex.current = null;
+  }, []);
+
   return (
     <div className="space-y-md">
       {blocks.length === 0 && (
@@ -315,10 +354,21 @@ export default function BlockEditor({ blocks, onChange }: BlockItemEditorProps) 
       )}
 
       {blocks.map((block, i) => (
-        <div key={i} className="p-md bg-surface-container border border-border-default">
+        <div
+          key={i}
+          draggable
+          onDragStart={(e) => handleDragStart(i, e)}
+          onDragOver={(e) => handleDragOver(i, e)}
+          onDragLeave={() => { if (dragOverIndex.current === i) dragOverIndex.current = null; }}
+          onDrop={handleDrop}
+          onDragEnd={handleDragEnd}
+          className={`p-md bg-surface-container border transition-colors cursor-grab active:cursor-grabbing ${
+            dragIndex === i ? "opacity-40 border-primary" : "border-border-default"
+          }`}
+        >
           <div className="flex items-center justify-between mb-sm">
             <div className="flex items-center gap-sm">
-              <GripVertical className="w-4 h-4 text-on-surface-muted shrink-0" />
+              <GripVertical className="w-4 h-4 text-on-surface-muted shrink-0 cursor-grab" />
               <span className="font-sora text-xs text-on-surface-muted uppercase tracking-widest">
                 {typeof block === "string" ? `Paragraph (markdown) #${i + 1}` : `Block: ${block.type}`}
               </span>

@@ -174,7 +174,7 @@ export default function AdminDashboardPage() {
         </div>
         <div className="p-lg bg-surface border border-border-default">
           <p className="font-sora text-3xl text-on-surface-muted font-bold">{stats.private}</p>
-          <p className="font-dm-sans text-xs text-on-surface-muted mt-xs">Private Drafts</p>
+          <p className="font-dm-sans text-xs text-on-surface-muted mt-xs">Private</p>
         </div>
       </div>
 

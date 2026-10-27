@@ -337,6 +337,7 @@ export interface GuideContent {
   isFeatured?: boolean;
   intro: string;
   body: string[];
+  sections?: Array<{ heading: string; paragraphs: (string | ContentBlock)[] }>;
   bentoHighlights?: BentoCardData[];
   pullQuotes?: PullQuoteData[];
   references?: { title: string; url: string; description?: string }[];

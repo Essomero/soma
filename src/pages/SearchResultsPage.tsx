@@ -22,6 +22,7 @@ const filters = [
 const trendingTopics = ["REACT", "WEBGL", "RUST", "DOCKER"];
 
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { coverUrl } from "@/lib/utils";
 
 export default function SearchResultsPage() {
   const [searchParams] = useSearchParams();
@@ -29,7 +30,7 @@ export default function SearchResultsPage() {
   const [activeFilter, setActiveFilter] = useState("All Results");
   usePageMeta({ title: query ? `Search: ${query}` : "Search" });
   // Stories + guides come from the server search endpoint, which enforces
-  // published-or-owner visibility : drafts never reach the client.
+  // published-or-owner visibility : private rows never reach the client.
   const [storyResults, setStoryResults] = useState<StoryContent[]>([]);
   const [guideResults, setGuideResults] = useState<GuideContent[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -159,7 +160,7 @@ export default function SearchResultsPage() {
                   <img
                     alt={storyResults[0].imageAlt}
                     className="w-full h-[400px] object-cover transition-transform duration-700 group-hover:scale-105"
-                    src={storyResults[0].image}
+                    src={coverUrl(storyResults[0]?.image)}
                   />
                 </div>
                 <div className="xl:col-span-5 flex flex-col justify-center">
@@ -192,7 +193,7 @@ export default function SearchResultsPage() {
                     <img
                       alt={story.imageAlt}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      src={story.image}
+                      src={coverUrl(story?.image)}
                     />
                   </div>
                   <span className="font-sora text-metadata-tag text-on-surface-muted mb-xs uppercase">

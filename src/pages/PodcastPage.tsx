@@ -13,6 +13,7 @@ const podcastTopics = [
 import type { PodcastEpisodeFull } from "@/types";
 import { md } from "@/lib/markdown";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { coverUrl } from "@/lib/utils";
 
 export default function PodcastPage() {
   const { data: episodes, loading } = useContentList<PodcastEpisodeFull>("podcast");
@@ -81,7 +82,7 @@ export default function PodcastPage() {
               <img
                 alt={featuredEpisode.imageAlt}
                 className="relative rounded-xl w-full aspect-[1.67] object-cover shadow-2xl"
-                src={featuredEpisode.image}
+                src={coverUrl(featuredEpisode?.image)}
               />
               <div className="absolute -bottom-4 -right-4 bg-secondary-container text-on-secondary-container p-sm px-md rounded-lg font-sora text-label-caps uppercase shadow-lg">
                 Trending
@@ -120,7 +121,7 @@ export default function PodcastPage() {
                   <img
                     alt={ep.imageAlt}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    src={ep.image}
+                    src={coverUrl(ep?.image)}
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <Play className="w-16 h-16 text-white fill-current" />

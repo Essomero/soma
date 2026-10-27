@@ -1,5 +1,6 @@
 import { useParams, Link, useLocation } from "react-router-dom";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { coverUrl } from "@/lib/utils";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
@@ -1120,7 +1121,7 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
               <img
                 alt={story.imageAlt}
                 className="w-full h-auto aspect-[16/9] object-cover rounded-lg border border-border-default"
-                src={story.image}
+                src={coverUrl(story.image)}
               />
             </figure>
 

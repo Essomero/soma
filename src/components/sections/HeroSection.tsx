@@ -2,6 +2,7 @@ import { ArrowRight } from "lucide-react";
 import Tag from "@/components/ui/Tag";
 import Button from "@/components/ui/Button";
 import { md } from "@/lib/markdown";
+import { coverUrl } from "@/lib/utils";
 import type { FeaturedStoryData } from "@/types";
 
 interface HeroSectionProps {
@@ -36,7 +37,7 @@ export default function HeroSection({ story }: HeroSectionProps) {
             <img
               alt={story.imageAlt}
               className="w-full h-full object-cover"
-              src={story.image}
+              src={coverUrl(story.image)}
             />
           </div>
         </div>

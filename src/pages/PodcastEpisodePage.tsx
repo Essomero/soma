@@ -11,6 +11,7 @@ import { contentToMarkdown, md } from "@/lib/markdown";
 import { useContentItem, useContentList } from "@/lib/content";
 import type { PodcastEpisodeFull } from "@/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { coverUrl } from "@/lib/utils";
 
 export default function PodcastEpisodePage() {
   const { slug } = useParams<{ slug: string }>();

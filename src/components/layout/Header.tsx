@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, LogOut, Sun, Moon, Settings } from "lucide-react";
+import { Search, LogOut, Sun, Moon, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSearch } from "@/lib/SearchContext";
 import { useTheme } from "@/lib/ThemeContext";
@@ -18,7 +18,14 @@ export default function Header() {
   const { setOpen } = useSearch();
   const { theme, toggleTheme } = useTheme();
   useEffect(() => {
-    setAuthed(document.cookie.includes("soma_auth="));
+    // In local dev AuthGuard bypasses login but doesn't set the cookie.
+    // The rest of the app relies on the cookie only for the "create" and
+    // "admin" nav hints, so apply the same bypass here.
+    if (import.meta.env.DEV) {
+      setAuthed(true);
+    } else {
+      setAuthed(document.cookie.includes("soma_auth="));
+    }
   }, []);
 
   useEffect(() => {
@@ -76,11 +83,20 @@ export default function Header() {
               );
             })}
           </div>
-          <NavHamburger links={innerNavLinks} />
+<NavHamburger links={innerNavLinks} authed={authed} />
         </div>
 
-        {/* Right: Theme toggle + Search + Sign Out */}
+        {/* Right: Theme toggle + Search + Create + Sign Out */}
         <div className="flex items-center gap-sm md:gap-md">
+          {authed && (
+            <Link
+              to="/admin/new"
+              className="inline-flex items-center gap-sm px-xl py-md bg-primary text-on-primary font-sora text-sm uppercase tracking-widest hover:bg-primary-hover transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Create
+            </Link>
+          )}
           <Tooltip label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} position="bottom">
             <button
               onClick={toggleTheme}
@@ -95,17 +111,6 @@ export default function Header() {
               <Search className="w-5 h-5" />
             </button>
           </Tooltip>
-          {authed && (
-            <Tooltip label="Content admin" position="bottom">
-              <Link
-                to="/admin"
-                className="p-2 text-on-surface-variant hover:text-primary rounded-lg hover:bg-surface-container-low transition-colors"
-                aria-label="Content admin"
-              >
-                <Settings className="w-5 h-5" />
-              </Link>
-            </Tooltip>
-          )}
           {authed && (
             <Tooltip label="Sign out" position="bottom" align="end">
               <button

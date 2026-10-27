@@ -9,6 +9,7 @@ import type { SortKey } from "@/lib/content";
 import SortControl from "@/components/ui/SortControl";
 import type { SeriesContent } from "@/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { coverUrl } from "@/lib/utils";
 
 export default function SeriesIndexPage() {
   const { data: series, loading } = useContentList<SeriesContent>("series");
@@ -64,7 +65,7 @@ export default function SeriesIndexPage() {
                       <img
                         alt={series.imageAlt}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        src={series.image}
+                        src={coverUrl(series?.image)}
                       />
                     </div>
                     <div className="p-xl">

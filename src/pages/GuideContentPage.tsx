@@ -22,6 +22,7 @@ import { type HighlightData } from "@/lib/highlights";
 
 import type { BentoCardData, PullQuoteData } from "@/types";
 import type { LucideIcon } from "lucide-react";
+import { cn, coverUrl } from "@/lib/utils";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 // Icon map for tip cards (matches ship-soma pattern)
@@ -40,11 +41,15 @@ export default function GuideContentPage() {
   const highlightClickRef = useRef<(id: number) => void>(() => {});
   const content = guide ?? null;
   const otherGuides = (guides ?? []).filter((g) => g.id !== guide?.id).slice(0, 3);
-  const storyText = [content?.intro || "", ...(content?.body || [])].join(" ");
+  const storyText = [
+    content?.intro || "",
+    ...(content?.body || []),
+    ...(content?.sections?.flatMap((s) => s.paragraphs.filter((p): p is string => typeof p === "string")) || []),
+  ].join(" ");
   usePageMeta({ title: guide?.title, description: guide?.excerpt, image: guide?.image });
 
-  // Extract TOC from ## headings only, preserving their numbers
-  const tocItems = (content?.body || [])
+  // Extract TOC from ## headings (body) and structured section headings
+  const tocBody = (content?.body || [])
     .filter((p) => /^##\s/.test(p.trim()))
     .map((p) => {
       const match = p.trim().match(/^##\s+(.+)$/);
@@ -58,6 +63,12 @@ export default function GuideContentPage() {
       return { number: num, title, href: `#${anchor}` };
     })
     .filter(Boolean) as { number: string; title: string; href: string }[];
+  const tocSections = (content?.sections || []).map((s) => ({
+    number: "",
+    title: s.heading,
+    href: `#${s.heading.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-")}`,
+  }));
+  const tocItems = [...tocSections, ...tocBody];
 
   if (loading) {
     return (
@@ -117,7 +128,7 @@ export default function GuideContentPage() {
           <img
             alt={guide.imageAlt}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            src={guide.image}
+            src={coverUrl(guide.image)}
           />
         </div>
 
@@ -215,6 +226,47 @@ export default function GuideContentPage() {
                       highlights={highlights}
                       onHighlightClick={(id) => highlightClickRef.current(id)}
                     />
+                  )}
+
+                  {/* Structured sections (AI-authored guides with headings) */}
+                  {content.sections && content.sections.length > 0 && (
+                    <div className="mt-giant">
+                      {content.sections.map((section, i) => {
+                        const quoteBefore =
+                          content.pullQuotes && i > 0
+                            ? content.pullQuotes[i - 1]
+                            : null;
+                        return (
+                          <div
+                            key={section.heading}
+                            id={section.heading.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-")}
+                            className="scroll-mt-24"
+                          >
+                            {quoteBefore && (
+                              <PullQuote
+                                variant={i === 1 ? "gradient-bar" : "border-left"}
+                                quote={quoteBefore.quote}
+                                attribution={quoteBefore.attribution}
+                              />
+                            )}
+                            <div>
+                              <h2
+                                className="font-sora text-article-title text-on-surface pt-lg pb-md"
+                                dangerouslySetInnerHTML={{ __html: md(section.heading) }}
+                              />
+                              <ContentBlocks
+                                blocks={section.paragraphs}
+                                firstDropCap={i === 0}
+                                sectionIndex={i}
+                                isPractice={/practice/i.test(section.heading)}
+                                highlights={highlights}
+                                onHighlightClick={(id) => highlightClickRef.current(id)}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </>
               ) : (
