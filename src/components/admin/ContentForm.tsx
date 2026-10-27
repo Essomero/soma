@@ -15,6 +15,7 @@ import type { AIDraft } from "./AIDraftPanel";
 interface ContentFormProps {
   initial: AIDraft | null;
   onSave: (data: SavePayload) => void;
+  onCancel: () => void;
   saving: boolean;
 }
 
@@ -122,7 +123,7 @@ function initFromDraft(draft: AIDraft | null): FormValues {
   };
 }
 
-export default function ContentForm({ initial, onSave, saving }: ContentFormProps) {
+export default function ContentForm({ initial, onSave, onCancel, saving }: ContentFormProps) {
   const [type, setType] = useState<ContentType>("story");
   const [values, setValues] = useState<FormValues>({});
   const [useCustomSlug, setUseCustomSlug] = useState(false);
@@ -1006,11 +1007,19 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
       {/* Save — at the bottom after all fields */}
       <div className="flex items-center gap-md">
         <button
+          type="button"
           onClick={handleSave}
           disabled={saving || !title || !slug}
           className="px-xl py-md bg-primary text-on-primary font-sora text-label-caps uppercase tracking-widest hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {saving ? "Saving..." : status === "published" ? "Publish" : "Save Private"}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-xl py-md bg-surface border border-border-default text-on-surface font-sora text-label-caps uppercase tracking-widest hover:border-primary transition-colors"
+        >
+          Cancel
         </button>
       </div>
     </div>

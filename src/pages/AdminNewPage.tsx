@@ -138,7 +138,12 @@ export default function AdminNewPage() {
         {/* Content Form — shown after draft is generated */}
         {draft && (
           <section className="p-xl bg-surface border border-border-default">
-            <ContentForm initial={draft} onSave={handleSave} saving={saving} />
+            <ContentForm
+              initial={draft}
+              onSave={handleSave}
+              onCancel={() => navigate("/admin")}
+              saving={saving}
+            />
           </section>
         )}
       </div>
