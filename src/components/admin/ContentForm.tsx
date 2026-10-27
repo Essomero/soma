@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Trash2, GripVertical, X } from "lucide-react";
 import BlockEditor from "./BlockEditor";
+import ContentPreview from "./ContentPreview";
 import type { ContentBlock } from "@/types";
 import {
   CONTENT_TYPE_LABELS,
@@ -234,6 +235,37 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
       status,
       body: buildBody(),
     });
+  };
+
+  // Live preview: mirror the current form state back into a draft shape.
+  const previewDraft: AIDraft = {
+    type,
+    reasoning: "",
+    title: str(values.title),
+    excerpt: str(values.excerpt),
+    category: str(values.category),
+    author: { name: str(values.authorName), handle: str(values.authorHandle) || undefined },
+    date: str(values.date),
+    intro: str(values.intro),
+    body: strArray(values.body),
+    sections: type === "doc" ? [] : recordArray(values.sections).map((s) => ({
+      heading: str(s.heading),
+      paragraphs: blockArray(s.paragraphs),
+    })),
+    docSections: type === "doc" ? recordArray(values.docSections).map((s) => ({
+      number: str(s.number),
+      heading: str(s.heading),
+      anchor: str(s.anchor),
+      items: recordArray(s.items).map((item) => ({
+        question: str(item.question),
+        answer: blockArray(item.answer),
+      })),
+    })) : [],
+    episodes: recordArray(values.episodes).map((e) => ({
+      title: str(e.title),
+      storySlug: str(e.storySlug),
+      description: str(e.description) || undefined,
+    })),
   };
 
   // ── Schema-driven field renderers ──
@@ -866,6 +898,9 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
           <span className="font-sora text-sm text-on-surface">Save &amp; Publish</span>
         </label>
       </div>
+
+      {/* Preview */}
+      <ContentPreview draft={previewDraft} />
 
       {/* Actions */}
       <div className="flex items-center gap-md">
