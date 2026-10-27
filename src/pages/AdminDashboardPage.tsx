@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Plus, Loader2, Eye, EyeOff, Search } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { CONTENT_TYPES, CONTENT_TYPE_LABELS, ROUTE_BASE, type ContentType } from "@/lib/admin-prompts";
+import { CONTENT_TYPES, CONTENT_TYPE_LABELS, type ContentType } from "@/lib/admin-prompts";
+import { ROUTE_BASE } from "@/lib/content-schema";
 
 interface ContentItem {
   slug: string;
