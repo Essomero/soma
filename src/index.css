@@ -952,6 +952,35 @@
 }
 
 /* ── Screen B/W preview toggle ──────────────────────────── */
-.print-bw {
-  filter: grayscale(100%);
+.print-bw main {
+  background: #fff !important;
+  color: #000 !important;
+}
+.print-bw main * {
+  color: #000 !important;
+  border-color: #ccc !important;
+}
+.print-bw main .text-primary,
+.print-bw main .text-accent-orange,
+.print-bw main .text-on-surface-muted,
+.print-bw main .text-on-surface-variant {
+  color: #000 !important;
+}
+.print-bw main .bg-surface-container-low,
+.print-bw main .bg-surface,
+.print-bw main .bg-surface-container,
+.print-bw main .bg-surface-container-highest,
+.print-bw main .bg-primary,
+.print-bw main .bg-primary\/10,
+.print-bw main .bg-accent-orange\/10,
+.print-bw main .bg-accent-orange\/15 {
+  background: #fff !important;
+}
+.print-bw main .text-gradient {
+  background: none !important;
+  color: #000 !important;
+}
+.print-bw main img,
+.print-bw main svg {
+  display: none !important;
 }
