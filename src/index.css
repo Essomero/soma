@@ -850,6 +850,17 @@
     background: #f5f5f5 !important;
     color: #000 !important;
   }
+  .print-bw .comment-code-block {
+    background: #fff !important;
+    border-color: #ccc !important;
+  }
+  .print-bw .comment-code-block .bg-surface-container {
+    background: #f1f5f9 !important;
+  }
+  .print-bw .comment-code-block pre,
+  .print-bw .comment-code-block code {
+    background: transparent !important;
+  }
   .print-bw .border-primary,
   .print-bw .border-accent-orange {
     border-color: #ccc !important;
@@ -875,20 +886,25 @@
     display: none !important;
   }
   .print-bw .print-passage .hljs-keyword,
-  .print-bw .print-passage .hljs-string,
-  .print-bw .print-passage .hljs-number,
-  .print-bw .print-passage .hljs-comment,
-  .print-bw .print-passage .hljs-function,
-  .print-bw .print-passage .hljs-literal,
+  .print-bw .print-passage .hljs-selector-tag,
   .print-bw .print-passage .hljs-built_in,
   .print-bw .print-passage .hljs-type,
+  .print-bw .print-passage .hljs-literal {
+    color: #000 !important;
+    font-weight: 700 !important;
+  }
+  .print-bw .print-passage .hljs-comment,
+  .print-bw .print-passage .hljs-quote {
+    color: #666 !important;
+    font-style: italic !important;
+  }
+  .print-bw .print-passage .hljs-string,
+  .print-bw .print-passage .hljs-number,
   .print-bw .print-passage .hljs-title,
-  .print-bw .print-passage .hljs-title\.class_,
   .print-bw .print-passage .hljs-attr,
   .print-bw .print-passage .hljs-selector-class,
-  .print-bw .print-passage .hljs-selector-tag,
   .print-bw .print-passage .hljs-section,
-  .print-bw .print-passage .hljs-quote,
+  .print-bw .print-passage .hljs-function,
   .print-bw .print-passage .hljs-variable,
   .print-bw .print-passage .hljs-addition,
   .print-bw .print-passage .hljs-deletion {
@@ -926,27 +942,47 @@
   background: #f5f5f5 !important;
   border-color: #ccc !important;
 }
+.print-bw main .comment-code-block {
+  background: #fff !important;
+  border-color: #ccc !important;
+}
+.print-bw main .comment-code-block .bg-surface-container {
+  background: #f1f5f9 !important;
+  border-color: #ccc !important;
+}
+.print-bw main .comment-code-block pre,
+.print-bw main .comment-code-block code {
+  background: transparent !important;
+}
 .print-bw main .bg-error\/40,
 .print-bw main .bg-accent-orange\/40,
 .print-bw main .bg-secondary\/40 {
   display: none !important;
 }
+/* B/W syntax: bold keywords keep the structure of the color version */
 .print-bw main .hljs-keyword,
-.print-bw main .hljs-string,
-.print-bw main .hljs-number,
-.print-bw main .hljs-literal,
+.print-bw main .hljs-selector-tag,
 .print-bw main .hljs-built_in,
 .print-bw main .hljs-type,
+.print-bw main .hljs-literal {
+  color: #000 !important;
+  font-weight: 700 !important;
+}
+.print-bw main .hljs-comment,
+.print-bw main .hljs-quote {
+  color: #666 !important;
+  font-style: italic !important;
+}
+.print-bw main .hljs-string,
+.print-bw main .hljs-number,
 .print-bw main .hljs-title,
 .print-bw main .hljs-title\.class_,
 .print-bw main .hljs-title\.function_,
 .print-bw main .hljs-attr,
 .print-bw main .hljs-selector-class,
-.print-bw main .hljs-selector-tag,
+.print-bw main .hljs-selector-pseudo,
 .print-bw main .hljs-section,
 .print-bw main .hljs-function,
-.print-bw main .hljs-comment,
-.print-bw main .hljs-quote,
 .print-bw main .hljs-variable,
 .print-bw main .hljs-addition,
 .print-bw main .hljs-deletion {
