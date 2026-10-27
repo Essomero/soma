@@ -943,6 +943,7 @@
 .print-preview main .comment-code-block pre,
 .print-preview main .comment-code-block code {
   background: #f8fafc !important;
+  color: #1e293b !important;
 }
 /* Light-theme hljs colors, matching the printed output */
 .print-preview main .hljs-keyword,
