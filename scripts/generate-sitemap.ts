@@ -1,12 +1,21 @@
 /**
- * Sitemap generator: seed corpus -> public/sitemap.xml
+ * Sitemap generator: content corpus -> public/sitemap.xml
  * Only the versioned corpus is listed: it is the public baseline.
  * Private store rows are never in the sitemap.
  * Run: npm run sitemap (also runs as part of npm run build)
  */
 import * as fs from "fs";
 import * as path from "path";
-import { loadCorpus } from "./corpus.ts";
+import { allStories } from "../src/content/stories/index.ts";
+import { allGuides } from "../src/content/guides/index.ts";
+import { allDocs } from "../src/content/docs/index.ts";
+import { allCourses } from "../src/content/courses/index.ts";
+import { allBooks } from "../src/content/books/index.ts";
+import { allSeries } from "../src/content/series/index.ts";
+import { allTests } from "../src/content/tests/index.ts";
+import { allFeatured } from "../src/content/featured/index.ts";
+import { allEpisodes } from "../src/content/podcast/episodes/index.ts";
+import { allTopics } from "../src/content/topics/index.ts";
 
 const BASE = "https://soma.mayanja.dev";
 
@@ -44,13 +53,33 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+function str(v: unknown): string {
+  return typeof v === "string" ? v : "";
+}
+
 async function main() {
-  const corpus = loadCorpus();
+  const collections: Array<{ type: string; items: Record<string, unknown>[] }> = [
+    { type: "story", items: allStories },
+    { type: "guide", items: allGuides },
+    { type: "doc", items: allDocs },
+    { type: "course", items: allCourses },
+    { type: "book", items: allBooks },
+    { type: "series", items: allSeries },
+    { type: "test", items: allTests },
+    { type: "featured", items: allFeatured },
+    { type: "podcast", items: allEpisodes },
+    { type: "topic", items: allTopics },
+  ];
+
   const urls = new Set<string>(STATIC_ROUTES);
-  for (const entry of corpus) {
-    const route = ROUTES[entry.type];
-    if (!route || !entry.slug) continue;
-    urls.add(`/${route}/${entry.slug}`);
+  for (const { type, items } of collections) {
+    const route = ROUTES[type];
+    if (!route) continue;
+    for (const item of items) {
+      const slug = str(item.slug);
+      if (!slug) continue;
+      urls.add(`/${route}/${slug}`);
+    }
   }
 
   const items = [...urls]
