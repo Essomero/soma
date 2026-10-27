@@ -11,6 +11,7 @@ import {
   type FieldSchema,
 } from "@/lib/admin-prompts";
 import type { AIDraft } from "./AIDraftPanel";
+import TestEditor from "./TestEditor";
 
 interface ContentFormProps {
   initial: AIDraft | null;
@@ -979,6 +980,16 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
         { name: "role", type: "string", required: false, description: "Role/title" },
         { name: "description", type: "string", required: false, description: "Bio" },
       ] satisfies FieldSchema[], { name: "", role: "", description: "" })}
+
+      {/* Test sources + questions */}
+      {type === "test" && (
+        <TestEditor
+          sources={recordArray(values.sources)}
+          questions={recordArray(values.questions)}
+          onSourcesChange={(next) => setVal("sources", next)}
+          onQuestionsChange={(next) => setVal("questions", next)}
+        />
+      )}
 
       {/* Visibility */}
       <div className="flex items-center gap-lg pt-lg border-t border-border-default">
