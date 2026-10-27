@@ -104,9 +104,18 @@ export default function TestPrintPage() {
 
       {/* ── Exam Paper ───────────────────────────────────────────── */}
       <main className="max-w-3xl mx-auto px-6 sm:px-8 py-12">
+        <table className="print-lesson-table">
+          <thead className="print-lesson-thead">
+            <tr>
+              <td style={{ height: "8mm", padding: 0 }} />
+            </tr>
+          </thead>
+          <tbody className="print-lesson-tbody">
+            <tr>
+              <td className="print-lesson-body-cell">
 
         {/* Header */}
-        <header className="border-b-2 border-on-surface pb-6 mb-8">
+        <header className="border-b-2 border-on-surface pb-6 mb-8 chapter-header">
           <div className="flex items-start justify-between mb-4">
             <div>
               <p className="font-sora text-xs font-bold uppercase tracking-[0.2em] text-primary mb-1">
@@ -251,6 +260,10 @@ export default function TestPrintPage() {
           <p className="font-sora text-sm font-bold text-on-surface uppercase tracking-widest">End of Paper</p>
           <p className="font-dm-sans text-xs text-on-surface-muted mt-1">{test.title} &middot; Soma Print Edition &middot; {test.questions.length} questions</p>
         </footer>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </main>
     </div>
   );
