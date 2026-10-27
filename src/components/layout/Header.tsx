@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, LogOut, Sun, Moon } from "lucide-react";
+import { Search, LogOut, Sun, Moon, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSearch } from "@/lib/SearchContext";
 import { useTheme } from "@/lib/ThemeContext";
@@ -95,6 +95,17 @@ export default function Header() {
               <Search className="w-5 h-5" />
             </button>
           </Tooltip>
+          {authed && (
+            <Tooltip label="Content admin" position="bottom">
+              <Link
+                to="/admin"
+                className="p-2 text-on-surface-variant hover:text-primary rounded-lg hover:bg-surface-container-low transition-colors"
+                aria-label="Content admin"
+              >
+                <Settings className="w-5 h-5" />
+              </Link>
+            </Tooltip>
+          )}
           {authed && (
             <Tooltip label="Sign out" position="bottom" align="end">
               <button

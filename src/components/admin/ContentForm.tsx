@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Trash2, GripVertical, X } from "lucide-react";
+import BlockEditor from "./BlockEditor";
+import type { ContentBlock } from "@/types";
 import {
   CONTENT_TYPE_LABELS,
   CONTENT_TYPES,
@@ -64,6 +66,20 @@ function recordArray(v: unknown): Record<string, unknown>[] {
 function strArray(v: unknown): string[] {
   if (Array.isArray(v) && v.every((x) => typeof x === "string")) return v as string[];
   return [""];
+}
+
+/** Narrow unknown to a mixed (string | ContentBlock)[] for BlockEditor. */
+function blockArray(v: unknown): (string | ContentBlock)[] {
+  if (!Array.isArray(v)) return [""];
+  const out: (string | ContentBlock)[] = [];
+  for (const item of v) {
+    if (typeof item === "string") {
+      out.push(item);
+    } else if (item && typeof item === "object") {
+      out.push(item as ContentBlock);
+    }
+  }
+  return out.length > 0 ? out : [""];
 }
 
 function initFromDraft(draft: AIDraft | null): FormValues {
@@ -621,9 +637,51 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
       )}
 
       {/* Sections (rich-text types) */}
-      {isRichText && renderArrayEditor("sections", "Sections", [
-        { name: "heading", type: "string", required: true, description: "Section heading" },
-      ] satisfies FieldSchema[], { heading: "", paragraphs: [""] })}
+      {isRichText && (
+        <div className="space-y-lg">
+          <label className="font-sora text-sm text-on-surface block">Sections</label>
+          {recordArray(values.sections).map((sec, i) => (
+            <div key={i} className="p-lg bg-surface-container border border-border-default">
+              <div className="flex items-center gap-sm mb-md">
+                <GripVertical className="w-4 h-4 text-on-surface-muted shrink-0" />
+                <input
+                  value={str(sec.heading)}
+                  onChange={(e) => {
+                    const next = [...recordArray(values.sections)];
+                    next[i] = { ...next[i], heading: e.target.value };
+                    setVal("sections", next);
+                  }}
+                  placeholder="Section heading"
+                  className="flex-1 p-sm bg-surface border border-border-default text-on-surface font-sora text-sm focus:outline-none focus:border-primary"
+                />
+                <button
+                  onClick={() => setVal("sections", recordArray(values.sections).filter((_, j) => j !== i))}
+                  className="p-sm text-on-surface-muted hover:text-error transition-colors"
+                  title="Remove section"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="ml-md">
+                <BlockEditor
+                  blocks={blockArray(sec.paragraphs)}
+                  onChange={(blocks) => {
+                    const next = [...recordArray(values.sections)];
+                    next[i] = { ...next[i], paragraphs: blocks };
+                    setVal("sections", next);
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+          <button
+            onClick={() => setVal("sections", [...recordArray(values.sections), { heading: "", paragraphs: [""] }])}
+            className="inline-flex items-center gap-sm text-sm text-primary hover:text-primary-hover font-dm-sans"
+          >
+            <Plus className="w-4 h-4" /> Add section
+          </button>
+        </div>
+      )}
 
       {/* Pull quotes (rich-text types) */}
       {isRichText && renderArrayEditor("pullQuotes", "Pull Quotes", [
@@ -724,19 +782,18 @@ export default function ContentForm({ initial, onSave, saving }: ContentFormProp
                       <X className="w-3 h-3" />
                     </button>
                   </div>
-                  <textarea
-                    value={strArray(item.answer).join("\n\n")}
-                    onChange={(e) => {
-                      const next = [...recordArray(values.docSections)];
-                      const items = [...recordArray(next[i].items)];
-                      items[j] = { ...items[j], answer: e.target.value.split("\n\n") };
-                      next[i] = { ...next[i], items };
-                      setVal("docSections", next);
-                    }}
-                    placeholder="Answer (separate blocks with blank lines)"
-                    rows={3}
-                    className="w-full p-sm bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary resize-y"
-                  />
+                  <div className="mt-sm">
+                    <BlockEditor
+                      blocks={blockArray(item.answer)}
+                      onChange={(blocks) => {
+                        const next = [...recordArray(values.docSections)];
+                        const items = [...recordArray(next[i].items)];
+                        items[j] = { ...items[j], answer: blocks };
+                        next[i] = { ...next[i], items };
+                        setVal("docSections", next);
+                      }}
+                    />
+                  </div>
                 </div>
               ))}
               <button

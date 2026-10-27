@@ -22,7 +22,7 @@ export interface AIDraft {
   topics?: string[];
   intro: string;
   body?: string[];
-  sections?: { heading: string; paragraphs: string[] }[];
+  sections?: { heading: string; paragraphs: (string | object)[] }[];
   pullQuotes?: { quote: string; attribution?: string }[];
   bentoHighlights?: { label: string; title: string; description: string }[];
   references?: { title: string; url: string; description?: string }[];
@@ -32,7 +32,7 @@ export interface AIDraft {
   chapters?: { title: string; storySlug: string; description?: string }[];
   episodes?: { title: string; storySlug: string; description?: string }[];
   // doc
-  docSections?: { number: string; heading: string; anchor: string; items: { question: string; answer: string[] }[] }[];
+  docSections?: { number: string; heading: string; anchor: string; items: { question: string; answer: (string | object)[] }[] }[];
   // test
   format?: "written" | "oral" | "hybrid";
   estimatedMinutes?: number;

@@ -29,6 +29,17 @@ function asStringArray(v: unknown): string[] | undefined {
   return undefined;
 }
 
+/** Mixed (string | ContentBlock)[] — keep strings, keep objects as blocks. */
+function blockOrArray(v: unknown): (string | object)[] {
+  if (!Array.isArray(v)) return [""];
+  const out: (string | object)[] = [];
+  for (const item of v) {
+    if (typeof item === "string") out.push(item);
+    else if (item && typeof item === "object" && !Array.isArray(item)) out.push(item);
+  }
+  return out.length > 0 ? out : [""];
+}
+
 function rowToDraft(row: Record<string, unknown>, type: ContentType): AIDraft {
   const author = (row.author && typeof row.author === "object" ? row.author : {}) as Record<string, unknown>;
   const draft: AIDraft = {
@@ -50,7 +61,7 @@ function rowToDraft(row: Record<string, unknown>, type: ContentType): AIDraft {
   // Rich text appendices
   draft.sections = asRecordArray(row.sections).map((s) => ({
     heading: str(s.heading),
-    paragraphs: asStringArray(s.paragraphs) ?? [],
+    paragraphs: blockOrArray(s.paragraphs),
   }));
   draft.pullQuotes = asRecordArray(row.pullQuotes).map((q) => ({
     quote: str(q.quote),
@@ -102,7 +113,7 @@ function rowToDraft(row: Record<string, unknown>, type: ContentType): AIDraft {
       anchor: str(s.anchor),
       items: asRecordArray(s.items).map((item) => ({
         question: str(item.question),
-        answer: asStringArray(item.answer) ?? [""],
+        answer: blockOrArray(item.answer),
       })),
     }));
     draft.sections = [];
