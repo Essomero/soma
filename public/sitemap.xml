@@ -100,6 +100,12 @@
     <loc>https://soma.mayanja.dev/tests</loc>
   </url>
   <url>
+    <loc>https://soma.mayanja.dev/tests/p1-school-and-home</loc>
+  </url>
+  <url>
+    <loc>https://soma.mayanja.dev/tests/p1-school-and-home-written</loc>
+  </url>
+  <url>
     <loc>https://soma.mayanja.dev/tests/sql-query-optimization</loc>
   </url>
   <url>
