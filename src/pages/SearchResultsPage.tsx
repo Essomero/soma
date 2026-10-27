@@ -22,7 +22,7 @@ const filters = [
 const trendingTopics = ["REACT", "WEBGL", "RUST", "DOCKER"];
 
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { coverUrl } from "@/lib/utils";
+import SafeImage from "@/components/ui/SafeImage";
 
 export default function SearchResultsPage() {
   const [searchParams] = useSearchParams();
@@ -157,10 +157,9 @@ export default function SearchResultsPage() {
             {storyResults[0] && (
               <Link to={`/stories/${storyResults[0].slug}`} className="grid grid-cols-1 xl:grid-cols-12 gap-xl group cursor-pointer block">
                 <div className="xl:col-span-7 overflow-hidden rounded-lg border border-border-default">
-                  <img
-                    alt={storyResults[0].imageAlt}
+                  <SafeImage alt={storyResults[0].imageAlt}
                     className="w-full h-[400px] object-cover transition-transform duration-700 group-hover:scale-105"
-                    src={coverUrl(storyResults[0]?.image)}
+                    src={storyResults[0]?.image}
                   />
                 </div>
                 <div className="xl:col-span-5 flex flex-col justify-center">
@@ -190,10 +189,9 @@ export default function SearchResultsPage() {
               {storyResults.slice(1, 2).map((story) => (
                 <Link key={story.slug} to={`/stories/${story.slug}`} className="flex flex-col group cursor-pointer">
                   <div className="aspect-video mb-lg overflow-hidden rounded-lg border border-border-default">
-                    <img
-                      alt={story.imageAlt}
+                    <SafeImage alt={story.imageAlt}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      src={coverUrl(story?.image)}
+                      src={story?.image}
                     />
                   </div>
                   <span className="font-sora text-metadata-tag text-on-surface-muted mb-xs uppercase">

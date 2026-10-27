@@ -11,7 +11,7 @@ import { contentToMarkdown, md } from "@/lib/markdown";
 import { useContentItem, useContentList } from "@/lib/content";
 import type { PodcastEpisodeFull } from "@/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { coverUrl } from "@/lib/utils";
+import SafeImage from "@/components/ui/SafeImage";
 
 export default function PodcastEpisodePage() {
   const { slug } = useParams<{ slug: string }>();
@@ -97,7 +97,7 @@ export default function PodcastEpisodePage() {
           <div className="col-span-12 lg:col-span-4 flex lg:justify-end">
             <div className="relative w-64 h-64 md:w-80 md:h-80 group">
               <div className="absolute inset-0 bg-secondary-container blur-2xl opacity-20 group-hover:opacity-40 transition-opacity" />
-              <img
+              <SafeImage
                 alt={episode.coverAlt || episode.imageAlt}
                 className="relative z-10 w-full h-full object-cover rounded-xl border border-border-default shadow-2xl"
                 src={episode.coverImage || episode.image}
@@ -282,7 +282,7 @@ export default function PodcastEpisodePage() {
                   <Link key={item.title} to={item.href} className="block group">
                     {item.image && (
                       <div className="mb-sm rounded-lg overflow-hidden border border-border-default aspect-[16/9]">
-                        <img
+                        <SafeImage
                           alt=""
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           src={item.image}

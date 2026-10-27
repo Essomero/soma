@@ -9,7 +9,7 @@ import type { SortKey } from "@/lib/content";
 import SortControl from "@/components/ui/SortControl";
 import type { CourseContent } from "@/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { coverUrl } from "@/lib/utils";
+import SafeImage from "@/components/ui/SafeImage";
 
 export default function CoursesIndexPage() {
   const { data: courses, loading } = useContentList<CourseContent>("course");
@@ -62,10 +62,9 @@ export default function CoursesIndexPage() {
                     className="group block bg-surface-container-low border border-border-default rounded-xl overflow-hidden hover:border-primary/50 hover:-translate-y-1 transition-all"
                   >
                     <div className="aspect-video overflow-hidden">
-                      <img
-                        alt={course.imageAlt}
+                      <SafeImage alt={course.imageAlt}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        src={coverUrl(course?.image)}
+                        src={course?.image}
                       />
                     </div>
                     <div className="p-xl">

@@ -8,7 +8,7 @@ import type { SortKey } from "@/lib/content";
 import SortControl from "@/components/ui/SortControl";
 import type { DocContent } from "@/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { coverUrl } from "@/lib/utils";
+import SafeImage from "@/components/ui/SafeImage";
 
 export default function DocsIndexPage() {
   const { data: docs, loading } = useContentList<DocContent>("doc");
@@ -61,10 +61,9 @@ export default function DocsIndexPage() {
                     className="group block bg-surface-container-low border border-border-default rounded-xl overflow-hidden hover:border-primary/50 hover:-translate-y-1 transition-all"
                   >
                     <div className="aspect-video overflow-hidden">
-                      <img
-                        alt={doc.imageAlt}
+                      <SafeImage alt={doc.imageAlt}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        src={coverUrl(doc?.image)}
+                        src={doc?.image}
                       />
                     </div>
                     <div className="p-xl">

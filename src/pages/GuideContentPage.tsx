@@ -14,6 +14,8 @@ import Comments from "@/components/ui/Comments";
 import ContentBlocks from "@/components/ui/ContentBlocks";
 import InlineHighlights from "@/components/ui/InlineHighlights";
 import PrintButton from "@/components/ui/PrintButton";
+import SafeImage from "@/components/ui/SafeImage";
+import { Edit3 } from "lucide-react";
 import { useContentItem, useContentList } from "@/lib/content";
 import type { GuideContent } from "@/types";
 import { useAuth } from "@/lib/AuthContext";
@@ -22,7 +24,6 @@ import { type HighlightData } from "@/lib/highlights";
 
 import type { BentoCardData, PullQuoteData } from "@/types";
 import type { LucideIcon } from "lucide-react";
-import { cn, coverUrl } from "@/lib/utils";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
 // Icon map for tip cards (matches ship-soma pattern)
@@ -116,8 +117,18 @@ export default function GuideContentPage() {
                   {guide.author.title}
                 </span>
               )}
-              <div className="mt-sm">
+              <div className="mt-sm flex items-center gap-sm">
                 <PrintButton to={`/guides/${slug}/print`} compact />
+                {isOwner && (
+                  <Link
+                    to={`/admin/guide/${slug}/edit`}
+                    className="inline-flex items-center gap-xs px-sm py-sm text-xs font-sora text-on-surface-muted hover:text-primary border border-border-default hover:border-primary/50 transition-colors print:hidden"
+                    title="Edit guide"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    Edit
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -125,10 +136,10 @@ export default function GuideContentPage() {
 
         {/* Featured Image : wide 21:9, matches ship-soma */}
         <div className="w-full aspect-[21/9] mb-giant overflow-hidden rounded-xl border border-border-default group">
-          <img
+          <SafeImage
             alt={guide.imageAlt}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            src={coverUrl(guide.image)}
+            src={guide.image}
           />
         </div>
 

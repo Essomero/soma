@@ -10,7 +10,7 @@ import { useContentList, toCard } from "@/lib/content";
 import type { StoryContent, GuideContent, FeaturedContent, PodcastEpisodeFull } from "@/types";
 import { Link } from "react-router-dom";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { coverUrl } from "@/lib/utils";
+import SafeImage from "@/components/ui/SafeImage";
 
 export default function HomePage() {
   const storiesQ = useContentList<StoryContent>("story");
@@ -144,10 +144,9 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="order-1 md:order-2 aspect-square rounded-lg overflow-hidden">
-              <img
-                alt={secondaryGuide.imageAlt}
+              <SafeImage alt={secondaryGuide.imageAlt}
                 className="w-full h-full object-cover"
-                src={coverUrl(secondaryGuide?.image)}
+                src={secondaryGuide?.image}
               />
             </div>
           </article>
@@ -157,10 +156,9 @@ export default function HomePage() {
             {secondaryStories.map((story) => (
               <article key={story.id} className="group">
                 <div className="aspect-video bg-surface-bright rounded-lg mb-6 overflow-hidden">
-                  <img
-                    alt={story.imageAlt}
+                  <SafeImage alt={story.imageAlt}
                     className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                    src={coverUrl(story?.image)}
+                    src={story?.image}
                   />
                 </div>
                 <Tag variant="primary">{story.category}</Tag>
@@ -220,10 +218,9 @@ export default function HomePage() {
           <article className="group">
             <Link to={featuredGuide.href} className="block">
               <div className="aspect-[3/4] bg-surface-bright rounded-lg mb-6 overflow-hidden relative">
-                <img
-                  alt="Testing"
+                <SafeImage alt="Testing"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  src={coverUrl(featuredGuide?.image)}
+                  src={featuredGuide?.image}
                 />
                 <div className="absolute bottom-4 left-4 right-4 p-4 bg-surface/90 backdrop-blur rounded border border-surface-bright">
                   <span className="text-[10px] font-bold uppercase text-brand">

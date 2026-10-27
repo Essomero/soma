@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
-import { cn, coverUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import Tag from "@/components/ui/Tag";
+import SafeImage from "@/components/ui/SafeImage";
 import type { ArticleCardData } from "@/types";
 import { md } from "@/lib/markdown";
 
@@ -19,10 +20,10 @@ export default function ArticleCard({
     <article className={cn("flex flex-col gap-4 group", className)}>
       <Link to={article.href} className="block">
         <div className="aspect-video rounded-lg overflow-hidden mb-4 grayscale group-hover:grayscale-0 transition-all duration-500">
-          <img
+          <SafeImage
             alt={article.imageAlt}
             className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
-            src={coverUrl(article.image)}
+            src={article.image}
           />
         </div>
       </Link>

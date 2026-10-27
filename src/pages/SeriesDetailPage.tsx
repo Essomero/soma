@@ -10,7 +10,7 @@ import { getTotalReadingTime } from "@/lib/readingTime";
 import { PublicToggleInline, useCollectionPublicState } from "@/components/ui/PublicToggle";
 import { md } from "@/lib/markdown";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { coverUrl } from "@/lib/utils";
+import SafeImage from "@/components/ui/SafeImage";
 
 export default function SeriesDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -49,10 +49,9 @@ export default function SeriesDetailPage() {
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-border-default">
         <div className="absolute inset-0 z-0">
-          <img
-            alt={series.imageAlt}
+          <SafeImage alt={series.imageAlt}
             className="w-full h-full object-cover opacity-30"
-            src={coverUrl(series?.image)}
+            src={series?.image}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
         </div>

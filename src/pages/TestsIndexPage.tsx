@@ -9,7 +9,7 @@ import SortControl from "@/components/ui/SortControl";
 import type { TestContent } from "@/types";
 import { getStoredAnswers, getStoredEvaluation } from "@/lib/testEvaluation";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { coverUrl } from "@/lib/utils";
+import SafeImage from "@/components/ui/SafeImage";
 
 export default function TestsIndexPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -137,10 +137,9 @@ export default function TestsIndexPage() {
                   <div>
                     {/* Test Image */}
                     <div className="aspect-[16/9] overflow-hidden relative">
-                      <img
-                        alt={test.imageAlt}
+                      <SafeImage alt={test.imageAlt}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        src={coverUrl(test?.image)}
+                        src={test?.image}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
 

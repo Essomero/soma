@@ -11,7 +11,7 @@ import type { DocContent, TocItem } from "@/types";
 import { md, contentToMarkdown } from "@/lib/markdown";
 import { useAuth } from "@/lib/AuthContext";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { coverUrl } from "@/lib/utils";
+import SafeImage from "@/components/ui/SafeImage";
 
 export default function DocPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -78,10 +78,9 @@ export default function DocPage() {
         </div>
 
         <div className="w-full aspect-[21/9] mb-giant overflow-hidden rounded-xl border border-border-default group">
-          <img
-            alt={doc.imageAlt}
+          <SafeImage alt={doc.imageAlt}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            src={coverUrl(doc?.image)}
+            src={doc?.image}
           />
         </div>
 

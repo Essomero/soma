@@ -7,8 +7,8 @@ import { useContentList, sortContent } from "@/lib/content";
 import type { SortKey } from "@/lib/content";
 import SortControl from "@/components/ui/SortControl";
 import type { GuideContent } from "@/types";
-import { coverUrl } from "@/lib/utils";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import SafeImage from "@/components/ui/SafeImage";
 
 export default function GuidesIndexPage() {
   const { data: guides, loading } = useContentList<GuideContent>("guide");
@@ -62,10 +62,9 @@ export default function GuidesIndexPage() {
               {featuredGuide && (
                 <Link to={featuredGuide.href} className="block">
                   <div className="relative aspect-video overflow-hidden border border-border-default bg-surface-container mb-md">
-                    <img
-                      alt={featuredGuide.imageAlt}
+                    <SafeImage alt={featuredGuide.imageAlt}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      src={coverUrl(featuredGuide?.image)}
+                      src={featuredGuide?.image}
                     />
                     <div className="absolute top-md left-md">
                       <span className="bg-primary text-on-primary font-sora text-label-caps px-sm py-xs uppercase">
@@ -109,10 +108,9 @@ export default function GuidesIndexPage() {
                 <div key={guide.id} className="group cursor-pointer">
                   <Link to={guide.href} className="block">
                     <div className="relative aspect-[1.67] overflow-hidden border border-border-default bg-surface-container mb-md">
-                      <img
-                        alt={guide.imageAlt}
+                      <SafeImage alt={guide.imageAlt}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        src={coverUrl(guide.image)}
+                        src={guide.image}
                       />
                     </div>
                     <div className="flex flex-col gap-xs">
