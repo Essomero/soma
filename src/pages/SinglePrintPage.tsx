@@ -116,7 +116,7 @@ export default function SinglePrintPage({ type, base }: { type: SinglePrintType;
       ].join(" ");
       return getReadingTime(text);
     }
-    if (guide) return getReadingTime([guide.intro || "", ...plainText(guide.body || [])].join(" "));
+    if (guide) return getReadingTime([guide.intro || "", ...plainText(guide.body || []), ...(guide.sections?.flatMap((s) => s.paragraphs.filter((p): p is string => typeof p === "string")) || [])].join(" "));
     if (doc) {
       const text = doc.sections
         .flatMap((s) => [
@@ -251,6 +251,20 @@ export default function SinglePrintPage({ type, base }: { type: SinglePrintType;
               {guide.body && guide.body.length > 0 && (
                 <ContentBlocks blocks={guide.body} isPrint={true} />
               )}
+              {guide.sections &&
+                guide.sections.map((section, i) => {
+                  const filtered = section.paragraphs.filter(
+                    (p) => typeof p === "string" || p.type !== "lab"
+                  );
+                  return (
+                    <div key={i} className="mt-6">
+                      <h2 className="font-sora text-2xl font-bold text-on-surface mb-4 pb-2 border-b border-border-default/50 break-after-avoid">
+                        <span dangerouslySetInnerHTML={{ __html: md(section.heading) }} />
+                      </h2>
+                      <ContentBlocks blocks={filtered} isPrint={true} />
+                    </div>
+                  );
+                })}
               <References items={guide.references} />
             </div>
           )}
