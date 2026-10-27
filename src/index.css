@@ -926,6 +926,63 @@
 .print-preview main .border-on-surface { border-color: #0f172a !important; }
 .print-preview main .text-gradient { background: none !important; color: #0f172a !important; }
 
+/* Code blocks on screen preview: match print (light surfaces, no window dots) */
+.print-preview main .comment-code-block {
+  background: #fff !important;
+  border-color: #e2e8f0 !important;
+}
+.print-preview main .comment-code-block .bg-surface-container {
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+.print-preview main .bg-error\/40,
+.print-preview main .bg-accent-orange\/40,
+.print-preview main .bg-secondary\/40 {
+  display: none !important;
+}
+.print-preview main .comment-code-block pre,
+.print-preview main .comment-code-block code {
+  background: #f8fafc !important;
+}
+/* Light-theme hljs colors, matching the printed output */
+.print-preview main .hljs-keyword,
+.print-preview main .hljs-selector-tag,
+.print-preview main .hljs-built_in,
+.print-preview main .hljs-type,
+.print-preview main .hljs-literal {
+  color: #b91c1c !important;
+  font-weight: 700 !important;
+}
+.print-preview main .hljs-string,
+.print-preview main .hljs-title,
+.print-preview main .hljs-section,
+.print-preview main .hljs-attribute,
+.print-preview main .hljs-addition {
+  color: #166534 !important;
+}
+.print-preview main .hljs-number,
+.print-preview main .hljs-selector-id {
+  color: #1d4ed8 !important;
+}
+.print-preview main .hljs-comment,
+.print-preview main .hljs-quote {
+  color: #64748b !important;
+  font-style: italic !important;
+}
+.print-preview main .hljs-function,
+.print-preview main .hljs-title.class_,
+.print-preview main .hljs-title.function_ {
+  color: #7c3aed !important;
+}
+.print-preview main .hljs-attr,
+.print-preview main .hljs-variable {
+  color: #0369a1 !important;
+}
+.print-preview main .hljs-selector-class,
+.print-preview main .hljs-selector-pseudo {
+  color: #b45309 !important;
+}
+
 /* ── Screen B/W preview toggle ─────���────────────────────── */
 .print-bw main {
   background: #fff !important;
