@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Plus, Trash2, GripVertical, X, Eye } from "lucide-react";
+import { Plus, Trash2, GripVertical, X, Eye, Pencil } from "lucide-react";
 import BlockEditor from "./BlockEditor";
 import ContentPreview from "./ContentPreview";
 import type { ContentBlock } from "@/types";
