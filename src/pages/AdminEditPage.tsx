@@ -305,7 +305,7 @@ export default function AdminEditPage() {
           <ContentForm
               initial={draft}
               onSave={handleSave}
-              onCancel={() => navigate("/admin")}
+              onCancel={() => navigate(-1)}
               saving={saving}
             />
         </section>
