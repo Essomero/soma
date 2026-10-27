@@ -5,15 +5,10 @@ import { useContentItem } from "@/lib/content";
 import { mdBlock } from "@/lib/markdown";
 import type {
   TestContent,
+  TestQuestion,
   OpenTestQuestion,
   MultipleChoiceTestQuestion,
 } from "@/types";
-
-function calcTotalSeconds(test: TestContent): number {
-  return test.questions.reduce((sum, q) => {
-    return sum + (q.timeLimitSeconds ?? test.defaultTimeLimitSeconds ?? 60);
-  }, 0);
-}
 
 function formatExamTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -28,6 +23,18 @@ function formatLabel(seconds: number): string {
   if (seconds <= 60) return `1 min`;
   if (seconds % 60 === 0) return `${seconds / 60} min`;
   return `${Math.floor(seconds / 60)} min ${seconds % 60}s`;
+}
+
+/** Marks per question: 1 for MCQ, 2 or 3 for open depending on depth. */
+function marksFor(q: TestQuestion): number {
+  return q.type === "multiple-choice" ? 1 : (q.timeLimitSeconds ?? 60) >= 120 ? 3 : 2;
+}
+
+/** Paper time: 2 minutes per mark (exam convention), unrelated to app timers. */
+const TIME_PER_MARK_SECONDS = 120;
+
+function paperTimeSeconds(q: TestQuestion): number {
+  return marksFor(q) * TIME_PER_MARK_SECONDS;
 }
 
 export default function TestPrintPage() {
@@ -64,11 +71,11 @@ export default function TestPrintPage() {
     );
   }
 
-  const totalSeconds = calcTotalSeconds(test);
   const qCount = test.questions.length;
   const openCount = test.questions.filter((q) => q.type === "open").length;
   const mcCount = test.questions.filter((q) => q.type === "multiple-choice").length;
-  const marksTotal = qCount;
+  const marksTotal = test.questions.reduce((sum, q) => sum + marksFor(q), 0);
+  const paperTotalSeconds = marksTotal * TIME_PER_MARK_SECONDS;
 
   return (
     <div className={`min-h-screen bg-background text-on-surface print-preview${bw ? " print-bw" : ""}`}>
@@ -135,7 +142,7 @@ export default function TestPrintPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-4 border-t border-border-default/60 text-sm font-sora">
             <div>
               <p className="text-[10px] uppercase tracking-wider text-on-surface-muted font-semibold">Time Allowed</p>
-              <p className="font-bold text-on-surface text-base mt-0.5">{formatExamTime(totalSeconds)}</p>
+              <p className="font-bold text-on-surface text-base mt-0.5">{formatExamTime(paperTotalSeconds)}</p>
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-wider text-on-surface-muted font-semibold">Total Marks</p>
@@ -163,7 +170,7 @@ export default function TestPrintPage() {
           <ol className="font-dm-sans text-sm text-on-surface-muted space-y-1.5 ml-5 list-decimal">
             <li>Write your name and candidate number at the top of this paper.</li>
             <li>Answer <strong>all</strong> questions in the spaces provided.</li>
-            <li>Total time allowed is {formatExamTime(totalSeconds)} across all {qCount} questions, about {formatExamTime(Math.round(totalSeconds / qCount))} each on average, including reading.</li>
+            <li>Total time allowed is {formatExamTime(paperTotalSeconds)}: 2 minutes per mark across {marksTotal} marks, including reading the passage.</li>
             <li>Read each passage and question carefully before writing your answer.</li>
             <li>Marks for each question are shown in brackets.</li>
           </ol>
@@ -201,7 +208,7 @@ export default function TestPrintPage() {
                       <div>
                         <p className="font-dm-sans text-sm text-on-surface leading-relaxed">{q.question}</p>
                         {q.description && <p className="font-dm-sans text-xs text-on-surface-muted mt-1">{q.description}</p>}
-                        <p className="font-mono text-[10px] text-on-surface-variant mt-1">Suggested time: {formatLabel(q.timeLimitSeconds ?? test.defaultTimeLimitSeconds ?? 60)} &middot; Marks: 1</p>
+                        <p className="font-mono text-[10px] text-on-surface-variant mt-1">Suggested time: {formatLabel(paperTimeSeconds(q))} &middot; Marks: {marksFor(q)}</p>
                       </div>
                     </div>
                     <div className="ml-8 mt-2 space-y-2">
@@ -239,8 +246,8 @@ export default function TestPrintPage() {
                         <p className="font-dm-sans text-sm text-on-surface leading-relaxed">{q.question}</p>
                         {q.description && <p className="font-dm-sans text-xs text-on-surface-muted mt-1 italic">{q.description}</p>}
                         <p className="font-mono text-[10px] text-on-surface-variant mt-1">
-                          Suggested time: {formatLabel(q.timeLimitSeconds ?? test.defaultTimeLimitSeconds ?? 60)} &middot;
-                          Marks: {(q.timeLimitSeconds ?? 60) >= 120 ? 3 : 2}
+                          Suggested time: {formatLabel(paperTimeSeconds(q))} &middot;
+                          Marks: {marksFor(q)}
                         </p>
                       </div>
                     </div>
