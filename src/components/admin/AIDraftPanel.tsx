@@ -1,7 +1,13 @@
-import { useState, useRef } from "react";
-import { Loader2, Sparkles, ArrowRight, AlertCircle } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Loader2, Sparkles, ArrowRight, AlertCircle, ChevronDown } from "lucide-react";
 import { buildSystemPrompt } from "@/lib/admin-prompts";
 import type { ContentType } from "@/lib/admin-prompts";
+
+interface ModelInfo {
+  id: string;
+  label: string;
+  provider: string;
+}
 
 interface AIDraftPanelProps {
   onDraft: (draft: AIDraft) => void;
@@ -31,15 +37,12 @@ export interface AIDraft {
   lessons?: { title: string; storySlug: string; description?: string }[];
   chapters?: { title: string; storySlug: string; description?: string }[];
   episodes?: { title: string; storySlug: string; description?: string }[];
-  // doc
   docSections?: { number: string; heading: string; anchor: string; items: { question: string; answer: (string | object)[] }[] }[];
-  // test
   format?: "written" | "oral" | "hybrid";
   estimatedMinutes?: number;
   passingScore?: number;
   sources?: { type: string; storySlug?: string; guideSlug?: string; docSlug?: string; title?: string; url?: string }[];
   questions?: { id: string; type: string; question: string; options?: { id: string; label: string }[]; correctOptionIds?: string[]; explanation?: string }[];
-  // podcast
   episode?: string;
   duration?: string;
   summary?: string;
@@ -54,10 +57,48 @@ export default function AIDraftPanel({ onDraft, disabled }: AIDraftPanelProps) {
   const [status, setStatus] = useState<"idle" | "generating" | "done" | "error">("idle");
   const [error, setError] = useState("");
   const [partial, setPartial] = useState("");
+  const [models, setModels] = useState<ModelInfo[]>([]);
+  const [modelsReady, setModelsReady] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<string>("");
+  const [selectedProvider, setSelectedProvider] = useState<string>("");
+  const [menuOpen, setMenuOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Fetch available models on mount
+  useEffect(() => {
+    fetch("/api/models")
+      .then((r) => r.json())
+      .then((data) => {
+        const list: ModelInfo[] = data.models ?? [];
+        setModels(list);
+        setModelsReady(true);
+        if (list.length > 0) {
+          setSelectedModel(list[0].id);
+          setSelectedProvider(list[0].provider);
+        }
+      })
+      .catch(() => {
+        setModels([]);
+        setModelsReady(true);
+      });
+  }, []);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen]);
+
+  const selected = models.find((m) => m.id === selectedModel && m.provider === selectedProvider);
+  const aiUnavailable = !modelsReady || models.length === 0;
 
   const generate = async () => {
-    if (!input.trim() || disabled) return;
+    if (!input.trim() || disabled || aiUnavailable) return;
     setStatus("generating");
     setError("");
     setPartial("");
@@ -72,7 +113,8 @@ export default function AIDraftPanel({ onDraft, disabled }: AIDraftPanelProps) {
         body: JSON.stringify({
           systemPrompt: buildSystemPrompt(),
           userMessage: `Create content based on this idea:\n\n${input.trim()}\n\nRespond with the JSON object only.`,
-          model: "straitly/deepseek/deepseek-v4-1-flash",
+          model: selectedModel,
+          provider: selectedProvider,
           stream: true,
           max_tokens: 8000,
         }),
@@ -80,8 +122,11 @@ export default function AIDraftPanel({ onDraft, disabled }: AIDraftPanelProps) {
       });
 
       if (!res.ok) {
-        const errBody = await res.text().catch(() => "");
-        throw new Error(`AI service error (${res.status}): ${errBody}`);
+        const errText = await res.text().catch(() => "");
+        const hint = errText.includes("not configured")
+          ? `${selectedProvider} key not configured — pick another model from the dropdown.`
+          : `AI service error (${res.status}): ${errText}`;
+        throw new Error(hint);
       }
 
       const reader = res.body?.getReader();
@@ -94,42 +139,36 @@ export default function AIDraftPanel({ onDraft, disabled }: AIDraftPanelProps) {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
         buffer = lines.pop() || "";
-
         for (const line of lines) {
           const trimmed = line.trim();
           if (!trimmed || !trimmed.startsWith("data: ")) continue;
           const data = trimmed.slice(6);
           if (data === "[DONE]") continue;
-
           try {
             const parsed = JSON.parse(data);
             const content = parsed.choices?.[0]?.delta?.content || "";
             accumulated += content;
             setPartial(accumulated);
           } catch {
-            // incomplete JSON line, skip
+            // incomplete frame
           }
         }
       }
 
-      // Parse the accumulated JSON
+      // Parse accumulated JSON
       const jsonStart = accumulated.indexOf("{");
       const jsonEnd = accumulated.lastIndexOf("}");
       if (jsonStart === -1 || jsonEnd === -1) {
         throw new Error("AI response did not contain valid JSON");
       }
-
       const jsonStr = accumulated.slice(jsonStart, jsonEnd + 1);
       const draft = JSON.parse(jsonStr) as AIDraft;
-
       if (!draft.type || !draft.title) {
         throw new Error("AI response missing required fields (type, title)");
       }
-
       setStatus("done");
       onDraft(draft);
     } catch (err) {
@@ -166,6 +205,59 @@ export default function AIDraftPanel({ onDraft, disabled }: AIDraftPanelProps) {
         </p>
       </div>
 
+      {/* Model picker + Generate button row */}
+      <div className="flex flex-wrap items-center gap-md">
+        {/* Model picker dropdown */}
+        <div ref={menuRef} className="relative">
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            disabled={aiUnavailable || status === "generating" || disabled}
+            className="inline-flex items-center gap-sm px-md py-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm hover:border-primary transition-colors disabled:opacity-40"
+          >
+            {selected ? selected.label : modelsReady ? "No models available" : "Loading models..."}
+            <ChevronDown className="w-4 h-4 text-on-surface-muted" />
+          </button>
+          {menuOpen && (
+            <div className="absolute top-full left-0 mt-1 z-50 w-64 bg-surface border border-border-default shadow-brutal max-h-60 overflow-y-auto">
+              {models.map((m) => (
+                <button
+                  key={`${m.provider}/${m.id}`}
+                  onClick={() => {
+                    setSelectedModel(m.id);
+                    setSelectedProvider(m.provider);
+                    setMenuOpen(false);
+                  }}
+                  className={`block w-full text-left px-lg py-sm font-dm-sans text-sm transition-colors hover:bg-surface-container ${
+                    m.id === selectedModel && m.provider === selectedProvider
+                      ? "text-primary bg-surface-container"
+                      : "text-on-surface-variant"
+                  }`}
+                >
+                  <span className="font-sora text-xs text-on-surface-muted uppercase mr-sm">{m.provider}</span>
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Generate button */}
+        <button
+          onClick={generate}
+          disabled={!input.trim() || status === "generating" || disabled || aiUnavailable}
+          className="inline-flex items-center gap-sm px-xl py-md bg-primary text-on-primary font-sora text-label-caps uppercase tracking-widest hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {status === "generating" ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Sparkles className="w-4 h-4" />
+          )}
+          {status === "generating" ? "Generating..." : "Generate Content"}
+          <ArrowRight className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Generating progress */}
       {status === "generating" && (
         <div className="flex items-start gap-md p-lg bg-surface-container border border-border-default">
           <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0 mt-0.5" />
@@ -189,6 +281,7 @@ export default function AIDraftPanel({ onDraft, disabled }: AIDraftPanelProps) {
         </div>
       )}
 
+      {/* Error */}
       {status === "error" && (
         <div className="flex items-start gap-md p-lg bg-surface-container border border-border-default border-l-4 border-l-error">
           <AlertCircle className="w-5 h-5 text-error shrink-0 mt-0.5" />
@@ -203,18 +296,6 @@ export default function AIDraftPanel({ onDraft, disabled }: AIDraftPanelProps) {
             Dismiss
           </button>
         </div>
-      )}
-
-      {status === "idle" && (
-        <button
-          onClick={generate}
-          disabled={!input.trim() || disabled}
-          className="inline-flex items-center gap-sm px-xl py-md bg-primary text-on-primary font-sora text-label-caps uppercase tracking-widest hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <Sparkles className="w-4 h-4" />
-          Generate Content
-          <ArrowRight className="w-4 h-4" />
-        </button>
       )}
     </div>
   );
