@@ -107,7 +107,9 @@ export default function TestPrintPage() {
         <table className="print-lesson-table">
           <thead className="print-lesson-thead">
             <tr>
-              <td style={{ height: "8mm", padding: 0 }} />
+              <td style={{ padding: 0, height: "12mm", verticalAlign: "bottom" }}>
+                <div style={{ height: "12mm", fontSize: "1pt", lineHeight: "12mm" }}>&nbsp;</div>
+              </td>
             </tr>
           </thead>
           <tbody className="print-lesson-tbody">
