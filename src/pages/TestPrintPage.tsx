@@ -272,6 +272,13 @@ export default function TestPrintPage() {
               </td>
             </tr>
           </tbody>
+          <tfoot className="print-lesson-tfoot">
+            <tr>
+              <td style={{ padding: 0, height: "12mm", verticalAlign: "top" }}>
+                <div style={{ height: "12mm", fontSize: "1pt", lineHeight: "12mm" }}>&nbsp;</div>
+              </td>
+            </tr>
+          </tfoot>
         </table>
       </main>
     </div>
