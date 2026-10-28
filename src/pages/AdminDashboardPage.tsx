@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Eye, EyeOff, Search, Pencil, Trash2, Globe } from "lucide-react";
+import { Plus, Eye, EyeOff, Search, Pencil, Trash2, Globe, Archive } from "lucide-react";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import { SkeletonAdminRows } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import LocalAgentPanel from "@/components/admin/LocalAgentPanel";
@@ -15,6 +16,7 @@ interface ContentItem {
   title: string;
   excerpt: string;
   updated_at: string;
+  archived?: boolean;
 }
 
 function useContentList() {
@@ -82,6 +84,8 @@ export default function AdminDashboardPage() {
   // Immediate toggle of a row's visibility: content_items.status is the
   // single gate, so the next GET reflects the flip.
   const [busySlug, setBusySlug] = useState<string | null>(null);
+  const [archiveTarget, setArchiveTarget] = useState<ContentItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ContentItem | null>(null);
 
   const toggleStatus = async (item: ContentItem) => {
     setBusySlug(item.slug);
@@ -126,8 +130,6 @@ export default function AdminDashboardPage() {
   };
 
   const deleteItem = async (item: ContentItem) => {
-    const ok = window.confirm(`Delete /${item.type}/${item.slug}? This is the hard path (unpublishing keeps the row).`);
-    if (!ok) return;
     setBusySlug(item.slug);
     setError("");
     try {
@@ -138,8 +140,50 @@ export default function AdminDashboardPage() {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       invalidateContentCache();
       setData((data || []).filter((it) => it.slug !== item.slug));
+      setDeleteTarget(null);
     } catch (err) {
       setError(`Delete failed: ${err instanceof Error ? err.message : "unknown"}`);
+    } finally {
+      setBusySlug(null);
+    }
+  };
+
+  /** Flip the row's archived flag. archived lives in body_json, so like a
+      status toggle this re-POSTs the full authored body with the flag set. */
+  const toggleArchived = async (item: ContentItem, archived: boolean) => {
+    setBusySlug(item.slug);
+    setError("");
+    try {
+      const COMPUTED: Record<string, true> = {
+        slug: true, type: true, status: true, title: true, excerpt: true,
+        meta: true, isFeatured: true, position: true, updatedAt: true,
+        id: true, href: true, archived: true,
+      };
+      const body = Object.fromEntries(
+        Object.entries(item).filter(([k]) => !COMPUTED[k])
+      );
+      const r = await fetch("/api/content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: item.slug,
+          type: item.type,
+          title: item.title,
+          excerpt: item.excerpt,
+          meta: {},
+          body: { ...body, archived },
+          status: item.status,
+        }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      invalidateContentCache();
+      const rows = (data || []).map((it) =>
+        it.slug === item.slug ? { ...it, archived } : it
+      );
+      setData(rows);
+      setArchiveTarget(null);
+    } catch (err) {
+      setError(`Archive toggle failed: ${err instanceof Error ? err.message : "unknown"}`);
     } finally {
       setBusySlug(null);
     }
@@ -302,6 +346,11 @@ export default function AdminDashboardPage() {
                           <EyeOff className="w-3 h-3" />
                         )}
                         {item.status}
+                        {item.archived && (
+                          <span className="text-accent-orange">
+                            <Archive className="w-3 h-3 inline-block" /> archived
+                          </span>
+                        )}
                       </span>
                     </td>
                     <td className="p-md">
@@ -335,7 +384,20 @@ export default function AdminDashboardPage() {
                           {busySlug === item.slug ? "..." : item.status === "published" ? "Unpublish" : "Publish"}
                         </button>
                         <button
-                          onClick={() => deleteItem(item)}
+                          onClick={() => setArchiveTarget(item)}
+                          disabled={busySlug === item.slug}
+                          className={`inline-flex items-center gap-xs px-md py-sm text-xs font-dm-sans transition-colors border disabled:opacity-50 ${
+                            item.archived
+                              ? "text-accent-orange border-border-default hover:border-accent-orange"
+                              : "text-on-surface-muted border-border-default hover:border-accent-orange hover:text-accent-orange"
+                          }`}
+                          title={item.archived ? `Unarchive ${item.slug}` : `Archive ${item.slug}`}
+                        >
+                          <Archive className="w-3 h-3" />
+                          {item.archived ? "Unarchive" : "Archive"}
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(item)}
                           disabled={busySlug === item.slug}
                           className="inline-flex items-center gap-xs px-md py-sm text-xs text-on-surface-muted hover:text-error font-dm-sans transition-colors border border-border-default hover:border-error disabled:opacity-50"
                           title={`Delete ${item.slug}`}
@@ -356,6 +418,34 @@ export default function AdminDashboardPage() {
       <div className="mt-xxl space-y-lg">
         <LocalAgentPanel />
       </div>
+
+      {archiveTarget && (
+        <ConfirmModal
+          title={archiveTarget.archived ? "Unarchive content?" : "Archive content?"}
+          message={
+            archiveTarget.archived
+              ? `"${archiveTarget.title}" will reappear on its index page.`
+              : `"${archiveTarget.title}" stays in the database (private or published as-is) but disappears from its index page. The archive page keeps a year-grouped list of archived stories.`
+          }
+          confirmLabel={archiveTarget.archived ? "Unarchive" : "Archive"}
+          loadingLabel={archiveTarget.archived ? "Unarchiving..." : "Archiving..."}
+          destructive={false}
+          onConfirm={() => toggleArchived(archiveTarget, !archiveTarget.archived)}
+          onCancel={() => setArchiveTarget(null)}
+          loading={busySlug === archiveTarget.slug}
+        />
+      )}
+
+      {deleteTarget && (
+        <ConfirmModal
+          title="Delete content?"
+          message={`"${deleteTarget.title}" (/${deleteTarget.type}/${deleteTarget.slug}) will be permanently removed from the database. This is the hard path: unpublishing keeps the row, deleting does not.`}
+          confirmText="DELETE"
+          onConfirm={() => deleteItem(deleteTarget)}
+          onCancel={() => setDeleteTarget(null)}
+          loading={busySlug === deleteTarget.slug}
+        />
+      )}
     </div>
   );
 }

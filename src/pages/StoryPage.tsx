@@ -1,4 +1,4 @@
-import { useParams, Link, useLocation } from "react-router-dom";
+import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import AccentBar from "@/components/ui/AccentBar";
@@ -14,9 +14,9 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import StoryJumpButtons from "@/components/ui/StoryJumpButtons";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import PrintButton from "@/components/ui/PrintButton";
-import { useContentItem, useContentList } from "@/lib/content";
+import { useContentItem, useContentList, invalidateContentCache } from "@/lib/content";
 import type { StoryContent, CourseContent, BookContent, SeriesContent, TestContent } from "@/types";
-import { ArrowLeft, ArrowRight, ExternalLink, Check, Copy, Bookmark, Loader2, Trash2, Bot, PenLine, Eye, Send, X, ChevronDown, Reply, Maximize2, Sparkles, Edit3 } from "lucide-react";
+import { ArrowLeft, ArrowRight, ExternalLink, Check, Copy, Bookmark, Loader2, Trash2, Bot, PenLine, Eye, Send, X, ChevronDown, Reply, Maximize2, Sparkles, Edit3, Archive } from "lucide-react";
 import { SkeletonStoryLayout } from "@/components/ui/Skeleton";
 import { mdBlock, contentToMarkdown, md } from "@/lib/markdown";
 import MarkdownHtml from "@/components/ui/MarkdownHtml";
@@ -127,6 +127,7 @@ function CollectionProgressButton({ collectionSlug, storySlugs, title, currentSl
 
 export default function StoryPage() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const { data: story, loading: storyLoading } = useContentItem<StoryContent>("story", slug);
   const courses = useContentList<CourseContent>("course").data ?? [];
   const books = useContentList<BookContent>("book").data ?? [];
@@ -167,6 +168,75 @@ export default function StoryPage() {
   const [commentsRefresh, setCommentsRefresh] = useState(0);
   const articleRef = useRef<HTMLElement>(null);
   const { selection, clearSelection } = useTextSelection(articleRef);
+
+  // ── Content lifecycle (owner) : archive / delete ──────
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [contentBusy, setContentBusy] = useState(false);
+  const [contentError, setContentError] = useState("");
+  const [archivedOverride, setArchivedOverride] = useState<boolean | null>(null);
+  const isArchived = archivedOverride ?? story?.archived ?? false;
+
+  const toggleArchived = async () => {
+    if (!story || contentBusy) return;
+    setContentBusy(true);
+    setContentError("");
+    try {
+      // The upsert overwrites body_json on conflict, so the full authored
+      // object must be re-sent. story is the mapped row (body + computed
+      // columns); strip the computed ones, then flip the archived flag.
+      const COMPUTED: Record<string, true> = {
+        slug: true, type: true, status: true, title: true, excerpt: true,
+        meta: true, isFeatured: true, position: true, updatedAt: true,
+        id: true, href: true, archived: true,
+      };
+      const body = Object.fromEntries(
+        Object.entries(story).filter(([k]) => !COMPUTED[k])
+      );
+      const row = story as StoryContent & { type?: string; status?: string };
+      const r = await fetch("/api/content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: story.slug,
+          type: row.type,
+          title: story.title,
+          excerpt: story.excerpt ?? "",
+          meta: {},
+          body: { ...body, archived: !isArchived },
+          status: row.status,
+        }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      invalidateContentCache();
+      setArchivedOverride(!isArchived);
+      setArchiveOpen(false);
+    } catch (err) {
+      setContentError(`Archive toggle failed: ${err instanceof Error ? err.message : "unknown"}`);
+    } finally {
+      setContentBusy(false);
+    }
+  };
+
+  const deleteStory = async () => {
+    if (!story || contentBusy) return;
+    setContentBusy(true);
+    setContentError("");
+    try {
+      const r = await fetch(`/api/content?slug=${encodeURIComponent(story.slug)}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      invalidateContentCache();
+      setDeleteOpen(false);
+      navigate("/stories");
+    } catch (err) {
+      setContentError(`Delete failed: ${err instanceof Error ? err.message : "unknown"}`);
+    } finally {
+      setContentBusy(false);
+    }
+  };
 
   const fetchHighlights = useCallback(async () => {
     if (!slug) return;
@@ -1026,6 +1096,7 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
                 <span className="text-on-surface-muted">//</span>
                 <PrintButton to={`${location.pathname}/print`} compact className="normal-case tracking-normal" />
                 {isOwner && (
+                  <>
                   <Link to={`/admin/story/${slug}/edit`}
                     className="print:hidden inline-flex items-center gap-sm font-sora bg-primary text-on-primary border-primary hover:bg-primary-hover transition-all shadow-sm rounded-lg font-semibold px-md py-sm text-xs"
                     title="Edit content"
@@ -1033,6 +1104,28 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
                     <Edit3 className="w-3.5 h-3.5" />
                     <span>Edit</span>
                   </Link>
+                  <button
+                    onClick={() => setArchiveOpen(true)}
+                    disabled={contentBusy}
+                    className="print:hidden inline-flex items-center gap-sm font-sora bg-surface-container-low border border-border-default hover:border-accent-orange hover:text-accent-orange transition-all rounded-lg font-semibold px-md py-sm text-xs text-on-surface-muted disabled:opacity-50"
+                    title={isArchived ? "Unarchive this story" : "Archive this story (hides it from the index, keeps it in the database)"}
+                  >
+                    <Archive className="w-3.5 h-3.5" />
+                    <span>{isArchived ? "Unarchive" : "Archive"}</span>
+                  </button>
+                  <button
+                    onClick={() => setDeleteOpen(true)}
+                    disabled={contentBusy}
+                    className="print:hidden inline-flex items-center gap-sm font-sora bg-surface-container-low border border-border-default hover:border-error hover:text-error transition-all rounded-lg font-semibold px-md py-sm text-xs text-on-surface-muted disabled:opacity-50"
+                    title="Permanently delete this story"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
+                  </>
+                )}
+                {contentError && (
+                  <span className="w-full font-dm-sans text-xs text-error">{contentError}</span>
                 )}
               </div>
             )}
@@ -2133,6 +2226,34 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
           onConfirm={confirmDeleteInlineComment}
           onCancel={() => setDeleteCommentTarget(null)}
           loading={inlineDeleting === deleteCommentTarget}
+        />
+      )}
+
+      {/* Content lifecycle modals (owner) */}
+      {archiveOpen && story && (
+        <ConfirmModal
+          title={isArchived ? "Unarchive story?" : "Archive story?"}
+          message={
+            isArchived
+              ? `"${story.title}" will reappear on the stories index.`
+              : `"${story.title}" stays in the database (private or published as-is) but disappears from the stories index. The archive page keeps a year-grouped list of archived stories.`
+          }
+          confirmLabel={isArchived ? "Unarchive" : "Archive"}
+          loadingLabel={isArchived ? "Unarchiving..." : "Archiving..."}
+          destructive={false}
+          onConfirm={toggleArchived}
+          onCancel={() => setArchiveOpen(false)}
+          loading={contentBusy}
+        />
+      )}
+      {deleteOpen && story && (
+        <ConfirmModal
+          title="Delete story?"
+          message={`"${story.title}" (/stories/${story.slug}) will be permanently removed from the database. This is the hard path: unpublishing keeps the row, deleting does not.`}
+          confirmText="DELETE"
+          onConfirm={deleteStory}
+          onCancel={() => setDeleteOpen(false)}
+          loading={contentBusy}
         />
       )}
 
