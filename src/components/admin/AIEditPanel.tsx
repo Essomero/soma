@@ -161,7 +161,10 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
         }
       }
       // Flush any remaining pending reasoning
-      clearTimeout(throttleTimer);
+      if (throttleTimer) {
+        clearTimeout(throttleTimer);
+        throttleTimer = null;
+      }
       setReasoning(accumulatedReasoning);
 
       // Parse the final JSON from accumulated content

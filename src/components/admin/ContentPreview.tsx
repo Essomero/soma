@@ -159,7 +159,7 @@ export default function ContentPreview({ draft, onBack }: ContentPreviewProps) {
             {sections.map((s, i) => {
               const quoteBefore =
                 (draft.pullQuotes ?? []).length > 0 && i > 0
-                  ? draft.pullQuotes[i - 1]
+                  ? (draft.pullQuotes ?? [])[i - 1]
                   : null;
 
               return (
