@@ -124,23 +124,23 @@ export default function ContentPreview({ draft, onBack }: ContentPreviewProps) {
           </span>
         </div>
 
-        {/* Intro (simple layout only — rich layout renders sections instead) */}
-        {draft.intro && sections.length === 0 && (
+        {/* Intro (shown in both layouts) */}
+        {draft.intro && (
           <div
             className="preview-prose font-dm-sans text-body-base text-on-surface-variant mb-lg leading-relaxed"
             dangerouslySetInnerHTML={{ __html: mdBlock(draft.intro) }}
           />
         )}
 
-        {/* Body (simple layout only) — in rich layout, body is replaced by sections */}
-        {body && sections.length === 0 && (
+        {/* Body */}
+        {body && (
           <div
             className="preview-prose font-dm-sans text-body-base text-on-surface-variant mb-lg leading-relaxed"
             dangerouslySetInnerHTML={{ __html: body }}
           />
         )}
 
-        {/* Bento highlights — rendered first in rich layout (matches StoryPage) */}
+        {/* Bento highlights — rendered between body and sections (matches StoryPage/GuidePage) */}
         {sections.length > 0 && (draft.bentoHighlights ?? []).length > 0 && (
           <div className="mb-lg grid grid-cols-1 sm:grid-cols-3 gap-md">
             {(draft.bentoHighlights ?? []).map((b, i) => (
