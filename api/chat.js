@@ -54,7 +54,11 @@ export default async function handler(req, res) {
   if (typeof userMessage !== "string" || userMessage.length > 20000) {
     return res.status(400).json({ error: "userMessage too long" });
   }
-  if (systemPrompt && (typeof systemPrompt !== "string" || systemPrompt.length > 20000)) {
+  // The system prompt is built client-side from the full content schema
+  // (buildSystemPrompt) and grows with each new content type : 20k was too
+  // small (the real prompt is ~28k today). Cap stays as an abuse guard;
+  // the endpoint already requires the owner session.
+  if (systemPrompt && (typeof systemPrompt !== "string" || systemPrompt.length > 60000)) {
     return res.status(400).json({ error: "systemPrompt too long" });
   }
   if (typeof model !== "undefined" && (typeof model !== "string" || model.length > 200)) {
