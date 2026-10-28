@@ -29,6 +29,7 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
   const [selectedProvider, setSelectedProvider] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     fetch("/api/models")
@@ -46,6 +47,14 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
         setModels([]);
         setModelsReady(true);
       });
+  }, []);
+
+  // Abort any in-flight edit stream on unmount so the loop doesn't
+  // keep the JS thread busy after the component is gone (e.g. switching
+  // from edit to preview mode).
+  useEffect(() => () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
   }, []);
 
   const selected = models.find((m) => m.id === selectedModel && m.provider === selectedProvider);
@@ -68,6 +77,7 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
     setReasoning("");
 
     const controller = new AbortController();
+    abortRef.current = controller;
     try {
       const systemPrompt = buildSystemPrompt();
       const userMessage = [
@@ -169,9 +179,11 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
       setPrompt("");
       setStatus("idle");
       setReasoning("");
+      abortRef.current = null;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Edit failed");
       setStatus("error");
+      abortRef.current = null;
     }
   };
 

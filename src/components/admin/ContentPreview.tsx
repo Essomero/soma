@@ -53,10 +53,18 @@ export default function ContentPreview({ draft, onBack }: ContentPreviewProps) {
   }, [draft.body]);
 
   const sections = useMemo(
-    () => (draft.sections ?? []).map((s) => ({
-      heading: s.heading,
-      html: (s.paragraphs ?? []).map(renderEntry).join(""),
-    })),
+    () => (draft.sections ?? []).slice(0, 20).map((s) => {
+      // Batch all paragraphs into one mdBlock call instead of per-paragraph,
+      // which avoids hundreds of marked.parse + hljs invocations in large content.
+      const combined = (s.paragraphs ?? [])
+        .map((p) => (typeof p === "string" ? p : ""))
+        .filter(Boolean)
+        .join("\n\n");
+      return {
+        heading: s.heading,
+        html: combined ? mdBlock(combined) : "",
+      };
+    }),
     [draft.sections],
   );
 
@@ -89,8 +97,8 @@ export default function ContentPreview({ draft, onBack }: ContentPreviewProps) {
         )}
       </div>
 
-      {/* Page body */}
-      <div className="max-h-[70vh] overflow-y-auto p-xl md:p-xxl">
+      {/* Page body — no inner scroll container: page scrolls naturally */}
+      <div className="p-xl md:p-xxl">
         <div className="w-full h-1 bg-gradient-to-r from-primary to-secondary mb-lg" />
         <p className="font-sora text-metadata-tag text-secondary uppercase tracking-widest mb-sm">
           {draft.category || "CATEGORY"}
