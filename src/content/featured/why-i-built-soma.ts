@@ -4,18 +4,18 @@ import type { FeaturedContent, Author, ArticleCardData, BentoCardData, PullQuote
 export const somaAuthor: Author = { name: "Benjamin Mayanja", handle: "@Essomero" };
 
 export const somaBentoHighlights: BentoCardData[] = [
-  { label: "SOVEREIGN BY DEFAULT", title: "Your Words Live in Your Database", description: "Notes, highlights, and publishing toggles sit in your own Turso edge SQLite behind one password you invent. There is no Soma cloud holding your writing hostage." },
-  { label: "LEARN OUT LOUD", title: "Reading You Can Prove", description: "Margin AI explains any paragraph, Soma Labs turns lessons into runnable drills, and the Son voice agent scores your spoken answers in real time." },
-  { label: "AGENTS THAT PUBLISH", title: "Staged Private, Shared by Choice", description: "Soma ships the same skills its author writes with, so any coding assistant can draft typed content and stage it into your database as a private piece. One toggle makes it public." },
+  { label: "YOUR OWN INFRASTRUCTURE", title: "Your Words Live in Your Database", description: "Notes, highlights, and publishing toggles sit in your own Turso edge SQLite behind one password you invent. No cloud holding your writing hostage." },
+  { label: "AI-ACCELERATED", title: "Point an LLM at the Repo, It Works", description: "Soma ships a bundled skill and MCP server. Any coding agent reads the skill and starts creating or editing content on its own. No setup, no config." },
+  { label: "BUILT FOR VISUAL LEARNERS", title: "Mermaid, KaTeX, 3D Scenes, Code Blocks", description: "Graphs beside math beside interactive scenes beside runnable code. If you learn by looking, you get the same treatment as someone who reads cover to cover." },
 ];
 
 export const somaPullQuotes: PullQuoteData[] = [
-  { quote: "Think in private on your own infrastructure, and make public what you wish.", attribution: "BENJAMIN MAYANJA" },
-  { quote: "You either publish too early or you never ship at all. Soma ends that trade." },
+  { quote: "AI-accelerated learning that you own. And it works with whatever you're already using.", attribution: "BENJAMIN MAYANJA" },
+  { quote: "Obsidian was great for local notes. But shareability, online access, and web rendering? It never cut it. Soma closes that gap." },
 ];
 
 export const somaMoreStories: ArticleCardData[] = [
-  { id: "benjamin-mayanja", category: "COMMUNITY", title: "Think on paper, but digital: why I built Soma", excerpt: "Why Benjamin built Soma: learn in private on your own infrastructure, and make public what you wish.", image: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=600&h=400&fit=crop", imageAlt: "Benjamin Mayanja", href: "/stories/benjamin-mayanja" },
+  { id: "benjamin-mayanja", category: "COMMUNITY", title: "AI-accelerated learning you own", excerpt: "I love to learn. I love markdown, graphs, illustrations, and maths. Obsidian was perfect for local notes, but it never cut it for shareability. I built Soma to close that gap.", image: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=600&h=400&fit=crop", imageAlt: "Benjamin Mayanja", href: "/stories/benjamin-mayanja" },
   { id: "fs-1-why-this-type-error", category: "ENGINEERING", title: "Why Does This Type Error?", excerpt: "The backpack rule: why TypeScript checks shapes instead of names.", image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&h=400&fit=crop", imageAlt: "TypeScript code editor", href: "/stories/fs-1-why-this-type-error" },
   { id: "fs-2-generics", category: "ENGINEERING", title: "Generics as Relationships", excerpt: "Connecting input types to output types without cluttering signatures.", image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&h=400&fit=crop", imageAlt: "Laptop with code", href: "/stories/fs-2-generics" },
 ];
@@ -23,68 +23,67 @@ export const somaMoreStories: ArticleCardData[] = [
 export const whyIBuiltSoma: FeaturedContent = {
   slug: "why-i-built-soma",
   tag: "FEATURED ARTICLE // SOMA",
-  title: "Think on paper, but digital: why I built Soma",
+  title: "AI-accelerated learning you own",
   description:
-    "AI can now teach you anything at your pace, tests can prove you know it, and one toggle can share it. And Soma is not only for studying: it holds anything readable. I built it so learning, reading, proving, seeing, and sharing live in the same place, on infrastructure you own.",
+    "I love to learn. I love markdown, graphs, illustrations, and maths laid out beautifully. Obsidian was my go-to for local notes, but it never cut it for shareability, online access, or the web. I built Soma to close that gap. AI-accelerated learning you own, that works with whatever you already use. Deploys to Vercel in 60 seconds and it's beautiful.",
   image:
     "https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=1200&h=675&fit=crop",
   imageAlt: "Writing by hand in a paper planner next to a laptop, coffee, and books",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
-  date: "October 24, 2026",
-  tagline: "Think in private on your own infrastructure, and make public what you wish.",
+  date: "October 29, 2026",
+  tagline: "AI-accelerated learning you own. Works with whatever you already use.",
   bentoHighlights: [
     {
-      label: "SOVEREIGN BY DEFAULT",
+      label: "YOUR OWN INFRASTRUCTURE",
       title: "Your Words Live in Your Database",
       description:
-        "Notes, highlights, and publishing toggles sit in your own Turso edge SQLite behind one password you invent. There is no Soma cloud holding your writing hostage.",
+        "Notes, highlights, and publishing toggles sit in your own Turso edge SQLite behind one password you invent. No cloud holding your writing hostage.",
     },
     {
-      label: "LEARN OUT LOUD",
-      title: "Reading You Can Prove",
+      label: "AI-ACCELERATED",
+      title: "Point an LLM at the Repo, It Works",
       description:
-        "Margin AI teaches at your pace, Soma Labs turns lessons into runnable drills, and the Son voice agent scores your spoken answers in real time.",
+        "Soma ships a bundled skill and MCP server. Any coding agent reads the skill and starts creating or editing content on its own. No setup, no config.",
     },
     {
-      label: "AGENTS THAT PUBLISH",
-      title: "Staged Private, Shared by Choice",
+      label: "BUILT FOR VISUAL LEARNERS",
+      title: "Mermaid, KaTeX, 3D Scenes, Code Blocks",
       description:
-        "Soma ships the same skills its author writes with, so any coding assistant can draft typed content and stage it into your database as a private piece. One toggle makes it public.",
+        "Graphs beside math beside interactive scenes beside runnable code. If you learn by looking, you get the same treatment as someone who reads cover to cover.",
     },
   ],
   pullQuotes: [
     {
       quote:
-        "Think in private on your own infrastructure, and make public what you wish.",
+        "AI-accelerated learning that you own. And it works with whatever you're already using.",
       attribution: "BENJAMIN MAYANJA",
     },
     {
       quote:
-        "You either publish too early or you never ship at all. Soma ends that trade.",
+        "Obsidian was great for local notes. But shareability, online access, and web rendering? It never cut it. Soma closes that gap.",
     },
   ],
   sections: [
     {
-      heading: "The trade every tool forces",
+      heading: "Why I built it",
       paragraphs: [
-        "Every publishing tool I tried forced the same trade. Blogging platforms like Ghost and Substack push you to perform for an audience before you have understood the topic yourself. Note-taking apps like Notion and Obsidian keep your thinking trapped in proprietary clouds or fragile sync setups. You either publish too early or you never ship at all.",
-        "So I stopped shopping for tools and started building one. Soma (Luganda: to read, study, learn) starts from a simple belief: learning and sharing have never been easier. AI can teach anything at whatever pace you need, so you do not have to keep up with a class or wait for one.",
+        "I love to learn new things. I wanted one centralized place to learn. I'm a visual learner. I love markdown, I love graphs, illustrations, and maths laid out beautifully side by side.",
+        "For years Obsidian was my go-to. I still use it for local notes. But it never cut it for shareability and online access from all my devices. It's built for the Obsidian app, not for web content. Their AI integrations are also built for note-taking, not for learning workflows.",
+        "I built Soma (Luganda: to read, study, learn) to close that gap. AI-accelerated learning that you own. And it works with whatever you're already using.",
       ],
     },
     {
-      heading: "Learn it at your pace, then prove you know it",
+      heading: "How it works",
       paragraphs: [
-        "Here is how a lesson feels in Soma. You read a hard paragraph on database lock contention, you select it, and you ask the margin AI to explain it like you are new, then challenge you like you are interviewing. You set the pace, not the page. When you are ready, Soma Labs hands you a runnable drill you run with your own hands, not a snippet you skim.",
-        "Then you say it out loud. Diagnostic tests grade your written answers, and the Son voice agent reads questions to you and scores your spoken answers in real time. If you cannot explain it in text and speech, you do not know it yet. That check is the whole point.",
+        "Point any LLM or coding agent at the codebase. It loads the bundled skill and starts creating or editing content on its own. There's also an MCP server shipped with the repo. It works entirely on the web and deploys to Vercel in 60 seconds. All you need is an API key to your favorite model and it gets working fast.",
+        "And it's beautiful. I love beautiful content. Every page is designed for readers who learn by looking. Mermaid diagrams beside KaTeX math beside interactive 3D scenes beside runnable code blocks. If you learn visually, you get the same treatment as someone who reads cover to cover.",
       ],
     },
     {
-      heading: "See it, then share it only if you want",
+      heading: "Your words live in your database",
       paragraphs: [
-        "Some ideas do not click until you see them move. Every page in Soma can draw: Mermaid diagrams for flows, interactive graphs for relationships, and full 3D scenes for systems you need to turn around in your head. If you learn by looking, you get the same first class treatment as someone who learns by reading.",
-        "And Soma is not only for lessons. It holds anything you like to read: a novel draft, a favorite essay, a book you want with you everywhere. If it reads like markdown-style content, Soma renders it, and the bundled agent skill converts any source into a Soma page. Bring what you already read, open it on your phone, tablet, or desktop, and share it with one click when you want someone else to see it.",
-        "You can also write straight in the app. The admin studio drafts any content type in the browser: stories, guides, courses, tests, and podcasts, with a live preview before you save and a single toggle to publish. Agents still exist for the big lifts; the studio is there for when you just want to write.",
-        "Owning the loop mattered more than any single feature. Fork the repo, import it into Vercel, add one password, click Add on the Turso card, deploy. Your writing lives in your database, never in git, so pulling my updates never touches your words. Nothing locks you in either: copy any page as markdown or export a beautiful PDF for print. You think in private, you prove it to yourself, and you flip one toggle only when you want the world to see it.",
+        "Your words live in your own Turso database, an edge SQLite you control behind one password you invent. Fork the repo, import it into Vercel, add the password, deploy. There's no Soma cloud holding your writing hostage. Pulling my updates never touches your words.",
+        "Nothing locks you in either. Copy any page as markdown or export a PDF for print. This is the gap I wanted closed. One centralized place to learn, AI-accelerated, that you own, that works with whatever you already use, that's beautiful by default, and that deploys in 60 seconds. Soma is that place.",
       ],
     },
   ],

@@ -90,7 +90,7 @@ export const bridgingCode: PodcastEpisodeFull = {
     { speaker: "Co-host", start: 300.6, text: "Well, we started by talking about toggling that messy private journal into a polished textbook for the world. But if the future of learning becomes perfectly customized, deeply private and entirely local, you know, running on our own machines with our own AI, what happens to the messy communal spaces of the traditional open internet? Will our future knowledge be brilliant, but entirely solitary?" },
   ],
   relatedReading: [
-    { tag: "Developer Story", title: "Think on paper, but digital: why I built Soma", image: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&h=675&fit=crop", color: "primary", href: "/stories/benjamin-mayanja" },
+    { tag: "Developer Story", title: "AI-accelerated learning you own", image: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&h=675&fit=crop", color: "primary", href: "/stories/benjamin-mayanja" },
     { tag: "Story", title: "Why does this type error?", image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=675&fit=crop", color: "secondary", href: "/stories/fs-1-why-this-type-error" },
     { tag: "Story", title: "Trust boundaries: where untrusted input stops", image: "", color: "accent-orange", href: "/stories/fs-5-typing-the-boundary" },
   ],

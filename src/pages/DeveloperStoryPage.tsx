@@ -45,7 +45,7 @@ export default function DeveloperStoryPage() {
   const intro = typeof storyRow?.intro === "string" ? storyRow.intro : "";
   const body = Array.isArray(storyRow?.body) ? (storyRow.body as string[]) : [];
   const storyText = [intro, ...body].join(" ");
-  usePageMeta({ title: (typeof storyRow?.title === "string" && storyRow.title) || "Think on paper, but digital", description: intro || undefined });
+  usePageMeta({ title: (typeof storyRow?.title === "string" && storyRow.title) || "AI-accelerated learning you own", description: intro || undefined });
   const moreStories = (storyRows ?? []).filter((s) => s.slug !== STORY_SLUG).slice(0, 3).map(toCard);
   return (
     <div>
@@ -204,7 +204,7 @@ export default function DeveloperStoryPage() {
             <div className="p-xl bg-surface-container border border-border-default rounded-xl relative overflow-hidden group hover:border-primary transition-all duration-300">
               <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-primary to-secondary" />
               <h3 className="font-sora text-xl mb-md text-on-surface">
-                Think on paper, but digital
+                AI-accelerated learning you own
               </h3>
               <p className="font-dm-sans text-body-base text-on-surface-variant leading-relaxed">
                 Soma combines the tactile focus of paper with sovereign edge

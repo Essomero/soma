@@ -57,10 +57,10 @@ export default function FeaturedArticlePage() {
       {/* Immersive Hero */}
       <ImmersiveHero
         tag="FEATURED ARTICLE // SOMA"
-        title="Think on paper, but digital: why I built Soma"
-        description="Most tools force a trade: publish before you understand, or understand in a silo nobody can see. I built Soma so learning and publishing live in the same place, on infrastructure you own."
+        title="AI-accelerated learning you own"
+        description="I love to learn. I love markdown, graphs, illustrations, and maths laid out beautifully. Obsidian was my go-to for local notes, but it never cut it for shareability, online access, or the web. I built Soma to close that gap."
         author={somaAuthor}
-        date="October 24, 2026"
+        date="October 29, 2026"
         image="https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=1200&h=675&fit=crop"
         imageAlt="Writing by hand in a paper planner next to a laptop, coffee, and books"
       />
@@ -73,13 +73,13 @@ export default function FeaturedArticlePage() {
             Featured Article // Soma
           </p>
           <h1 className="font-sora text-3xl font-extrabold text-on-surface leading-tight mb-3">
-            Think on paper, but digital: why I built Soma
+            AI-accelerated learning you own
           </h1>
           <p className="font-dm-sans text-base text-on-surface-muted leading-relaxed mb-3">
-            Most tools force a trade: publish before you understand, or understand in a silo nobody can see. I built Soma so learning and publishing live in the same place, on infrastructure you own.
+            I love to learn. I love markdown, graphs, illustrations, and maths laid out beautifully. Obsidian was my go-to for local notes, but it never cut it for shareability, online access, or the web. I built Soma to close that gap.
           </p>
           <p className="font-sora text-xs text-on-surface-muted">
-            Benjamin Mayanja // @Essomero <span className="text-secondary mx-1">//</span> October 24, 2026
+            Benjamin Mayanja // @Essomero <span className="text-secondary mx-1">//</span> October 29, 2026
           </p>
         </div>
         {/* Sidebar */}
@@ -182,13 +182,13 @@ export default function FeaturedArticlePage() {
 
       {/* Comments */}
       <div className="print:hidden">
-      <Comments storySlug={STORY_SLUG} storyContext={{ title: "Think on paper, but digital: why I built Soma", body: storyText }} refreshSignal={commentsRefresh} />
+      <Comments storySlug={STORY_SLUG} storyContext={{ title: "AI-accelerated learning you own", body: storyText }} refreshSignal={commentsRefresh} />
       </div>
 
       <InlineHighlights
         slug={STORY_SLUG}
         storyText={storyText}
-        storyTitle="Think on paper, but digital: why I built Soma"
+        storyTitle="AI-accelerated learning you own"
         articleRef={articleRef}
         isOwner={isOwner}
         onHighlightsChange={(hs) => { setPageHighlights(hs); setCommentsRefresh((n: number) => n + 1); }}

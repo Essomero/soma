@@ -4,21 +4,23 @@
 
 # Soma
 
-> Learn anything at your pace with AI, prove you know it, and share it only if you want.
+> AI-accelerated learning you own. Markdown-native, visual, works with whatever you already use.
 
-New here? Three moves: [**fork the repo**](https://github.com/Essomero/soma/fork), [import it into Vercel](https://vercel.com/new), add one password, click Add on the Turso card, deploy. [Full walkthrough below](#step-0-fork-soma).
+New here? [**Fork the repo**](https://github.com/Essomero/soma/fork), [import it into Vercel](https://vercel.com/new), add one password, deploy. 60 seconds, done. [Full walkthrough below](#step-0-fork-soma).
 
 ---
 
-Soma (*Luganda: to read, study, learn*) exists because learning and sharing have never been easier. AI can teach you anything at whatever pace you need, tests (written and spoken) can prove you know it, and one toggle can share it with the world. Soma puts all three in one place you own, with visuals for how you think: Mermaid diagrams, interactive graphs, and full 3D scenes next to math and code.
+I love to learn. I wanted one centralized place to learn. I'm a visual learner. I love markdown, graphs, illustrations, and maths laid out beautifully.
 
-And it is not only for studying. Soma holds anything readable: books, essays, leisure reads, notes. If it reads like markdown-style content, Soma renders it, and the bundled agent skill converts any source into a Soma page. Bring what you already read, open it on phone, tablet, or desktop, and share it with one click when you want.
+For years Obsidian was my go-to. I still use it for local notes. But it never cut it for shareability, online access from every device, or rendering on the web. It's built for the Obsidian app, not for web content. Their AI integrations are also built for note-taking, not for learning workflows.
 
-Most publishing tools force a trade:
-- **Blogging platforms** (Ghost, Substack) push you to publish for an audience before you have understood the topic yourself.
-- **Note-taking apps** (Notion, Obsidian) keep thoughts trapped in proprietary clouds or require fragile sync setups with clumsy export pipelines.
+I built Soma (*Luganda: to read, study, learn*) to close that gap.
 
-Soma gives you a private library that teaches at your pace, text and voice tests that verify what you learned, visual components that show it, and one toggle that shares it. Nothing locks you in: copy any page as markdown or export a beautiful PDF for print. Read [why I built Soma](https://soma.mayanja.dev/featured/why-i-built-soma) for the story behind it.
+Soma is one centralized place to learn. AI-accelerated learning you own, that works with whatever you're already using. Point any LLM or coding agent at the repo, it loads the bundled skill and starts creating or editing content on its own. There's also an MCP server shipped with the repo. It works entirely on the web and deploys to Vercel in 60 seconds. All you need is an API key to your favorite model and it gets working fast.
+
+**And it's beautiful.** I love beautiful content. Every page is designed for readers who learn by looking. Mermaid diagrams beside KaTeX math beside interactive 3D scenes beside runnable code blocks. If it reads like markdown, Soma renders it. The bundled agent skill converts any source into a Soma page.
+
+Soma holds anything readable: books, essays, courses, guides, stories, tests, podcast transcripts, leisure reads. All in one place you own. Bring what you already read, open it on phone, tablet, or desktop, and share it with one toggle when you want. Nothing locks you in. Copy any page as markdown or export a PDF for print.
 
 ---
 

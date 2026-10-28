@@ -32,8 +32,8 @@ export default function HomePage() {
   const featuredHero = {
     id: defaultFeatured ? defaultFeatured.slug : "why-i-built-soma",
     tag: "Featured Article",
-    title: defaultFeatured ? defaultFeatured.title : "Think on paper, but digital: why I built Soma",
-    description: defaultFeatured ? (typeof defaultFeatured.description === "string" ? defaultFeatured.description : "") : "Most tools force a trade: publish before you understand, or understand in a silo nobody can see.",
+    title: defaultFeatured ? defaultFeatured.title : "AI-accelerated learning you own",
+    description: defaultFeatured ? (typeof defaultFeatured.description === "string" ? defaultFeatured.description : "") : "I love to learn. I love markdown, graphs, illustrations, and maths laid out beautifully. Obsidian was my go-to for local notes, but it never cut it for shareability, online access, or the web. I built Soma to close that gap.",
     image: defaultFeatured ? (typeof defaultFeatured.image === "string" ? defaultFeatured.image : "") : "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&h=675&fit=crop",
     imageAlt: defaultFeatured ? (typeof defaultFeatured.imageAlt === "string" ? defaultFeatured.imageAlt : "") : "Benjamin Mayanja",
     cta: { label: "Read story", href: defaultFeatured ? `/featured/${defaultFeatured.slug}` : "/featured/why-i-built-soma" },
