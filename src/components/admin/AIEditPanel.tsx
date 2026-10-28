@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Loader2, Sparkles, AlertCircle, Wand2, ChevronDown, Check } from "lucide-react";
+import { Loader2, Sparkles, AlertCircle, Wand2, ChevronDown, Check, Lightbulb } from "lucide-react";
 import { buildSystemPrompt } from "@/lib/admin-prompts";
 
 interface ModelInfo {
@@ -20,6 +20,7 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
   const [prompt, setPrompt] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "error">("idle");
   const [error, setError] = useState("");
+  const [reasoning, setReasoning] = useState("");
 
   // Model list: fetched from /api/models, like test evaluation and draft panels.
   const [models, setModels] = useState<ModelInfo[]>([]);
@@ -64,6 +65,7 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
     if (!prompt.trim() || status === "sending" || !selected) return;
     setStatus("sending");
     setError("");
+    setReasoning("");
 
     const controller = new AbortController();
     try {
@@ -90,7 +92,7 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
           userMessage,
           model: selected.id,
           provider: selected.provider,
-          stream: false,
+          stream: true,
           max_tokens: 8000,
         }),
         signal: controller.signal,
@@ -101,16 +103,58 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
         throw new Error(`AI error (${res.status}): ${text}`);
       }
 
-      const body = await res.json();
-      const content = body?.choices?.[0]?.message?.content || "";
-      const jsonStart = content.indexOf("{");
-      const jsonEnd = content.lastIndexOf("}");
-      if (jsonStart === -1 || jsonEnd === -1) throw new Error("Response did not contain valid JSON");
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response body");
 
-      const parsed = JSON.parse(content.slice(jsonStart, jsonEnd + 1));
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let accumulated = "";
+      let accumulatedReasoning = "";
+      let finalContent = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith("data: ")) continue;
+          const data = trimmed.slice(6);
+          if (data === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(data);
+            const delta = parsed.choices?.[0]?.delta;
+            const rc = delta?.reasoning_content;
+            if (rc) {
+              accumulatedReasoning += rc;
+              setReasoning(accumulatedReasoning);
+            }
+            const c = delta?.content || "";
+            accumulated += c;
+          } catch {
+            // incomplete frame
+          }
+        }
+      }
+
+      // Parse the final JSON from accumulated content
+      finalContent = accumulated;
+      finalContent = finalContent.replace(/```json\s*/gi, "").replace(/```\s*$/gm, "").trim();
+      const jsonStart = finalContent.indexOf("{");
+      const jsonEnd = finalContent.lastIndexOf("}");
+      if (jsonStart === -1 || jsonEnd === -1) {
+        throw new Error(
+          `Response did not contain valid JSON.\n\nRaw response:\n${finalContent.slice(0, 2000)}`,
+        );
+      }
+
+      const parsed = JSON.parse(finalContent.slice(jsonStart, jsonEnd + 1));
       onUpdate(parsed);
       setPrompt("");
       setStatus("idle");
+      setReasoning("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Edit failed");
       setStatus("error");
@@ -203,8 +247,23 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
           {error && (
             <div className="flex items-start gap-2 p-sm bg-error/10 border border-error/30 rounded text-xs font-dm-sans text-on-surface">
               <AlertCircle className="w-3.5 h-3.5 text-error shrink-0 mt-0.5" />
-              <span>{error}</span>
+              <span className="whitespace-pre-wrap">{error}</span>
             </div>
+          )}
+
+          {reasoning && (
+            <details className="group">
+              <summary className="flex items-center gap-md cursor-pointer list-none p-md bg-surface border border-border-default border-l-4 border-l-primary hover:bg-surface-container transition-colors">
+                <Lightbulb className="w-4 h-4 text-primary shrink-0" />
+                <span className="font-sora text-xs font-semibold text-on-surface">Model thinking</span>
+                <ChevronDown className="w-3.5 h-3.5 text-on-surface-muted ml-auto transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="p-md bg-surface border-x border-b border-border-default">
+                <p className="font-dm-sans text-xs text-on-surface-muted whitespace-pre-wrap leading-relaxed">
+                  {reasoning}
+                </p>
+              </div>
+            </details>
           )}
         </div>
       )}
