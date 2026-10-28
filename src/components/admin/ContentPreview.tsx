@@ -49,7 +49,7 @@ function renderEntry(entry: string | object): string {
 export default function ContentPreview({ draft, onBack }: ContentPreviewProps) {
   const body = useMemo(() => {
     const parts = (draft.body ?? []).slice(0, 4);
-    return parts.length > 0 ? parts.map((p) => mdBlock(p)).join("") : "";
+    return parts.length > 0 ? parts.map((p) => mdBlock(p)).join('<div class="h-4"></div>') : "";
   }, [draft.body]);
 
   const sections = useMemo(
@@ -130,6 +130,33 @@ export default function ContentPreview({ draft, onBack }: ContentPreviewProps) {
             className="preview-prose font-dm-sans text-body-base text-on-surface-variant mb-lg leading-relaxed"
             dangerouslySetInnerHTML={{ __html: body }}
           />
+        )}
+
+        {/* Pull quotes */}
+        {(draft.pullQuotes ?? []).length > 0 && (
+          <div className="mb-lg space-y-md">
+            {(draft.pullQuotes ?? []).map((q, i) => (
+              <blockquote key={i} className="border-l-4 border-primary pl-md italic font-dm-sans text-body-base text-on-surface-variant">
+                <p>{q.quote}</p>
+                {q.attribution && (
+                  <footer className="font-sora text-xs text-on-surface-muted mt-xs">— {q.attribution}</footer>
+                )}
+              </blockquote>
+            ))}
+          </div>
+        )}
+
+        {/* Bento highlights */}
+        {(draft.bentoHighlights ?? []).length > 0 && (
+          <div className="mb-lg grid grid-cols-1 sm:grid-cols-3 gap-md">
+            {(draft.bentoHighlights ?? []).map((b, i) => (
+              <div key={i} className="p-md bg-surface-container-low border border-border-default rounded-lg">
+                <p className="font-sora text-[10px] font-bold text-primary uppercase tracking-widest mb-xs">{b.label}</p>
+                <p className="font-sora text-sm font-semibold text-on-surface mb-xs">{b.title}</p>
+                <p className="font-dm-sans text-xs text-on-surface-variant">{b.description}</p>
+              </div>
+            ))}
+          </div>
         )}
 
         {/* Sections */}

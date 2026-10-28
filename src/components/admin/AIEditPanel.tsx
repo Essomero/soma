@@ -112,6 +112,15 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
       let accumulatedReasoning = "";
       let finalContent = "";
 
+      // Throttle reactive state updates: render at most every ~80ms,
+      // otherwise the component re-renders on every SSE line and the
+      // whole ContentForm tree (including previewDraft) janks.
+      let throttleTimer: ReturnType<typeof setTimeout> | null = null;
+      const flushReasoning = () => {
+        setReasoning(accumulatedReasoning);
+        throttleTimer = null;
+      };
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -129,7 +138,9 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
             const rc = delta?.reasoning_content;
             if (rc) {
               accumulatedReasoning += rc;
-              setReasoning(accumulatedReasoning);
+              if (!throttleTimer) {
+                throttleTimer = setTimeout(flushReasoning, 80);
+              }
             }
             const c = delta?.content || "";
             accumulated += c;
@@ -138,6 +149,9 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
           }
         }
       }
+      // Flush any remaining pending reasoning
+      clearTimeout(throttleTimer);
+      setReasoning(accumulatedReasoning);
 
       // Parse the final JSON from accumulated content
       finalContent = accumulated;

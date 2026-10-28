@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Plus, Trash2, GripVertical, X, Eye, Pencil } from "lucide-react";
 import BlockEditor from "./BlockEditor";
 import ContentPreview from "./ContentPreview";
@@ -291,7 +291,7 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
   };
 
   // Live preview: mirror the current form state back into a draft shape.
-  const previewDraft: AIDraft = {
+  const previewDraft: AIDraft = useMemo(() => ({
     type,
     reasoning: "",
     title: str(values.title),
@@ -319,7 +319,7 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
       storySlug: str(e.storySlug),
       description: str(e.description) || undefined,
     })),
-  };
+  }), [values, type]);
 
   // ── Schema-driven field renderers ──
 
