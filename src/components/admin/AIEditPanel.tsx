@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Loader2, Sparkles, AlertCircle, Wand2, ChevronDown, Check, Lightbulb } from "lucide-react";
 import { buildSystemPrompt } from "@/lib/admin-prompts";
+import Tooltip from "@/components/ui/Tooltip";
 
 interface ModelInfo {
   id: string;
@@ -190,17 +191,20 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
   return (
     <div className="border border-border-default bg-surface-container rounded-xl overflow-hidden mb-xl">
       {/* Header toggle */}
-      <button
-        type="button"
-        onClick={() => setPanelOpen(!panelOpen)}
-        className="w-full flex items-center justify-between px-md py-sm hover:bg-surface transition-colors"
-      >
-        <span className="flex items-center gap-2 font-sora text-xs font-semibold text-on-surface uppercase tracking-widest">
-          <Wand2 className="w-4 h-4 text-primary" />
-          AI Edit
-        </span>
-        <ChevronDown className={`w-3.5 h-3.5 text-on-surface-muted transition-transform ${panelOpen ? "rotate-180" : ""}`} />
-      </button>
+      <Tooltip label={aiUnavailable ? "Add an AI provider key to enable" : ""}>
+        <button
+          type="button"
+          onClick={() => setPanelOpen(!panelOpen)}
+          disabled={aiUnavailable}
+          className="w-full flex items-center justify-between px-md py-sm hover:bg-surface transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <span className="flex items-center gap-2 font-sora text-xs font-semibold text-on-surface uppercase tracking-widest">
+            <Wand2 className="w-4 h-4 text-primary" />
+            AI Edit
+          </span>
+          <ChevronDown className={`w-3.5 h-3.5 text-on-surface-muted transition-transform ${panelOpen ? "rotate-180" : ""}`} />
+        </button>
+      </Tooltip>
 
       {panelOpen && (
         <div className="px-md pb-md space-y-sm">
@@ -249,8 +253,9 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             rows={3}
+            disabled={aiUnavailable}
             placeholder='e.g. "Make this more beginner-friendly" or "Add three more sections about deployment"'
-            className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm placeholder:text-on-surface-muted focus:outline-none focus:border-primary resize-y"
+            className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm placeholder:text-on-surface-muted focus:outline-none focus:border-primary resize-y disabled:opacity-40"
           />
 
           {/* Actions */}
@@ -259,7 +264,7 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
             <button
               type="button"
               onClick={submit}
-              disabled={!prompt.trim() || status === "sending" || !selected}
+              disabled={!prompt.trim() || status === "sending" || !selected || aiUnavailable}
               className="inline-flex items-center gap-1.5 px-md py-sm bg-primary text-on-primary font-sora text-xs font-semibold uppercase tracking-widest hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {status === "sending" ? (
