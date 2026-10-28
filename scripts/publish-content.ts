@@ -1,10 +1,12 @@
 #!/usr/bin/env tsx
 /**
  * Agent publishing path: .ts manuscript -> content_items row (always private).
- *   npm run publish -- [--type story] [--featured] <file...>
+ *   npm run publish -- [--type story] [--featured] [--check] <file...>
  * Publishing validates schema and cross-file references, then upserts.
  * Publishing never touches visibility: new rows land private, existing rows
  * keep their status. Going public is a human toggle flip, never a CLI flag.
+ * --check runs the full validation (batch shape, required fields, slug
+ * uniqueness, DB + batch reference integrity) and stops before any write.
  */
 import { pathToFileURL } from "url";
 import { basename, dirname, resolve } from "path";
@@ -65,11 +67,13 @@ async function main() {
   const rawArgs = process.argv.slice(2);
   let typeOverride = "";
   let featured = false;
+  let checkOnly = false;
   const files: string[] = [];
   for (let i = 0; i < rawArgs.length; i++) {
     const a = rawArgs[i];
     if (a === "--type") typeOverride = rawArgs[++i] || typeOverride;
     else if (a === "--featured") featured = true;
+    else if (a === "--check") checkOnly = true;
     else if (a.startsWith("--")) throw new Error(`unknown flag ${a}`);
     else files.push(a);
   }
@@ -117,6 +121,12 @@ async function main() {
       const hit = await db.execute({ sql: "SELECT slug FROM content_items WHERE slug = ?", args: [ref] });
       if (!hit.rows.length) throw new Error(`${b.file}: ${b.type} references unknown slug '${ref}'`);
     }
+  }
+
+  // --check stops here: batch is loaded and validated, nothing written.
+  if (checkOnly) {
+    console.log(`check OK: ${batch.length} manuscript(s) valid`);
+    return;
   }
 
   // Single visibility gate: content_items.status controls public access.

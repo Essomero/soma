@@ -187,6 +187,28 @@ Because Soma bundles agent skills, you can use any coding assistant to manage yo
 4. You flip the row to **public** with one click in the Studio or on the page: instant, no rebuild, no redeploy. Unpublishing is the same click back.
 5. It archives the published manuscript under `src/content/` and commits that single file, so git holds the version history of public work and nothing else.
 
+### MCP Server (Agent Tooling)
+
+Soma ships a Model Context Protocol server (`server/mcp-server.mjs`) that agents can drive instead of reading the skill or scraping the site. It is registered in `.mcp.json` already, so skill-enabled assistants pick it up automatically; any MCP client can register it manually with `node server/mcp-server.mjs` (stdio, no secrets to configure: it reads `.env` like everything else).
+
+The tools mirror the SOMA_SKILL.md workflow, and each shells out to the repo's own entry points so behavior stays the single source of truth:
+
+| Tool | What it does |
+|---|---|
+| `content_types` | The 10 content types, folders, routes, when to use each |
+| `topics` | Valid topic slugs for the `topics:` field |
+| `manuscript_template` | Starter typed manuscript for a type + the publish lifecycle |
+| `existing_content` | Store rows (slug, type, status) for slug-uniqueness and discovery |
+| `get_content` | Full store row incl. body for a slug (alternative to browsing the site) |
+| `store_row` | The mandated post-publish confirmation: slug, type, status |
+| `drafts` | Staged manuscripts under gitignored `drafts/` |
+| `validate_manuscript` | Runs the exact publish checks (`--check`) with no write |
+| `publish_manuscript` | Validates + upserts as private; never touches visibility |
+| `verify_url` | HEAD/GET check for every image, video, and external link URL |
+| `archive_manuscript` | Copies a public manuscript to `src/content/`, returns the exact commit command |
+
+The trust model matches the rest of the repo: the server is spawned by the agent client on the owner's machine, so no token is needed (unlike the browser-facing `local-agent` sidecar). `publish_manuscript` and `archive_manuscript` are the only writes; everything else is read-only. Going public stays a human toggle flip, never a tool call.
+
 ---
 
 ## Running the Complete Suite Locally

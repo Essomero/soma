@@ -1,5 +1,10 @@
 {
   "mcpServers": {
+    "soma": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["server/mcp-server.mjs"]
+    },
     "vision-bridge": {
       "type": "stdio",
       "command": "/Users/v1b3m/Dev/Personal/vision-bridge/bin/mcp-server"
