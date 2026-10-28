@@ -12,6 +12,7 @@ import {
 } from "@/lib/admin-prompts";
 import type { AIDraft } from "./AIDraftPanel";
 import TestEditor from "./TestEditor";
+import AIEditPanel from "./AIEditPanel";
 
 interface ContentFormProps {
   initial: AIDraft | null;
@@ -122,6 +123,52 @@ function initFromDraft(draft: AIDraft | null): FormValues {
     guests: draft.guests || [],
     relatedReading: draft.relatedReading || [],
   };
+}
+
+/**
+ * Merge a partial AIDraft returned by an AI edit into the current form values.
+ * Only fields present in `draft` are updated; everything else keeps its value.
+ * This is the same shape mapping as initFromDraft but non-destructive.
+ */
+function mergeDraft(current: FormValues, draft: Record<string, unknown>): FormValues {
+  const next = { ...current };
+  if (typeof draft.title === "string") next.title = draft.title;
+  if (typeof draft.excerpt === "string") next.excerpt = draft.excerpt;
+  if (typeof draft.category === "string") next.category = draft.category;
+  if (draft.author && typeof draft.author === "object") {
+    const a = draft.author as Record<string, unknown>;
+    if (typeof a.name === "string") next.authorName = a.name;
+    if (typeof a.handle === "string") next.authorHandle = a.handle;
+  }
+  if (typeof draft.date === "string") next.date = draft.date;
+  if (typeof draft.image === "string") next.image = draft.image;
+  if (typeof draft.imageAlt === "string") next.imageAlt = draft.imageAlt;
+  if (Array.isArray(draft.tags)) next.tagsText = draft.tags.join(", ");
+  if (Array.isArray(draft.topics)) next.topics = draft.topics;
+  if (typeof draft.intro === "string") next.intro = draft.intro;
+  if (Array.isArray(draft.body)) next.body = [...draft.body];
+  if (Array.isArray(draft.sections)) next.sections = draft.sections;
+  if (Array.isArray(draft.pullQuotes)) next.pullQuotes = draft.pullQuotes;
+  if (Array.isArray(draft.bentoHighlights)) next.bentoHighlights = draft.bentoHighlights;
+  if (Array.isArray(draft.references)) next.references = draft.references;
+  if (Array.isArray(draft.tipCards)) next.tipCards = draft.tipCards;
+  if (typeof draft.tagline === "string") next.tagline = draft.tagline;
+  if (typeof draft.format === "string") next.format = draft.format;
+  if (typeof draft.estimatedMinutes === "number") next.estimatedMinutes = draft.estimatedMinutes;
+  if (typeof draft.passingScore === "number") next.passingScore = draft.passingScore;
+  if (Array.isArray(draft.lessons)) next.lessons = draft.lessons;
+  if (Array.isArray(draft.chapters)) next.chapters = draft.chapters;
+  if (Array.isArray(draft.episodes)) next.episodes = draft.episodes;
+  if (Array.isArray(draft.docSections)) next.docSections = draft.docSections;
+  if (Array.isArray(draft.sources)) next.sources = draft.sources;
+  if (Array.isArray(draft.questions)) next.questions = draft.questions;
+  if (typeof draft.episode === "string") next.episode = draft.episode;
+  if (typeof draft.duration === "string") next.duration = draft.duration;
+  if (typeof draft.summary === "string") next.summary = draft.summary;
+  if (Array.isArray(draft.segments)) next.segments = draft.segments;
+  if (Array.isArray(draft.guests)) next.guests = draft.guests;
+  if (Array.isArray(draft.relatedReading)) next.relatedReading = draft.relatedReading;
+  return next;
 }
 
 export default function ContentForm({ initial, onSave, onCancel, saving }: ContentFormProps) {
@@ -602,6 +649,12 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
 
   return (
     <div className="space-y-xl">
+      {/* AI Edit — modifies current content via LLM */}
+      <AIEditPanel
+        currentJson={JSON.stringify(previewDraft)}
+        onUpdate={(partial) => setValues(mergeDraft(values, partial))}
+      />
+
       {/* Preview — above all fields so clicking it sees content from the top */}
       <div className="flex items-center gap-md">
         <button
