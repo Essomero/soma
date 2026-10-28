@@ -1,6 +1,12 @@
-import { useState, useRef } from "react";
-import { Loader2, Sparkles, ArrowRight, AlertCircle, Wand2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Loader2, Sparkles, ArrowRight, AlertCircle, Wand2, ChevronDown, Check } from "lucide-react";
 import { buildSystemPrompt } from "@/lib/admin-prompts";
+
+interface ModelInfo {
+  id: string;
+  label: string;
+  provider: string;
+}
 
 interface AIEditPanelProps {
   /** The current form values serialised as a JSON string for the LLM context. */
@@ -9,42 +15,71 @@ interface AIEditPanelProps {
   onUpdate: (partial: Record<string, unknown>) => void;
 }
 
-const MODELS = [
-  { id: "deepseek-flash", label: "DeepSeek Flash", provider: "deepseek" },
-  { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash", provider: "gemini" },
-  { id: "google/gemini-2.5-flash", label: "Google Gemini Flash", provider: "openrouter" },
-];
-
 export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps) {
-  const [open, setOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "error">("idle");
   const [error, setError] = useState("");
-  const [model, setModel] = useState(MODELS[0]);
-  const abortRef = useRef<AbortController | null>(null);
+
+  // Model list: fetched from /api/models, like test evaluation and draft panels.
+  const [models, setModels] = useState<ModelInfo[]>([]);
+  const [modelsReady, setModelsReady] = useState(false);
+  const [selectedModel, setSelectedModel] = useState("");
+  const [selectedProvider, setSelectedProvider] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch("/api/models")
+      .then((r) => r.json())
+      .then((data) => {
+        const list: ModelInfo[] = data.models ?? [];
+        setModels(list);
+        setModelsReady(true);
+        if (list.length > 0) {
+          setSelectedModel(list[0].id);
+          setSelectedProvider(list[0].provider);
+        }
+      })
+      .catch(() => {
+        setModels([]);
+        setModelsReady(true);
+      });
+  }, []);
+
+  const selected = models.find((m) => m.id === selectedModel && m.provider === selectedProvider);
+  const aiUnavailable = !modelsReady || models.length === 0;
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen]);
 
   const submit = async () => {
-    if (!prompt.trim() || status === "sending") return;
+    if (!prompt.trim() || status === "sending" || !selected) return;
     setStatus("sending");
     setError("");
 
     const controller = new AbortController();
-    abortRef.current = controller;
-
     try {
       const systemPrompt = buildSystemPrompt();
       const userMessage = [
-        `You are editing existing content. Below is the current content as JSON.`,
-        `Apply this edit request and return the FULL modified content as a JSON object.`,
-        `Do NOT change fields the edit request does not mention — keep every field exactly as-is unless the edit requires it.`,
-        ``,
-        `CURRENT CONTENT:`,
+        "You are editing existing content. Below is the current content as JSON.",
+        "Apply this edit request and return the FULL modified content as a JSON object.",
+        "Do NOT change fields the edit request does not mention — keep every field exactly as-is unless the edit requires it.",
+        "",
+        "CURRENT CONTENT:",
         currentJson,
-        ``,
-        `EDIT REQUEST:`,
+        "",
+        "EDIT REQUEST:",
         prompt.trim(),
-        ``,
-        `Respond with the JSON object only.`,
+        "",
+        "Respond with the JSON object only.",
       ].join("\n");
 
       const res = await fetch("/api/chat", {
@@ -53,8 +88,8 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
         body: JSON.stringify({
           systemPrompt,
           userMessage,
-          model: model.id,
-          provider: model.provider,
+          model: selected.id,
+          provider: selected.provider,
           stream: false,
           max_tokens: 8000,
         }),
@@ -87,40 +122,55 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
       {/* Header toggle */}
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={() => setPanelOpen(!panelOpen)}
         className="w-full flex items-center justify-between px-md py-sm hover:bg-surface transition-colors"
       >
         <span className="flex items-center gap-2 font-sora text-xs font-semibold text-on-surface uppercase tracking-widest">
           <Wand2 className="w-4 h-4 text-primary" />
           AI Edit
         </span>
-        <ArrowRight className={`w-3.5 h-3.5 text-on-surface-muted transition-transform ${open ? "rotate-90" : ""}`} />
+        <ArrowRight className={`w-3.5 h-3.5 text-on-surface-muted transition-transform ${panelOpen ? "rotate-90" : ""}`} />
       </button>
 
-      {open && (
+      {panelOpen && (
         <div className="px-md pb-md space-y-sm">
           <p className="font-dm-sans text-[11px] text-on-surface-muted leading-relaxed">
             Tell the AI what to change in the current content. It returns the full modified content with only your requested changes applied.
           </p>
 
-          {/* Model picker */}
+          {/* Custom model dropdown */}
           <div className="flex items-center gap-sm">
-            <span className="font-sora text-[10px] text-on-surface-muted uppercase tracking-wider">Model</span>
-            <div className="flex gap-xs">
-              {MODELS.map((m) => (
-                <button
-                  key={`${m.provider}-${m.id}`}
-                  type="button"
-                  onClick={() => setModel(m)}
-                  className={`px-md py-xs font-sora text-[11px] uppercase tracking-wider border transition-colors ${
-                    model.id === m.id && model.provider === m.provider
-                      ? "bg-primary text-on-primary border-primary"
-                      : "bg-surface text-on-surface-muted border-border-default hover:border-primary"
-                  }`}
-                >
-                  {m.label}
-                </button>
-              ))}
+            <span className="font-sora text-[10px] text-on-surface-muted uppercase tracking-wider shrink-0">Model</span>
+            <div ref={menuRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setMenuOpen(!menuOpen)}
+                disabled={aiUnavailable}
+                className="inline-flex items-center gap-sm px-md py-xs font-sora text-xs border border-border-default bg-surface text-on-surface hover:border-primary transition-colors disabled:opacity-40"
+              >
+                {selected ? selected.label : modelsReady ? "No models available" : "Loading models..."}
+                <ChevronDown className="w-3.5 h-3.5 text-on-surface-muted shrink-0" />
+              </button>
+              {menuOpen && (
+                <div className="absolute top-full left-0 mt-1 z-50 bg-surface border border-border-default shadow-xl min-w-[260px] max-h-[300px] overflow-y-auto">
+                  {models.map((m) => {
+                    const isActive = m.id === selectedModel && m.provider === selectedProvider;
+                    return (
+                      <button
+                        key={`${m.provider}-${m.id}`}
+                        type="button"
+                        onClick={() => { setSelectedModel(m.id); setSelectedProvider(m.provider); setMenuOpen(false); }}
+                        className={`w-full text-left px-md py-sm font-dm-sans text-sm transition-colors hover:bg-surface-container flex items-center justify-between ${
+                          isActive ? "text-primary bg-surface-container font-semibold" : "text-on-surface-variant"
+                        }`}
+                      >
+                        <span className="truncate">{m.label}</span>
+                        {isActive && <Check className="w-3.5 h-3.5 shrink-0 text-primary" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
@@ -139,7 +189,7 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
             <button
               type="button"
               onClick={submit}
-              disabled={!prompt.trim() || status === "sending"}
+              disabled={!prompt.trim() || status === "sending" || !selected}
               className="inline-flex items-center gap-1.5 px-md py-sm bg-primary text-on-primary font-sora text-xs font-semibold uppercase tracking-widest hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {status === "sending" ? (
