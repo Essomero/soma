@@ -258,7 +258,7 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
                 <span className="font-sora text-xs font-semibold text-on-surface">Model thinking</span>
                 <ChevronDown className="w-3.5 h-3.5 text-on-surface-muted ml-auto transition-transform group-open:rotate-180" />
               </summary>
-              <div className="p-md bg-surface border-x border-b border-border-default">
+              <div className="max-h-48 overflow-y-auto p-md bg-surface border-x border-b border-border-default">
                 <p className="font-dm-sans text-xs text-on-surface-muted whitespace-pre-wrap leading-relaxed">
                   {reasoning}
                 </p>
