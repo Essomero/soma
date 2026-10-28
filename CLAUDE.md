@@ -78,6 +78,22 @@ All content lives in `src/content/` organized by type:
 - `src/content/podcast/`: Audio episodes, transcripts, and show notes
 - `src/content/registry.ts`: Single unified export registry
 
+## Agent MCP Server
+
+Content workflows are exposed to coding agents through a stdio MCP server at `server/mcp-server.mjs`. For content tasks, use its tools instead of reading `SOMA_SKILL.md` or scraping the site. The tools mirror the skill's workflow and shell out to the repo's own scripts; `SOMA_SKILL.md` stays the source of truth.
+
+**How to load it**
+
+- Registered in `.mcp.json` (`mcpServers.soma`), so MCP clients that read the project config connect automatically. `npm install` gives it everything it needs (`@libsql/client` is a direct dependency; `tsx` serves the validate/publish tools).
+- Manual registration for a client that ignores `.mcp.json`: add an stdio server entry with `cwd` at the repo root:
+  ```json
+  { "command": "node", "args": ["server/mcp-server.mjs"] }
+  ```
+- No token, no extra config: the server reads `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` from `.env` / `.env.local` like the rest of the repo. Without credentials the store tools fail loud.
+- stdout is the protocol channel only. The server never writes logs to stdout; diagnostics go to stderr.
+
+**Tools (11)**: `content_types`, `topics`, `manuscript_template`, `existing_content`, `get_content`, `store_row`, `drafts`, `validate_manuscript`, `publish_manuscript`, `verify_url`, `archive_manuscript`. Full descriptors come over `tools/list`; the README's "MCP Server (Agent Tooling)" section has the summary table. `publish_manuscript` upserts rows as private and never touches visibility; public flips stay the owner's toggle, no CLI flag.
+
 ## Companion Repositories
 - **Soma Labs** (`https://github.com/Essomero/soma-labs`): Companion runnable code drills in Go, Deno, Docker Compose, and Node.
 - **Son** (`https://github.com/Essomero/son`): Real-time voice agent powering oral interview questions at `http://localhost:7860`.
