@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Loader2, Sparkles, ArrowRight, AlertCircle, Wand2, ChevronDown, Check } from "lucide-react";
+import { Loader2, Sparkles, AlertCircle, Wand2, ChevronDown, Check } from "lucide-react";
 import { buildSystemPrompt } from "@/lib/admin-prompts";
 
 interface ModelInfo {
@@ -129,7 +129,7 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
           <Wand2 className="w-4 h-4 text-primary" />
           AI Edit
         </span>
-        <ArrowRight className={`w-3.5 h-3.5 text-on-surface-muted transition-transform ${panelOpen ? "rotate-90" : ""}`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-on-surface-muted transition-transform ${panelOpen ? "rotate-180" : ""}`} />
       </button>
 
       {panelOpen && (
