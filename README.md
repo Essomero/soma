@@ -71,10 +71,11 @@ Soma ships a full content studio at **`/admin`** (owner login required). Every c
 - **Type-aware forms**: Each type gets its own field set (intro, body, sections, pull quotes, bento highlights, tip cards, lessons/chapters/episodes, doc sections, test sources and questions, podcast segments and guests).
 - **Every block mapped**: The block editor handles all 12 content block types — paragraph, image, horizontal rule, video callout, callout, code, math (KaTeX), Mermaid, YouTube, chart, 3D scene, and lab — plus free-form JSON editing for the complex ones.
 - **Edit / Preview / Save**: Switch between editing and a live page preview, then save as private or publish in one click. Cancel returns you to wherever you came from.
-- **Agent-Powered Publishing**: The repository ships two dedicated agent skills:
+- **Agent-Powered Publishing**: The repository ships two dedicated agent skills plus a content MCP server:
   - **Content Skill (`.claude/skills/soma`, `.agents/skills/soma`, `SOMA_SKILL.md`)**: Instructs any AI agent (Claude Code, Cursor, Windsurf, Cline, Aider, omp) to draft, type-check, and publish courses, stories, guides, books, and diagnostic tests in the *Grokking Algorithms* voice.
   - **Opinionation Skill (`.claude/skills/opinionation`, `.agents/skills/opinionation`, `OPINIONATION_SKILL.md`)**: Enforces minimal dependencies, explicit prerequisites, automated install setup, and self-contained README standards across code and companion labs.
-- **Zero-friction publishing pipeline**: Ask your agent: *"Write a 4-lesson guide on WebSockets with companion drills."* The agent creates typed TypeScript schema files under `src/content/`, links companion lab folders, verifies `npm run build`, and your git push deploys it to the world. Got an existing book, essay, or leisure read? Ask the agent to convert it: any markdown-style source becomes a Soma page.
+  - **Content MCP Server (`server/mcp-server.mjs`)**: The same workflow (draft, validate, publish private, verify URLs, archive) exposed as 11 stdio tools; registered in `.mcp.json` for clients that read it.
+- **Zero-friction publishing pipeline**: Ask your agent: *"Write a 4-lesson guide on WebSockets with companion drills."* The agent drafts the typed TypeScript manuscript in gitignored `drafts/<type>/`, links companion lab folders where a course needs drills, and publishes it to the store as a private row: previewable at your dev server, nothing committed. You flip the visibility toggle when it is ready; the agent then archives the manuscript to `src/content/` and commits that single file. Got an existing book, essay, or leisure read? Ask the agent to convert it: any markdown-style source becomes a Soma page.
 ### 2. Think on Paper, but Digital
 - **Tactile typography**: Built with Sora (display), DM Sans (body), and KaTeX (mathematics) with wide reading margins.
 - **Marginalia that survives edits**: Highlight any passage to leave private notes or questions. If you edit or rewrite the text later, an unmapped notes drawer preserves your annotations so your marginalia never drifts or vanishes.
@@ -181,7 +182,7 @@ Because Soma bundles agent skills, you can use any coding assistant to manage yo
 "Add a new 4-lesson guide on WebRTC peer connection fundamentals"
 ```
 
-1. The agent reads `.claude/skills/soma/SKILL.md` (or `.agents/skills/soma/SKILL.md`).
+1. The agent reads `.claude/skills/soma/SKILL.md` (or `.agents/skills/soma/SKILL.md`), or drives the bundled MCP server below instead.
 2. It drafts the structured TypeScript manuscript in a staging file outside git, following the exact schema (`slug`, `title`, `sections`, `bentoHighlights`, `pullQuote`).
 3. It publishes the manuscript with `npm run publish` — validated, private, previewable at your local dev server. Nothing is committed.
 4. You flip the row to **public** with one click in the Studio or on the page: instant, no rebuild, no redeploy. Unpublishing is the same click back.
@@ -189,7 +190,7 @@ Because Soma bundles agent skills, you can use any coding assistant to manage yo
 
 ### MCP Server (Agent Tooling)
 
-Soma ships a Model Context Protocol server (`server/mcp-server.mjs`) that agents can drive instead of reading the skill or scraping the site. It is registered in `.mcp.json` already, so skill-enabled assistants pick it up automatically; any MCP client can register it manually with `node server/mcp-server.mjs` (stdio, no secrets to configure: it reads `.env` like everything else).
+Soma ships a Model Context Protocol server (`server/mcp-server.mjs`) that agents can drive instead of reading the skill or scraping the site. It is registered in `.mcp.json` already, so clients that honor a project `.mcp.json` pick it up automatically; any MCP client can register it manually with `node server/mcp-server.mjs` (stdio, no secrets to configure: it reads `.env` like everything else).
 
 The tools mirror the SOMA_SKILL.md workflow, and each shells out to the repo's own entry points so behavior stays the single source of truth:
 
