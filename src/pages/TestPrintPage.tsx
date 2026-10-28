@@ -114,7 +114,7 @@ export default function TestPrintPage() {
               <span>{bw ? "B/W" : "Color"}</span>
             </button>
             <Link to={`/admin/test/${test.slug}/edit`}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg font-sora text-xs font-semibold border border-border-default bg-surface-container text-on-surface hover:border-primary/50 hover:text-primary transition-all print:hidden">
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg font-sora text-xs font-semibold bg-primary text-on-primary border-primary hover:bg-primary-hover transition-all shadow-sm print:hidden">
               <Edit3 className="w-3.5 h-3.5" />
               <span>Edit</span>
             </Link>

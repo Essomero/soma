@@ -1,9 +1,10 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowRight, Clock, BookOpen, Check, Printer, Loader2 } from "lucide-react";
+import { ArrowRight, Clock, BookOpen, Check, Printer, Loader2, Edit3 } from "lucide-react";
 import Tooltip from "@/components/ui/Tooltip";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
 import { useContentItem, useContentList } from "@/lib/content";
+import { useAuth } from "@/lib/AuthContext";
 import type { BookContent, StoryContent } from "@/types";
 import { useProgress } from "@/lib/useProgress";
 import { getTotalReadingTime } from "@/lib/readingTime";
@@ -17,7 +18,8 @@ export default function BookDetailPage() {
   const { data: stories } = useContentList<StoryContent>("story");
   const allStories = stories ?? [];
   const chapterSlugs = book ? book.chapters.map((ch) => ch.storySlug) : [];
-  const { isCompleted, toggle, progress } = useProgress(slug ?? "", chapterSlugs);
+  const { isOwner } = useAuth();
+const { isCompleted, toggle, progress } = useProgress(slug ?? "", chapterSlugs);
   usePageMeta({ title: book?.title, description: book?.description, image: book?.image });
   const totalMinutes = book
     ? getTotalReadingTime(book.chapters.map((ch) => ch.storySlug), allStories)
@@ -62,6 +64,18 @@ export default function BookDetailPage() {
             <span>{progress}/{book.chapters.length} read</span>
             <span className="text-secondary">//</span>
             <span>~{totalMinutes} min</span>
+            {isOwner && (
+              <>
+                <span className="text-secondary">//</span>
+                <Link to={`/admin/book/${book.slug}/edit`}
+                  className="inline-flex items-center gap-sm font-sora bg-primary text-on-primary border-primary hover:bg-primary-hover transition-all shadow-sm rounded-lg font-semibold px-md py-sm text-xs"
+                  title="Edit book"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Edit</span>
+                </Link>
+              </>
+            )}
           </div>
           <div className="mt-lg w-full max-w-md h-1 bg-surface-container rounded-full overflow-hidden">
             <div

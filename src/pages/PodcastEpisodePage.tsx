@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams, Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { Star, User, PenLine, ChevronLeft, ChevronRight, Printer, Loader2 } from "lucide-react";
+import { Star, User, PenLine, ChevronLeft, ChevronRight, Printer, Loader2, Edit3 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import AudioPlayer from "@/components/ui/AudioPlayer";
 import ShareButtons from "@/components/ui/ShareButtons";
@@ -90,8 +90,17 @@ export default function PodcastEpisodePage() {
               {episode.title}
             </h1>
             <p className="font-dm-sans text-body-base text-on-surface-variant max-w-2xl text-lg md:text-xl leading-relaxed" dangerouslySetInnerHTML={{ __html: md(episode.description) }} />
-            <div className="mt-md">
+            <div className="mt-md flex items-center gap-sm">
               <PrintButton to={`/podcast/${slug}/print`} compact />
+              {isOwner && (
+                <Link to={`/admin/podcast/${slug}/edit`}
+                  className="inline-flex items-center gap-sm font-sora bg-primary text-on-primary border-primary hover:bg-primary-hover transition-all shadow-sm rounded-lg font-semibold px-md py-sm text-xs"
+                  title="Edit episode"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Edit</span>
+                </Link>
+              )}
             </div>
           </div>
           <div className="col-span-12 lg:col-span-4 flex lg:justify-end">
