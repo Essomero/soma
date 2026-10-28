@@ -5,6 +5,7 @@ import AIDraftPanel from "@/components/admin/AIDraftPanel";
 import ContentForm from "@/components/admin/ContentForm";
 import AccentBar from "@/components/ui/AccentBar";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { invalidateContentCache } from "@/lib/content";
 import type { AIDraft } from "@/components/admin/AIDraftPanel";
 import type { SavePayload } from "@/components/admin/ContentForm";
 import type { ContentType } from "@/lib/admin-prompts";
@@ -60,6 +61,8 @@ export default function AdminNewPage() {
         const errBody = await res.text().catch(() => "");
         throw new Error(`Save failed (${res.status}): ${errBody}`);
       }
+
+      invalidateContentCache();
 
       const baseRoute = ROUTE_BASE[data.type as ContentType] || data.type;
       setSuccess(`"${data.title}" saved successfully!`);

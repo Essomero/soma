@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import ContentForm from "@/components/admin/ContentForm";
 import AccentBar from "@/components/ui/AccentBar";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { invalidateContentCache } from "@/lib/content";
 import { ROUTE_BASE, CONTENT_TYPE_LABELS, type ContentType } from "@/lib/admin-prompts";
 import type { AIDraft } from "@/components/admin/AIDraftPanel";
 import type { SavePayload } from "@/components/admin/ContentForm";
@@ -237,6 +238,8 @@ export default function AdminEditPage() {
         const errBody = await r.text().catch(() => "");
         throw new Error(`Save failed (${r.status}): ${errBody}`);
       }
+
+      invalidateContentCache();
 
       const baseRoute = ROUTE_BASE[data.type] || data.type;
       setSuccess(`"${data.title}" saved. Redirecting...`);

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Globe, Lock, Loader2 } from "lucide-react";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import { invalidateContentCache } from "@/lib/content";
 
 interface Row {
   slug: string;
@@ -40,6 +41,7 @@ export default function PublishAll() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ slugs: rows.map((r) => r.slug), public: makePublic }),
       }).catch(() => {});
+      invalidateContentCache();
       await load();
     } finally {
       setWorking(false);

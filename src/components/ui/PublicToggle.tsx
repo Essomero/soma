@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Globe, Lock } from "lucide-react";
 import Tooltip from "@/components/ui/Tooltip";
+import { invalidateContentCache } from "@/lib/content";
 
 // ── API helpers ────────────────────────────────────────
 async function apiGet(slug: string): Promise<boolean> {
@@ -19,6 +20,7 @@ async function apiSet(slugs: string[], isPublic: boolean): Promise<void> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ slugs, public: isPublic }),
   }).catch(() => {});
+  invalidateContentCache();
 }
 
 // ── localStorage keys (optimistic UI : API is source of truth) ──

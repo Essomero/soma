@@ -22,6 +22,16 @@ async function get<T>(url: string): Promise<T> {
 const listCache = new Map<string, Promise<unknown[]>>();
 const itemCache = new Map<string, Promise<unknown>>();
 
+/**
+ * Drop cached content after a mutation (save, publish toggle, delete).
+ * Without this, navigation after an edit serves the stale row: both the
+ * single-item and list caches hold the pre-save promise forever.
+ */
+export function invalidateContentCache(): void {
+  listCache.clear();
+  itemCache.clear();
+}
+
 
 /** Single item by type+slug. Rejects with status 404 when missing or private. */
 export function fetchContentItem<T>(type: string, slug: string): Promise<T> {

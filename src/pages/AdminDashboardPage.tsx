@@ -4,6 +4,7 @@ import { Plus, Loader2, Eye, EyeOff, Search, Pencil, Trash2, Globe } from "lucid
 import AccentBar from "@/components/ui/AccentBar";
 import LocalAgentPanel from "@/components/admin/LocalAgentPanel";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { invalidateContentCache } from "@/lib/content";
 import { CONTENT_TYPES, CONTENT_TYPE_LABELS, ROUTE_BASE, type ContentType } from "@/lib/admin-prompts";
 
 interface ContentItem {
@@ -111,6 +112,7 @@ export default function AdminDashboardPage() {
         }),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      invalidateContentCache();
       const rows = (data || []).map((it) =>
         it.slug === item.slug ? { ...it, status: next } : it
       );
@@ -133,6 +135,7 @@ export default function AdminDashboardPage() {
         headers: { "Content-Type": "application/json" },
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      invalidateContentCache();
       setData((data || []).filter((it) => it.slug !== item.slug));
     } catch (err) {
       setError(`Delete failed: ${err instanceof Error ? err.message : "unknown"}`);
