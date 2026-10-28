@@ -301,7 +301,7 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
     date: str(values.date),
     image: str(values.image),
     imageAlt: str(values.imageAlt),
-    tags: strArray(values.tagsText.length ? values.tagsText.split(",").map((t: string) => t.trim()).filter((t: string) => t) : []),
+    tags: (() => { const t = str(values.tagsText); return t ? t.split(",").map((s) => s.trim()).filter(Boolean) : []; })(),
     topics: strArray(values.topics),
     intro: str(values.intro),
     tagline: str(values.tagline),
