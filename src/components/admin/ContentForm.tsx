@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { Plus, Trash2, GripVertical, X, Eye, Pencil } from "lucide-react";
+import { Plus, Trash2, GripVertical, X, Eye, Pencil, AlertTriangle } from "lucide-react";
 import BlockEditor from "./BlockEditor";
 import ContentPreview from "./ContentPreview";
 import type { ContentBlock } from "@/types";
@@ -179,6 +179,7 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
   const [status, setStatus] = useState<"private" | "published">("private");
   const [reasoning, setReasoning] = useState("");
   const [mode, setMode] = useState<"edit" | "preview">("edit");
+  const [aiEdited, setAiEdited] = useState(false);
   // Shared drag state for array editors (sections, items, etc.)
   const [dragFrom, setDragFrom] = useState<number | null>(null);
   const dragToRef = useRef<number | null>(null);
@@ -272,6 +273,7 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
     const tags = tagsText.split(",").map((t) => t.trim()).filter(Boolean);
     const topicsRaw = values.topics;
     const topics = strArray(topicsRaw).filter(Boolean);
+    setAiEdited(false);
 
     onSave({
       slug,
@@ -667,11 +669,24 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
 
   return (
     <div className="space-y-xl">
-      {/* AI Edit — modifies current content via LLM */}
+      {/* AI Edit — modifies current content via LLM. Applies to the form;
+          persistence requires the explicit Save button below. */}
       <AIEditPanel
         currentJson={JSON.stringify(previewDraft)}
-        onUpdate={(partial) => setValues(mergeDraft(values, partial))}
+        onUpdate={(partial) => {
+          setValues(mergeDraft(values, partial));
+          setAiEdited(true);
+        }}
       />
+      {aiEdited && (
+        <div className="flex items-center gap-2 p-sm bg-accent-orange/10 border border-accent-orange/40 rounded text-xs font-dm-sans text-on-surface">
+          <AlertTriangle className="w-3.5 h-3.5 text-accent-orange shrink-0" />
+          <span>
+            AI edits applied to the form. <strong>Save below</strong> (or Preview &rarr; save) to persist them — the published page
+            still shows the previous version until you save.
+          </span>
+        </div>
+      )}
 
       {/* Preview — above all fields so clicking it sees content from the top */}
       <div className="flex items-center gap-md">
