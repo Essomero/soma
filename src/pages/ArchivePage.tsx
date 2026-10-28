@@ -1,6 +1,7 @@
 import { md } from "@/lib/markdown";
 import { Link } from "react-router-dom";
-import { Archive, Loader2 } from "lucide-react";
+import { Archive } from "lucide-react";
+import { SkeletonIndexHeader, SkeletonArticleGrid } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import ArticleCard from "@/components/cards/ArticleCard";
 import LoadMore from "@/components/ui/LoadMore";
@@ -15,8 +16,9 @@ export default function ArchivePage() {
   usePageMeta({ title: "Archive", description: "Every retired story, grouped by year. Still readable, still searchable." });
   if (loading) {
     return (
-      <div className="pt-32 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">
-        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      <div className="pt-32 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop">
+        <SkeletonIndexHeader />
+        <SkeletonArticleGrid count={6} />
       </div>
     );
   }

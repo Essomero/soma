@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Loader2, Eye, EyeOff, Search, Pencil, Trash2, Globe } from "lucide-react";
+import { Plus, Eye, EyeOff, Search, Pencil, Trash2, Globe } from "lucide-react";
+import { SkeletonAdminRows } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import LocalAgentPanel from "@/components/admin/LocalAgentPanel";
 import { usePageMeta } from "@/hooks/usePageMeta";
@@ -224,8 +225,8 @@ export default function AdminDashboardPage() {
 
       {/* Content Table */}
       {loading ? (
-        <div className="flex items-center justify-center py-xxl">
-          <Loader2 className="w-6 h-6 animate-spin text-on-surface-muted" />
+        <div className="py-xl">
+          <SkeletonAdminRows rows={5} />
         </div>
       ) : error ? (
         <div className="p-lg bg-surface-container border border-border-default border-l-4 border-l-error">

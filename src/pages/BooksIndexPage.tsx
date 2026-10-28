@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { md } from "@/lib/markdown";
 import { Link } from "react-router-dom";
-import { BookOpen, ArrowRight, Loader2 } from "lucide-react";
+import { BookOpen, ArrowRight } from "lucide-react";
+import { SkeletonIndexHeader, SkeletonFeatureGrid } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import LoadMore from "@/components/ui/LoadMore";
 import { useContentList, sortContent } from "@/lib/content";
@@ -17,8 +18,9 @@ export default function BooksIndexPage() {
   usePageMeta({ title: "Books", description: "Finished works to read in chapter order." });
   if (loading) {
     return (
-      <div className="pt-32 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">
-        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      <div className="pt-32 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop">
+        <SkeletonIndexHeader />
+        <SkeletonFeatureGrid />
       </div>
     );
   }

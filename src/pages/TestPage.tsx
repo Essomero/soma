@@ -29,6 +29,7 @@ import {
   Printer,
 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
+import { SkeletonTestDrill } from "@/components/ui/Skeleton";
 import Tag from "@/components/ui/Tag";
 import Button from "@/components/ui/Button";
 import Tooltip from "@/components/ui/Tooltip";
@@ -736,9 +737,7 @@ export default function TestPage() {
 
   if (testLoading) {
     return (
-      <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant text-center">
-        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
-      </div>
+      <SkeletonTestDrill />
     );
   }
 

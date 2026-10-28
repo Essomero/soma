@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { SkeletonForm } from "@/components/ui/Skeleton";
 import ContentForm from "@/components/admin/ContentForm";
 import AccentBar from "@/components/ui/AccentBar";
 import { usePageMeta } from "@/hooks/usePageMeta";
@@ -290,8 +291,8 @@ export default function AdminEditPage() {
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-xxl">
-          <Loader2 className="w-6 h-6 animate-spin text-on-surface-muted" />
+        <div className="py-xl">
+          <SkeletonForm rows={5} />
         </div>
       ) : notFound ? (
         <div className="py-xxl text-center border border-dashed border-border-default">

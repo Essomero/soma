@@ -17,6 +17,7 @@ import PrintButton from "@/components/ui/PrintButton";
 import { useContentItem, useContentList } from "@/lib/content";
 import type { StoryContent, CourseContent, BookContent, SeriesContent, TestContent } from "@/types";
 import { ArrowLeft, ArrowRight, ExternalLink, Check, Copy, Bookmark, Loader2, Trash2, Bot, PenLine, Eye, Send, X, ChevronDown, Reply, Maximize2, Sparkles, Edit3 } from "lucide-react";
+import { SkeletonStoryLayout } from "@/components/ui/Skeleton";
 import { mdBlock, contentToMarkdown, md } from "@/lib/markdown";
 import MarkdownHtml from "@/components/ui/MarkdownHtml";
 import { useProgress } from "@/lib/useProgress";
@@ -972,9 +973,7 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
 
   if (storyLoading) {
     return (
-      <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant text-center">
-        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
-      </div>
+      <SkeletonStoryLayout />
     );
   }
 

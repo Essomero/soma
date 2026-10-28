@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Edit3, Trash2, Loader2, Link2Off, Clipboard, Check } from "lucide-react";
+import { SkeletonLearnArticle } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
 import Comments from "@/components/ui/Comments";
@@ -201,9 +202,7 @@ export default function LearnArticlePage() {
 
   if (loading) {
     return (
-      <div className="pt-32 pb-xxl max-w-readme mx-auto px-gutter md:px-margin-desktop flex items-center justify-center py-xxl">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-      </div>
+      <SkeletonLearnArticle />
     );
   }
 

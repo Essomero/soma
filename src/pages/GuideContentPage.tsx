@@ -1,6 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { useState, useRef } from "react";
-import { Minus, Terminal, UserCheck, AlertTriangle, Lightbulb, Shield, Zap, Loader2 } from "lucide-react";
+import { Minus, Terminal, UserCheck, AlertTriangle, Lightbulb, Shield, Zap } from "lucide-react";
+import { SkeletonDocLayout } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
 import PullQuote from "@/components/ui/PullQuote";
@@ -73,9 +74,7 @@ export default function GuideContentPage() {
 
   if (loading) {
     return (
-      <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant text-center">
-        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
-      </div>
+      <SkeletonDocLayout />
     );
   }
 

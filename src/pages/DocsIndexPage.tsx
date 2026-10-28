@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { FileText, ArrowRight, Loader2 } from "lucide-react";
+import { FileText, ArrowRight } from "lucide-react";
+import { SkeletonIndexHeader, SkeletonFeatureGrid } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import LoadMore from "@/components/ui/LoadMore";
 import { useContentList, sortContent } from "@/lib/content";
@@ -16,8 +17,9 @@ export default function DocsIndexPage() {
   usePageMeta({ title: "Docs", description: "Lookup answers: setup references and infrastructure notes. Jump in anywhere." });
   if (loading) {
     return (
-      <div className="pt-32 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">
-        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      <div className="pt-32 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop">
+        <SkeletonIndexHeader />
+        <SkeletonFeatureGrid />
       </div>
     );
   }

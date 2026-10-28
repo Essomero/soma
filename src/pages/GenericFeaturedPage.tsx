@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { SkeletonFeaturedLayout } from "@/components/ui/Skeleton";
 import { useParams, Link } from "react-router-dom";
 import { useState, useRef } from "react";
 import ImmersiveHero from "@/components/sections/ImmersiveHero";
@@ -29,9 +29,7 @@ export default function GenericFeaturedPage() {
 
   if (loading) {
     return (
-      <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant text-center">
-        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
-      </div>
+      <SkeletonFeaturedLayout />
     );
   }
 

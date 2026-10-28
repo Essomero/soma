@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { SkeletonIndexHeader, SkeletonEditorialGrid } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import ArticleCard from "@/components/cards/ArticleCard";
 import LoadMore from "@/components/ui/LoadMore";
@@ -34,8 +35,9 @@ export default function StoriesIndexPage() {
   usePageMeta({ title: "Stories", description: "One idea per story, felt deeply: engineering, craft, and the systems underneath." });
   if (loading) {
     return (
-      <div className="pt-32 pb-xxl max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">
-        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      <div className="pt-32 pb-xxl max-w-readme mx-auto px-gutter md:px-margin-desktop">
+        <SkeletonIndexHeader withDescription={false} />
+        <SkeletonEditorialGrid />
       </div>
     );
   }

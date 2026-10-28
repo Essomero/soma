@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams, Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { Star, User, PenLine, ChevronLeft, ChevronRight, Printer, Loader2, Edit3 } from "lucide-react";
+import { Star, User, PenLine, ChevronLeft, ChevronRight, Printer, Edit3 } from "lucide-react";
+import { SkeletonPodcastEpisodeLayout } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import AudioPlayer from "@/components/ui/AudioPlayer";
 import ShareButtons from "@/components/ui/ShareButtons";
@@ -65,9 +66,7 @@ export default function PodcastEpisodePage() {
 
   if (loading) {
     return (
-      <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant text-center">
-        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
-      </div>
+      <SkeletonPodcastEpisodeLayout />
     );
   }
 

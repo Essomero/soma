@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Play, ArrowRight, Podcast, Radio, Rss, Share2, Loader2 } from "lucide-react";
+import { Play, ArrowRight, Podcast, Radio, Rss, Share2 } from "lucide-react";
+import { SkeletonPodcastIndex } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import { useContentList, sortContent } from "@/lib/content";
 import type { SortKey } from "@/lib/content";
@@ -21,9 +22,7 @@ export default function PodcastPage() {
   usePageMeta({ title: "Podcast", description: "Ideas better heard than read: deep dives into technology, economics, and philosophy." });
   if (loading) {
     return (
-      <div className="mt-16 py-giant text-center">
-        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
-      </div>
+      <SkeletonPodcastIndex />
     );
   }
   const allEpisodes = episodes ?? [];

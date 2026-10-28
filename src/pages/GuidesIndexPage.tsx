@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { md } from "@/lib/markdown";
 import { Link } from "react-router-dom";
-import { ArrowRight, Loader2, Search, ChevronDown } from "lucide-react";
+import { ArrowRight, Search, ChevronDown } from "lucide-react";
+import { SkeletonGuidesGrid } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import { useContentList, sortContent } from "@/lib/content";
 import type { SortKey } from "@/lib/content";
@@ -28,8 +29,8 @@ export default function GuidesIndexPage() {
   usePageMeta({ title: "Guides", description: "Step-by-step guides that end somewhere new: self-hosting, drills, launch playbooks." });
   if (loading) {
     return (
-      <div className="pt-24 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">
-        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      <div className="pt-24 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop">
+        <SkeletonGuidesGrid />
       </div>
     );
   }

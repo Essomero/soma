@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowRight, Clock, BookOpen, Check, Printer, Loader2, Edit3 } from "lucide-react";
+import { ArrowRight, Clock, BookOpen, Check, Printer, Edit3 } from "lucide-react";
+import { SkeletonCollectionDetail } from "@/components/ui/Skeleton";
 import Tooltip from "@/components/ui/Tooltip";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
@@ -27,9 +28,7 @@ const { isCompleted, toggle, progress } = useProgress(slug ?? "", chapterSlugs);
 
   if (loading) {
     return (
-      <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant text-center">
-        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
-      </div>
+      <SkeletonCollectionDetail rows={4} />
     );
   }
 

@@ -1,5 +1,6 @@
 import { md } from "@/lib/markdown";
-import { Mic, ArrowRight, Loader2 } from "lucide-react";
+import { Mic, ArrowRight } from "lucide-react";
+import { SkeletonHome } from "@/components/ui/Skeleton";
 import ReadMENav from "@/components/layout/ReadMENav";
 import HeroSection from "@/components/sections/HeroSection";
 import ArticleCard from "@/components/cards/ArticleCard";
@@ -19,11 +20,7 @@ export default function HomePage() {
   const podcastQ = useContentList<PodcastEpisodeFull>("podcast");
   usePageMeta({});
   if (storiesQ.loading || guidesQ.loading || featuredQ.loading || podcastQ.loading) {
-    return (
-      <div className="mx-auto max-w-readme px-6 py-12 text-center">
-        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
-      </div>
-    );
+    return <SkeletonHome />;
   }
   const stories = storiesQ.data ?? [];
   const guides = guidesQ.data ?? [];

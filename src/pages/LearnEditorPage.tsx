@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, PenLine, Eye, Loader2, Save } from "lucide-react";
+import { SkeletonForm } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import MarkdownHtml from "@/components/ui/MarkdownHtml";
 import { mdBlock } from "@/lib/markdown";
@@ -69,8 +70,8 @@ export default function LearnEditorPage() {
 
   if (loading) {
     return (
-      <div className="pt-32 pb-xxl max-w-readme mx-auto px-gutter md:px-margin-desktop flex items-center justify-center py-xxl">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      <div className="pt-32 pb-xxl max-w-readme mx-auto px-gutter md:px-margin-desktop">
+        <SkeletonForm rows={5} />
       </div>
     );
   }

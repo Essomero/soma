@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Clock, FileText, ArrowRight, Sparkles, CheckCircle2, BookOpen, Mic, Loader2 } from "lucide-react";
+import { Clock, FileText, ArrowRight, Sparkles, CheckCircle2, BookOpen, Mic } from "lucide-react";
+import { SkeletonIndexHeader, SkeletonTestGrid } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
 import { useContentList, sortContent } from "@/lib/content";
@@ -55,8 +56,9 @@ export default function TestsIndexPage() {
 
   if (loading) {
     return (
-      <div className="pt-32 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop text-center">
-        <Loader2 className="w-6 h-6 mx-auto animate-spin text-on-surface-muted" />
+      <div className="pt-32 pb-giant max-w-readme mx-auto px-gutter md:px-margin-desktop">
+        <SkeletonIndexHeader />
+        <SkeletonTestGrid />
       </div>
     );
   }

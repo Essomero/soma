@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Trash2, Loader2, Edit3, StickyNote } from "lucide-react";
+import { Plus, Trash2, Edit3, StickyNote } from "lucide-react";
+import { SkeletonLearnIndexGrid } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import Tooltip from "@/components/ui/Tooltip";
@@ -79,9 +80,7 @@ export default function LearnIndexPage() {
 
       {/* List */}
       {loading ? (
-        <div className="flex items-center justify-center py-xxl">
-          <Loader2 className="w-6 h-6 animate-spin text-primary" />
-        </div>
+        <SkeletonLearnIndexGrid />
       ) : loadError ? (
         <div className="py-xxl text-center">
           <p className="font-dm-sans text-sm text-error">Couldn't load notes. Try again.</p>
