@@ -685,44 +685,49 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
 
   // ── Render ──
 
-  // Preview mode replaces the whole editor surface with the rendered page.
-  if (mode === "preview") {
-    return (
-      <div className="space-y-xl">
-        {/* Sticky save bar : preview is the final check, so saving must
-            not require a round trip back through edit fields. */}
-        <div className="sticky top-0 z-20 bg-surface/95 backdrop-blur border border-border-default px-md py-sm flex flex-wrap items-center justify-between gap-md">
-          <div className="flex items-center gap-md">
-            <button
-              onClick={() => setMode("edit")}
-              className="inline-flex items-center gap-sm px-xl py-md bg-surface border border-border-default text-on-surface font-sora text-label-caps uppercase tracking-widest hover:border-primary transition-colors"
-            >
-              <Pencil className="w-4 h-4" />
-              Back to Edit
-            </button>
-            <span className="hidden md:inline font-sora text-xs text-on-surface-muted">
-              {status === "published" ? "Will save &amp; publish" : "Will save as private"}
-            </span>
-          </div>
-          <button
-            onClick={handleSave}
-            disabled={saving || !title || !slug}
-            className="px-xl py-md bg-primary text-on-primary font-sora text-label-caps uppercase tracking-widest hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {saving ? "Saving..." : status === "published" ? "Publish" : "Save Private"}
-          </button>
-        </div>
-
-        <ContentPreview
-          draft={previewDraft}
-          onBack={() => setMode("edit")}
-        />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-xl">
+      {/* Sticky save bar : identical in edit and preview. The toggle below
+          only swaps the content pane, save works from either mode. */}
+      <div className="sticky top-0 z-20 bg-surface/95 backdrop-blur border border-border-default px-md py-sm flex flex-wrap items-center justify-between gap-md">
+        <div className="flex items-center gap-md">
+          <button
+            onClick={() => setMode((m) => (m === "edit" ? "preview" : "edit"))}
+            disabled={saving}
+            className="inline-flex items-center gap-sm px-xl py-md bg-surface border border-border-default text-on-surface font-sora text-label-caps uppercase tracking-widest hover:border-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {mode === "edit" ? (
+              <>
+                <Eye className="w-4 h-4" />
+                Preview
+              </>
+            ) : (
+              <>
+                <Pencil className="w-4 h-4" />
+                Back to Edit
+              </>
+            )}
+          </button>
+          <span className="hidden md:inline font-sora text-xs text-on-surface-muted">
+            {status === "published" ? "Will save &amp; publish" : "Will save as private"}
+          </span>
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={saving || !title || !slug}
+          className="px-xl py-md bg-primary text-on-primary font-sora text-label-caps uppercase tracking-widest hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {saving ? "Saving..." : status === "published" ? "Publish" : "Save Private"}
+        </button>
+      </div>
+
+      {/* Content pane : mode only swaps the layout (fields vs rendered page). */}
+      {mode === "preview" ? (
+        <ContentPreview
+          draft={previewDraft}
+        />
+      ) : (
+        <>
       {/* AI Edit — modifies current content via LLM. Applies to the form;
           persistence requires the explicit Save button below. */}
       <AIEditPanel
@@ -736,23 +741,11 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
         <div className="flex items-center gap-2 p-sm bg-accent-orange/10 border border-accent-orange/40 rounded text-xs font-dm-sans text-on-surface">
           <AlertTriangle className="w-3.5 h-3.5 text-accent-orange shrink-0" />
           <span>
-            AI edits applied to the form. <strong>Save below</strong> (or Preview &rarr; save) to persist them — the published page
+            AI edits applied to the form. <strong>Save</strong> (above or below) to persist them — the published page
             still shows the previous version until you save.
           </span>
         </div>
       )}
-
-      {/* Preview — above all fields so clicking it sees content from the top */}
-      <div className="flex items-center gap-md">
-        <button
-          onClick={() => setMode("preview")}
-          disabled={saving || !title}
-          className="inline-flex items-center gap-sm px-xl py-md bg-surface border border-border-default text-on-surface font-sora text-label-caps uppercase tracking-widest hover:border-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <Eye className="w-4 h-4" />
-          Preview
-        </button>
-      </div>
 
       {/* Reasoning / type suggestion from AI */}
       {reasoning && (
@@ -1154,8 +1147,10 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
           <span className="font-sora text-sm text-on-surface">Save &amp; Publish</span>
         </label>
       </div>
+        </>
+      )}
 
-      {/* Save — at the bottom after all fields */}
+      {/* Save — at the bottom after all fields, present in both modes */}
       <div className="flex items-center gap-md">
         <button
           type="button"
