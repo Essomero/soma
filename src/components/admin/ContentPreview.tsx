@@ -124,38 +124,24 @@ export default function ContentPreview({ draft, onBack }: ContentPreviewProps) {
           </span>
         </div>
 
-        {/* Intro */}
-        {draft.intro && (
+        {/* Intro (simple layout only — rich layout renders sections instead) */}
+        {draft.intro && sections.length === 0 && (
           <div
             className="preview-prose font-dm-sans text-body-base text-on-surface-variant mb-lg leading-relaxed"
             dangerouslySetInnerHTML={{ __html: mdBlock(draft.intro) }}
           />
         )}
 
-        {/* Body */}
-        {body && (
+        {/* Body (simple layout only) — in rich layout, body is replaced by sections */}
+        {body && sections.length === 0 && (
           <div
             className="preview-prose font-dm-sans text-body-base text-on-surface-variant mb-lg leading-relaxed"
             dangerouslySetInnerHTML={{ __html: body }}
           />
         )}
 
-        {/* Pull quotes */}
-        {(draft.pullQuotes ?? []).length > 0 && (
-          <div className="mb-lg space-y-md">
-            {(draft.pullQuotes ?? []).map((q, i) => (
-              <blockquote key={i} className="border-l-4 border-primary pl-md italic font-dm-sans text-body-base text-on-surface-variant">
-                <p>{q.quote}</p>
-                {q.attribution && (
-                  <footer className="font-sora text-xs text-on-surface-muted mt-xs">— {q.attribution}</footer>
-                )}
-              </blockquote>
-            ))}
-          </div>
-        )}
-
-        {/* Bento highlights */}
-        {(draft.bentoHighlights ?? []).length > 0 && (
+        {/* Bento highlights — rendered first in rich layout (matches StoryPage) */}
+        {sections.length > 0 && (draft.bentoHighlights ?? []).length > 0 && (
           <div className="mb-lg grid grid-cols-1 sm:grid-cols-3 gap-md">
             {(draft.bentoHighlights ?? []).map((b, i) => (
               <div key={i} className="p-md bg-surface-container-low border border-border-default rounded-lg">
@@ -167,20 +153,53 @@ export default function ContentPreview({ draft, onBack }: ContentPreviewProps) {
           </div>
         )}
 
-        {/* Sections */}
-        {sections.map((s, i) => (
-          <section key={i} className="mb-lg">
-            <h2 className="font-sora text-article-title text-on-surface mb-md">
-              {s.heading || `Section ${i + 1}`}
-            </h2>
-            <div
-              className="preview-prose font-dm-sans text-body-base text-on-surface-variant leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: s.html }}
-            />
-          </section>
-        ))}
+        {/* Sections with interspersed pull quotes (quote i-1 before section i) */}
+        {sections.length > 0 && (
+          <>
+            {sections.map((s, i) => {
+              const quoteBefore =
+                (draft.pullQuotes ?? []).length > 0 && i > 0
+                  ? draft.pullQuotes[i - 1]
+                  : null;
 
-        {/* Doc Q&A sections */}
+              return (
+                <section key={i} className="mb-lg">
+                  {quoteBefore && (
+                    <blockquote className="border-l-4 border-primary pl-md italic font-dm-sans text-body-base text-on-surface-variant mb-lg">
+                      <p>{quoteBefore.quote}</p>
+                      {quoteBefore.attribution && (
+                        <footer className="font-sora text-xs text-on-surface-muted mt-xs">— {quoteBefore.attribution}</footer>
+                      )}
+                    </blockquote>
+                  )}
+                  <h2 className="font-sora text-article-title text-on-surface mb-md">
+                    {s.heading || `Section ${i + 1}`}
+                  </h2>
+                  <div
+                    className="preview-prose font-dm-sans text-body-base text-on-surface-variant leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: s.html }}
+                  />
+                </section>
+              );
+            })}
+
+            {/* Remaining pull quotes after last section */}
+            {(draft.pullQuotes ?? []).length > sections.length - 1 && (
+              <div className="space-y-md">
+                {(draft.pullQuotes ?? []).slice(sections.length - 1).map((q, i) => (
+                  <blockquote key={i} className="border-l-4 border-primary pl-md italic font-dm-sans text-body-base text-on-surface-variant">
+                    <p>{q.quote}</p>
+                    {q.attribution && (
+                      <footer className="font-sora text-xs text-on-surface-muted mt-xs">— {q.attribution}</footer>
+                    )}
+                  </blockquote>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Doc Q&A sections — only when no story sections (docs page) */}
         {docSections.map((s, i) => (
           <section key={i} className="mb-lg">
             <h2 className="font-sora text-article-title text-on-surface mb-md">
@@ -198,7 +217,7 @@ export default function ContentPreview({ draft, onBack }: ContentPreviewProps) {
           </section>
         ))}
 
-        {!draft.intro && !body && sections.length === 0 && docSections.length === 0 && (
+        {!draft.intro && !body && sections.length === 0 && docSections.length === 0 && (draft.pullQuotes ?? []).length === 0 && (draft.bentoHighlights ?? []).length === 0 && (draft.tipCards ?? []).length === 0 && (draft.references ?? []).length === 0 && (draft.tagline ?? "") === "" && (
           <p className="font-dm-sans text-sm text-on-surface-muted italic">
             Nothing to preview yet — fill in the intro and content above.
           </p>
