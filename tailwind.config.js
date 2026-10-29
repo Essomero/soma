@@ -127,6 +127,15 @@ export default {
       maxWidth: {
         readme: "1540px",
       },
+      animation: {
+        ripple: "ripple 0.5s ease-out",
+      },
+      keyframes: {
+        ripple: {
+          "0%": { transform: "scale(0)", opacity: "0.5" },
+          "100%": { transform: "scale(1)", opacity: "0" },
+        },
+      },
     },
   },
   plugins: [require("@tailwindcss/forms")],

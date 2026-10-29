@@ -809,12 +809,31 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
                 <label className="font-sora text-sm text-on-surface block mb-xs">
                   Date <span className="text-error ml-xs">*</span>
                 </label>
-                <input
-                  type="date"
-                  value={dateVal}
-                  onChange={(e) => setVal("publishedAt", `${e.target.value}T12:00:00.000Z`)}
-                  className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary cursor-pointer active:scale-[0.99] transition-transform duration-75 [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:[filter:brightness(0)_invert(1)]"
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={dateVal}
+                    onChange={(e) => setVal("publishedAt", `${e.target.value}T12:00:00.000Z`)}
+                    className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary cursor-pointer [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:[filter:brightness(0)_invert(1)] [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  />
+                  <div
+                    className="absolute inset-0 pointer-events-none [&:has(+input:focus-visible)]:ring-1 [&:has(+input:focus-visible)]:ring-primary rounded"
+                    onPointerDown={(e) => {
+                      const el = e.currentTarget;
+                      const rect = el.getBoundingClientRect();
+                      const x = e.clientX - rect.left;
+                      const y = e.clientY - rect.top;
+                      const ripple = document.createElement("span");
+                      ripple.className = "absolute rounded-full pointer-events-none animate-ripple bg-on-surface/20";
+                      const size = Math.max(rect.width, rect.height) * 2;
+                      ripple.style.width = ripple.style.height = `${size}px`;
+                      ripple.style.left = `${x - size / 2}px`;
+                      ripple.style.top = `${y - size / 2}px`;
+                      el.appendChild(ripple);
+                      ripple.addEventListener("animationend", () => ripple.remove());
+                    }}
+                  />
+                </div>
               </div>
             );
           }
