@@ -87,14 +87,18 @@ function blockArray(v: unknown): (string | ContentBlock)[] {
 }
 
 function initFromDraft(draft: AIDraft | null): FormValues {
-  if (!draft) return {};
+  const now = new Date().toISOString().split("T")[0];
+  if (!draft) return {
+    authorName: "Soma Editorial",
+    date: now,
+  };
   return {
     title: draft.title || "",
     excerpt: draft.excerpt || "",
     category: draft.category || "Engineering",
-    authorName: draft.author?.name || "",
+    authorName: draft.author?.name || "Soma Editorial",
     authorHandle: draft.author?.handle || "",
-    date: draft.date || new Date().toISOString().split("T")[0],
+    date: draft.date || now,
     image: draft.image || "",
     imageAlt: draft.imageAlt || "",
     tagsText: (draft.tags || []).join(", "),
