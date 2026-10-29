@@ -11,13 +11,13 @@ function getCookie(name: string): string | null {
 function slugFromPath(pathname: string): string {
   // Print views share the visibility of the page they print.
   const printMatch = pathname.match(
-    /^\/(stories|series|courses|learn|docs|guides|podcast|featured|tests)\/([^/]+)\/print$/
+    /^\/(stories|series|courses|notes|docs|guides|podcast|featured|tests)\/([^/]+)\/print$/
   );
   if (printMatch) return printMatch[2];
   // Article pages: a slug with status=published reads without the cookie.
   // Index, editor, and print-index paths never match, so they stay login-gated.
   const pageMatch = pathname.match(
-    /^\/(stories|series|courses|learn|docs|guides|podcast|featured)\/([^/]+)$/
+    /^\/(stories|series|courses|notes|docs|guides|podcast|featured)\/([^/]+)$/
   );
   if (pageMatch) return pageMatch[2];
   return "";

@@ -8,14 +8,14 @@ import {
 import AccentBar from "@/components/ui/AccentBar";
 import { fetchContentList } from "@/lib/content";
 import type { StoryContent, GuideContent } from "@/types";
-import { fetchLearnList, deriveExcerpt } from "@/lib/learn";
-import { type LearnArticle } from "@/types";
+import { fetchNotesList, deriveExcerpt } from "@/lib/notes";
+import { type NoteArticle } from "@/types";
 
 const filters = [
   { label: "All Results", icon: Search, color: "text-secondary" },
   { label: "Top Stories", icon: BookOpen, color: "text-primary" },
   { label: "Technical Guides", icon: Bookmark, color: "text-tertiary" },
-  { label: "Learn Notes", icon: StickyNote, color: "text-accent-blue-neon" },
+  { label: "Notes", icon: StickyNote, color: "text-accent-blue-neon" },
   { label: "Podcasts", icon: Mic, color: "text-accent-orange" },
 ];
 
@@ -53,15 +53,15 @@ export default function SearchResultsPage() {
     return () => { live = false; };
   }, [query]);
 
-  // Learn notes come from Turso at runtime : fetch once on mount
-  const [learnArticles, setLearnArticles] = useState<LearnArticle[]>([]);
+  // Notes come from Turso at runtime : fetch once on mount
+  const [noteArticles, setNoteArticles] = useState<NoteArticle[]>([]);
   useEffect(() => {
     let cancelled = false;
-    fetchLearnList().then((list) => { if (!cancelled) setLearnArticles(list); }).catch(() => {});
+    fetchNotesList().then((list) => { if (!cancelled) setNoteArticles(list); }).catch(() => {});
     return () => { cancelled = true; };
   }, []);
 
-  const learnResults = learnArticles.filter(
+  const noteResults = noteArticles.filter(
     (l) =>
       l.title.toLowerCase().includes(query.toLowerCase()) ||
       deriveExcerpt(l.content).toLowerCase().includes(query.toLowerCase())
@@ -69,9 +69,9 @@ export default function SearchResultsPage() {
 
   const results =
     activeFilter === "Technical Guides" ? guideResults :
-    activeFilter === "Learn Notes" ? learnResults :
+    activeFilter === "Notes" ? noteResults :
     activeFilter === "Podcasts" ? [] :
-    [...storyResults, ...guideResults, ...learnResults];
+    [...storyResults, ...guideResults, ...noteResults];
   const hasResults = results.length > 0;
 
   return (
@@ -222,22 +222,22 @@ export default function SearchResultsPage() {
               </div>
             </div>
 
-            {/* Learn Notes */}
-            {learnResults.length > 0 && (activeFilter === "All Results" || activeFilter === "Learn Notes") && (
+            {/* Notes */}
+            {noteResults.length > 0 && (activeFilter === "All Results" || activeFilter === "Notes") && (
               <section>
                 <div className="border-t border-border-default" />
                 <h2 className="font-sora text-headline-md text-on-surface mt-giant mb-lg flex items-center gap-sm">
-                  <StickyNote className="w-5 h-5 text-accent-blue-neon" /> Learn Notes
+                  <StickyNote className="w-5 h-5 text-accent-blue-neon" /> Notes
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
-                  {learnResults.map((note) => (
+                  {noteResults.map((note) => (
                     <Link
                       key={note.slug}
-                      to={`/learn/${note.slug}`}
+                      to={`/notes/${note.slug}`}
                       className="p-lg bg-surface-container rounded-lg border border-border-default group hover:border-primary transition-all cursor-pointer block"
                     >
                       <span className="font-sora text-metadata-tag text-accent-blue-neon mb-xs uppercase">
-                        // Learn
+                        // Notes
                       </span>
                       <h3 className="font-sora text-article-title text-on-surface mb-sm group-hover:text-primary transition-colors">{note.title}</h3>
                       <p className="font-dm-sans text-on-surface-muted mb-md line-clamp-2">{deriveExcerpt(note.content)}</p>

@@ -29,7 +29,7 @@ const PORT = 3001;
 // Note: auth.ts is TypeScript and needs the Vercel build; local DEV mode
 // bypasses the auth gate in AuthGuard, so it is intentionally not served here.
 const handlers = {};
-for (const name of ["progress", "ratings", "comments", "chat", "models", "tests", "learn", "public", "highlights", "content", "diag"]) {
+for (const name of ["progress", "ratings", "comments", "chat", "models", "tests", "notes", "public", "highlights", "content", "diag"]) {
   const mod = await import(`../api/${name}.js`);
   handlers[name] = mod.default;
 }

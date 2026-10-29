@@ -22,9 +22,9 @@ import SeriesIndexPage from "@/pages/SeriesIndexPage";
 import SeriesDetailPage from "@/pages/SeriesDetailPage";
 import DocsIndexPage from "@/pages/DocsIndexPage";
 import DocPage from "@/pages/DocPage";
-import LearnIndexPage from "@/pages/LearnIndexPage";
-import LearnEditorPage from "@/pages/LearnEditorPage";
-import LearnArticlePage from "@/pages/LearnArticlePage";
+import NotesIndexPage from "@/pages/NotesIndexPage";
+import NotesEditorPage from "@/pages/NotesEditorPage";
+import NotesArticlePage from "@/pages/NotesArticlePage";
 import TestsIndexPage from "@/pages/TestsIndexPage";
 import TestPage from "@/pages/TestPage";
 import TestPrintPage from "@/pages/TestPrintPage";
@@ -219,22 +219,22 @@ const router = createBrowserRouter([
         element: <AdminEditPage />,
       },
 
-      // Learn (user-authored notes: index login-gated; article public if toggled)
+      // Notes (user-authored: index login-gated; article public if toggled)
       {
-        path: "learn",
-        element: <LearnIndexPage />,
+        path: "notes",
+        element: <NotesIndexPage />,
       },
       {
-        path: "learn/new",
-        element: <LearnEditorPage />,
+        path: "notes/new",
+        element: <NotesEditorPage />,
       },
       {
-        path: "learn/:slug/edit",
-        element: <LearnEditorPage />,
+        path: "notes/:slug/edit",
+        element: <NotesEditorPage />,
       },
       {
-        path: "learn/:slug",
-        element: <LearnArticlePage />,
+        path: "notes/:slug",
+        element: <NotesArticlePage />,
       },
     ],
   },

@@ -1,6 +1,6 @@
 import { mdBlock } from "@/lib/markdown";
 import { type HighlightData } from "@/lib/highlights";
-import { type LearnArticle } from "@/types";
+import { type NoteArticle } from "@/types";
 
 // ── Small helpers ──────────────────────────────────────
 
@@ -21,7 +21,7 @@ export function deriveExcerpt(content: string, max = 180): string {
 }
 
 // ── Markdown → stable blocks ───────────────────────────
-// A learn article is stored as ONE markdown document. Before rendering we
+// A note is stored as ONE markdown document. Before rendering we
 // split it into top-level blocks so ContentBlocks can render each block
 // independently (that's what gives every block a stable paragraphIndex for
 // highlight anchors). The split is deterministic: same document → same
@@ -181,7 +181,7 @@ export function validateHighlights(
 // ── API helpers ────────────────────────────────────────
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const r = await fetch(`/api/learn${path}`, init);
+  const r = await fetch(`/api/notes${path}`, init);
   if (!r.ok) {
     let detail = `HTTP ${r.status}`;
     try { const d = await r.json(); if (d.error) detail = d.error; } catch {}
@@ -190,15 +190,15 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
   return r.json() as Promise<T>;
 }
 
-export function fetchLearnList(): Promise<LearnArticle[]> {
+export function fetchNotesList(): Promise<NoteArticle[]> {
   return api("/");
 }
 
-export function fetchLearn(slug: string): Promise<LearnArticle> {
+export function fetchNote(slug: string): Promise<NoteArticle> {
   return api(`/?slug=${encodeURIComponent(slug)}`);
 }
 
-export function createLearn(input: { title: string; content: string }): Promise<LearnArticle> {
+export function createNote(input: { title: string; content: string }): Promise<NoteArticle> {
   return api("/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -206,7 +206,7 @@ export function createLearn(input: { title: string; content: string }): Promise<
   });
 }
 
-export function updateLearn(slug: string, input: { title: string; content: string }): Promise<LearnArticle> {
+export function updateNote(slug: string, input: { title: string; content: string }): Promise<NoteArticle> {
   return api("/", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -214,7 +214,7 @@ export function updateLearn(slug: string, input: { title: string; content: strin
   });
 }
 
-export function deleteLearn(slug: string): Promise<{ success: boolean }> {
+export function deleteNote(slug: string): Promise<{ success: boolean }> {
   return api("/", {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },

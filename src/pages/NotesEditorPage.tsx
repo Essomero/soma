@@ -1,11 +1,11 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, PenLine, Eye, Loader2, Save } from "lucide-react";
 import { SkeletonForm } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import MarkdownHtml from "@/components/ui/MarkdownHtml";
 import { mdBlock } from "@/lib/markdown";
-import { createLearn, fetchLearn, updateLearn } from "@/lib/learn";
+import { createNote, fetchNote, updateNote } from "@/lib/notes";
 
 const PREVIEW_PLACEHOLDER = `Start with a **bold idea** and let the notes flow:
 
@@ -20,11 +20,12 @@ const PREVIEW_PLACEHOLDER = `Start with a **bold idea** and let the notes flow:
 | Example | Illustrates the point |
 `;
 
-export default function LearnEditorPage() {
+export default function NotesEditorPage() {
   const { slug } = useParams<{ slug: string }>();
   const isEdit = !!slug;
   const navigate = useNavigate();
 
+  const titleRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [tab, setTab] = useState<"write" | "preview">("write");
@@ -32,11 +33,16 @@ export default function LearnEditorPage() {
   const [loading, setLoading] = useState(isEdit);
   const [error, setError] = useState("");
 
+  // Focus the title field on mount
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, []);
+
   // Edit mode: prefill from the stored article
   useEffect(() => {
     if (!isEdit) return;
     let cancelled = false;
-    fetchLearn(slug!).then((a) => {
+    fetchNote(slug!).then((a) => {
       if (cancelled) return;
       setTitle(a.title);
       setContent(a.content);
@@ -56,11 +62,11 @@ export default function LearnEditorPage() {
     setError("");
     try {
       if (isEdit) {
-        await updateLearn(slug!, { title: t, content });
-        navigate(`/learn/${slug}`, { replace: true });
+        await updateNote(slug!, { title: t, content });
+        navigate(`/notes/${slug}`, { replace: true });
       } else {
-        const created = await createLearn({ title: t, content });
-        navigate(`/learn/${created.slug}`, { replace: true });
+        const created = await createNote({ title: t, content });
+        navigate(`/notes/${created.slug}`, { replace: true });
       }
     } catch (e: any) {
       setError(e?.message || "Couldn't save the note.");
@@ -83,14 +89,14 @@ export default function LearnEditorPage() {
         <div className="flex items-center justify-between gap-lg flex-wrap">
           <div>
             <p className="font-sora text-metadata-tag text-primary uppercase tracking-widest mb-sm">
-              // LEARN : {isEdit ? "EDIT NOTE" : "NEW NOTE"}
+              // NOTES : {isEdit ? "EDIT NOTE" : "NEW NOTE"}
             </p>
             <h1 className="font-sora text-headline-md text-on-surface">
               {isEdit ? "Edit your note" : "Write a study note"}
             </h1>
           </div>
           <Link
-            to={isEdit ? `/learn/${slug}` : "/learn"}
+            to={isEdit ? `/notes/${slug}` : "/notes"}
             className="inline-flex items-center gap-xs font-sora text-metadata-tag uppercase tracking-widest text-on-surface-muted hover:text-primary transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> {isEdit ? "Back to note" : "Back to notes"}
@@ -100,13 +106,19 @@ export default function LearnEditorPage() {
 
       <div className="space-y-lg">
         {/* Title */}
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Note title"
-          maxLength={120}
-          className="w-full bg-transparent font-sora text-2xl md:text-headline-md text-on-surface placeholder:text-on-surface-muted focus:outline-none border-0 border-b border-border-default pb-md focus:border-primary/50 transition-colors"
-        />
+        <div>
+          <label className="font-sora text-metadata-tag text-on-surface-muted uppercase tracking-widest mb-xs block">
+            Title <span className="text-error">*</span>
+          </label>
+          <input
+            ref={titleRef}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Note title"
+            maxLength={120}
+            className="w-full bg-transparent font-sora text-2xl md:text-headline-md text-on-surface placeholder:text-on-surface-muted focus:outline-none border-0 border-b border-border-default pb-md focus:border-primary/50 transition-colors"
+          />
+        </div>
 
         {/* Editor card */}
         <div className="border border-border-default rounded-xl overflow-hidden bg-surface">
@@ -171,7 +183,7 @@ export default function LearnEditorPage() {
             {saving ? "Saving..." : isEdit ? "Save changes" : "Create note"}
           </button>
           <Link
-            to={isEdit ? `/learn/${slug}` : "/learn"}
+            to={isEdit ? `/notes/${slug}` : "/notes"}
             className="inline-flex items-center gap-xs px-xl py-md rounded-lg font-sora text-sm bg-surface border border-border-default text-on-surface-muted hover:bg-surface-container transition-colors"
           >
             Cancel

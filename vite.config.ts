@@ -820,8 +820,8 @@ function chatDevPlugin(env: Record<string, string>) {
         }
       });
 
-      // Learn articles CRUD — local dev mirror of api/learn.js
-      server.middlewares.use("/api/learn", async (req: any, res: any, next: any) => {
+      // Notes CRUD — local dev mirror of api/notes.js
+      server.middlewares.use("/api/notes", async (req: any, res: any, next: any) => {
         const TURSO_URL = (env.TURSO_DATABASE_URL || env.TURSO_DB || "").replace("libsql://", "https://");
         const TURSO_TOKEN = env.TURSO_AUTH_TOKEN || env.TURSO_TOKEN || "";
 
@@ -855,7 +855,7 @@ function chatDevPlugin(env: Record<string, string>) {
         }
 
         // Ensure table exists on first request
-        await turso("CREATE TABLE IF NOT EXISTS learn_articles (id INTEGER PRIMARY KEY AUTOINCREMENT, slug TEXT NOT NULL UNIQUE, title TEXT NOT NULL, content TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT)", []).catch(() => {});
+        await turso("CREATE TABLE IF NOT EXISTS note_articles (id INTEGER PRIMARY KEY AUTOINCREMENT, slug TEXT NOT NULL UNIQUE, title TEXT NOT NULL, content TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT)", []).catch(() => {});
 
         const send = (code: number, data: any) => { res.writeHead(code, { "Content-Type": "application/json" }); return res.end(JSON.stringify(data)); };
         const mapRow = (r: any) => r && ({ id: r.id, slug: r.slug, title: r.title, content: r.content, createdAt: r.created_at, updatedAt: r.updated_at });
@@ -865,11 +865,11 @@ function chatDevPlugin(env: Record<string, string>) {
             const u = new URL(req.url, "http://localhost");
             const slug = u.searchParams.get("slug");
             if (slug) {
-              const rows = await tursoRows("SELECT * FROM learn_articles WHERE slug = ?", [slug]);
+              const rows = await tursoRows("SELECT * FROM note_articles WHERE slug = ?", [slug]);
               if (!rows[0]) return send(404, { error: "Not found" });
               return send(200, mapRow(rows[0]));
             }
-            const rows = await tursoRows("SELECT * FROM learn_articles ORDER BY updated_at DESC, created_at DESC", []);
+            const rows = await tursoRows("SELECT * FROM note_articles ORDER BY updated_at DESC, created_at DESC", []);
             return send(200, rows.map(mapRow));
           }
           if (req.method === "POST") {
@@ -877,16 +877,16 @@ function chatDevPlugin(env: Record<string, string>) {
             if (!title || content == null) return send(400, { error: "title and content required" });
             const finalSlug = (slug && slug.trim()) ? slug.trim() : title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
             if (!finalSlug) return send(400, { error: "title must produce a slug" });
-            const existing = await tursoRows("SELECT slug FROM learn_articles WHERE slug = ?", [finalSlug]);
+            const existing = await tursoRows("SELECT slug FROM note_articles WHERE slug = ?", [finalSlug]);
             if (existing.length) return send(409, { error: "slug already exists" });
-            const result = await turso("INSERT INTO learn_articles (slug, title, content) VALUES (?, ?, ?)", [finalSlug, title, content]);
-            const inserted = await tursoRows("SELECT * FROM learn_articles WHERE slug = ?", [finalSlug]);
+            const result = await turso("INSERT INTO note_articles (slug, title, content) VALUES (?, ?, ?)", [finalSlug, title, content]);
+            const inserted = await tursoRows("SELECT * FROM note_articles WHERE slug = ?", [finalSlug]);
             return send(201, mapRow(inserted[0]));
           }
           if (req.method === "PUT") {
             const { slug, title, content } = readBody();
             if (!slug || !title || content == null) return send(400, { error: "slug, title and content required" });
-            const updated = await tursoRows("UPDATE learn_articles SET title = ?, content = ?, updated_at = datetime('now') WHERE slug = ? RETURNING *", [title, content, slug]);
+            const updated = await tursoRows("UPDATE note_articles SET title = ?, content = ?, updated_at = datetime('now') WHERE slug = ? RETURNING *", [title, content, slug]);
             if (!updated[0]) return send(404, { error: "Not found" });
             return send(200, mapRow(updated[0]));
           }
@@ -895,17 +895,17 @@ function chatDevPlugin(env: Record<string, string>) {
             if (!slug) return send(400, { error: "slug required" });
             await turso("DELETE FROM comments WHERE story_slug = ?", [slug]);
             await turso("DELETE FROM highlights WHERE story_slug = ?", [slug]);
-            await turso("DELETE FROM learn_articles WHERE slug = ?", [slug]);
+            await turso("DELETE FROM note_articles WHERE slug = ?", [slug]);
             return send(200, { success: true });
           }
           return next();
         } catch (e: any) {
-          console.error("[learn-dev]", e.message);
+          console.error("[notes-dev]", e.message);
           return send(500, { error: e.message });
         }
       });
 
-      // Public-page toggles — mirrors api/public.js so the learn/public toggle works in dev
+      // Public-page toggles — mirrors api/public.js so the notes/public toggle works in dev
       server.middlewares.use("/api/public", async (req: any, res: any, next: any) => {
         const TURSO_URL = (env.TURSO_DATABASE_URL || env.TURSO_DB || "").replace("libsql://", "https://");
         const TURSO_TOKEN = env.TURSO_AUTH_TOKEN || env.TURSO_TOKEN || "";
@@ -971,7 +971,7 @@ function chatDevPlugin(env: Record<string, string>) {
       // Local API fallback: serve the remaining /api/* routes from api/*.js
       // with the same owner bypass as `npm run server`, so plain `npm run dev`
       // works with zero extra processes. Routes handled above (chat, models,
-      // comments, highlights, learn, public) never reach this.
+      // comments, highlights, notes, public) never reach this.
       for (const k of ["TURSO_DATABASE_URL", "TURSO_DB", "TURSO_AUTH_TOKEN", "TURSO_TOKEN", "SITE_PASSWORD"]) {
         if (!process.env[k] && env[k]) process.env[k] = env[k];
       }

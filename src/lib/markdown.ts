@@ -6,7 +6,7 @@ import type { ContentBlock } from "@/types";
 
 /**
  * All HTML leaving this module is sanitized. Comment bodies, highlight notes,
- * and learn notes are visitor input rendered with dangerouslySetInnerHTML
+ * and notes are visitor input rendered with dangerouslySetInnerHTML
  * downstream, so raw HTML, event handlers, and javascript: URLs must die here.
  * `style` stays allowed because KaTeX positions math with inline styles;
  * modern browsers no longer execute script from style. XSS here cannot read
