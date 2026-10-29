@@ -312,9 +312,9 @@ export interface StoryContent {
   sections?: Array<{ heading: string; paragraphs: (string | ContentBlock)[] }>;
 }
 
-// User-authored learning notes : stored at runtime in Turso (not shipped as TS files).
+// User-authored notes : stored at runtime in Turso (not shipped as TS files).
 // `slug` is immutable once created (it's the key that links comments/highlights).
-export interface LearnArticle {
+export interface NoteArticle {
   id: number;
   slug: string;
   title: string;

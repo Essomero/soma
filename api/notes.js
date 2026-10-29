@@ -4,7 +4,7 @@ const DB_URL = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").re
 const TOKEN = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "";
 
 // Table is created idempotently on every request : no manual migration needed.
-const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS learn_articles (
+const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS note_articles (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   slug TEXT NOT NULL UNIQUE,
   title TEXT NOT NULL,
@@ -93,7 +93,7 @@ export default async function handler(req, res) {
     if (req.method === "GET") {
       const authed = isAuthed(req);
       if (req.query.slug) {
-        const rows = await query("SELECT * FROM learn_articles WHERE slug = ?", [req.query.slug]);
+        const rows = await query("SELECT * FROM note_articles WHERE slug = ?", [req.query.slug]);
         const row = rows[0];
         if (!row) return res.status(404).json({ error: "Not found" });
         if (!authed) {
@@ -103,11 +103,11 @@ export default async function handler(req, res) {
         return res.json(mapRow(row));
       }
       if (authed) {
-        const rows = await query("SELECT * FROM learn_articles ORDER BY updated_at DESC, created_at DESC");
+        const rows = await query("SELECT * FROM note_articles ORDER BY updated_at DESC, created_at DESC");
         return res.json(rows.map(mapRow));
       }
       const rows = await query(
-        "SELECT la.* FROM learn_articles la JOIN public_pages pp ON pp.slug = la.slug WHERE pp.\"public\" = 1 ORDER BY la.updated_at DESC, la.created_at DESC"
+        "SELECT la.* FROM note_articles la JOIN public_pages pp ON pp.slug = la.slug WHERE pp.\"public\" = 1 ORDER BY la.updated_at DESC, la.created_at DESC"
       );
       return res.json(rows.map(mapRow));
     }
@@ -122,11 +122,11 @@ export default async function handler(req, res) {
       const finalSlug = slug && slug.trim() ? slug.trim() : title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
       if (!finalSlug) return res.status(400).json({ error: "title must produce a slug" });
 
-      const existing = await query("SELECT slug FROM learn_articles WHERE slug = ?", [finalSlug]);
+      const existing = await query("SELECT slug FROM note_articles WHERE slug = ?", [finalSlug]);
       if (existing.length) return res.status(409).json({ error: "slug already exists" });
 
       const result = await query(
-        "INSERT INTO learn_articles (slug, title, content) VALUES (?, ?, ?) RETURNING *",
+        "INSERT INTO note_articles (slug, title, content) VALUES (?, ?, ?) RETURNING *",
         [finalSlug, title, content]
       );
       return res.status(201).json(mapRow(result[0]));
@@ -137,7 +137,7 @@ export default async function handler(req, res) {
       if (!slug || !title || content == null) return res.status(400).json({ error: "slug, title and content required" });
 
       const result = await query(
-        "UPDATE learn_articles SET title = ?, content = ?, updated_at = datetime('now') WHERE slug = ? RETURNING *",
+        "UPDATE note_articles SET title = ?, content = ?, updated_at = datetime('now') WHERE slug = ? RETURNING *",
         [title, content, slug]
       );
       const row = result[0];
@@ -152,7 +152,7 @@ export default async function handler(req, res) {
       // Cascade: remove comments + highlights attached to this article
       await query("DELETE FROM comments WHERE story_slug = ?", [slug]);
       await query("DELETE FROM highlights WHERE story_slug = ?", [slug]);
-      await query("DELETE FROM learn_articles WHERE slug = ?", [slug]);
+      await query("DELETE FROM note_articles WHERE slug = ?", [slug]);
       return res.json({ success: true });
     }
 

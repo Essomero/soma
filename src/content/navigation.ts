@@ -3,7 +3,7 @@ import type { NavItem } from "@/types";
 export const readmeNavLinks: NavItem[] = [
   { label: "Featured", href: "/" },
   { label: "Stories", href: "/stories" },
-  { label: "Learn", href: "/learn" },
+  { label: "Notes", href: "/notes" },
   { label: "Series", href: "/series" },
   { label: "Courses", href: "/courses" },
   { label: "Tests", href: "/tests" },
@@ -15,7 +15,7 @@ export const readmeNavLinks: NavItem[] = [
 export const innerNavLinks: NavItem[] = [
   { label: "Featured", href: "/" },
   { label: "Stories", href: "/stories" },
-  { label: "Learn", href: "/learn" },
+  { label: "Notes", href: "/notes" },
   { label: "Series", href: "/series" },
   { label: "Books", href: "/books" },
   { label: "Courses", href: "/courses" },

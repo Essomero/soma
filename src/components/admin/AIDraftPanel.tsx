@@ -13,6 +13,7 @@ interface ModelInfo {
 interface AIDraftPanelProps {
   onDraft: (draft: AIDraft) => void;
   disabled?: boolean;
+  initialInput?: string;
 }
 
 export interface AIDraft {
@@ -53,8 +54,8 @@ export interface AIDraft {
   [key: string]: unknown;
 }
 
-export default function AIDraftPanel({ onDraft, disabled }: AIDraftPanelProps) {
-  const [input, setInput] = useState("");
+export default function AIDraftPanel({ onDraft, disabled, initialInput }: AIDraftPanelProps) {
+  const [input, setInput] = useState(initialInput ?? "");
   const [status, setStatus] = useState<"idle" | "generating" | "done" | "error">("idle");
   const [error, setError] = useState("");
   const [reasoning, setReasoning] = useState("");
@@ -66,6 +67,11 @@ export default function AIDraftPanel({ onDraft, disabled }: AIDraftPanelProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Sync input when initialInput changes (e.g. navigating from a different note)
+  useEffect(() => {
+    if (initialInput !== undefined) setInput(initialInput);
+  }, [initialInput]);
 
   // Fetch available models on mount
   useEffect(() => {

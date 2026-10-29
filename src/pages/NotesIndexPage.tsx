@@ -1,32 +1,32 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Trash2, Edit3, StickyNote } from "lucide-react";
-import { SkeletonLearnIndexGrid } from "@/components/ui/Skeleton";
+import { SkeletonNotesIndexGrid } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import Tooltip from "@/components/ui/Tooltip";
 import { useAuth } from "@/lib/AuthContext";
-import { fetchLearnList, deleteLearn, deriveExcerpt } from "@/lib/learn";
+import { fetchNotesList, deleteNote, deriveExcerpt } from "@/lib/notes";
 import PublishAll from "@/components/studio/PublishAll";
-import { type LearnArticle } from "@/types";
+import { type NoteArticle } from "@/types";
 
 function formatDate(iso: string): string {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-export default function LearnIndexPage() {
+export default function NotesIndexPage() {
   const { isOwner } = useAuth();
-  const [articles, setArticles] = useState<LearnArticle[]>([]);
+  const [articles, setArticles] = useState<NoteArticle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deleteTarget, setDeleteTarget] = useState<LearnArticle | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<NoteArticle | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [loadError, setLoadError] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const list = await fetchLearnList();
+      const list = await fetchNotesList();
       setArticles(list);
       setLoadError(false);
     } catch {
@@ -42,7 +42,7 @@ export default function LearnIndexPage() {
     if (!deleteTarget || deleting) return;
     setDeleting(true);
     try {
-      await deleteLearn(deleteTarget.slug);
+      await deleteNote(deleteTarget.slug);
       setArticles((prev) => prev.filter((a) => a.slug !== deleteTarget.slug));
       setDeleteTarget(null);
     } catch {
@@ -58,7 +58,7 @@ export default function LearnIndexPage() {
       <header className="mb-giant">
         <AccentBar variant="small" className="mb-md" />
         <p className="font-sora text-metadata-tag text-primary uppercase tracking-widest mb-sm">
-          // LEARN
+          // NOTES
         </p>
         <div className="flex items-end justify-between gap-lg flex-wrap">
           <h1 className="font-sora text-headline-md max-w-3xl text-on-surface">
@@ -66,7 +66,7 @@ export default function LearnIndexPage() {
           </h1>
           {isOwner && (
             <Link
-              to="/learn/new"
+              to="/notes/new"
               className="inline-flex items-center gap-xs px-xl py-md rounded-none font-sora text-sm font-bold bg-primary text-on-primary border-2 border-inverse-surface shadow-brutal-sm hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-brutal active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all"
             >
               <Plus className="w-4 h-4" /> New note
@@ -80,7 +80,7 @@ export default function LearnIndexPage() {
 
       {/* List */}
       {loading ? (
-        <SkeletonLearnIndexGrid />
+        <SkeletonNotesIndexGrid />
       ) : loadError ? (
         <div className="py-xxl text-center">
           <p className="font-dm-sans text-sm text-error">Couldn't load notes. Try again.</p>
@@ -93,7 +93,7 @@ export default function LearnIndexPage() {
           </p>
           {isOwner && (
             <Link
-              to="/learn/new"
+              to="/notes/new"
               className="inline-flex items-center gap-xs px-xl py-md rounded-none font-sora text-sm font-bold bg-primary text-on-primary border-2 border-inverse-surface shadow-brutal-sm hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-brutal active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all"
             >
               <Plus className="w-4 h-4" /> Write a note
@@ -107,7 +107,7 @@ export default function LearnIndexPage() {
               key={a.slug}
               className="group flex flex-col border-2 border-inverse-surface bg-surface hover:-translate-y-1 hover:shadow-brutal transition-all duration-200 rounded-none overflow-hidden"
             >
-              <Link to={`/learn/${a.slug}`} className="block flex-1 p-lg flex flex-col">
+              <Link to={`/notes/${a.slug}`} className="block flex-1 p-lg flex flex-col">
                 <p className="font-sora text-metadata-tag text-on-surface-muted uppercase tracking-widest mb-md">
                   Updated {formatDate(a.updatedAt || a.createdAt)}
                 </p>
@@ -122,7 +122,7 @@ export default function LearnIndexPage() {
                 <div className="flex items-center gap-xs px-lg pb-lg">
                   <Tooltip label="Edit note">
                     <Link
-                      to={`/learn/${a.slug}/edit`}
+                      to={`/notes/${a.slug}/edit`}
                       className="inline-flex items-center gap-xs px-md py-xs rounded-md font-sora text-[10px] uppercase tracking-widest text-on-surface-muted hover:text-primary hover:bg-surface-container transition-colors"
                     >
                       <Edit3 className="w-3 h-3" /> Edit

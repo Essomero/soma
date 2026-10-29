@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Edit3, Trash2, Loader2, Link2Off, Clipboard, Check } from "lucide-react";
-import { SkeletonLearnArticle } from "@/components/ui/Skeleton";
+import { ArrowLeft, Edit3, Trash2, Loader2, Link2Off, Clipboard, Check, Sparkles } from "lucide-react";
+import { SkeletonNotesArticle } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
 import Comments from "@/components/ui/Comments";
@@ -14,8 +14,8 @@ import { PublicToggleButton, usePublicState } from "@/components/ui/PublicToggle
 import { useAuth } from "@/lib/AuthContext";
 import { mdBlock } from "@/lib/markdown";
 import { type HighlightData, type HighlightComment } from "@/lib/highlights";
-import { fetchLearn, deleteLearn, splitMarkdownBlocks, validateHighlights } from "@/lib/learn";
-import { type LearnArticle } from "@/types";
+import { fetchNote, deleteNote, splitMarkdownBlocks, validateHighlights } from "@/lib/notes";
+import { type NoteArticle } from "@/types";
 
 function formatDate(iso: string): string {
   if (!iso) return "";
@@ -102,12 +102,12 @@ function OrphanNoteCard({
   );
 }
 
-export default function LearnArticlePage() {
+export default function NotesArticlePage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { isOwner } = useAuth();
 
-  const [article, setArticle] = useState<LearnArticle | null>(null);
+  const [article, setArticle] = useState<NoteArticle | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -127,7 +127,7 @@ export default function LearnArticlePage() {
     if (!slug) return;
     setLoading(true);
     try {
-      const a = await fetchLearn(slug);
+      const a = await fetchNote(slug);
       setArticle(a);
       setNotFound(false);
     } catch {
@@ -179,8 +179,8 @@ export default function LearnArticlePage() {
     if (!article || deleting) return;
     setDeleting(true);
     try {
-      await deleteLearn(article.slug);
-      navigate("/learn");
+      await deleteNote(article.slug);
+      navigate("/notes");
     } catch {
       setDeleting(false);
     }
@@ -202,7 +202,7 @@ export default function LearnArticlePage() {
 
   if (loading) {
     return (
-      <SkeletonLearnArticle />
+      <SkeletonNotesArticle />
     );
   }
 
@@ -211,7 +211,7 @@ export default function LearnArticlePage() {
       <div className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant text-center">
         <h1 className="font-sora text-headline-md text-on-surface mb-md">Note Not Found</h1>
         <p className="text-on-surface-muted mb-xl">This note doesn't exist (or was deleted).</p>
-        <Link to="/learn" className="text-primary hover:underline font-bold">
+        <Link to="/notes" className="text-primary hover:underline font-bold">
           ← Back to notes
         </Link>
       </div>
@@ -224,7 +224,7 @@ export default function LearnArticlePage() {
       <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop mb-giant">
         <div className="flex items-center gap-sm mb-lg">
           <Link
-            to="/learn"
+            to="/notes"
             className="inline-flex items-center gap-xs font-sora text-metadata-tag uppercase tracking-widest text-on-surface-muted hover:text-primary transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Notes
@@ -238,7 +238,7 @@ export default function LearnArticlePage() {
         </div>
 
         <AccentBar variant="small" className="mb-md" />
-        <Tag variant="primary" className="mb-sm block">LEARN</Tag>
+        <Tag variant="primary" className="mb-sm block">NOTES</Tag>
         <h1 className="font-sora text-headline-md text-on-surface mb-md max-w-4xl leading-tight">
           {article.title}
         </h1>
@@ -255,7 +255,7 @@ export default function LearnArticlePage() {
         {isOwner && (
           <div className="flex items-center gap-xs mt-lg">
             <Link
-              to={`/learn/${article.slug}/edit`}
+              to={`/notes/${article.slug}/edit`}
               className="inline-flex items-center gap-xs px-md py-sm rounded-md font-sora text-xs bg-surface border border-border-default text-on-surface-muted hover:text-primary hover:border-primary/50 transition-colors"
             >
               <Edit3 className="w-3.5 h-3.5" /> Edit
@@ -266,6 +266,24 @@ export default function LearnArticlePage() {
                 className="inline-flex items-center gap-xs px-md py-sm rounded-md font-sora text-xs bg-surface border border-border-default text-on-surface-muted hover:text-secondary hover:border-secondary/50 transition-colors"
               >
                 {noteCopied ? <Check className="w-3.5 h-3.5 text-secondary" /> : <Clipboard className="w-3.5 h-3.5" />} {noteCopied ? "Copied" : "Copy"}
+              </button>
+            </Tooltip>
+            <Tooltip label="Generate AI content from this note">
+              <button
+                onClick={() =>
+                  navigate("/admin/new", {
+                    state: {
+                      sourceNote: {
+                        slug: article.slug,
+                        title: article.title,
+                        content: article.content,
+                      },
+                    },
+                  })
+                }
+                className="inline-flex items-center gap-xs px-md py-sm rounded-md font-sora text-xs bg-surface border border-border-default text-on-surface-muted hover:text-primary hover:border-primary/50 transition-colors"
+              >
+                <Sparkles className="w-3.5 h-3.5" /> Generate
               </button>
             </Tooltip>
             <button

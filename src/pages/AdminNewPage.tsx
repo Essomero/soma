@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { useState, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { ArrowLeft, FileText, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 import AIDraftPanel from "@/components/admin/AIDraftPanel";
 import ContentForm from "@/components/admin/ContentForm";
 import AccentBar from "@/components/ui/AccentBar";
@@ -13,6 +14,19 @@ import { CONTENT_TYPE_LABELS, ROUTE_BASE } from "@/lib/admin-prompts";
 
 export default function AdminNewPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const sourceNote = (location.state as { sourceNote?: { slug: string; title: string; content: string } } | null)
+    ?.sourceNote;
+
+  const initialPrompt = useMemo(() => {
+    if (!sourceNote) return undefined;
+    return (
+      `Create content based on this source note:\n\n` +
+      `Title: ${sourceNote.title}\n\n` +
+      `${sourceNote.content.slice(0, 4000)}` +
+      (sourceNote.content.length > 4000 ? "\n\n[Note truncated to first 4000 characters]" : "")
+    );
+  }, [sourceNote]);
   const [draft, setDraft] = useState<AIDraft | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -131,10 +145,28 @@ export default function AdminNewPage() {
       )}
 
       <div className="space-y-xxl">
+        {/* Source note banner — shown when navigating from a note */}
+        {sourceNote && (
+          <div className="flex items-start gap-md p-lg bg-surface-container border border-border-default border-l-4 border-l-primary">
+            <FileText className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="font-sora text-xs text-primary uppercase tracking-widest mb-xs">Source note</p>
+              <p className="font-dm-sans text-sm text-on-surface truncate">{sourceNote.title}</p>
+            </div>
+            <Link
+              to={`/notes/${sourceNote.slug}`}
+              className="inline-flex items-center gap-xs shrink-0 font-sora text-xs text-on-surface-muted hover:text-primary transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              View
+            </Link>
+          </div>
+        )}
+
         {/* AI Drafting Panel — shown when no draft yet */}
         {!draft && (
           <section className="p-xl bg-surface border border-border-default">
-            <AIDraftPanel onDraft={handleDraft} disabled={saving} />
+            <AIDraftPanel onDraft={handleDraft} disabled={saving} initialInput={initialPrompt} />
           </section>
         )}
 

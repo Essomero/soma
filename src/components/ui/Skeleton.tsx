@@ -560,8 +560,8 @@ export function SkeletonFeaturedLayout() {
   );
 }
 
-/** Learn index : 3-col note cards (border-2 brutalist style). */
-export function SkeletonLearnIndexGrid() {
+/** Notes index : 3-col note cards (border-2 brutalist style). */
+export function SkeletonNotesIndexGrid() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
       {Array.from({ length: 6 }).map((_, i) => (
@@ -576,8 +576,8 @@ export function SkeletonLearnIndexGrid() {
   );
 }
 
-/** Learn note article : back-link row + tag + title + meta, then prose. */
-export function SkeletonLearnArticle() {
+/** Note article : back-link row + tag + title + meta, then prose. */
+export function SkeletonNotesArticle() {
   return (
     <div className="pt-32 pb-xxl">
       <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop mb-giant">
@@ -623,7 +623,7 @@ export function SkeletonAdminRows({ rows = 5 }: { rows?: number }) {
   );
 }
 
-/** Admin edit / learn editor : form field groups (label + input rows). */
+/** Admin edit / note editor : form field groups (label + input rows). */
 export function SkeletonForm({ rows = 5 }: { rows?: number }) {
   return (
     <div className="space-y-xl">

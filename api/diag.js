@@ -65,8 +65,8 @@ export default async function handler(req, res) {
   } else {
     report.store.content_items = "missing-or-unreadable";
   }
-  const learn = await run("SELECT COUNT(*) AS n FROM learn_articles", []);
-  if (learn.ok) report.store.learnArticles = Number(learn.rows[0] && learn.rows[0].n);
+  const learn = await run("SELECT COUNT(*) AS n FROM note_articles", []);
+  if (learn.ok) report.store.noteArticles = Number(learn.rows[0] && learn.rows[0].n);
 
   return res.json(report);
 }

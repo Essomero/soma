@@ -249,7 +249,7 @@ export default function GuidePage() {
                       The First Boot
                     </h4>
                     <p className="font-dm-sans text-sm text-on-surface-muted">
-                      Open /learn, log in with your SITE_PASSWORD, and write
+                      Open /notes, log in with your SITE_PASSWORD, and write
                       one note. The tables self-create on first use. Flip the
                       lock/globe toggle and check the page in a private window
                       to confirm public access.
