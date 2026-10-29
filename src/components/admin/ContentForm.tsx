@@ -96,9 +96,9 @@ function initFromDraft(draft: AIDraft | null): FormValues {
     title: draft.title || "",
     excerpt: draft.excerpt || "",
     category: draft.category || "Engineering",
-    authorName: draft.author?.name || "Soma Editorial",
-    authorHandle: draft.author?.handle || "",
-    publishedAt: draft.publishedAt || now,
+    authorName: "Soma Editorial",               // AI never controls this
+    authorHandle: "",                            // AI never controls this
+    publishedAt: now,                            // AI never controls this — always the current time
     image: draft.image || "",
     imageAlt: draft.imageAlt || "",
     tagsText: (draft.tags || []).join(", "),
@@ -139,12 +139,7 @@ function mergeDraft(current: FormValues, draft: Record<string, unknown>): FormVa
   if (typeof draft.title === "string") next.title = draft.title;
   if (typeof draft.excerpt === "string") next.excerpt = draft.excerpt;
   if (typeof draft.category === "string") next.category = draft.category;
-  if (draft.author && typeof draft.author === "object") {
-    const a = draft.author as Record<string, unknown>;
-    if (typeof a.name === "string") next.authorName = a.name;
-    if (typeof a.handle === "string") next.authorHandle = a.handle;
-  }
-  if (typeof draft.publishedAt === "string") next.publishedAt = draft.publishedAt;
+  // AI edit never touches author or publishedAt — hardcoded defaults always win
   if (typeof draft.image === "string") next.image = draft.image;
   if (typeof draft.imageAlt === "string") next.imageAlt = draft.imageAlt;
   if (Array.isArray(draft.tags)) next.tagsText = draft.tags.join(", ");
