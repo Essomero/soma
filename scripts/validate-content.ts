@@ -12,11 +12,78 @@
 import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import { getDb } from "./content-db.ts";
+import { allStories } from "../src/content/stories/index.ts";
+import { allGuides } from "../src/content/guides/index.ts";
+import { allFeatured } from "../src/content/featured/index.ts";
+import { allCourses } from "../src/content/courses/index.ts";
+import { allBooks } from "../src/content/books/index.ts";
+import { allSeries } from "../src/content/series/index.ts";
+import { allDocs } from "../src/content/docs/index.ts";
+import { allTests } from "../src/content/tests/index.ts";
+import { allEpisodes } from "../src/content/podcast/episodes/index.ts";
+import { allTopics } from "../src/content/topics/index.ts";
 
 let failures = 0;
 function fail(msg: string) {
   failures++;
   console.error("content error:", msg);
+}
+
+// Per-type required fields on the final corpus items (after computed fields).
+// Every non-optional TS interface field that the render path reads must be present.
+const CORPUS_REQUIRED: Record<string, string[]> = {
+  story: ["slug", "title", "category", "excerpt", "image", "imageAlt", "author", "date", "intro", "body"],
+  guide: ["slug", "title", "category", "excerpt", "image", "imageAlt", "author", "date", "intro", "body"],
+  doc: ["slug", "title", "category", "description", "image", "imageAlt", "author", "date", "tags", "sections"],
+  course: ["slug", "title", "description", "image", "imageAlt", "author", "date", "lessons"],
+  book: ["slug", "title", "description", "image", "imageAlt", "author", "date", "chapters"],
+  series: ["slug", "title", "description", "image", "imageAlt", "author", "date", "episodes"],
+  test: ["slug", "title", "description", "category", "image", "imageAlt", "author", "date", "sources", "questions"],
+  featured: ["slug", "tag", "title", "description", "image", "imageAlt", "author", "date"],
+  podcast: ["id", "title", "image", "imageAlt", "episode", "date", "duration", "description", "category", "href"],
+  topic: ["slug", "title", "description", "icon", "accentColor", "accentBg", "accentText"],
+};
+
+function checkCorpus() {
+  const corpus: Array<{ type: string; items: Record<string, unknown>[] }> = [
+    { type: "story", items: allStories as unknown as Record<string, unknown>[] },
+    { type: "guide", items: allGuides as unknown as Record<string, unknown>[] },
+    { type: "featured", items: allFeatured as unknown as Record<string, unknown>[] },
+    { type: "course", items: allCourses as unknown as Record<string, unknown>[] },
+    { type: "book", items: allBooks as unknown as Record<string, unknown>[] },
+    { type: "series", items: allSeries as unknown as Record<string, unknown>[] },
+    { type: "doc", items: allDocs as unknown as Record<string, unknown>[] },
+    { type: "test", items: allTests as unknown as Record<string, unknown>[] },
+    { type: "podcast", items: allEpisodes as unknown as Record<string, unknown>[] },
+    { type: "topic", items: allTopics as unknown as Record<string, unknown>[] },
+  ];
+
+  for (const { type, items } of corpus) {
+    const required = CORPUS_REQUIRED[type];
+    if (!required) continue;
+    for (const item of items) {
+      const slug = typeof item.slug === "string" ? item.slug : item.id;
+      for (const field of required) {
+        const val = item[field];
+        if (val === undefined || val === null || val === "") {
+          // Author is an object — deeper emptiness check
+          if (field === "author" && (typeof val !== "object" || val === null)) {
+            fail(`${type}/${slug}: missing required field '${field}'`);
+          } else if (field !== "author" && !isNonEmptyValue(val)) {
+            fail(`${type}/${slug}: missing required field '${field}'`);
+          }
+        }
+      }
+    }
+  }
+}
+
+function isNonEmptyValue(val: unknown): boolean {
+  if (Array.isArray(val)) return val.length > 0;
+  if (typeof val === "object" && val !== null) return Object.keys(val).length > 0;
+  if (typeof val === "string") return val.trim().length > 0;
+  if (typeof val === "number") return true;
+  return false;
 }
 
 // 1. Env reads must prefer the official Turso names. A bare TURSO_DB /
@@ -84,7 +151,8 @@ async function checkHrefs() {
   }
 }
 
+checkCorpus();
 await checkHrefs();
 
-console.log(failures === 0 ? "content OK" : `${failures} dangling reference(s)`);
+console.log(failures === 0 ? "content OK" : `${failures} failure(s)`);
 process.exit(failures ? 1 : 0);

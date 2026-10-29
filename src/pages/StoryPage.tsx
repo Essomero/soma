@@ -1225,7 +1225,7 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
               />
             </figure>
 
-            {(story.intro || story.body.length > 0) ? (
+            {(story.intro || (story.body || []).length > 0) ? (
               <>
                 {/* Intro (shown in both layouts) */}
                 {story.intro && (
@@ -1245,10 +1245,10 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
                 {hasRichContent ? (
                   <>
                     {/* Body (shown before bento in rich layout, merged as a single ContentBlocks block) */}
-                    {story.body.length > 0 && (
+                    {(story.body || []).length > 0 && (
                       <div className="font-dm-sans text-body-base leading-relaxed text-on-surface mb-lg">
                         <ContentBlocks
-                          blocks={story.body}
+                          blocks={story.body as string[]}
                           firstDropCap={false}
                           highlights={highlights}
                           onHighlightClick={handleHighlightClick}
@@ -1321,7 +1321,7 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
                   <>
                     <div className="font-dm-sans text-body-base leading-loose text-on-surface space-y-lg">
                       <ContentBlocks
-                        blocks={story.body}
+                        blocks={story.body || []}
                         firstDropCap={true}
                         highlights={highlights}
                         onHighlightClick={handleHighlightClick}
