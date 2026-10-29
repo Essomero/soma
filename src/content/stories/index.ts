@@ -27,13 +27,25 @@ const rawStories = [
   prophet6OnSorrow,
 ];
 
-// Inject computed fields
-export const allStories: StoryContent[] = (rawStories as any[]).map((s, i) => ({
-  ...s,
-  id: s.slug,
-  href: `/stories/${s.slug}`,
-  isFeatured: i === 0,
-})) as StoryContent[];
+// Inject computed fields. Validate every story has fields pages assume exist
+// without optional chaining, so a missing field crashes at build time, not
+// at runtime on a user's browser.
+const REQUIRED_STORY_FIELDS = ["slug", "title", "body", "author", "date", "category", "image", "imageAlt", "excerpt"] as const;
+export const allStories: StoryContent[] = (rawStories as unknown[]).map((s, i) => {
+  if (!s || typeof s !== "object") throw new Error(`story[${i}] is not an object`);
+  const story = s as Record<string, unknown>;
+  for (const f of REQUIRED_STORY_FIELDS) {
+    if (story[f] === undefined) {
+      throw new Error(`story[${i}] (slug="${story.slug}") is missing required field "${f}". Every story must have it.`);
+    }
+  }
+  return {
+    ...story,
+    id: story.slug,
+    href: `/stories/${story.slug}`,
+    isFeatured: i === 0,
+  } as StoryContent;
+});
 
 // Convert to ArticleCardData for listing pages
 export function toArticleCard(s: StoryContent): ArticleCardData {
