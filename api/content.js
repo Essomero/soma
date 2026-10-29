@@ -16,7 +16,8 @@ const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS content_items (
   body_json TEXT NOT NULL,
   meta_json TEXT NOT NULL DEFAULT '{}',
   position INTEGER NOT NULL DEFAULT 0,
-  updated_at TEXT DEFAULT (datetime('now'))
+  updated_at TEXT DEFAULT (datetime('now')),
+  archived_at TEXT
 )`;
 
 // Registry route base per content type : mirrors src/content/registry.ts

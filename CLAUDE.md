@@ -92,7 +92,7 @@ Content workflows are exposed to coding agents through a stdio MCP server at `se
 - No token, no extra config: the server reads `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` from `.env` / `.env.local` like the rest of the repo. Without credentials the store tools fail loud.
 - stdout is the protocol channel only. The server never writes logs to stdout; diagnostics go to stderr.
 
-**Tools (11)**: `content_types`, `topics`, `manuscript_template`, `existing_content`, `get_content`, `store_row`, `drafts`, `validate_manuscript`, `publish_manuscript`, `verify_url`, `archive_manuscript`. Full descriptors come over `tools/list`; the README's "MCP Server (Agent Tooling)" section has the summary table. `publish_manuscript` upserts rows as private and never touches visibility; public flips stay the owner's toggle, no CLI flag.
+**Tools (10)**: `content_types`, `topics`, `manuscript_template`, `existing_content`, `get_content`, `store_row`, `drafts`, `validate_manuscript`, `publish_manuscript`, `verify_url`. Full descriptors come over `tools/list`; the README's "MCP Server (Agent Tooling)" section has the summary table. `publish_manuscript` upserts rows as private and never touches visibility; public flips stay the owner's toggle, no CLI flag.
 
 ## Companion Repositories
 - **Soma Labs** (`https://github.com/Essomero/soma-labs`): Companion runnable code drills in Go, Deno, Docker Compose, and Node.

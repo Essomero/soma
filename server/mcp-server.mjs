@@ -5,12 +5,11 @@
 // line on stdin, one per line on stdout (JSONL). Agents use the tools below
 // to drive the SOMA_SKILL.md workflow without reading the skill or scraping
 // the site: draft manuscript -> validate -> publish (private) -> confirm
-// store row -> verify URLs -> archive with the exact commit command.
+// store row -> verify URLs.
 //
 // stdout is the protocol channel ONLY. Diagnostics go to stderr; never log
-// to stdout. The server is read-only except for two deliberate writes:
-// publish_manuscript (upserts store rows; always private) and
-// archive_manuscript (copies a published manuscript into src/content/).
+// to stdout. The server is read-only except for one deliberate write:
+// publish_manuscript (upserts store rows; always private).
 //
 // Tools shell out to the repo's own entry points (scripts/publish-content.ts
 // with --check for validation, the Turso store for reads) so behavior is
@@ -19,7 +18,7 @@
 import { createInterface } from "node:readline";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { existsSync, readdirSync, statSync, copyFileSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, statSync, readFileSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
@@ -127,7 +126,7 @@ async function existingContent(type) {
 }
 
 async function storeRow(slug) {
-  const rows = await queryRows("SELECT slug, type, status, title, position, updated_at FROM content_items WHERE slug = ?", [slug]);
+  const rows = await queryRows("SELECT slug, type, status, title, position, updated_at, archived_at FROM content_items WHERE slug = ?", [slug]);
   if (!rows.length) return `No row for '${slug}' in the store. The piece never landed: run publish_manuscript first.`;
   const r = rows[0];
   return `Row confirmed: ${JSON.stringify(r, null, 2)}`;
@@ -199,26 +198,6 @@ async function verifyUrl(url) {
   return `HEAD ${head.status} ${head.ok ? "OK" : "FAILED"} (final: ${head.url})`;
 }
 
-async function archiveManuscript(type, slug) {
-  if (!TYPES.has(type) || !ROUTE_BASE[type]) throw new Error(`unknown type ${type}`);
-  const src = join(rootDir, "drafts", type, `${slug}.ts`);
-  const dest = join(rootDir, "src", "content", type, `${slug}.ts`);
-  if (!existsSync(src)) throw new Error(`no staged draft at drafts/${type}/${slug}.ts`);
-  const rows = await queryRows("SELECT slug, type, status, title FROM content_items WHERE slug = ?", [slug]);
-  if (!rows.length) throw new Error(`no store row for '${slug}': publish_manuscript it first (and the owner must flip it public) before archiving.`);
-  const row = rows[0];
-  if (row.type !== type) throw new Error(`store row for '${slug}' is type ${row.type}, not ${type}`);
-  if (existsSync(dest)) throw new Error(`refusing to overwrite existing ${dest}; the archive copy already exists.`);
-  copyFileSync(src, dest);
-  return [
-    `Archived drafts/${type}/${slug}.ts -> ${dest} (status: ${row.status}).`,
-    `Commit the single file now:`,
-    `  git add ${dest}`,
-    `  git commit -m "Add ${type}: ${row.title}"`,
-    `Never git add -A: a blind add sweeps unfinished work into the public fork.`,
-  ].join("\n");
-}
-
 // ── Tool registry ───────────────────────────────────────────────────────────
 
 const TOOLS = [
@@ -256,7 +235,7 @@ const TOOLS = [
   },
   {
     name: "store_row",
-    description: "Confirm a slug's row in the content store: slug, type, status, title, position, updated_at. A manuscript task is NOT done until this confirms the row exists (private).",
+    description: "Confirm a slug's row in the content store: slug, type, status, title, position, updated_at, archived_at. A manuscript task is NOT done until this confirms the row exists (private).",
     inputSchema: {
       type: "object",
       properties: { slug: { type: "string", description: "Content slug" } },
@@ -317,19 +296,6 @@ const TOOLS = [
       required: ["url"],
     },
     run: async ({ url }) => verifyUrl(requireStr(url, "url")),
-  },
-  {
-    name: "archive_manuscript",
-    description: "After the owner flips a piece public, copy the staged draft to its archive home src/content/<type>/<slug>.ts and return the exact git commit command (never git add -A). Refuses to overwrite an existing archive copy or to archive an unpublished/typed-mismatch row.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        type: { type: "string", description: "Content type matching the draft's parent dir" },
-        slug: { type: "string", description: "Content slug" },
-      },
-      required: ["type", "slug"],
-    },
-    run: async ({ type, slug }) => archiveManuscript(requireStr(type, "type"), requireStr(slug, "slug")),
   },
 ];
 
