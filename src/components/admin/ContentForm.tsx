@@ -87,7 +87,7 @@ function blockArray(v: unknown): (string | ContentBlock)[] {
 }
 
 function initFromDraft(draft: AIDraft | null): FormValues {
-  const now = new Date().toISOString().split("T")[0];
+  const now = `${new Date().toISOString().split("T")[0]}T12:00:00.000Z`;
   if (!draft) return {
     authorName: "Soma Editorial",
     publishedAt: now,
@@ -98,7 +98,7 @@ function initFromDraft(draft: AIDraft | null): FormValues {
     category: draft.category || "Engineering",
     authorName: "Soma Editorial",               // AI never controls this
     authorHandle: "",                            // AI never controls this
-    publishedAt: now,                            // AI never controls this — always the current time
+    publishedAt: draft.publishedAt || now,        // preserve for edits; fall back to now for new content
     image: draft.image || "",
     imageAlt: draft.imageAlt || "",
     tagsText: (draft.tags || []).join(", "),
@@ -801,6 +801,22 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
           }
           if (f.name === "format" || f.name === "category") {
             return renderField(f);
+          }
+          if (f.name === "publishedAt") {
+            const dateVal = str(values.publishedAt).split("T")[0];
+            return (
+              <div key="publishedAt">
+                <label className="font-sora text-sm text-on-surface block mb-xs">
+                  Date <span className="text-error ml-xs">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={dateVal}
+                  onChange={(e) => setVal("publishedAt", `${e.target.value}T12:00:00.000Z`)}
+                  className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+              </div>
+            );
           }
           if (["tagline", "episode", "duration", "summary"].includes(f.name)) {
             return renderField(f);
