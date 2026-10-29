@@ -46,7 +46,6 @@ export const shipSoma = {
     "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=675&fit=crop",
   imageAlt: "Server racks in a data center",
   author: { name: "Benjamin Mayanja", title: "Founder, Soma" },
-  date: "October 24, 2026",
   publishedAt: "2026-10-24T00:00:00Z",
   tags: ["Self-Hosting", "Vercel", "Turso", "Sovereignty"],
   intro:

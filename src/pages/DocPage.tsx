@@ -1,4 +1,5 @@
 import { Link, useParams } from "react-router-dom";
+import { formatDate } from "@/lib/format-date";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
 import SidebarToc from "@/components/sections/SidebarToc";
@@ -68,7 +69,7 @@ export default function DocPage() {
                 Compiled By
               </span>
               <span className="font-sora text-label-caps text-on-surface">{doc.author.name}</span>
-              <span className="font-sora text-metadata-tag text-on-surface-muted">{doc.date}</span>
+              <span className="font-sora text-metadata-tag text-on-surface-muted">{formatDate(doc.publishedAt)}</span>
               <div className="mt-sm flex lg:justify-end">
                 <div className="flex items-center gap-sm">
                   <PrintButton to={`/docs/${slug}/print`} compact />

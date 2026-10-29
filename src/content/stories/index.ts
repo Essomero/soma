@@ -30,7 +30,7 @@ const rawStories = [
 // Inject computed fields. Validate every story has fields pages assume exist
 // without optional chaining, so a missing field crashes at build time, not
 // at runtime on a user's browser.
-const REQUIRED_STORY_FIELDS = ["slug", "title", "body", "author", "date", "category", "image", "imageAlt", "excerpt"] as const;
+const REQUIRED_STORY_FIELDS = ["slug", "title", "body", "author", "category", "image", "imageAlt", "excerpt"] as const;
 export const allStories: StoryContent[] = (rawStories as unknown[]).map((s, i) => {
   if (!s || typeof s !== "object") throw new Error(`story[${i}] is not an object`);
   const story = s as Record<string, unknown>;
@@ -58,7 +58,6 @@ export function toArticleCard(s: StoryContent): ArticleCardData {
     imageAlt: s.imageAlt,
     href: s.href,
     author: s.author,
-    date: s.date,
     publishedAt: s.publishedAt,
     tags: s.tags,
   };

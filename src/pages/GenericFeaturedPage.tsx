@@ -16,6 +16,7 @@ import type { FeaturedContent } from "@/types";
 import { type HighlightData } from "@/lib/highlights";
 import { md, contentToMarkdown } from "@/lib/markdown";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { formatDate } from "@/lib/format-date";
 
 export default function GenericFeaturedPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -61,7 +62,7 @@ export default function GenericFeaturedPage() {
         title={article.title}
         description={article.description}
         author={article.author}
-        date={article.date}
+        date={formatDate(article.publishedAt)}
         image={article.image}
         imageAlt={article.imageAlt}
       />
@@ -80,7 +81,7 @@ export default function GenericFeaturedPage() {
             {article.description}
           </p>
           <p className="font-sora text-xs text-on-surface-muted">
-            {article.author.name} // {article.author.handle} <span className="text-secondary mx-1">//</span> {article.date}
+            {article.author.name} // {article.author.handle} <span className="text-secondary mx-1">//</span> {formatDate(article.publishedAt)}
           </p>
         </div>
         {/* Sidebar */}

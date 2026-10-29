@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import { formatDate } from "@/lib/format-date";
 import { ArrowRight, Clock, BookOpen, Check, Printer, Edit3 } from "lucide-react";
 import { SkeletonCollectionDetail } from "@/components/ui/Skeleton";
 import Tooltip from "@/components/ui/Tooltip";
@@ -129,7 +130,7 @@ const { isCompleted, toggle, progress } = useProgress(slug ?? "", chapterSlugs);
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-sm mb-sm">
                         <span className="font-sora text-metadata-tag text-on-surface-muted uppercase">CHAPTER {i + 1}</span>
-                        {story && <span className="flex items-center gap-xs text-on-surface-muted"><Clock className="w-3 h-3" /><span className="font-sora text-[10px] uppercase">{story.date}</span></span>}
+                        {story && <span className="flex items-center gap-xs text-on-surface-muted"><Clock className="w-3 h-3" /><span className="font-sora text-[10px] uppercase">{formatDate(story.publishedAt)}</span></span>}
                       </div>
                       <h3 className="font-sora text-article-title text-on-surface group-hover:text-primary transition-colors mb-sm">{chapter.title}</h3>
                       {chapter.description && <p className="font-dm-sans text-body-base text-on-surface-muted" dangerouslySetInnerHTML={{ __html: md(chapter.description) }} />}

@@ -50,7 +50,6 @@ export const benjaminMayanja = {
     "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&h=675&fit=crop",
   imageAlt: "Benjamin Mayanja",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
-  date: "October 29, 2026",
   publishedAt: "2026-10-28T21:00:00Z",
   tags: ["Learning", "Open Source", "Sovereignty"],
   intro:

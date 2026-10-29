@@ -8,7 +8,6 @@ export const prophet6OnSorrow = {
   image: "https://images.unsplash.com/photo-1511721285502-9f81e79be874?w=1200&h=675&fit=crop",
   imageAlt: "Row of wooden card catalog drawers",
   author: { name: "Kahlil Gibran" },
-  date: "1923-01-01",
   publishedAt: "2026-10-23T21:00:00Z",
   tags: ["Poetry", "Philosophy", "Wisdom"],
   topics: ["philosophy"],

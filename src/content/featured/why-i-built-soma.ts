@@ -30,7 +30,6 @@ export const whyIBuiltSoma: FeaturedContent = {
     "https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=1200&h=675&fit=crop",
   imageAlt: "Writing by hand in a paper planner next to a laptop, coffee, and books",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
-  date: "October 29, 2026",
   publishedAt: "2026-10-29T00:00:00Z",
   tagline: "AI-accelerated learning you own. Works with whatever you already use.",
   bentoHighlights: [

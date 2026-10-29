@@ -17,7 +17,6 @@ export function toEpisodeCard(ep: PodcastEpisodeFull) {
     image: ep.image,
     imageAlt: ep.imageAlt,
     episode: ep.episode,
-    date: ep.date,
     publishedAt: ep.publishedAt,
     duration: ep.duration,
     description: ep.description,

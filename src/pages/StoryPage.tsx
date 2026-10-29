@@ -26,6 +26,7 @@ import StarRating from "@/components/ui/StarRating";
 import Comments from "@/components/ui/Comments";
 import { useAuth } from "@/lib/AuthContext";
 import { useTextSelection } from "@/lib/useTextSelection";
+import { formatDate } from "@/lib/format-date";
 import { getSelectionOffsets, type HighlightData, COMMENT_MAX_DEPTH } from "@/lib/highlights";
 import { useScrollLock } from "@/lib/useScrollLock";
 import { buildLessonIndex, resolveSectionAnchors, storyCodePrefix } from "@/lib/storyLinks";
@@ -1085,10 +1086,10 @@ ${story?.title ? `Title: ${story.title}\n` : ""}${articleExcerpt}
             {story.author && (
               <div className="flex flex-wrap items-center gap-sm font-sora text-metadata-tag text-primary uppercase tracking-widest mb-lg">
                 <span>{story.author.name}</span>
-                {story.date && (
+                {story.publishedAt && (
                   <>
                     <span className="text-on-surface-muted">//</span>
-                    <span className="text-on-surface-muted">{story.date}</span>
+                    <span className="text-on-surface-muted">{formatDate(story.publishedAt)}</span>
                   </>
                 )}
                 <span className="text-on-surface-muted">//</span>

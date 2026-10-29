@@ -118,7 +118,7 @@ const COMMON_META: FieldSchema[] = [
     { name: "name", type: "string", required: true, description: "Full name. Use 'Soma Editorial' as the default for AI-generated content unless the content has a known author.", placeholder: "Soma Editorial" },
     { name: "handle", type: "string", required: false, description: "Social handle. Not needed for 'Soma Editorial.'", placeholder: "@Essomero" },
   ]},
-  { name: "date", type: "string", required: true, description: "Display date. Use YYYY-MM-DD format. MUST be the current date — never a random or placeholder date.", constraints: "Must be today's real date in YYYY-MM-DD, not a placeholder or random date.", placeholder: "2026-10-29" },
+  { name: "publishedAt", type: "string", required: true, description: "UTC ISO 8601 timestamp. Display date is derived from this at render time. MUST be the current date — never a random or placeholder date.", constraints: "Must be today's real date in YYYY-MM-DD or full ISO 8601 format, not a placeholder or random date.", placeholder: "2026-10-29T00:00:00.000Z" },
   { name: "image", type: "string", required: true, description: "Hero image URL shown in listings and at the top of the page. MUST be an actual image URL (https://images.unsplash.com/... or similar) — an absolute requirement, never a description of an image.", constraints: "Must start with http:// or https:// and point to a real image file. NEVER fill this with prose like 'a terminal window showing...' — if no real URL is available use https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=675&fit=crop as a safe default.", placeholder: "https://images.unsplash.com/photo-..." },
   { name: "imageAlt", type: "string", required: false, description: "Accessible alt text for the hero image — a SHORT description of what the image actually shows. Never a longer caption or title.", constraints: "1-8 words. Describes the picture itself, not the article's topic.", placeholder: "Code editor displaying a compile error overlay" },
   { name: "tags", type: "string[]", required: false, description: "2-5 tags for filtering and discovery. Short, lowercase, hyphenated.", constraints: "Tags should be specific but not overly niche.", placeholder: "full-stack-prep, typescript" },
@@ -294,7 +294,7 @@ export const CONTENT_SCHEMA: Record<ContentType, TypeSchema> = {
       excerpt: "You wrote an object that has every property a function asked for, but TypeScript still threw a red squiggle. This lesson unpacks structural typing from first principles.",
       category: "Engineering",
       author: { name: "Soma Editorial" },
-      date: "2026-08-16",
+      publishedAt: "2026-08-16T00:00:00.000Z",
       tags: ["full-stack-prep", "typescript"],
       topics: ["technology", "career"],
       intro: "Most developers first encounter TypeScript as an obstacle course. You write code that runs perfectly fine in JavaScript, but the editor paints it with red squiggles...",
@@ -330,7 +330,7 @@ export const CONTENT_SCHEMA: Record<ContentType, TypeSchema> = {
       excerpt: "A step-by-step guide to configuring TypeScript in a Node.js Express project from scratch: tsconfig, hot reload, debugging, and production build.",
       category: "Engineering",
       author: { name: "Soma Editorial" },
-      date: "2026-09-01",
+      publishedAt: "2026-09-01T00:00:00.000Z",
       tags: ["typescript", "nodejs", "express"],
       topics: ["technology", "career"],
       intro: "You have an Express API that works. Now you want TypeScript guarding your routes, your request handlers, and your database queries. Here's how to set it up without the usual config pain.",
@@ -360,7 +360,7 @@ export const CONTENT_SCHEMA: Record<ContentType, TypeSchema> = {
       excerpt: "Five visual lessons that make the type system click: shapes over names, generics as relationships, and boundaries you can trust.",
       category: "Engineering",
       author: { name: "Soma Editorial" },
-      date: "2026-08-20",
+      publishedAt: "2026-08-20T00:00:00.000Z",
       tagline: "Five visual lessons that make the type system click",
       lessons: [
         { title: "Why Does This TypeScript Error?", storySlug: "fs-1-why-this-type-error", description: "Structural typing from first principles." },
@@ -384,7 +384,7 @@ export const CONTENT_SCHEMA: Record<ContentType, TypeSchema> = {
       excerpt: "Kahlil Gibran's timeless collection of poetic essays on life, love, and the human condition.",
       category: "Philosophy",
       author: { name: "Soma Editorial" },
-      date: "2026-07-01",
+      publishedAt: "2026-07-01T00:00:00.000Z",
       chapters: [
         { title: "On Love", storySlug: "prophet-1-on-love", description: "Love gives naught but itself and takes naught but from itself." },
         { title: "On Marriage", storySlug: "prophet-2-on-marriage", description: "Let there be spaces in your togetherness." },
@@ -407,7 +407,7 @@ export const CONTENT_SCHEMA: Record<ContentType, TypeSchema> = {
       excerpt: "A series on the principles, practices, and philosophy of building software that lasts.",
       category: "Engineering",
       author: { name: "Soma Editorial" },
-      date: "2026-06-15",
+      publishedAt: "2026-06-15T00:00:00.000Z",
       episodes: [
         { title: "On Code", storySlug: "craft-of-software-1-on-code" },
         { title: "On Architecture", storySlug: "craft-of-software-2-on-architecture" },
@@ -430,7 +430,7 @@ export const CONTENT_SCHEMA: Record<ContentType, TypeSchema> = {
       excerpt: "A quick reference for setting up your local Soma development environment: dependencies, configuration, and common commands.",
       category: "Engineering",
       author: { name: "Soma Editorial" },
-      date: "2026-05-10",
+      publishedAt: "2026-05-10T00:00:00.000Z",
       tags: ["setup", "development"],
       sections: [
         {
@@ -469,7 +469,7 @@ export const CONTENT_SCHEMA: Record<ContentType, TypeSchema> = {
       excerpt: "A new kind of library, built for the age of agents.",
       category: "Philosophy",
       author: { name: "Soma Editorial" },
-      date: "2026-01-01",
+      publishedAt: "2026-01-01T00:00:00.000Z",
       tagline: "A new kind of library, built for the age of agents.",
       sections: [
         { heading: "The Problem with Digital Libraries", paragraphs: ["Digital libraries today are designed for humans who read linearly..."] },
@@ -493,7 +493,7 @@ export const CONTENT_SCHEMA: Record<ContentType, TypeSchema> = {
       excerpt: "Test your understanding of SQL query optimization: indexing strategies, execution plans, and query rewriting.",
       category: "Engineering",
       author: { name: "Soma Editorial" },
-      date: "2026-09-10",
+      publishedAt: "2026-09-10T00:00:00.000Z",
       format: "written",
       estimatedMinutes: 30,
       passingScore: 70,
@@ -523,7 +523,7 @@ export const CONTENT_SCHEMA: Record<ContentType, TypeSchema> = {
       excerpt: "A conversation about open source, developer communities, and the craft of building tools that people love to use.",
       category: "Technology",
       author: { name: "Soma Editorial" },
-      date: "2026-10-01",
+      publishedAt: "2026-10-01T00:00:00.000Z",
       tags: ["open-source", "community"],
       episode: "EPISODE 30 // OCT 24",
       duration: "42 MIN",
@@ -623,7 +623,7 @@ Return ONLY valid JSON (no markdown fences). The JSON must have:
 - \`excerpt\`: string — 1-2 sentence card summary
 - \`category\`: string — one of: ${CATEGORIES.join(", ")}
 - \`author\`: object — { name: "Soma Editorial" } (default for AI-generated content; use the original author for edits/rewrites)
-- \`date\`: string — today in YYYY-MM-DD (MUST be the actual current date, never a random or placeholder value)
+- \`publishedAt\`: string — today in YYYY-MM-DD or full ISO 8601 (MUST be the actual current date, never a random or placeholder value)
 
 ### Type-specific fields:
 

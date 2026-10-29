@@ -8,7 +8,6 @@ export const fs4UtilityTypes = {
   image: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=1200&h=675&fit=crop",
   imageAlt: "Engineer's hands over a technical blueprint showing precision design",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
-  date: "2026-08-16",
   publishedAt: "2026-08-15T21:00:00Z",
   tags: ["Full-Stack Prep", "TypeScript"],
   topics: ["technology", "career"],

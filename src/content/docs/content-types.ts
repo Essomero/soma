@@ -9,7 +9,6 @@ export const contentTypes: DocContent = {
   image: "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1600&h=900&fit=crop",
   imageAlt: "A fountain pen resting on handwritten manuscript pages",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
-  date: "October 2026",
   publishedAt: "2026-10-01T00:00:00Z",
   tags: ["Publishing", "Content Model", "Writing"],
   topics: ["technology"],

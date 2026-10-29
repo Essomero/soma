@@ -8,7 +8,6 @@ export const prophet3OnChildren = {
   image: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1200&h=675&fit=crop",
   imageAlt: "Mist rolling over branching mountain ridges",
   author: { name: "Kahlil Gibran" },
-  date: "1923-01-01",
   publishedAt: "2026-10-23T21:00:00Z",
   tags: ["Poetry", "Philosophy", "Wisdom"],
   topics: ["philosophy"],

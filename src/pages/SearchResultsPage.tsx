@@ -22,6 +22,7 @@ const filters = [
 const trendingTopics = ["REACT", "WEBGL", "RUST", "DOCKER"];
 
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { formatDate } from "@/lib/format-date";
 import SafeImage from "@/components/ui/SafeImage";
 
 export default function SearchResultsPage() {
@@ -175,7 +176,7 @@ export default function SearchResultsPage() {
                       {storyResults[0].tags?.[0] || "STORY"}
                     </span>
                     <span className="font-sora text-[11px] text-on-surface-muted uppercase">
-                      {storyResults[0].date}
+                      {formatDate(storyResults[0].publishedAt)}
                     </span>
                   </div>
                 </div>

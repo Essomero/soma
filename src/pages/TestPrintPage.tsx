@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { formatDate } from "@/lib/format-date";
 import { ArrowLeft, Printer, FileText, Palette, Monitor, Edit3 } from "lucide-react";
 import { useContentItem } from "@/lib/content";
 import { mdBlock } from "@/lib/markdown";
@@ -156,7 +157,7 @@ export default function TestPrintPage() {
             </div>
             <div className="text-right shrink-0">
               <p className="font-sora text-xs font-bold text-on-surface-muted uppercase tracking-wider">Soma</p>
-              <p className="font-sora text-xs text-on-surface-muted mt-1">{test.date}</p>
+              <p className="font-sora text-xs text-on-surface-muted mt-1">{formatDate(test.publishedAt)}</p>
             </div>
           </div>
 

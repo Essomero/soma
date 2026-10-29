@@ -8,7 +8,6 @@ export const fs1WhyThisTypeError = {
   image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=675&fit=crop",
   imageAlt: "Code editor displaying a compile error overlay on a monitor",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
-  date: "2026-08-16",
   publishedAt: "2026-08-15T21:00:00Z",
   tags: ["Full-Stack Prep", "TypeScript"],
   topics: ["technology", "career"],

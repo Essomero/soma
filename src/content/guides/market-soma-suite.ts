@@ -8,7 +8,6 @@ export const marketSomaSuite = {
     "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&h=675&fit=crop",
   imageAlt: "A laptop, notebook, and coffee on a desk, ready to write a launch post",
   author: { name: "Benjamin Mayanja", title: "Founder, Soma" },
-  date: "October 24, 2026",
   publishedAt: "2026-10-24T00:00:00Z",
   tags: ["Marketing", "Launch", "Distribution", "Soma Labs", "Son"],
   intro:

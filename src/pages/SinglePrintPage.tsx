@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Printer } from "lucide-react";
 import { useContentItem } from "@/lib/content";
+import { formatDate } from "@/lib/format-date";
 import { getReadingTime } from "@/lib/readingTime";
 import { md } from "@/lib/markdown";
 import ContentBlocks from "@/components/ui/ContentBlocks";
@@ -99,11 +100,11 @@ export default function SinglePrintPage({ type, base }: { type: SinglePrintType;
     featured?.author?.name ??
     "Soma";
   const date =
-    (story as { date?: string } | undefined)?.date ??
-    guide?.date ??
-    doc?.date ??
-    episode?.date ??
-    featured?.date ??
+    story?.publishedAt ??
+    guide?.publishedAt ??
+    doc?.publishedAt ??
+    episode?.publishedAt ??
+    featured?.publishedAt ??
     "";
   const minutes = (() => {
     if (story) {
@@ -200,7 +201,7 @@ export default function SinglePrintPage({ type, base }: { type: SinglePrintType;
           kicker={typeLabel}
           title={title}
           standfirst={description || undefined}
-          meta={[authorName, date, minutes > 0 ? `~${minutes} min read` : ""].filter(Boolean).join(" • ")}
+          meta={[authorName, formatDate(date), minutes > 0 ? `~${minutes} min read` : ""].filter(Boolean).join(" • ")}
           goals={
             story?.sections?.map((s) => s.heading) ??
             doc?.sections.map((s) => s.heading) ??

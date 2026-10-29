@@ -28,7 +28,7 @@ export interface SavePayload {
   excerpt: string;
   category: string;
   author: { name: string; handle?: string };
-  date: string;
+  publishedAt: string;
   image?: string;
   imageAlt?: string;
   tags?: string[];
@@ -90,7 +90,7 @@ function initFromDraft(draft: AIDraft | null): FormValues {
   const now = new Date().toISOString().split("T")[0];
   if (!draft) return {
     authorName: "Soma Editorial",
-    date: now,
+    publishedAt: now,
   };
   return {
     title: draft.title || "",
@@ -98,7 +98,7 @@ function initFromDraft(draft: AIDraft | null): FormValues {
     category: draft.category || "Engineering",
     authorName: draft.author?.name || "Soma Editorial",
     authorHandle: draft.author?.handle || "",
-    date: draft.date || now,
+    publishedAt: draft.publishedAt || now,
     image: draft.image || "",
     imageAlt: draft.imageAlt || "",
     tagsText: (draft.tags || []).join(", "),
@@ -144,7 +144,7 @@ function mergeDraft(current: FormValues, draft: Record<string, unknown>): FormVa
     if (typeof a.name === "string") next.authorName = a.name;
     if (typeof a.handle === "string") next.authorHandle = a.handle;
   }
-  if (typeof draft.date === "string") next.date = draft.date;
+  if (typeof draft.publishedAt === "string") next.publishedAt = draft.publishedAt;
   if (typeof draft.image === "string") next.image = draft.image;
   if (typeof draft.imageAlt === "string") next.imageAlt = draft.imageAlt;
   if (Array.isArray(draft.tags)) next.tagsText = draft.tags.join(", ");
@@ -286,7 +286,7 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
       excerpt: str(values.excerpt),
       category: str(values.category),
       author: { name: str(values.authorName), handle: str(values.authorHandle) || undefined },
-      date: str(values.date),
+      publishedAt: str(values.publishedAt),
       image: str(values.image) || undefined,
       imageAlt: str(values.imageAlt) || undefined,
       tags: tags.length > 0 ? tags : undefined,
@@ -304,7 +304,7 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
     excerpt: str(values.excerpt),
     category: str(values.category),
     author: { name: str(values.authorName), handle: str(values.authorHandle) || undefined },
-    date: str(values.date),
+    publishedAt: str(values.publishedAt),
     image: str(values.image),
     imageAlt: str(values.imageAlt),
     tags: (() => { const t = str(values.tagsText); return t ? t.split(",").map((s) => s.trim()).filter(Boolean) : []; })(),
@@ -779,7 +779,7 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
 
       {/* Schema-driven metadata fields */}
       {schema.fields
-        .filter((f) => ["title", "excerpt", "category", "author", "date", "image", "imageAlt", "tags", "topics", "tagline", "format", "estimatedMinutes", "passingScore", "episode", "duration", "summary"].includes(f.name))
+        .filter((f) => ["title", "excerpt", "category", "author", "publishedAt", "image", "imageAlt", "tags", "topics", "tagline", "format", "estimatedMinutes", "passingScore", "episode", "duration", "summary"].includes(f.name))
         .map((f) => {
           // Special handling for fields that use sub-keys
           if (f.name === "author") {

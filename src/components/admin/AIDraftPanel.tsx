@@ -23,7 +23,7 @@ export interface AIDraft {
   excerpt: string;
   category: string;
   author: { name: string; handle?: string };
-  date: string;
+  publishedAt: string;
   image?: string;
   imageAlt?: string;
   tags?: string[];

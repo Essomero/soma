@@ -9,6 +9,7 @@ import { useContentList } from "@/lib/content";
 import type { StoryContent } from "@/types";
 import { useAllReadSlugs } from "@/lib/useProgress";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { formatDate } from "@/lib/format-date";
 
 export default function ArchivePage() {
   const readSlugs = useAllReadSlugs();
@@ -24,12 +25,12 @@ export default function ArchivePage() {
   }
   const archived = (stories ?? [])
     .filter((s) => s.archived)
-    .sort((a, b) => { const au = readSlugs.has(a.slug) ? 1 : 0; const bu = readSlugs.has(b.slug) ? 1 : 0; if (au !== bu) return au - bu; return new Date(b.publishedAt || b.date).getTime() - new Date(a.publishedAt || a.date).getTime(); });
+    .sort((a, b) => { const au = readSlugs.has(a.slug) ? 1 : 0; const bu = readSlugs.has(b.slug) ? 1 : 0; if (au !== bu) return au - bu; return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(); });
 
   // Group by year
   const byYear = new Map<string, typeof archived>();
   archived.forEach((s) => {
-    const year = new Date(s.date).getFullYear().toString();
+    const year = new Date(s.publishedAt).getFullYear().toString();
     if (!byYear.has(year)) byYear.set(year, []);
     byYear.get(year)!.push(s);
   });
@@ -84,7 +85,7 @@ export default function ArchivePage() {
                               imageAlt: story.imageAlt,
                               href: story.href,
                               author: story.author,
-                              date: story.date,
+                              date: formatDate(story.publishedAt),
                               tags: story.tags,
                             }}
                           />

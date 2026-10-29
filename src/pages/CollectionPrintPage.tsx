@@ -7,6 +7,7 @@ import { md } from "@/lib/markdown";
 import ContentBlocks from "@/components/ui/ContentBlocks";
 import { PrintCoverFront, PrintLessonOpener, PrintCoverBack } from "@/components/print/PrintCovers";
 import { artFor } from "@/cover-art";
+import { formatDate } from "@/lib/format-date";
 import type { CourseContent, SeriesContent, BookContent, StoryContent, CollectionCover } from "@/types";
 
 interface CollectionItem {
@@ -21,7 +22,7 @@ interface NormalizedCollection {
   description: string;
   tagline?: string;
   author: { name: string };
-  date: string;
+  publishedAt: string;
   image?: string;
   imageAlt?: string;
   backHref: string;
@@ -49,7 +50,7 @@ export default function CollectionPrintPage({ type }: { type: "course" | "series
         description: course.description,
         tagline: course.tagline,
         author: course.author,
-        date: course.date,
+        publishedAt: course.publishedAt,
         image: course.image,
         imageAlt: course.imageAlt,
         backHref: `/courses/${course.slug}`,
@@ -68,7 +69,7 @@ export default function CollectionPrintPage({ type }: { type: "course" | "series
         description: series.description,
         tagline: series.tagline,
         author: series.author,
-        date: series.date,
+        publishedAt: series.publishedAt,
         image: series.image,
         imageAlt: series.imageAlt,
         backHref: `/series/${series.slug}`,
@@ -87,7 +88,7 @@ export default function CollectionPrintPage({ type }: { type: "course" | "series
         description: book.description,
         tagline: book.tagline,
         author: book.author,
-        date: book.date,
+        publishedAt: book.publishedAt,
         image: book.image,
         imageAlt: book.imageAlt,
         backHref: `/books/${book.slug}`,
@@ -187,7 +188,7 @@ export default function CollectionPrintPage({ type }: { type: "course" | "series
           title={collection.title}
           blurb={frontBlurb}
           authorName={collection.author.name}
-          date={collection.date}
+          date={formatDate(collection.publishedAt)}
           itemCount={collection.items.length}
           itemNoun={itemNoun}
           totalMinutes={totalMinutes}
@@ -232,7 +233,7 @@ export default function CollectionPrintPage({ type }: { type: "course" | "series
                   </div>
                   {story && (
                     <span className="text-[10px] text-on-surface-muted tabular-nums shrink-0">
-                      {story.date}
+                      {formatDate(story.publishedAt)}
                     </span>
                   )}
                 </div>
@@ -293,7 +294,7 @@ export default function CollectionPrintPage({ type }: { type: "course" | "series
                   indexLabel={lessonNumber < 10 ? `0${lessonNumber}` : `${lessonNumber}`}
                   title={item.title}
                   standfirst={story?.excerpt}
-                  meta={story?.date}
+                  meta={story?.publishedAt ? formatDate(story.publishedAt) : undefined}
                   goals={story?.sections?.map((s) => s.heading)}
                 />
 
@@ -374,7 +375,7 @@ export default function CollectionPrintPage({ type }: { type: "course" | "series
           typeLabel={collection.typeLabel}
           blurb={backBlurb}
           livePath={collection.backHref}
-          date={collection.date}
+          date={formatDate(collection.publishedAt)}
           totalMinutes={totalMinutes}
           itemCount={collection.items.length}
           itemNoun={itemNoun}

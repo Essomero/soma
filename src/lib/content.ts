@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatDate } from "./format-date";
 
 // ── Runtime content store ──────────────────────────────────
 // Replaces static `import { allX } from "@/content/registry"` for every
@@ -115,7 +116,7 @@ export function toCard(item: {
     imageAlt: typeof item.imageAlt === "string" ? item.imageAlt : "",
     href: item.href,
     author,
-    date: typeof item.date === "string" ? item.date : "",
+    date: typeof item.publishedAt === "string" ? formatDate(item.publishedAt) : "",
     publishedAt: typeof item.publishedAt === "string" ? item.publishedAt : "",
     tags: Array.isArray(item.tags) ? (item.tags as string[]) : [],
   };

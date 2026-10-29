@@ -8,7 +8,6 @@ export const prophet5OnReasonAndPassion = {
   image: "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1200&h=675&fit=crop",
   imageAlt: "A fountain pen resting on handwritten manuscript pages",
   author: { name: "Kahlil Gibran" },
-  date: "1923-01-01",
   publishedAt: "2026-10-23T21:00:00Z",
   tags: ["Poetry", "Philosophy", "Wisdom"],
   topics: ["philosophy"],

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Pencil, X } from "lucide-react";
 import { md, mdBlock } from "@/lib/markdown";
+import { formatDate } from "@/lib/format-date";
 import type { ContentBlock } from "@/types";
 import type { AIDraft } from "./AIDraftPanel";
 
@@ -112,10 +113,10 @@ export default function ContentPreview({ draft, onBack }: ContentPreviewProps) {
         />
         <div className="flex flex-wrap items-center gap-sm font-sora text-metadata-tag text-primary uppercase tracking-widest mb-lg">
           <span>{draft.author?.name || "Author"}</span>
-          {draft.date && (
+          {draft.publishedAt && (
             <>
               <span className="text-on-surface-muted">//</span>
-              <span className="text-on-surface-muted">{draft.date}</span>
+              <span className="text-on-surface-muted">{formatDate(draft.publishedAt)}</span>
             </>
           )}
           <span className="text-on-surface-muted">//</span>

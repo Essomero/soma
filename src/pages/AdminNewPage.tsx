@@ -52,7 +52,7 @@ export default function AdminNewPage() {
         ...data.body,
         category: data.category,
         author: data.author,
-        date: data.date,
+        publishedAt: data.publishedAt,
         tags: data.tags,
         topics: data.topics,
       };
