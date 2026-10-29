@@ -23,6 +23,7 @@ export const p1EnglishTest: TestContent = {
     handle: "@teacher-michael",
   },
   date: "October 2026",
+  publishedAt: "2026-10-01T00:00:00Z",
   tags: ["P1", "Primary School", "Uganda", "Oral Assessment", "English", "Vocabulary", "Communication"],
   topics: ["education"],
   estimatedMinutes: 15,

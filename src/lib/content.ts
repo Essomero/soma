@@ -100,7 +100,7 @@ export function useContentItem<T>(type: string, slug: string | undefined): Conte
 export function toCard(item: {
   slug: string; title: string; excerpt: string; href: string;
   category?: unknown; image?: unknown; imageAlt?: unknown;
-  author?: unknown; date?: unknown; tags?: unknown;
+  author?: unknown; date?: unknown; publishedAt?: unknown; tags?: unknown;
 }) {
   const rawAuthor = item.author as { name?: unknown; handle?: unknown } | undefined;
   const author = rawAuthor && typeof rawAuthor.name === "string"
@@ -116,25 +116,25 @@ export function toCard(item: {
     href: item.href,
     author,
     date: typeof item.date === "string" ? item.date : "",
+    publishedAt: typeof item.publishedAt === "string" ? item.publishedAt : "",
     tags: Array.isArray(item.tags) ? (item.tags as string[]) : [],
   };
 }
 
 // ── Client-side sorting ──────────────────────────────────
 // Convention: content recency reads the authored date fields
-// (`added`, then `date`), same as the stories/courses/books indexes
-// always did. Missing or unparsable dates sort as oldest.
+// (`publishedAt`, then `date`). Missing or unparsable dates sort as oldest.
 export type SortKey = "newest" | "oldest" | "title";
 
 interface Sortable {
-  added?: unknown;
+  publishedAt?: unknown;
   date?: unknown;
   title?: unknown;
   position?: unknown;
 }
 
 export function contentTime(item: Sortable): number {
-  const raw = item.added || item.date;
+  const raw = item.publishedAt || item.date;
   const t = typeof raw === "string" || typeof raw === "number" ? Date.parse(String(raw)) : NaN;
   return Number.isFinite(t) ? t : 0;
 }

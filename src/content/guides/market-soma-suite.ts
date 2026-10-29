@@ -9,6 +9,7 @@ export const marketSomaSuite = {
   imageAlt: "A laptop, notebook, and coffee on a desk, ready to write a launch post",
   author: { name: "Benjamin Mayanja", title: "Founder, Soma" },
   date: "October 24, 2026",
+  publishedAt: "2026-10-24T00:00:00Z",
   tags: ["Marketing", "Launch", "Distribution", "Soma Labs", "Son"],
   intro:
     "You built Soma, Labs, and Son, and you shipped them to a Vercel URL nobody visits. That gap is normal. Shipping ends when the deploy turns green, but launching ends when strangers can find you, get you in ten seconds, and tell a friend. This guide closes that gap in order: one home address, one storefront, search plumbing, then a two week calendar with the days that actually work.",

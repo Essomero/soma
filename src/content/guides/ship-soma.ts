@@ -47,6 +47,7 @@ export const shipSoma = {
   imageAlt: "Server racks in a data center",
   author: { name: "Benjamin Mayanja", title: "Founder, Soma" },
   date: "October 24, 2026",
+  publishedAt: "2026-10-24T00:00:00Z",
   tags: ["Self-Hosting", "Vercel", "Turso", "Sovereignty"],
   intro:
     "Soma runs entirely on infrastructure you own: a Vercel project for hosting, a Turso database for your writing, and one password that gates your studio. Three moves get you deployed, and because your notes live in your database instead of git, pulling my updates later never touches your words.",

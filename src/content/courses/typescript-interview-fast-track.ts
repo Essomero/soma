@@ -11,7 +11,7 @@ export const typescriptInterviewFastTrack: CourseContent = {
     "Code editor displaying clean TypeScript type definitions on a dark monitor",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
   date: "2026-10-16",
-  added: "2026-10-16T00:00:00+03:00",
+  publishedAt: "2026-10-15T21:00:00Z",
   topics: ["technology", "career"],
   tagline:
     "Five visual lessons that make TypeScript click: shapes over names, generics as relationships, impossible states, utility loops, and runtime boundaries.",

@@ -9,6 +9,7 @@ export const launchVideos = {
   imageAlt: "A video editing timeline on a laptop screen",
   author: { name: "Benjamin Mayanja", title: "Founder, Soma" },
   date: "October 25, 2026",
+  publishedAt: "2026-10-25T00:00:00Z",
   tags: ["Video", "Launch", "AI Video", "Mac", "Remotion"],
   intro:
     "You don't need a studio to ship a video strangers repost. You need 60 to 90 seconds with a hook in the first 3 seconds, one real product moment, and a CTA frame that works as a thumbnail. Your M1 Pro can cut that today. What's changed is you've got three ways to build it: record your screen, prompt a cloud model, or render motion graphics from code. This guide maps all three, with prices, and calls out what truly runs on 16GB unified memory.",

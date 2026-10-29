@@ -10,6 +10,7 @@ export const contentTypes: DocContent = {
   imageAlt: "A fountain pen resting on handwritten manuscript pages",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
   date: "October 2026",
+  publishedAt: "2026-10-01T00:00:00Z",
   tags: ["Publishing", "Content Model", "Writing"],
   topics: ["technology"],
 

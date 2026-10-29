@@ -33,6 +33,7 @@ export function toArticleCard(g: GuideContent): ArticleCardData {
     href: g.href,
     author: g.author,
     date: g.date,
+    publishedAt: g.publishedAt,
     tags: g.tags,
   };
 }

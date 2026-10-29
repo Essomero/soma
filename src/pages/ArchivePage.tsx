@@ -24,7 +24,7 @@ export default function ArchivePage() {
   }
   const archived = (stories ?? [])
     .filter((s) => s.archived)
-    .sort((a, b) => { const au = readSlugs.has(a.slug) ? 1 : 0; const bu = readSlugs.has(b.slug) ? 1 : 0; if (au !== bu) return au - bu; return new Date(b.added || b.date).getTime() - new Date(a.added || a.date).getTime(); });
+    .sort((a, b) => { const au = readSlugs.has(a.slug) ? 1 : 0; const bu = readSlugs.has(b.slug) ? 1 : 0; if (au !== bu) return au - bu; return new Date(b.publishedAt || b.date).getTime() - new Date(a.publishedAt || a.date).getTime(); });
 
   // Group by year
   const byYear = new Map<string, typeof archived>();

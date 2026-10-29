@@ -20,15 +20,15 @@ const TYPES = new Set(["story", "guide", "doc", "course", "book", "series", "tes
 // These match the non-optional TS interface fields that source files provide
 // (id and href are computed by the content index, not checked here).
 const REQUIRED: Record<string, string[]> = {
-  story: ["slug", "title", "category", "excerpt", "image", "imageAlt", "author", "date", "intro", "body"],
-  guide: ["slug", "title", "category", "excerpt", "image", "imageAlt", "author", "date", "intro", "body"],
-  doc: ["slug", "title", "category", "description", "image", "imageAlt", "author", "date", "tags", "sections"],
-  course: ["slug", "title", "description", "image", "imageAlt", "author", "date", "lessons"],
-  book: ["slug", "title", "description", "image", "imageAlt", "author", "date", "chapters"],
-  series: ["slug", "title", "description", "image", "imageAlt", "author", "date", "episodes"],
-  test: ["slug", "title", "description", "category", "image", "imageAlt", "author", "date", "sources", "questions"],
-  featured: ["slug", "tag", "title", "description", "image", "imageAlt", "author", "date"],
-  podcast: ["id", "title", "image", "imageAlt", "episode", "date", "duration", "description", "category"],
+  story: ["slug", "title", "category", "excerpt", "image", "imageAlt", "author", "date", "publishedAt", "intro", "body"],
+  guide: ["slug", "title", "category", "excerpt", "image", "imageAlt", "author", "date", "publishedAt", "intro", "body"],
+  doc: ["slug", "title", "category", "description", "image", "imageAlt", "author", "date", "publishedAt", "tags", "sections"],
+  course: ["slug", "title", "description", "image", "imageAlt", "author", "date", "publishedAt", "lessons"],
+  book: ["slug", "title", "description", "image", "imageAlt", "author", "date", "publishedAt", "chapters"],
+  series: ["slug", "title", "description", "image", "imageAlt", "author", "date", "publishedAt", "episodes"],
+  test: ["slug", "title", "description", "category", "image", "imageAlt", "author", "date", "publishedAt", "sources", "questions"],
+  featured: ["slug", "tag", "title", "description", "image", "imageAlt", "author", "date", "publishedAt"],
+  podcast: ["id", "title", "image", "imageAlt", "episode", "date", "publishedAt", "duration", "description", "category"],
   topic: ["slug", "title", "description", "icon", "accentColor", "accentBg", "accentText"],
 };
 

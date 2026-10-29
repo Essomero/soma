@@ -9,6 +9,7 @@ export const son = {
   imageAlt: "Studio condenser microphone, podcast and audio production",
   author: { name: "Benjamin Mayanja", title: "Founder, Soma" },
   date: "October 2026",
+  publishedAt: "2026-10-01T00:00:00Z",
   tags: ["Son", "Voice Agent", "Oral Exams", "Local-First"],
   intro:
     "Writing the right answer and saying it under pressure are different skills, and interviews test the second one. Son is a real-time voice agent that runs on your own machine: it reads Soma's diagnostic questions aloud, hears your spoken answer, and scores it. No cloud meeting, no human examiner, no audio leaving your desk unless you choose it.",

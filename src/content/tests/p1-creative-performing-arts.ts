@@ -23,6 +23,7 @@ export const p1CreativePerformingArtsTest: TestContent = {
     handle: "@teacher-michael",
   },
   date: "October 2026",
+  publishedAt: "2026-10-01T00:00:00Z",
   tags: ["P1", "Primary School", "Uganda", "Oral Assessment", "Creative Arts", "Music", "Art and Crafts"],
   topics: ["education"],
   estimatedMinutes: 12,

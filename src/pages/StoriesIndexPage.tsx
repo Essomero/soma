@@ -48,7 +48,7 @@ export default function StoriesIndexPage() {
     const aUnread = readSlugs.has(a.slug) ? 1 : 0;
     const bUnread = readSlugs.has(b.slug) ? 1 : 0;
     if (aUnread !== bUnread) return aUnread - bUnread;
-    return new Date(b.added || b.date).getTime() - new Date(a.added || a.date).getTime();
+    return new Date(b.publishedAt || b.date).getTime() - new Date(a.publishedAt || a.date).getTime();
   };
 
   const sorted = [...active].sort(sortUnreadFirst);

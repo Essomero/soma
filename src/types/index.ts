@@ -270,6 +270,8 @@ export interface ArticleCardData {
   href: string;
   author?: Author;
   date?: string;
+  /** UTC ISO 8601 timestamp for sorting */
+  publishedAt?: string;
   tags?: string[];
   isFeatured?: boolean;
 }
@@ -286,6 +288,8 @@ export interface StoryContent {
   href: string;      // "/stories/:slug"
   author: Author;
   date: string;
+  /** UTC ISO 8601 timestamp for sorting */
+  publishedAt: string;
   tags?: string[];
   isFeatured?: boolean;
   intro: string;
@@ -294,9 +298,6 @@ export interface StoryContent {
   // Attribution
   source?: { name: string; url: string };  // Single source : republished content (Twitter thread, etc.)
   references?: { title: string; url: string; description?: string }[];  // Multi-source : original synthesis/research
-
-  // When this was added to Soma : drives "newest first" ordering
-  added?: string;      // ISO date. Falls back to `date` if not set.
 
   // Content lifecycle
   archived?: boolean;
@@ -333,6 +334,8 @@ export interface GuideContent {
   href: string;      // "/guides/:slug"
   author: Author;
   date: string;
+  /** UTC ISO 8601 timestamp for sorting */
+  publishedAt: string;
   tags?: string[];
   isFeatured?: boolean;
   intro: string;
@@ -353,6 +356,8 @@ export interface FeaturedContent {
   imageAlt: string;
   author: Author;
   date: string;
+  /** UTC ISO 8601 timestamp for sorting */
+  publishedAt: string;
   tagline?: string;
   bentoHighlights?: BentoCardData[];
   pullQuotes?: PullQuoteData[];
@@ -370,6 +375,8 @@ export interface FeaturedStoryData {
   cta: { label: string; href: string };
   author?: Author;
   date?: string;
+  /** UTC ISO 8601 timestamp for sorting */
+  publishedAt?: string;
 }
 
 // ── Podcast ───────────────────────────────────────────
@@ -389,6 +396,8 @@ export interface PodcastEpisodeFull {
   imageAlt: string;
   episode: string;        // "EPISODE 30 // AUG 14"
   date: string;           // "AUG 14"
+  /** UTC ISO 8601 timestamp for sorting */
+  publishedAt: string;
   duration: string;       // "42 MIN"
   durationSeconds?: number; // 2520 : for progress tracking
   description: string;
@@ -496,10 +505,11 @@ export interface BookContent {
   imageAlt: string;
   author: Author;
   date: string;
+  /** UTC ISO 8601 timestamp for sorting */
+  publishedAt: string;
   topics?: string[];
   tagline?: string;
   archived?: boolean;
-  added?: string;
   cover?: CollectionCover;
   chapters: Array<{
     title: string;
@@ -517,10 +527,11 @@ export interface SeriesContent {
   imageAlt: string;
   author: Author;
   date: string;
+  /** UTC ISO 8601 timestamp for sorting */
+  publishedAt: string;
   topics?: string[];
   tagline?: string;
   archived?: boolean;
-  added?: string;
   cover?: CollectionCover;
   episodes: Array<{
     title: string;
@@ -555,6 +566,8 @@ export interface DocContent {
   imageAlt: string;
   author: Author;
   date: string;
+  /** UTC ISO 8601 timestamp for sorting */
+  publishedAt: string;
   tags: string[];
   topics?: string[];
   sections: DocSection[];
@@ -572,10 +585,11 @@ export interface CourseContent {
   imageAlt: string;
   author: Author;
   date: string;
+  /** UTC ISO 8601 timestamp for sorting */
+  publishedAt: string;
   topics?: string[];
   tagline?: string;
   archived?: boolean;
-  added?: string;
   cover?: CollectionCover;
   lessons: Array<{
     title: string;
@@ -683,6 +697,8 @@ export interface TestContent {
   imageAlt: string;
   author: Author;
   date: string;
+  /** UTC ISO 8601 timestamp for sorting */
+  publishedAt: string;
   tags?: string[];
   topics?: string[];
   archived?: boolean;
