@@ -194,6 +194,11 @@ export function fetchNotesList(): Promise<NoteArticle[]> {
   return api("/");
 }
 
+/** Search notes via FTS5. Returns ranked results with rank field. */
+export function fetchNotesSearch(q: string): Promise<(NoteArticle & { rank?: number })[]> {
+  return api(`/?q=${encodeURIComponent(q)}`);
+}
+
 export function fetchNote(slug: string): Promise<NoteArticle> {
   return api(`/?slug=${encodeURIComponent(slug)}`);
 }
