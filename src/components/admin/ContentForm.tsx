@@ -813,7 +813,7 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
                   type="date"
                   value={dateVal}
                   onChange={(e) => setVal("publishedAt", `${e.target.value}T12:00:00.000Z`)}
-                  className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:invert"
+                  className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary cursor-pointer active:scale-[0.99] transition-transform duration-75 [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:[filter:brightness(0)_invert(1)]"
                 />
               </div>
             );
