@@ -11,6 +11,7 @@
     "dev:local": "LOCAL_API=1 vite",
     "build": "npx tsx scripts/publish-all.ts --if-empty && npx tsx scripts/validate-content.ts && npx tsx scripts/generate-sitemap.ts && tsc -b && vite build",
     "rss": "npx tsx scripts/generate-rss.ts",
+    "ci:check": "npx tsx scripts/validate-content.ts && npx tsx scripts/generate-sitemap.ts && tsc -b && vite build",
     "preview": "vite preview",
     "server": "node server/api-dev.mjs",
     "agent": "node server/local-agent.mjs",

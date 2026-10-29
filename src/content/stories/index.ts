@@ -47,6 +47,7 @@ export function toArticleCard(s: StoryContent): ArticleCardData {
     href: s.href,
     author: s.author,
     date: s.date,
+    publishedAt: s.publishedAt,
     tags: s.tags,
   };
 }

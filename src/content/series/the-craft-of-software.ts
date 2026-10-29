@@ -8,7 +8,7 @@ export const theCraftOfSoftware: SeriesContent = {
   imageAlt: "Laptop displaying code in a focused workspace",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
   date: "2026-10-23",
-  added: "2026-10-23T00:00:00+03:00",
+  publishedAt: "2026-10-22T21:00:00Z",
   topics: ["technology"],
   tagline: "From first principles to working systems.",
   episodes: [

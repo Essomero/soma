@@ -8,6 +8,7 @@ export const bridgingCode: PodcastEpisodeFull = {
   imageAlt: "Studio condenser microphone, podcast and audio production",
   episode: "EPISODE 1 // OCT 24",
   date: "OCT 24",
+  publishedAt: "2026-10-24T00:00:00Z",
   duration: "5 MIN",
   durationSeconds: 323,
   audioUrl: "/audio/bridging-code-and-community.m4a",

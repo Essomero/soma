@@ -9,6 +9,7 @@ export const somaLabs = {
   imageAlt: "Laptop displaying code in a focused workspace",
   author: { name: "Benjamin Mayanja", title: "Founder, Soma" },
   date: "October 2026",
+  publishedAt: "2026-10-01T00:00:00Z",
   tags: ["Labs", "Drills", "TypeScript", "Deno", "Self-Hosting"],
   intro:
     "Reading about generics feels like understanding until someone asks you to write one from scratch. Soma Labs closes that gap: every course lesson points at a folder you can run, break, and fix on your own machine. Clone once, and from then on every lesson is a directory plus a verification command.",

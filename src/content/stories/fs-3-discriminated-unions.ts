@@ -9,7 +9,7 @@ export const fs3DiscriminatedUnions = {
   imageAlt: "Mist rolling over branching mountain ridges showing paths that fork and narrow",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
   date: "2026-08-16",
-  added: "2026-08-16T00:00:00+03:00",
+  publishedAt: "2026-08-15T21:00:00Z",
   tags: ["Full-Stack Prep", "TypeScript"],
   topics: ["technology", "career"],
   archived: false,

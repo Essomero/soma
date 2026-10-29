@@ -9,7 +9,7 @@ export const prophet6OnSorrow = {
   imageAlt: "Row of wooden card catalog drawers",
   author: { name: "Kahlil Gibran" },
   date: "1923-01-01",
-  added: "2026-10-24T00:00:00+03:00",
+  publishedAt: "2026-10-23T21:00:00Z",
   tags: ["Poetry", "Philosophy", "Wisdom"],
   topics: ["philosophy"],
   archived: false,

@@ -14,6 +14,7 @@ export const sqlQueryOptimizationTest: TestContent = {
     handle: "@Essomero",
   },
   date: "September 2026",
+  publishedAt: "2026-09-01T00:00:00Z",
   tags: ["PostgreSQL", "SQL", "Indexes", "Query Optimization", "Concurrency"],
   topics: ["technology"],
   storySlug: "fs-1-why-this-type-error",

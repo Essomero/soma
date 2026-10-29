@@ -9,7 +9,7 @@ export const fs4UtilityTypes = {
   imageAlt: "Engineer's hands over a technical blueprint showing precision design",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
   date: "2026-08-16",
-  added: "2026-08-16T00:00:00+03:00",
+  publishedAt: "2026-08-15T21:00:00Z",
   tags: ["Full-Stack Prep", "TypeScript"],
   topics: ["technology", "career"],
   archived: false,

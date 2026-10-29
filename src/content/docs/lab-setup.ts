@@ -10,6 +10,7 @@ export const labSetup: DocContent = {
   imageAlt: "A terminal window showing code compilation and test passes in green text",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
   date: "September 2026",
+  publishedAt: "2026-09-01T00:00:00Z",
   tags: ["Labs", "Dev Environment", "TypeScript", "Deno", "Node"],
   topics: ["technology"],
 

@@ -51,7 +51,7 @@ export const benjaminMayanja = {
   imageAlt: "Benjamin Mayanja",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
   date: "October 29, 2026",
-  added: "2026-10-29T00:00:00+03:00",
+  publishedAt: "2026-10-28T21:00:00Z",
   tags: ["Learning", "Open Source", "Sovereignty"],
   intro:
     "I'm Benjamin Mayanja. I build Soma, an AI-accelerated learning platform you own. It works with whatever you already use. Point any LLM or coding agent at the repo, it loads the bundled skill and starts creating or editing content. It also ships an MCP server and deploys to Vercel in 60 seconds. All you need is an API key to your favorite model and it gets working fast. And it's beautiful, designed for how visual learners actually learn.",

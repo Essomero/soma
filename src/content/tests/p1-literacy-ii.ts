@@ -15,6 +15,7 @@ export const p1LiteracyTwoTest: TestContent = {
     handle: "@teacher-michael",
   },
   date: "October 2026",
+  publishedAt: "2026-10-01T00:00:00Z",
   tags: ["P1", "Primary School", "Uganda", "Written Assessment", "Literacy II", "Reading", "Writing"],
   topics: ["education"],
   estimatedMinutes: 25,

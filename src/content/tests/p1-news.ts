@@ -23,6 +23,7 @@ export const p1NewsTest: TestContent = {
     handle: "@teacher-michael",
   },
   date: "October 2026",
+  publishedAt: "2026-10-01T00:00:00Z",
   tags: ["P1", "Primary School", "Uganda", "Oral Assessment", "News", "Story Time", "Life Skills"],
   topics: ["education"],
   estimatedMinutes: 12,

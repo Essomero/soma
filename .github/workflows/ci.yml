@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-flight runs for the same branch (save CI minutes on amend pushes).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type check
+        run: npx tsc -b
+
+      - name: Content validation
+        run: npx tsx scripts/validate-content.ts
+        env:
+          # validate-content uses DB credentials to cross-check static hrefs
+          # against known slugs. Without credentials (fork PRs / no secrets) it
+          # skips the href check gracefully and still validates env naming.
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL || '' }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN || '' }}
+
+      - name: Generate sitemap
+        run: npx tsx scripts/generate-sitemap.ts
+
+      - name: Vite production build
+        run: npx vite build
+
+      - name: Verify build output
+        run: |
+          test -f dist/index.html || { echo "dist/index.html missing"; exit 1; }
+          echo "Build OK — $(du -sh dist | cut -f1)"
+
+      - name: Check for uncommitted build artifacts
+        run: |
+          if ! git diff --exit-code --stat; then
+            echo ""
+            echo "=== Build produced uncommitted changes ==="
+            echo "Run the full CI chain (ci:check) locally and commit the result."
+            exit 1
+          fi

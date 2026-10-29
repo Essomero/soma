@@ -16,18 +16,20 @@ type Fields = Record<string, unknown>;
 
 const TYPES = new Set(["story", "guide", "doc", "course", "book", "series", "test", "featured", "podcast", "topic"]);
 
-// Minimal per-type required fields : shape depth is enforced by tsc on the manuscript.
+// Per-type required fields. Missing a required field = a crash at render time.
+// These match the non-optional TS interface fields that source files provide
+// (id and href are computed by the content index, not checked here).
 const REQUIRED: Record<string, string[]> = {
-  story: ["slug", "title"],
-  guide: ["slug", "title"],
-  doc: ["slug", "title"],
-  course: ["slug", "title", "lessons"],
-  book: ["slug", "title", "chapters"],
-  series: ["slug", "title", "episodes"],
-  test: ["slug", "title", "questions"],
-  featured: ["slug", "title"],
-  podcast: ["slug", "title"],
-  topic: ["slug", "title"],
+  story: ["slug", "title", "category", "excerpt", "image", "imageAlt", "author", "date", "publishedAt", "intro", "body"],
+  guide: ["slug", "title", "category", "excerpt", "image", "imageAlt", "author", "date", "publishedAt", "intro", "body"],
+  doc: ["slug", "title", "category", "description", "image", "imageAlt", "author", "date", "publishedAt", "tags", "sections"],
+  course: ["slug", "title", "description", "image", "imageAlt", "author", "date", "publishedAt", "lessons"],
+  book: ["slug", "title", "description", "image", "imageAlt", "author", "date", "publishedAt", "chapters"],
+  series: ["slug", "title", "description", "image", "imageAlt", "author", "date", "publishedAt", "episodes"],
+  test: ["slug", "title", "description", "category", "image", "imageAlt", "author", "date", "publishedAt", "sources", "questions"],
+  featured: ["slug", "tag", "title", "description", "image", "imageAlt", "author", "date", "publishedAt"],
+  podcast: ["id", "title", "image", "imageAlt", "episode", "date", "publishedAt", "duration", "description", "category"],
+  topic: ["slug", "title", "description", "icon", "accentColor", "accentBg", "accentText"],
 };
 
 // Fields holding slug pointers to other rows, checked against DB + batch.
