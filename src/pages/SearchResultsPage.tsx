@@ -1,5 +1,5 @@
 import { md } from "@/lib/markdown";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   Search, BookOpen, Mic, Star, ArrowRight, SearchX,
@@ -8,15 +8,41 @@ import {
 import AccentBar from "@/components/ui/AccentBar";
 import { fetchContentList } from "@/lib/content";
 import type { StoryContent, GuideContent } from "@/types";
-import { fetchNotesList, deriveExcerpt } from "@/lib/notes";
+import { fetchNotesList, fetchNotesSearch, deriveExcerpt } from "@/lib/notes";
 import { type NoteArticle } from "@/types";
 
+// Mirrors ROUTE_BASE in api/content.js so the client knows how to link.
+const TYPE_ROUTES: Record<string, string> = {
+  story: "stories",
+  guide: "guides",
+  doc: "docs",
+  course: "courses",
+  book: "books",
+  series: "series",
+  test: "tests",
+  featured: "featured",
+  podcast: "podcast",
+  topic: "topics",
+};
+
+const TYPE_LABELS: Record<string, string> = {
+  story: "Story",
+  guide: "Guide",
+  doc: "Docs",
+  course: "Course",
+  book: "Book",
+  series: "Series",
+  test: "Test",
+  featured: "Featured",
+  podcast: "Podcast",
+};
+
 const filters = [
-  { label: "All Results", icon: Search, color: "text-secondary" },
-  { label: "Top Stories", icon: BookOpen, color: "text-primary" },
-  { label: "Technical Guides", icon: Bookmark, color: "text-tertiary" },
-  { label: "Notes", icon: StickyNote, color: "text-accent-blue-neon" },
-  { label: "Podcasts", icon: Mic, color: "text-accent-orange" },
+  { label: "All Results", icon: Search, color: "text-secondary", type: null },
+  { label: "Top Stories", icon: BookOpen, color: "text-primary", type: "story" },
+  { label: "Technical Guides", icon: Bookmark, color: "text-tertiary", type: "guide" },
+  { label: "Notes", icon: StickyNote, color: "text-accent-blue-neon", type: "note" },
+  { label: "Podcasts", icon: Mic, color: "text-accent-orange", type: "podcast" },
 ];
 
 const trendingTopics = ["REACT", "WEBGL", "RUST", "DOCKER"];
@@ -25,55 +51,110 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 import { formatDate } from "@/lib/format-date";
 import SafeImage from "@/components/ui/SafeImage";
 
+/** Minimal search result shape from the API. */
+interface SearchResult {
+  id: string;
+  slug: string;
+  type: string;
+  title: string;
+  excerpt: string;
+  category?: string;
+  tags?: string[];
+  image?: string;
+  imageAlt?: string;
+  publishedAt?: string;
+  updatedAt?: string | null;
+  href?: string;
+}
+
 export default function SearchResultsPage() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
   const [activeFilter, setActiveFilter] = useState("All Results");
   usePageMeta({ title: query ? `Search: ${query}` : "Search" });
-  // Stories + guides come from the server search endpoint, which enforces
-  // published-or-owner visibility : private rows never reach the client.
-  const [storyResults, setStoryResults] = useState<StoryContent[]>([]);
-  const [guideResults, setGuideResults] = useState<GuideContent[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  useEffect(() => {
-    const q = query.trim();
-    if (!q) {
-      setStoryResults([]);
-      setGuideResults([]);
+
+  const [allResults, setAllResults] = useState<SearchResult[]>([]);
+  const [noteResults, setNoteResults] = useState<NoteArticle[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [page, setPage] = useState(0);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const PAGE_SIZE = 20;
+
+  // ── Fetch search results ──────────────────────────────────────────
+  // Cross-type search from the API (FTS5 ranked). Notes are searched
+  // server-side too via a separate endpoint.
+  const doSearch = useCallback(async (q: string, reset: boolean) => {
+    if (!q.trim()) {
+      setAllResults([]);
+      setNoteResults([]);
+      setHasMore(false);
+      setPage(0);
       return;
     }
-    let live = true;
-    setSearchLoading(true);
-    Promise.all([
-      fetchContentList<StoryContent>("story", q),
-      fetchContentList<GuideContent>("guide", q),
-    ]).then(
-      ([stories, guides]) => live && (setStoryResults(stories), setGuideResults(guides), setSearchLoading(false)),
-      () => live && (setStoryResults([]), setGuideResults([]), setSearchLoading(false)),
-    );
-    return () => { live = false; };
-  }, [query]);
+    const offset = reset ? 0 : page * PAGE_SIZE;
+    setLoading(true);
 
-  // Notes come from Turso at runtime : fetch once on mount
-  const [noteArticles, setNoteArticles] = useState<NoteArticle[]>([]);
+    const [contentResults, notes] = await Promise.all([
+      fetchContentList<SearchResult>("all", q).catch(() => [] as SearchResult[]),
+      fetchNotesSearch(q).catch(() => [] as NoteArticle[]),
+    ]);
+
+    const merged = [...contentResults, ...notes.map((n) => ({
+      id: `note-${n.slug}`,
+      slug: n.slug,
+      type: "note",
+      title: n.title,
+      excerpt: deriveExcerpt(n.content),
+      publishedAt: n.createdAt,
+      updatedAt: n.updatedAt,
+      href: `/notes/${n.slug}`,
+    }))];
+
+    if (reset) {
+      setAllResults(merged);
+    } else {
+      setAllResults((prev) => [...prev, ...merged]);
+    }
+    setNoteResults(notes);
+    setHasMore(merged.length >= PAGE_SIZE);
+    setPage((p) => (reset ? 1 : p + 1));
+    setLoading(false);
+  }, [page]);
+
   useEffect(() => {
-    let cancelled = false;
-    fetchNotesList().then((list) => { if (!cancelled) setNoteArticles(list); }).catch(() => {});
-    return () => { cancelled = true; };
-  }, []);
+    doSearch(query, true);
+  }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const noteResults = noteArticles.filter(
-    (l) =>
-      l.title.toLowerCase().includes(query.toLowerCase()) ||
-      deriveExcerpt(l.content).toLowerCase().includes(query.toLowerCase())
-  );
+  // ── Intersection observer for infinite scroll ───────────────────
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && hasMore && !loading) {
+          doSearch(query, false);
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [hasMore, loading, query, doSearch]);
 
-  const results =
-    activeFilter === "Technical Guides" ? guideResults :
-    activeFilter === "Notes" ? noteResults :
-    activeFilter === "Podcasts" ? [] :
-    [...storyResults, ...guideResults, ...noteResults];
-  const hasResults = results.length > 0;
+  // ── Filter results by type ──────────────────────────────────────
+  const activeType = filters.find((f) => f.label === activeFilter)?.type;
+  const filteredResults = activeType
+    ? allResults.filter((r) => r.type === activeType)
+    : allResults;
+  const hasResults = filteredResults.length > 0;
+
+  // Hero = first story result (rich layout), rest = cards
+  const firstStoryIdx = filteredResults.findIndex((r) => r.type === "story");
+  const heroResult = firstStoryIdx >= 0 ? filteredResults[firstStoryIdx] : null;
+  const remainingResults = heroResult
+    ? filteredResults.filter((_, i) => i !== firstStoryIdx)
+    : filteredResults;
 
   return (
     <div className="flex max-w-readme mx-auto pt-16 min-h-screen">
@@ -116,12 +197,12 @@ export default function SearchResultsPage() {
             Search results for: <span className="text-primary italic">{query}</span>
           </h1>
           <p className="font-dm-sans text-body-base text-on-surface-muted mt-sm">
-            Showing {results.length} results from Soma.
+            {loading ? "Searching..." : `Showing ${filteredResults.length} results from Soma.`}
           </p>
         </header>
 
         {/* AI Insights */}
-        {hasResults && (
+        {hasResults && !loading && (
           <section className="mb-giant">
             <div className="glass-card p-xl rounded-xl relative overflow-hidden">
               <div className="absolute top-0 left-0 w-1 h-full bg-primary-container" />
@@ -151,105 +232,87 @@ export default function SearchResultsPage() {
           </section>
         )}
 
+        {/* Loading state */}
+        {loading && allResults.length === 0 && (
+          <div className="flex items-center justify-center py-giant">
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          </div>
+        )}
+
         {/* Results List */}
         {hasResults ? (
           <div className="space-y-xxl">
             {/* Hero Result - first story */}
-            {storyResults[0] && (
-              <Link to={`/stories/${storyResults[0].slug}`} className="grid grid-cols-1 xl:grid-cols-12 gap-xl group cursor-pointer block">
+            {heroResult && (
+              <Link to={`/stories/${heroResult.slug}`} className="grid grid-cols-1 xl:grid-cols-12 gap-xl group cursor-pointer block">
                 <div className="xl:col-span-7 overflow-hidden rounded-lg border border-border-default">
-                  <SafeImage alt={storyResults[0].imageAlt}
+                  <SafeImage alt={heroResult.imageAlt || heroResult.title}
                     className="w-full h-[400px] object-cover transition-transform duration-700 group-hover:scale-105"
-                    src={storyResults[0]?.image}
+                    src={heroResult?.image}
                   />
                 </div>
                 <div className="xl:col-span-5 flex flex-col justify-center">
                   <span className="font-sora text-metadata-tag text-primary mb-sm uppercase">
-                    // {storyResults[0].category.split("//")[0]}
+                    // {heroResult.category?.split("//")[0] || "Story"}
                   </span>
                   <h2 className="font-sora text-[40px] leading-none text-on-surface group-hover:text-primary transition-colors">
-                    {storyResults[0].title}
+                    {heroResult.title}
                   </h2>
-                  <p className="font-dm-sans text-on-surface-muted mt-md mb-lg line-clamp-3" dangerouslySetInnerHTML={{ __html: md(storyResults[0].excerpt) }} />
+                  <p className="font-dm-sans text-on-surface-muted mt-md mb-lg line-clamp-3" dangerouslySetInnerHTML={{ __html: md(heroResult.excerpt) }} />
                   <div className="flex items-center gap-md">
                     <span className="font-sora text-[11px] text-on-surface border border-border-default px-sm py-xs rounded">
-                      {storyResults[0].tags?.[0] || "STORY"}
+                      {heroResult.tags?.[0] || "STORY"}
                     </span>
                     <span className="font-sora text-[11px] text-on-surface-muted uppercase">
-                      {formatDate(storyResults[0].publishedAt)}
+                      {formatDate(heroResult.publishedAt || heroResult.updatedAt || "")}
                     </span>
                   </div>
                 </div>
               </Link>
             )}
 
-            <div className="border-t border-border-default" />
+            {heroResult && <div className="border-t border-border-default" />}
 
-            {/* Secondary Results Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-xxl">
-              {storyResults.slice(1, 2).map((story) => (
-                <Link key={story.slug} to={`/stories/${story.slug}`} className="flex flex-col group cursor-pointer">
-                  <div className="aspect-video mb-lg overflow-hidden rounded-lg border border-border-default">
-                    <SafeImage alt={story.imageAlt}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      src={story?.image}
-                    />
-                  </div>
-                  <span className="font-sora text-metadata-tag text-on-surface-muted mb-xs uppercase">
-                    // {story.category.split("//")[0]}
-                  </span>
-                  <h3 className="font-sora text-article-title text-on-surface group-hover:text-primary transition-colors">
-                    {story.title}
-                  </h3>
-                  <p className="font-dm-sans text-on-surface-muted mt-sm line-clamp-2" dangerouslySetInnerHTML={{ __html: md(story.excerpt) }} />
-                </Link>
-              ))}
-
-              <div className="flex flex-col gap-xxl">
-                {guideResults.slice(0, 2).map((guide) => (
-                  <Link
-                    key={guide.slug}
-                    to={`/guides/${guide.slug}`}
-                    className="p-lg bg-surface-container rounded-lg border border-border-default group hover:border-primary transition-all cursor-pointer block"
-                  >
-                    <span className="font-sora text-metadata-tag text-secondary mb-xs uppercase">
-                      // Guide
-                    </span>
-                    <h3 className="font-sora text-article-title text-on-surface mb-sm">{guide.title}</h3>
-                    <p className="font-dm-sans text-on-surface-muted mb-md" dangerouslySetInnerHTML={{ __html: md(guide.excerpt) }} />
-                    <ArrowRight className="w-4 h-4 text-primary group-hover:translate-x-2 transition-transform" />
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Notes */}
-            {noteResults.length > 0 && (activeFilter === "All Results" || activeFilter === "Notes") && (
-              <section>
-                <div className="border-t border-border-default" />
-                <h2 className="font-sora text-headline-md text-on-surface mt-giant mb-lg flex items-center gap-sm">
-                  <StickyNote className="w-5 h-5 text-accent-blue-neon" /> Notes
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
-                  {noteResults.map((note) => (
+            {/* Remaining Results Grid */}
+            {remainingResults.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-xl">
+                {remainingResults.map((result) => {
+                  const routeBase = TYPE_ROUTES[result.type] || result.type;
+                  const label = TYPE_LABELS[result.type] || result.type;
+                  return (
                     <Link
-                      key={note.slug}
-                      to={`/notes/${note.slug}`}
-                      className="p-lg bg-surface-container rounded-lg border border-border-default group hover:border-primary transition-all cursor-pointer block"
+                      key={result.id}
+                      to={result.href || `/${routeBase}/${result.slug}`}
+                      className={`p-lg rounded-lg border border-border-default group hover:border-primary transition-all cursor-pointer block ${
+                        result.type === "note" ? "bg-surface-container" : "bg-surface-container-low"
+                      }`}
                     >
-                      <span className="font-sora text-metadata-tag text-accent-blue-neon mb-xs uppercase">
-                        // Notes
+                      <span className={`font-sora text-metadata-tag mb-xs uppercase ${
+                        result.type === "story" ? "text-primary" :
+                        result.type === "guide" ? "text-secondary" :
+                        result.type === "note" ? "text-accent-blue-neon" :
+                        "text-on-surface-muted"
+                      }`}>
+                        // {label}
                       </span>
-                      <h3 className="font-sora text-article-title text-on-surface mb-sm group-hover:text-primary transition-colors">{note.title}</h3>
-                      <p className="font-dm-sans text-on-surface-muted mb-md line-clamp-2">{deriveExcerpt(note.content)}</p>
-                      <ArrowRight className="w-4 h-4 text-primary group-hover:translate-x-2 transition-transform" />
+                      <h3 className="font-sora text-article-title text-on-surface mb-sm group-hover:text-primary transition-colors line-clamp-3">
+                        {result.title}
+                      </h3>
+                      <p className="font-dm-sans text-on-surface-muted text-sm line-clamp-2">
+                        {result.excerpt}
+                      </p>
+                      {result.publishedAt && (
+                        <span className="font-sora text-[10px] text-on-surface-muted uppercase mt-sm block">
+                          {formatDate(result.publishedAt)}
+                        </span>
+                      )}
                     </Link>
-                  ))}
-                </div>
-              </section>
+                  );
+                })}
+              </div>
             )}
           </div>
-        ) : (
+        ) : !loading && query.trim() ? (
           /* Empty State */
           <div className="mt-giant text-center py-giant border-2 border-dashed border-border-default rounded-xl">
             <SearchX className="w-16 h-16 text-on-surface-muted mx-auto mb-md" />
@@ -268,6 +331,14 @@ export default function SearchResultsPage() {
                 </Link>
               ))}
             </div>
+          </div>
+        ) : null}
+
+        {/* Infinite scroll sentinel */}
+        <div ref={loadMoreRef} className="h-10" />
+        {loading && allResults.length > 0 && (
+          <div className="flex justify-center py-lg">
+            <Loader2 className="w-6 h-6 text-primary animate-spin" />
           </div>
         )}
       </main>

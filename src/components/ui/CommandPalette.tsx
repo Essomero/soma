@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, CornerDownLeft, History, X, BookOpen, Mic, Compass, User } from "lucide-react";
+import { Search, CornerDownLeft, History, X, BookOpen, Mic, Compass, User, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CommandPaletteProps {
@@ -8,16 +8,30 @@ interface CommandPaletteProps {
   onClose: () => void;
 }
 
+interface LiveResult {
+  slug: string;
+  type: string;
+  title: string;
+  excerpt: string;
+  href: string;
+}
+
 const quickActions = [
   { icon: Compass, label: "Go to Guides Hub", href: "/guides", color: "text-accent-blue-neon" },
   { icon: Mic, label: "Open Podcast Feed", href: "/podcast", color: "text-accent-orange" },
 ];
 
-const topMatches = [
-  { icon: BookOpen, label: "Why Does This Type Error?", sub: "Story // TypeScript", href: "/stories/fs-1-why-this-type-error", color: "text-primary" },
-  { icon: User, label: "AI-accelerated learning you own", sub: "Developer Story", href: "/stories/benjamin-mayanja", color: "text-secondary" },
-  { icon: BookOpen, label: "Ship Soma on your own infrastructure in minutes", sub: "Technical Guide // Self-Hosting", href: "/guides/ship-soma", color: "text-tertiary" },
-];
+const TYPE_ROUTES: Record<string, string> = {
+  story: "stories",
+  guide: "guides",
+  doc: "docs",
+  course: "courses",
+  book: "books",
+  series: "series",
+  test: "tests",
+  featured: "featured",
+  podcast: "podcast",
+};
 
 function loadRecent(): string[] {
   try { return JSON.parse(localStorage.getItem("recentSearches") || "[]"); } catch { return []; }
@@ -30,13 +44,17 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>(loadRecent);
   const [selectedIdx, setSelectedIdx] = useState(-1);
+  const [liveResults, setLiveResults] = useState<LiveResult[]>([]);
+  const [liveLoading, setLiveLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (open) {
       setQuery("");
       setSelectedIdx(-1);
+      setLiveResults([]);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
@@ -53,6 +71,41 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [open, onClose]);
+
+  // ── Debounced live search via FTS5 API ─────────────────────────
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const trimmed = query.trim();
+    if (!trimmed) {
+      setLiveResults([]);
+      setLiveLoading(false);
+      return;
+    }
+    setLiveLoading(true);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/content?type=all&q=${encodeURIComponent(trimmed)}&limit=5`);
+        if (!r.ok) { setLiveResults([]); return; }
+        const data = await r.json();
+        setLiveResults(
+          (data || []).map((item: any) => ({
+            slug: item.slug,
+            type: item.type,
+            title: item.title,
+            excerpt: item.excerpt?.slice(0, 100) || "",
+            href: `/${TYPE_ROUTES[item.type] || item.type}/${item.slug}`,
+          }))
+        );
+      } catch {
+        setLiveResults([]);
+      } finally {
+        setLiveLoading(false);
+      }
+    }, 200);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [query]);
 
   const submit = useCallback(
     (term: string) => {
@@ -73,6 +126,8 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
   };
 
   const hasQuery = query.trim().length > 0;
+  const displayItems = hasQuery ? liveResults : [];
+  const totalItems = displayItems.length;
 
   if (!open) return null;
 
@@ -95,13 +150,15 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
             onChange={(e) => { setQuery(e.target.value); setSelectedIdx(-1); }}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
-                if (selectedIdx >= 0 && hasQuery) {
-                  const match = topMatches[selectedIdx];
-                  if (match) { onClose(); navigate(match.href); return; }
+                if (selectedIdx >= 0 && hasQuery && displayItems[selectedIdx]) {
+                  const match = displayItems[selectedIdx];
+                  onClose();
+                  navigate(match.href);
+                  return;
                 }
                 submit(query);
               }
-              if (e.key === "ArrowDown") setSelectedIdx((i) => Math.min(i + 1, topMatches.length - 1));
+              if (e.key === "ArrowDown") setSelectedIdx((i) => Math.min(i + 1, Math.max(totalItems - 1, 0)));
               if (e.key === "ArrowUp") { e.preventDefault(); setSelectedIdx((i) => Math.max(i - 1, -1)); }
             }}
           />
@@ -114,27 +171,54 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
             <div className="p-lg space-y-sm">
               <div className="flex items-center gap-sm pb-xs">
                 <div className="w-8 h-[2px] bg-accent-blue-neon" />
-                <h3 className="font-sora text-label-caps text-on-surface-muted uppercase">Top Matches</h3>
+                <h3 className="font-sora text-label-caps text-on-surface-muted uppercase">
+                  {liveLoading ? "Searching..." : "Results"}
+                </h3>
               </div>
-              {topMatches.map((match, i) => (
-                <div
-                  key={match.label}
-                  onClick={() => { onClose(); navigate(match.href); }}
-                  className={cn(
-                    "group flex items-center justify-between p-md hover:bg-surface-variant border border-transparent hover:border-border-default transition-all cursor-pointer rounded",
-                    i === selectedIdx && "bg-surface-variant border-border-default"
-                  )}
-                >
-                  <div className="flex items-center gap-md">
-                    <match.icon className={cn("w-5 h-5", match.color)} />
-                    <div>
-                      <p className="font-dm-sans text-on-background group-hover:text-on-surface font-semibold">{match.label}</p>
-                      <p className="text-xs text-on-surface-muted">{match.sub}</p>
-                    </div>
-                  </div>
-                  <CornerDownLeft className="w-4 h-4 text-on-surface-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+              {liveLoading && liveResults.length === 0 ? (
+                <div className="flex items-center justify-center py-lg">
+                  <Loader2 className="w-5 h-5 text-primary animate-spin" />
                 </div>
-              ))}
+              ) : displayItems.length === 0 ? (
+                <p className="font-dm-sans text-on-surface-muted text-sm py-md text-center">
+                  No results — press Enter to search all content
+                </p>
+              ) : (
+                displayItems.map((result, i) => (
+                  <div
+                    key={result.slug}
+                    onClick={() => { onClose(); navigate(result.href); }}
+                    className={cn(
+                      "group flex items-center justify-between p-md hover:bg-surface-variant border border-transparent hover:border-border-default transition-all cursor-pointer rounded",
+                      i === selectedIdx && "bg-surface-variant border-border-default"
+                    )}
+                  >
+                    <div className="flex items-center gap-md min-w-0">
+                      <BookOpen className="w-5 h-5 text-primary shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-dm-sans text-on-background group-hover:text-on-surface font-semibold truncate">
+                          {result.title}
+                        </p>
+                        <p className="text-xs text-on-surface-muted truncate capitalize">
+                          {result.type} — {result.excerpt}
+                        </p>
+                      </div>
+                    </div>
+                    <CornerDownLeft className="w-4 h-4 text-on-surface-muted opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                  </div>
+                ))
+              )}
+              {displayItems.length > 0 && (
+                <div
+                  onClick={() => submit(query)}
+                  className="flex items-center justify-center gap-sm p-md mt-sm bg-surface-container hover:bg-surface-bright rounded cursor-pointer transition-colors border border-dashed border-border-default"
+                >
+                  <Search className="w-4 h-4 text-on-surface-muted" />
+                  <span className="font-sora text-label-caps text-on-surface-muted">
+                    Search all content for "{query}"
+                  </span>
+                </div>
+              )}
             </div>
           ) : (
             <div className="divide-y divide-border-default/50">
