@@ -84,10 +84,17 @@ export default async function handler(req, res) {
       const newStatus = isPublic ? "published" : "private";
 
       for (const slug of slugList) {
-        await query(
-          "UPDATE content_items SET status = ?, updated_at = ? WHERE slug = ?",
-          [newStatus, now, slug]
-        );
+        if (isPublic) {
+          await query(
+            "UPDATE content_items SET status = ?, updated_at = ?, archived_at = COALESCE(archived_at, ?) WHERE slug = ?",
+            [newStatus, now, now, slug]
+          );
+        } else {
+          await query(
+            "UPDATE content_items SET status = ?, updated_at = ?, archived_at = NULL WHERE slug = ?",
+            [newStatus, now, slug]
+          );
+        }
       }
 
       return res.json({ success: true });

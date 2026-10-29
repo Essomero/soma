@@ -208,9 +208,8 @@ The tools mirror the SOMA_SKILL.md workflow, and each shells out to the repo's o
 | `validate_manuscript` | Runs the exact publish checks (`--check`) with no write |
 | `publish_manuscript` | Validates + upserts as private; never touches visibility |
 | `verify_url` | HEAD/GET check for every image, video, and external link URL |
-| `archive_manuscript` | Copies a public manuscript to `src/content/`, returns the exact commit command |
 
-The trust model matches the rest of the repo: the server is spawned by the agent client on the owner's machine, so no token is needed (unlike the browser-facing `local-agent` sidecar). `publish_manuscript` and `archive_manuscript` are the only writes; everything else is read-only. Going public stays a human toggle flip, never a tool call.
+The trust model matches the rest of the repo: the server is spawned by the agent client on the owner's machine, so no token is needed (unlike the browser-facing `local-agent` sidecar). `publish_manuscript` is the only write; everything else is read-only. Going public stays a human toggle flip, never a tool call.
 
 ---
 

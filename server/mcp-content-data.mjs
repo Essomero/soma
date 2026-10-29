@@ -54,7 +54,7 @@ export const WORKFLOW_NOTE = `Lifecycle (from SOMA_SKILL.md):
 4. Confirm with store_row(<slug>): expect "status": "private". A missing row means the piece never landed.
 5. Preview locally: the owner opens http://localhost:5173{route} (plain npm run dev serves the owner view including private rows).
 6. The owner flips private -> public with the page toggle. There is NO CLI flag for going public.
-7. After the piece is public, call archive_manuscript to copy the manuscript to its archive home and get the exact git commit command. Never git add -A.`;
+7. The toggle sets archived_at = now() on the content row. No file is copied; no git commit is needed.`;
 
 // Starter manuscripts, one per type. Field sets match the canonical shapes in
 // src/types/index.ts. Fill in the "..." placeholders and delete the comments.
