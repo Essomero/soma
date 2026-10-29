@@ -32,15 +32,15 @@ function fail(msg: string) {
 // Per-type required fields on the final corpus items (after computed fields).
 // Every non-optional TS interface field that the render path reads must be present.
 const CORPUS_REQUIRED: Record<string, string[]> = {
-  story: ["slug", "title", "category", "excerpt", "image", "imageAlt", "author", "date", "publishedAt", "intro", "body"],
-  guide: ["slug", "title", "category", "excerpt", "image", "imageAlt", "author", "date", "publishedAt", "intro", "body"],
-  doc: ["slug", "title", "category", "description", "image", "imageAlt", "author", "date", "publishedAt", "tags", "sections"],
-  course: ["slug", "title", "description", "image", "imageAlt", "author", "date", "publishedAt", "lessons"],
-  book: ["slug", "title", "description", "image", "imageAlt", "author", "date", "publishedAt", "chapters"],
-  series: ["slug", "title", "description", "image", "imageAlt", "author", "date", "publishedAt", "episodes"],
-  test: ["slug", "title", "description", "category", "image", "imageAlt", "author", "date", "publishedAt", "sources", "questions"],
-  featured: ["slug", "tag", "title", "description", "image", "imageAlt", "author", "date", "publishedAt"],
-  podcast: ["id", "title", "image", "imageAlt", "episode", "date", "publishedAt", "duration", "description", "category", "href"],
+  story: ["slug", "title", "category", "excerpt", "image", "imageAlt", "author", "publishedAt", "intro", "body"],
+  guide: ["slug", "title", "category", "excerpt", "image", "imageAlt", "author", "publishedAt", "intro", "body"],
+  doc: ["slug", "title", "category", "description", "image", "imageAlt", "author", "publishedAt", "tags", "sections"],
+  course: ["slug", "title", "description", "image", "imageAlt", "author", "publishedAt", "lessons"],
+  book: ["slug", "title", "description", "image", "imageAlt", "author", "publishedAt", "chapters"],
+  series: ["slug", "title", "description", "image", "imageAlt", "author", "publishedAt", "episodes"],
+  test: ["slug", "title", "description", "category", "image", "imageAlt", "author", "publishedAt", "sources", "questions"],
+  featured: ["slug", "tag", "title", "description", "image", "imageAlt", "author", "publishedAt"],
+  podcast: ["id", "title", "image", "imageAlt", "episode", "publishedAt", "duration", "description", "category", "href"],
   topic: ["slug", "title", "description", "icon", "accentColor", "accentBg", "accentText"],
 };
 
