@@ -6,6 +6,7 @@ import { allTopics } from "@/content/registry";
 import { useContentList } from "@/lib/content";
 import type { StoryContent } from "@/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { formatDate } from "@/lib/format-date";
 
 export default function TopicDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -64,7 +65,7 @@ export default function TopicDetailPage() {
                     imageAlt: story.imageAlt,
                     href: story.href,
                     author: story.author,
-                    date: story.date,
+                    date: formatDate(story.publishedAt),
                     tags: story.tags,
                   }}
                 />

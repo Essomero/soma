@@ -13,7 +13,6 @@ export const sqlQueryOptimizationTest: TestContent = {
     name: "Benjamin Mayanja",
     handle: "@Essomero",
   },
-  date: "September 2026",
   publishedAt: "2026-09-01T00:00:00Z",
   tags: ["PostgreSQL", "SQL", "Indexes", "Query Optimization", "Concurrency"],
   topics: ["technology"],

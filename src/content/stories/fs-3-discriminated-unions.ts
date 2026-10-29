@@ -8,7 +8,6 @@ export const fs3DiscriminatedUnions = {
   image: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1200&h=675&fit=crop",
   imageAlt: "Mist rolling over branching mountain ridges showing paths that fork and narrow",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
-  date: "2026-08-16",
   publishedAt: "2026-08-15T21:00:00Z",
   tags: ["Full-Stack Prep", "TypeScript"],
   topics: ["technology", "career"],

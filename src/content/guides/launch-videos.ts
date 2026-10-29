@@ -8,7 +8,6 @@ export const launchVideos = {
     "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=1200&h=675&fit=crop",
   imageAlt: "A video editing timeline on a laptop screen",
   author: { name: "Benjamin Mayanja", title: "Founder, Soma" },
-  date: "October 25, 2026",
   publishedAt: "2026-10-25T00:00:00Z",
   tags: ["Video", "Launch", "AI Video", "Mac", "Remotion"],
   intro:

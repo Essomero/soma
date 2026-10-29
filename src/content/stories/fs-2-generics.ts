@@ -8,7 +8,6 @@ export const fs2Generics = {
   image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&h=675&fit=crop",
   imageAlt: "Abstract 3D shapes showing a mold that produces an infinite family of forms",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
-  date: "2026-08-16",
   publishedAt: "2026-08-15T21:00:00Z",
   tags: ["Full-Stack Prep", "TypeScript"],
   topics: ["technology", "career"],

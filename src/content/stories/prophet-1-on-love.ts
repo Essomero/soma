@@ -8,7 +8,6 @@ export const prophet1OnLove = {
   image: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=1200&h=675&fit=crop",
   imageAlt: "Desert dunes under sunset sky",
   author: { name: "Kahlil Gibran" },
-  date: "1923-01-01",
   publishedAt: "2026-10-23T21:00:00Z",
   tags: ["Poetry", "Philosophy", "Wisdom"],
   topics: ["philosophy"],

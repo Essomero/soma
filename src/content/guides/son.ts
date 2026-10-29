@@ -8,7 +8,6 @@ export const son = {
     "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=1200&h=675&fit=crop",
   imageAlt: "Studio condenser microphone, podcast and audio production",
   author: { name: "Benjamin Mayanja", title: "Founder, Soma" },
-  date: "October 2026",
   publishedAt: "2026-10-01T00:00:00Z",
   tags: ["Son", "Voice Agent", "Oral Exams", "Local-First"],
   intro:

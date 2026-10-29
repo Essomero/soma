@@ -7,7 +7,6 @@ export const theCraftOfSoftware: SeriesContent = {
   image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1600&h=900&fit=crop",
   imageAlt: "Laptop displaying code in a focused workspace",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
-  date: "2026-10-23",
   publishedAt: "2026-10-22T21:00:00Z",
   topics: ["technology"],
   tagline: "From first principles to working systems.",

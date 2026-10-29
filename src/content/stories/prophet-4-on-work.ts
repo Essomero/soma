@@ -8,7 +8,6 @@ export const prophet4OnWork = {
   image: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=1200&h=675&fit=crop",
   imageAlt: "Engineer's hands over a technical blueprint",
   author: { name: "Kahlil Gibran" },
-  date: "1923-01-01",
   publishedAt: "2026-10-23T21:00:00Z",
   tags: ["Poetry", "Philosophy", "Wisdom"],
   topics: ["philosophy"],

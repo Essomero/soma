@@ -8,7 +8,6 @@ export const somaLabs = {
     "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&h=675&fit=crop",
   imageAlt: "Laptop displaying code in a focused workspace",
   author: { name: "Benjamin Mayanja", title: "Founder, Soma" },
-  date: "October 2026",
   publishedAt: "2026-10-01T00:00:00Z",
   tags: ["Labs", "Drills", "TypeScript", "Deno", "Self-Hosting"],
   intro:

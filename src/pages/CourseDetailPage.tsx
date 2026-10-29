@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import { formatDate } from "@/lib/format-date";
 import { ArrowRight, Clock, BookOpen, Check, ExternalLink, Sparkles, Printer, Edit3 } from "lucide-react";
 import { SkeletonCollectionDetail } from "@/components/ui/Skeleton";
 import Tooltip from "@/components/ui/Tooltip";
@@ -189,7 +190,7 @@ const { isCompleted, toggle, progress } = useProgress(slug ?? "", lessonSlugs);
                         {story && (
                           <span className="flex items-center gap-xs text-on-surface-muted">
                             <Clock className="w-3 h-3" />
-                            <span className="font-sora text-[10px] uppercase">{story.date}</span>
+                            <span className="font-sora text-[10px] uppercase">{formatDate(story.publishedAt)}</span>
                           </span>
                         )}
                         {(() => {

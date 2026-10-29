@@ -8,7 +8,6 @@ export const fs5TypingTheBoundary = {
   image: "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?w=1200&h=675&fit=crop",
   imageAlt: "Sunlight through an open doorway representing the boundary where untrusted data enters",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
-  date: "2026-08-16",
   publishedAt: "2026-08-15T21:00:00Z",
   tags: ["Full-Stack Prep", "TypeScript"],
   topics: ["technology", "career"],

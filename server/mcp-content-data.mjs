@@ -72,8 +72,8 @@ export const myStory: StoryContent = {
   excerpt: "Compelling one-liner summary.",
   image: "https://images.unsplash.com/photo-{NUMERIC_ID}?w=1200&h=675&fit=crop", // verified ID, see below
   imageAlt: "Descriptive alt text describing the actual photo",
-  author: { name: "Author Name", handle: "@handle" },
-  date: "October 2026",
+  author: { name: "Soma Editorial" },
+  publishedAt: "2026-10-29T00:00:00.000Z",                   // MUST be the actual creation date in YYYY-MM-DD or full ISO 8601
   tags: ["Tag1", "Tag2"],
   topics: ["technology"],               // must be valid topic slugs
   source: { name: "Author - Platform", url: "https://..." }, // optional single-source republish
@@ -117,8 +117,8 @@ export const myGuide: GuideContent = {
   excerpt: "Compelling one-liner summary.",
   image: "https://images.unsplash.com/photo-{NUMERIC_ID}?w=1200&h=675&fit=crop",
   imageAlt: "Descriptive alt text",
-  author: { name: "Author Name", title: "Role" },
-  date: "October 2026",
+  author: { name: "Soma Editorial" },
+  publishedAt: "2026-10-29T00:00:00.000Z",                   // MUST be the actual creation date in YYYY-MM-DD or full ISO 8601
   tags: ["Tag1", "Tag2"],
   intro: "Opening paragraph with **bold** and [links](url) - inline markdown only.",
   body: [
@@ -149,8 +149,8 @@ export const myDoc: DocContent = {
   description: "What this doc answers.",
   image: "https://images.unsplash.com/photo-{NUMERIC_ID}?w=1200&h=675&fit=crop",
   imageAlt: "Descriptive alt text",
-  author: { name: "Author Name" },
-  date: "October 2026",
+  author: { name: "Soma Editorial" },
+  publishedAt: "2026-10-29T00:00:00.000Z",                   // MUST be the actual creation date in YYYY-MM-DD or full ISO 8601
   tags: ["Tag1"],
   topics: ["technology"],
   sections: [
@@ -181,8 +181,8 @@ export const myCourse: CourseContent = {
   description: "What the learner will understand by the end.",
   image: "https://images.unsplash.com/photo-{NUMERIC_ID}?w=1600&h=900&fit=crop",
   imageAlt: "Descriptive alt text",
-  author: { name: "Author Name" },
-  date: "October 2026",
+  author: { name: "Soma Editorial" },
+  publishedAt: "2026-10-29T00:00:00.000Z",                   // MUST be the actual creation date in YYYY-MM-DD or full ISO 8601
   topics: ["technology"],
   tagline: "Optional subtitle under the description.",
   lessons: [
@@ -208,8 +208,8 @@ export const myBook: BookContent = {
   description: "One-line description of the whole work.",
   image: "https://images.unsplash.com/photo-{NUMERIC_ID}?w=1600&h=900&fit=crop",
   imageAlt: "Descriptive alt text",
-  author: { name: "Author Name" },
-  date: "October 2026",
+  author: { name: "Soma Editorial" },
+  publishedAt: "2026-10-29T00:00:00.000Z",                   // MUST be the actual creation date in YYYY-MM-DD or full ISO 8601
   topics: ["technology"],
   tagline: "Optional tagline.",
   chapters: [
@@ -231,8 +231,8 @@ export const mySeries: SeriesContent = {
   description: "One-line description of the series.",
   image: "https://images.unsplash.com/photo-{NUMERIC_ID}?w=1600&h=900&fit=crop",
   imageAlt: "Descriptive alt text",
-  author: { name: "Author Name" },
-  date: "October 2026",
+  author: { name: "Soma Editorial" },
+  publishedAt: "2026-10-29T00:00:00.000Z",                   // MUST be the actual creation date in YYYY-MM-DD or full ISO 8601
   topics: ["technology"],
   tagline: "Optional tagline.",
   episodes: [
@@ -259,7 +259,7 @@ export const myFeatured: FeaturedContent = {
   image: "https://images.unsplash.com/photo-{NUMERIC_ID}?w=1600&h=900&fit=crop", // wider hero
   imageAlt: myStory.imageAlt,
   author: myStory.author,
-  date: myStory.date,
+  publishedAt: myStory.publishedAt,
   tagline: "Optional tagline under the hero heading.",
   // Single source of truth: reuse the story's content
   bentoHighlights: myStory.bentoHighlights,
@@ -280,8 +280,8 @@ export const myTest: TestContent = {
   format: "written",                       // "written" | "oral" | "hybrid"
   image: "https://images.unsplash.com/photo-{NUMERIC_ID}?w=1200&h=675&fit=crop",
   imageAlt: "Descriptive alt text",
-  author: { name: "Author Name" },
-  date: "October 2026",
+  author: { name: "Soma Editorial" },
+  publishedAt: "2026-10-29T00:00:00.000Z",                   // MUST be the actual creation date in YYYY-MM-DD or full ISO 8601
   tags: ["Tag1"],
   topics: ["technology"],
   estimatedMinutes: 15,
@@ -320,7 +320,7 @@ export const myEpisode: PodcastEpisodeFull = {
   image: "https://images.unsplash.com/photo-{NUMERIC_ID}?w=1200&h=675&fit=crop",
   imageAlt: "Descriptive alt text",
   episode: "EPISODE 31 // OCT 2026",
-  date: "OCT 2026",
+  publishedAt: "2026-10-01T00:00:00.000Z",
   duration: "42 MIN",
   durationSeconds: 2520,
   description: "One-line description.",

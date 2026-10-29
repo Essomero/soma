@@ -287,8 +287,7 @@ export interface StoryContent {
   imageAlt: string;
   href: string;      // "/stories/:slug"
   author: Author;
-  date: string;
-  /** UTC ISO 8601 timestamp for sorting */
+  /** UTC ISO 8601 timestamp — formatted to display date at render time */
   publishedAt: string;
   tags?: string[];
   isFeatured?: boolean;
@@ -333,8 +332,7 @@ export interface GuideContent {
   imageAlt: string;
   href: string;      // "/guides/:slug"
   author: Author;
-  date: string;
-  /** UTC ISO 8601 timestamp for sorting */
+  /** UTC ISO 8601 timestamp — formatted to display date at render time */
   publishedAt: string;
   tags?: string[];
   isFeatured?: boolean;
@@ -355,8 +353,7 @@ export interface FeaturedContent {
   image: string;
   imageAlt: string;
   author: Author;
-  date: string;
-  /** UTC ISO 8601 timestamp for sorting */
+  /** UTC ISO 8601 timestamp — formatted to display date at render time */
   publishedAt: string;
   tagline?: string;
   bentoHighlights?: BentoCardData[];
@@ -395,8 +392,7 @@ export interface PodcastEpisodeFull {
   image: string;
   imageAlt: string;
   episode: string;        // "EPISODE 30 // AUG 14"
-  date: string;           // "AUG 14"
-  /** UTC ISO 8601 timestamp for sorting */
+  /** UTC ISO 8601 timestamp — formatted to display date at render time */
   publishedAt: string;
   duration: string;       // "42 MIN"
   durationSeconds?: number; // 2520 : for progress tracking
@@ -504,8 +500,7 @@ export interface BookContent {
   image: string;
   imageAlt: string;
   author: Author;
-  date: string;
-  /** UTC ISO 8601 timestamp for sorting */
+  /** UTC ISO 8601 timestamp — formatted to display date at render time */
   publishedAt: string;
   topics?: string[];
   tagline?: string;
@@ -526,8 +521,7 @@ export interface SeriesContent {
   image: string;
   imageAlt: string;
   author: Author;
-  date: string;
-  /** UTC ISO 8601 timestamp for sorting */
+  /** UTC ISO 8601 timestamp — formatted to display date at render time */
   publishedAt: string;
   topics?: string[];
   tagline?: string;
@@ -565,8 +559,7 @@ export interface DocContent {
   image: string;
   imageAlt: string;
   author: Author;
-  date: string;
-  /** UTC ISO 8601 timestamp for sorting */
+  /** UTC ISO 8601 timestamp — formatted to display date at render time */
   publishedAt: string;
   tags: string[];
   topics?: string[];
@@ -584,8 +577,7 @@ export interface CourseContent {
   image: string;
   imageAlt: string;
   author: Author;
-  date: string;
-  /** UTC ISO 8601 timestamp for sorting */
+  /** UTC ISO 8601 timestamp — formatted to display date at render time */
   publishedAt: string;
   topics?: string[];
   tagline?: string;
@@ -696,8 +688,7 @@ export interface TestContent {
   image: string;
   imageAlt: string;
   author: Author;
-  date: string;
-  /** UTC ISO 8601 timestamp for sorting */
+  /** UTC ISO 8601 timestamp — formatted to display date at render time */
   publishedAt: string;
   tags?: string[];
   topics?: string[];

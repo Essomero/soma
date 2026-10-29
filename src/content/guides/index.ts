@@ -32,7 +32,6 @@ export function toArticleCard(g: GuideContent): ArticleCardData {
     imageAlt: g.imageAlt,
     href: g.href,
     author: g.author,
-    date: g.date,
     publishedAt: g.publishedAt,
     tags: g.tags,
   };

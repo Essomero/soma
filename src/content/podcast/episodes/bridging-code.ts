@@ -7,7 +7,6 @@ export const bridgingCode: PodcastEpisodeFull = {
   image: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=1200&h=1200&fit=crop",
   imageAlt: "Studio condenser microphone, podcast and audio production",
   episode: "EPISODE 1 // OCT 24",
-  date: "OCT 24",
   publishedAt: "2026-10-24T00:00:00Z",
   duration: "5 MIN",
   durationSeconds: 323,

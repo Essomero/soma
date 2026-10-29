@@ -8,7 +8,6 @@ export const theProphet: BookContent = {
   image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&h=900&fit=crop",
   imageAlt: "Calm sea under a clear sky, a ship's voyage home",
   author: { name: "Kahlil Gibran" },
-  date: "1923-01-01",
   publishedAt: "1923-01-01T00:00:00Z",
   topics: ["philosophy"],
   tagline: "Love, work, and freedom in six sittings, plus notes for learners.",

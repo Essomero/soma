@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { formatDate } from "@/lib/format-date";
 import { FileText, ArrowRight } from "lucide-react";
 import { SkeletonIndexHeader, SkeletonFeatureGrid } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
@@ -70,7 +71,7 @@ export default function DocsIndexPage() {
                     </div>
                     <div className="p-xl">
                       <span className="font-sora text-metadata-tag text-primary uppercase tracking-widest">
-                        {doc.sections.length} SECTIONS · {doc.date}
+                        {doc.sections.length} SECTIONS · {formatDate(doc.publishedAt)}
                       </span>
                       <h2 className="font-sora text-article-title text-on-surface group-hover:text-primary transition-colors mt-sm mb-sm">
                         {doc.title}

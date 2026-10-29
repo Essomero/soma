@@ -11,6 +11,7 @@ import { useContentList, toCard } from "@/lib/content";
 import type { StoryContent, GuideContent, FeaturedContent, PodcastEpisodeFull } from "@/types";
 import { Link } from "react-router-dom";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { formatDate } from "@/lib/format-date";
 import SafeImage from "@/components/ui/SafeImage";
 
 export default function HomePage() {
@@ -48,11 +49,11 @@ export default function HomePage() {
     image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=675&fit=crop",
     imageAlt: "Server racks in a data center",
     author: { name: "Benjamin Mayanja" },
-    date: "2026-10-23",
+    publishedAt: "2026-10-23",
   } as StoryContent);
   const secondaryStories = stories.slice(1, 4).map(toCard);
   const latestUpdates = stories.slice(0, 5).map((s) => ({
-    date: new Date(s.date || Date.now()).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase(),
+    date: formatDate(s.publishedAt || new Date().toISOString()).toUpperCase(),
     title: s.title,
     href: s.href || `/stories/${s.slug}`,
   }));

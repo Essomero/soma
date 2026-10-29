@@ -9,7 +9,6 @@ export const labSetup: DocContent = {
   image: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1600&h=900&fit=crop",
   imageAlt: "A terminal window showing code compilation and test passes in green text",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
-  date: "September 2026",
   publishedAt: "2026-09-01T00:00:00Z",
   tags: ["Labs", "Dev Environment", "TypeScript", "Deno", "Node"],
   topics: ["technology"],

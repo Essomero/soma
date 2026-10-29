@@ -8,7 +8,6 @@ export const prophet2OnMarriage = {
   image: "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?w=1200&h=675&fit=crop",
   imageAlt: "Sunlight through an open doorway",
   author: { name: "Kahlil Gibran" },
-  date: "1923-01-01",
   publishedAt: "2026-10-23T21:00:00Z",
   tags: ["Poetry", "Philosophy", "Wisdom"],
   topics: ["philosophy"],

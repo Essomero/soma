@@ -13,6 +13,7 @@ import type { StoryContent } from "@/types";
 import { useAllReadSlugs } from "@/lib/useProgress";
 import { md } from "@/lib/markdown";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { formatDate } from "@/lib/format-date";
 import SafeImage from "@/components/ui/SafeImage";
 
 const trendingItems = [
@@ -48,7 +49,7 @@ export default function StoriesIndexPage() {
     const aUnread = readSlugs.has(a.slug) ? 1 : 0;
     const bUnread = readSlugs.has(b.slug) ? 1 : 0;
     if (aUnread !== bUnread) return aUnread - bUnread;
-    return new Date(b.publishedAt || b.date).getTime() - new Date(a.publishedAt || a.date).getTime();
+    return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
   };
 
   const sorted = [...active].sort(sortUnreadFirst);
@@ -267,7 +268,7 @@ export default function StoriesIndexPage() {
                         imageAlt: story.imageAlt,
                         href: story.href,
                         author: story.author,
-                        date: story.date,
+                        date: formatDate(story.publishedAt),
                         tags: story.tags,
                       }}
                     />

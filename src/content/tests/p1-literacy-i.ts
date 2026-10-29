@@ -22,7 +22,6 @@ export const p1LiteracyOneTest: TestContent = {
     name: "Teacher Michael",
     handle: "@teacher-michael",
   },
-  date: "October 2026",
   publishedAt: "2026-10-01T00:00:00Z",
   tags: ["P1", "Primary School", "Uganda", "Oral Assessment", "Literacy I", "Listening", "Pre-Reading", "Pre-Writing"],
   topics: ["education"],
