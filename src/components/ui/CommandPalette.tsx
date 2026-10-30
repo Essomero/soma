@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, CornerDownLeft, History, X, BookOpen, Mic, Compass, User, Loader2 } from "lucide-react";
+import { Search, CornerDownLeft, History, X, BookOpen, Mic, Compass, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CommandPaletteProps {
@@ -176,8 +176,16 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
                 </h3>
               </div>
               {liveLoading && liveResults.length === 0 ? (
-                <div className="flex items-center justify-center py-lg">
-                  <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                <div className="space-y-1 animate-pulse">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-md p-md rounded">
+                      <div className="w-5 h-5 rounded bg-surface-container-high shrink-0" />
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="h-4 w-3/4 bg-surface-container-high rounded" />
+                        <div className="h-3 w-1/2 bg-surface-container-high rounded" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : displayItems.length === 0 ? (
                 <p className="font-dm-sans text-on-surface-muted text-sm py-md text-center">
