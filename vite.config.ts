@@ -985,6 +985,7 @@ function chatDevPlugin(env: Record<string, string>) {
           else if (name === "progress") localHandlerCache[name] = (await import("./api/progress.js")).default;
           else if (name === "ratings") localHandlerCache[name] = (await import("./api/ratings.js")).default;
           else if (name === "unsplash-search") localHandlerCache[name] = (await import("./api/unsplash-search.js")).default;
+          else if (name === "unsplash-config") localHandlerCache[name] = (await import("./api/unsplash-config.js")).default;
           else localHandlerCache[name] = (await import("./api/tests.js")).default;
         }
         return localHandlerCache[name];
@@ -992,7 +993,7 @@ function chatDevPlugin(env: Record<string, string>) {
       server.middlewares.use(async (req: any, res: any, next: any) => {
         const m = /^\/api\/([a-z-]+)/.exec(req.url || "");
         const name = m ? m[1] : "";
-        if (!["content", "progress", "ratings", "tests", "unsplash-search"].includes(name)) return next();
+        if (!["content", "progress", "ratings", "tests", "unsplash-search", "unsplash-config"].includes(name)) return next();
         try {
           const handler = await loadLocalHandler(name);
           const u = new URL(req.url || "", "http://localhost");

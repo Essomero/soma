@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, CornerDownLeft, History, X, BookOpen, Mic, Compass, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useScrollLock } from "@/lib/useScrollLock";
 
 interface CommandPaletteProps {
   open: boolean;
@@ -49,6 +50,8 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const navigate = useNavigate();
+
+  useScrollLock(open);
 
   useEffect(() => {
     if (open) {

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Search, X, ImageIcon, Loader2, AlertCircle, Check } from "lucide-react";
+import { Search, X, ImageIcon, AlertCircle, Check } from "lucide-react";
 import { FALLBACK_COVER } from "@/lib/utils";
+import { useScrollLock } from "@/lib/useScrollLock";
 
 interface UnsplashPhoto {
   id: string;
@@ -18,7 +19,7 @@ interface CoverImagePickerProps {
   onChange: (image: string, imageAlt: string) => void;
 }
 
-/** Mill */
+/** Construct a standard Unsplash cover URL from the photo ID. */
 function coverUrl(photoId: string, width = 1200, height = 675): string {
   return `https://images.unsplash.com/photo-${photoId}?w=${width}&h=${height}&fit=crop`;
 }
@@ -40,9 +41,12 @@ export default function CoverImagePicker({ image, imageAlt, onChange }: CoverIma
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
   const [selectedId, setSelectedId] = useState("");
+  const [searchConfigured, setSearchConfigured] = useState(true);
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+
+  useScrollLock(open);
 
   // Focus search input when modal opens
   useEffect(() => {
@@ -59,6 +63,15 @@ export default function CoverImagePicker({ image, imageAlt, onChange }: CoverIma
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
+  }, [open]);
+
+  // Probe whether Unsplash search is configured on the server
+  useEffect(() => {
+    if (!open) return;
+    fetch("/api/unsplash-config")
+      .then((r) => r.json())
+      .then((data) => setSearchConfigured(!!data.configured))
+      .catch(() => setSearchConfigured(false));
   }, [open]);
 
   // Close on backdrop click
@@ -154,8 +167,10 @@ export default function CoverImagePicker({ image, imageAlt, onChange }: CoverIma
         />
         <button
           type="button"
-          onClick={() => setOpen(true)}
-          className="inline-flex items-center gap-sm px-lg py-md bg-surface border border-border-default text-on-surface font-sora text-xs uppercase tracking-widest hover:bg-surface-container hover:border-outline transition-colors shrink-0"
+          onClick={() => searchConfigured && setOpen(true)}
+          disabled={!searchConfigured}
+          title={searchConfigured ? "Search Unsplash for cover images" : "Set UNSPLASH_ACCESS_KEY in your environment to enable image search"}
+          className="inline-flex items-center gap-sm px-lg py-md bg-surface border border-border-default text-on-surface font-sora text-xs uppercase tracking-widest hover:bg-surface-container hover:border-outline transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Search className="w-4 h-4" />
           Search
@@ -201,10 +216,29 @@ export default function CoverImagePicker({ image, imageAlt, onChange }: CoverIma
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto p-lg">
-              {/* Loading */}
-              {loading && (
-                <div className="flex items-center justify-center py-xl">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              {/* Search not configured — button is disabled so this is defensive */}
+              {!searchConfigured && (
+                <div className="flex flex-col items-center justify-center py-xl text-center">
+                  <AlertCircle className="w-8 h-8 text-on-surface-muted mb-md" />
+                  <p className="font-dm-sans text-sm text-on-surface-muted">Image search is not available</p>
+                  <p className="font-dm-sans text-xs text-on-surface-muted mt-xs">
+                    Paste a cover URL directly in the field above.
+                  </p>
+                </div>
+              )}
+
+              {/* Loading — skeleton grid matching the results layout */}
+              {searchConfigured && loading && (
+                <div className="space-y-md">
+                  <div className="w-48 h-4 bg-surface-container rounded animate-pulse" />
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-md">
+                    {Array.from({ length: 12 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="aspect-[16/9] rounded bg-surface-container animate-pulse"
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
 
