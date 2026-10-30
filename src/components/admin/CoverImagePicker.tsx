@@ -19,9 +19,10 @@ interface CoverImagePickerProps {
   onChange: (image: string, imageAlt: string) => void;
 }
 
-/** Construct a standard Unsplash cover URL from the photo ID. */
-function coverUrl(photoId: string, width = 1200, height = 675): string {
-  return `https://images.unsplash.com/photo-${photoId}?w=${width}&h=${height}&fit=crop`;
+/** Append sizing parameters to an Unsplash raw URL. */
+function coverUrl(rawUrl: string, width = 1200, height = 675): string {
+  const separator = rawUrl.includes("?") ? "&" : "?";
+  return `${rawUrl}${separator}w=${width}&h=${height}&fit=crop`;
 }
 
 function debounce<T extends (...args: any[]) => void>(fn: T, ms: number): (...args: Parameters<T>) => void {
@@ -130,7 +131,7 @@ export default function CoverImagePicker({ image, imageAlt, onChange }: CoverIma
   };
 
   const handleSelect = (photo: UnsplashPhoto) => {
-    const url = coverUrl(photo.id);
+    const url = coverUrl(photo.urls.raw);
     const alt = photo.description
       ? photo.description.charAt(0).toUpperCase() + photo.description.slice(1).toLowerCase()
       : "Cover image";
