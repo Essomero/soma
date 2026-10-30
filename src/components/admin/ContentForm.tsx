@@ -29,6 +29,7 @@ export interface SavePayload {
   category: string;
   author: { name: string; handle?: string };
   publishedAt: string;
+  updatedAt?: string;
   image?: string;
   imageAlt?: string;
   tags?: string[];
@@ -91,6 +92,7 @@ function initFromDraft(draft: AIDraft | null): FormValues {
   if (!draft) return {
     authorName: "Soma Editorial",
     publishedAt: now,
+    updatedAt: "",
   };
   return {
     title: draft.title || "",
@@ -98,7 +100,8 @@ function initFromDraft(draft: AIDraft | null): FormValues {
     category: draft.category || "Engineering",
     authorName: "Soma Editorial",               // AI never controls this
     authorHandle: "",                            // AI never controls this
-    publishedAt: now,                           // always today — AI never controls this
+    publishedAt: draft.publishedAt || now,        // AI stripped in create flow; preserved for edits
+    updatedAt: draft.updatedAt || "",
     image: draft.image || "",
     imageAlt: draft.imageAlt || "",
     tagsText: (draft.tags || []).join(", "),
@@ -282,6 +285,7 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
       category: str(values.category),
       author: { name: str(values.authorName), handle: str(values.authorHandle) || undefined },
       publishedAt: str(values.publishedAt),
+      updatedAt: str(values.updatedAt) || undefined,
       image: str(values.image) || undefined,
       imageAlt: str(values.imageAlt) || undefined,
       tags: tags.length > 0 ? tags : undefined,
@@ -804,14 +808,28 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
           }
           if (f.name === "publishedAt") {
             const displayDate = str(values.publishedAt).split("T")[0];
+            const updatedVal = str(values.updatedAt).split("T")[0];
             return (
-              <div key="publishedAt" className="flex items-center gap-md">
-                <label className="font-sora text-sm text-on-surface block">
-                  Date
-                </label>
-                <span className="font-dm-sans text-sm text-on-surface-muted">
-                  {displayDate}
-                </span>
+              <div key="publishedAt" className="space-y-sm">
+                <div className="flex items-center gap-md">
+                  <label className="font-sora text-sm text-on-surface block">
+                    Published
+                  </label>
+                  <span className="font-dm-sans text-sm text-on-surface-muted">
+                    {displayDate}
+                  </span>
+                </div>
+                <div>
+                  <label className="font-sora text-sm text-on-surface block mb-xs">
+                    Last updated
+                  </label>
+                  <input
+                    type="date"
+                    value={updatedVal}
+                    onChange={(e) => setVal("updatedAt", e.target.value ? `${e.target.value}T12:00:00.000Z` : "")}
+                    className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary cursor-pointer dark:[color-scheme:dark] dark:[&::-webkit-calendar-picker-indicator]:[filter:brightness(0)_invert(1)] [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  />
+                </div>
               </div>
             );
           }

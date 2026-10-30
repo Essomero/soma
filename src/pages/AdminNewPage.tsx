@@ -36,7 +36,11 @@ export default function AdminNewPage() {
   usePageMeta({ title: "New Content", description: "Create new content with AI assistance" });
 
   const handleDraft = (newDraft: AIDraft) => {
-    setDraft(newDraft);
+    // Never let the AI set the publish date — always today for new
+    // content. Strip whatever the model guessed so initFromDraft falls
+    // back to `now`.
+    const { publishedAt: _stripped, ...clean } = newDraft;
+    setDraft(clean);
     setError("");
   };
 
@@ -46,6 +50,21 @@ export default function AdminNewPage() {
     setSuccess("");
 
     try {
+      // Slug collision: creating new content must never silently
+      // overwrite an existing item (LLMs frequently regenerate the
+      // same title → same slug). Disambiguate with a numeric suffix.
+      let finalSlug = data.slug;
+      {
+        let n = 2;
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const probe = await fetch(`/api/content?slug=${encodeURIComponent(finalSlug)}`);
+          if (probe.status === 404) break;
+          if (!probe.ok) throw new Error(`Slug check failed (${probe.status})`);
+          finalSlug = `${data.slug}-${n++}`;
+        }
+      }
+
       // Pages read category/author/date/tags/topics from the spread body
       // (mapRow flattens body_json at the top level). meta carries only
       // the featured flag, matching publish-all.ts.
@@ -62,13 +81,14 @@ export default function AdminNewPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          slug: data.slug,
+          slug: finalSlug,
           type: data.type,
           title: data.title,
           excerpt: data.excerpt,
           meta: {},
           body: bodyPayload,
           status: data.status,
+          updatedAt: data.updatedAt,
         }),
       });
 
@@ -85,7 +105,7 @@ export default function AdminNewPage() {
           const existing = await fetchNote(sourceNote.slug);
           const entry = {
             title: data.title,
-            slug: data.slug,
+            slug: finalSlug,
             type: data.type,
           };
           const updated = [...(existing.publishedContent || []), entry];
@@ -106,7 +126,7 @@ export default function AdminNewPage() {
 
       // Navigate to the content page after a brief delay
       setTimeout(() => {
-        navigate(`/${baseRoute}/${data.slug}`);
+        navigate(`/${baseRoute}/${finalSlug}`);
       }, 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed");

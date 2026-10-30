@@ -430,7 +430,7 @@ export default async function handler(req, res) {
     // keeps the row's current status (new rows default to private).
     if (req.method === "POST") {
       if (!requireAuth(req, res)) return;
-      const { slug, type, status, title, excerpt, body, meta, position } = req.body || {};
+      const { slug, type, status, title, excerpt, body, meta, position, updatedAt } = req.body || {};
       if (!slug || !type || !body) {
         return res.status(400).json({ error: "slug, type and body required" });
       }
@@ -438,7 +438,8 @@ export default async function handler(req, res) {
       if (status && !STATUSES.has(status)) return res.status(400).json({ error: "status must be private|published" });
       const existing = await query("SELECT status FROM content_items WHERE slug = ?", [slug]);
       const effectiveStatus = status || (existing.length && existing[0].status) || "private";
-      const now = new Date().toISOString();
+      // Author backdate support: updatedAt (UTC ISO) wins, else now.
+      const now = updatedAt && typeof updatedAt === "string" ? updatedAt : new Date().toISOString();
       const rows = await query(
         `INSERT INTO content_items (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)

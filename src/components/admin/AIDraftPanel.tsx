@@ -26,6 +26,7 @@ export interface AIDraft {
   category: string;
   author: { name: string; handle?: string };
   publishedAt?: string;
+  updatedAt?: string;
   image?: string;
   imageAlt?: string;
   tags?: string[];
