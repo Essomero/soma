@@ -7,7 +7,7 @@ import ContentForm from "@/components/admin/ContentForm";
 import AccentBar from "@/components/ui/AccentBar";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { invalidateContentCache } from "@/lib/content";
-import { updateNote } from "@/lib/notes";
+import { fetchNote, updateNote } from "@/lib/notes";
 import type { AIDraft } from "@/components/admin/AIDraftPanel";
 import type { SavePayload } from "@/components/admin/ContentForm";
 import type { ContentType } from "@/lib/admin-prompts";
@@ -77,16 +77,22 @@ export default function AdminNewPage() {
         throw new Error(`Save failed (${res.status}): ${errBody}`);
       }
 
-      // If content was generated from a source note, update the note
-      // with a link to the new content.
+      // If content was generated from a source note, append to the note's
+      // publishedContent array so the note page shows a "Published Content"
+      // section with links to everything generated from it.
       if (sourceNote) {
         try {
-          const baseRoute = ROUTE_BASE[data.type as ContentType] || data.type;
-          const contentUrl = `/${baseRoute}/${data.slug}`;
-          const linkLine = `\n\n---\n\n→ Published content: [${data.title}](${contentUrl})`;
+          const existing = await fetchNote(sourceNote.slug);
+          const entry = {
+            title: data.title,
+            slug: data.slug,
+            type: data.type,
+          };
+          const updated = [...(existing.publishedContent || []), entry];
           await updateNote(sourceNote.slug, {
-            title: sourceNote.title,
-            content: sourceNote.content + linkLine,
+            title: existing.title,
+            content: existing.content,
+            publishedContent: updated,
           });
         } catch {
           // Note update is best-effort — don't block the user.

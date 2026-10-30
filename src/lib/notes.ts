@@ -1,6 +1,6 @@
 import { mdBlock } from "@/lib/markdown";
 import { type HighlightData } from "@/lib/highlights";
-import { type NoteArticle } from "@/types";
+import { type NoteArticle, type PublishedContentEntry } from "@/types";
 
 // ── Small helpers ──────────────────────────────────────
 
@@ -203,7 +203,7 @@ export function fetchNote(slug: string): Promise<NoteArticle> {
   return api(`/?slug=${encodeURIComponent(slug)}`);
 }
 
-export function createNote(input: { title: string; content: string }): Promise<NoteArticle> {
+export function createNote(input: { title: string; content: string; publishedContent?: PublishedContentEntry[] }): Promise<NoteArticle> {
   return api("/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -211,7 +211,7 @@ export function createNote(input: { title: string; content: string }): Promise<N
   });
 }
 
-export function updateNote(slug: string, input: { title: string; content: string }): Promise<NoteArticle> {
+export function updateNote(slug: string, input: { title: string; content: string; publishedContent?: PublishedContentEntry[] }): Promise<NoteArticle> {
   return api("/", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },

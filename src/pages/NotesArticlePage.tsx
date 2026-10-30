@@ -314,6 +314,39 @@ export default function NotesArticlePage() {
         </div>
       </article>
 
+      {/* Published content generated from this note */}
+      {article.publishedContent && article.publishedContent.length > 0 && (
+        <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop mb-giant">
+          <h2 className="font-sora text-headline-md text-on-surface mb-md">Published content</h2>
+          <div className="space-y-sm">
+            {article.publishedContent.map((pc, i) => {
+              const baseRoute =
+                pc.type === "story" ? "stories" :
+                pc.type === "guide" ? "guides" :
+                pc.type === "course" ? "courses" :
+                pc.type === "book" ? "books" :
+                pc.type === "series" ? "series" :
+                pc.type === "doc" ? "docs" :
+                pc.type === "featured" ? "featured" :
+                pc.type === "test" ? "tests" :
+                pc.type === "podcast" ? "podcast" : pc.type;
+              return (
+                <Link
+                  key={i}
+                  to={`/${baseRoute}/${pc.slug}`}
+                  className="block p-md bg-surface-container border border-border-default hover:border-primary/40 transition-colors rounded-lg"
+                >
+                  <span className="font-sora text-xs text-primary uppercase tracking-widest">
+                    {pc.type}
+                  </span>
+                  <p className="font-dm-sans text-sm text-on-surface mt-xs">{pc.title}</p>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* Unmapped notes : comments whose highlight anchor drifted on edit */}
       {orphans.length > 0 && (
         <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop mb-giant">
