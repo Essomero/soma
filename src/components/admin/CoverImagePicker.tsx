@@ -244,7 +244,7 @@ export default function CoverImagePicker({ image, imageAlt, onChange }: CoverIma
               )}
 
               {/* Error */}
-              {error && !loading && (
+              {searchConfigured && error && !loading && (
                 <div className="flex flex-col items-center justify-center py-xl text-center">
                   <AlertCircle className="w-8 h-8 text-error mb-md" />
                   <p className="font-dm-sans text-sm text-on-surface-muted">{error}</p>
@@ -255,7 +255,7 @@ export default function CoverImagePicker({ image, imageAlt, onChange }: CoverIma
               )}
 
               {/* Empty (searched, no results) */}
-              {!loading && !error && searched && results.length === 0 && (
+              {searchConfigured && !loading && !error && searched && results.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-xl text-center">
                   <ImageIcon className="w-8 h-8 text-on-surface-muted mb-md" />
                   <p className="font-dm-sans text-sm text-on-surface-muted">No results for &ldquo;{query}&rdquo;</p>
@@ -264,7 +264,7 @@ export default function CoverImagePicker({ image, imageAlt, onChange }: CoverIma
               )}
 
               {/* Start state */}
-              {!loading && !error && !searched && (
+              {searchConfigured && !loading && !error && !searched && (
                 <div className="flex flex-col items-center justify-center py-xl text-center">
                   <ImageIcon className="w-8 h-8 text-on-surface-muted mb-md" />
                   <p className="font-dm-sans text-sm text-on-surface-muted">Search for a cover image</p>
@@ -275,7 +275,7 @@ export default function CoverImagePicker({ image, imageAlt, onChange }: CoverIma
               )}
 
               {/* Results grid */}
-              {!loading && !error && results.length > 0 && (
+              {searchConfigured && !loading && !error && results.length > 0 && (
                 <>
                   <p className="font-dm-sans text-xs text-on-surface-muted mb-md">
                     {total.toLocaleString()} results &middot; Click an image to select it
