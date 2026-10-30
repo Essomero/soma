@@ -138,6 +138,20 @@ export default async function handler(req, res) {
 
   const shouldStream = stream !== false;
 
+  // ── Reasoning model detection ──
+  // DeepSeek V4 models are reasoning models: max_tokens counts thinking
+  // + answer tokens. Without explicit thinking depth control, flash
+  // models burn their whole budget on reasoning (empty content,
+  // finish_reason: length). Give them generous room (64k) and cap
+  // thinking depth via env var. Straitly-deepseek and native DeepSeek
+  // are detected by the same ID pattern.
+  const selectedModelId = selectedModel.toLowerCase();
+  const isReasoningModel =
+    selectedModelId.includes("deepseek-v4") ||
+    selectedModelId.includes("deepseek/deepseek-v4") ||
+    selectedModelId.includes("z-ai/glm");
+  const reasoningEffort = process.env.DEEPSEEK_REASONING_EFFORT ?? "high";
+
   try {
     // ── Gemini path (non-OpenAI-compatible API) ──
     if (isGemini) {
@@ -174,6 +188,12 @@ export default async function handler(req, res) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 60000);
 
+    // For reasoning models (DeepSeek V4), max_tokens counts thinking +
+    // answer tokens, so grant a large budget and cap thinking depth.
+    const maxTokens = isReasoningModel
+      ? Math.min(Math.max(Number(req.body?.max_tokens) || 64000, 1), 64000)
+      : Math.min(Math.max(Number(req.body?.max_tokens) || 3500, 1), 8000);
+
     const r = await fetch(apiUrl, {
       method: "POST",
       headers,
@@ -181,8 +201,14 @@ export default async function handler(req, res) {
         model: selectedModel,
         messages,
         temperature: 0.7,
-        max_tokens: Math.min(Math.max(Number(req.body?.max_tokens) || 3500, 1), 8000),
+        max_tokens: maxTokens,
         stream: shouldStream,
+        ...(isReasoningModel
+          ? {
+              thinking: { type: "enabled" },
+              reasoning_effort: reasoningEffort,
+            }
+          : {}),
       }),
       signal: controller.signal,
     });
