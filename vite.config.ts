@@ -946,6 +946,8 @@ function chatDevPlugin(env: Record<string, string>) {
         try {
           if (req.method === "GET") {
             const u = new URL(req.url, "http://localhost");
+            // Passthrough unsplash search/probe to the fallback handler
+            if (u.searchParams.get("unsplash")) return next();
             const slug = u.searchParams.get("slug");
             if (!slug) return send(400, { error: "Missing slug param" });
             const rows = await tursoRows("SELECT \"public\" FROM public_pages WHERE slug = ?", [slug]);
@@ -984,8 +986,7 @@ function chatDevPlugin(env: Record<string, string>) {
           if (name === "content") localHandlerCache[name] = (await import("./api/content.js")).default;
           else if (name === "progress") localHandlerCache[name] = (await import("./api/progress.js")).default;
           else if (name === "ratings") localHandlerCache[name] = (await import("./api/ratings.js")).default;
-          else if (name === "unsplash-search") localHandlerCache[name] = (await import("./api/unsplash-search.js")).default;
-          else if (name === "unsplash-config") localHandlerCache[name] = (await import("./api/unsplash-config.js")).default;
+          else if (name === "public") localHandlerCache[name] = (await import("./api/public.js")).default;
           else localHandlerCache[name] = (await import("./api/tests.js")).default;
         }
         return localHandlerCache[name];
@@ -993,7 +994,7 @@ function chatDevPlugin(env: Record<string, string>) {
       server.middlewares.use(async (req: any, res: any, next: any) => {
         const m = /^\/api\/([a-z-]+)/.exec(req.url || "");
         const name = m ? m[1] : "";
-        if (!["content", "progress", "ratings", "tests", "unsplash-search", "unsplash-config"].includes(name)) return next();
+        if (!["content", "progress", "ratings", "tests", "public"].includes(name)) return next();
         try {
           const handler = await loadLocalHandler(name);
           const u = new URL(req.url || "", "http://localhost");

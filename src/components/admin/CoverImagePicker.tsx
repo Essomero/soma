@@ -69,7 +69,7 @@ export default function CoverImagePicker({ image, imageAlt, onChange }: CoverIma
   // Probe whether Unsplash search is configured on the server
   useEffect(() => {
     if (!open) return;
-    fetch("/api/unsplash-config")
+    fetch("/api/public?unsplash=probe")
       .then((r) => r.json())
       .then((data) => setSearchConfigured(!!data.configured))
       .catch(() => setSearchConfigured(false));
@@ -99,7 +99,7 @@ export default function CoverImagePicker({ image, imageAlt, onChange }: CoverIma
     setSelectedId("");
 
     try {
-      const res = await fetch(`/api/unsplash-search?q=${encodeURIComponent(q.trim())}&per_page=24`, {
+      const res = await fetch(`/api/public?unsplash=search&q=${encodeURIComponent(q.trim())}&per_page=24`, {
         signal: controller.signal,
       });
       if (!res.ok) {
