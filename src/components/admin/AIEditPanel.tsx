@@ -280,8 +280,9 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
   };
 
   return (
-    <div className="border border-border-default bg-surface-container rounded-xl overflow-hidden mb-xl">
+    <div className="border border-border-default bg-surface-container rounded-xl mb-xl">
       {/* Header toggle */}
+      <div className="rounded-t-xl overflow-hidden">
       <Tooltip label={aiUnavailable ? "Add an AI provider key to enable" : ""}>
         <button
           type="button"
@@ -296,6 +297,7 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
           <ChevronDown className={`w-3.5 h-3.5 text-on-surface-muted transition-transform ${panelOpen ? "rotate-180" : ""}`} />
         </button>
       </Tooltip>
+      </div>
 
       {panelOpen && (
         <div className="px-md pb-md space-y-sm">
