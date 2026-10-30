@@ -213,8 +213,8 @@ export default function CoverImagePicker({ image, imageAlt, onChange }: CoverIma
                 <div className="flex flex-col items-center justify-center py-xl text-center">
                   <AlertCircle className="w-8 h-8 text-error mb-md" />
                   <p className="font-dm-sans text-sm text-on-surface-muted">{error}</p>
-                  <p className="font-dm-sans text-xs text-on-surface-muted mt-xs">
-                    Set UNSPLASH_ACCESS_KEY in your environment to enable cover search.
+                    <p className="font-dm-sans text-xs text-on-surface-muted mt-xs">
+                    Set UNSPLASH_ACCESS_KEY (or UNSPLASH_APP_ID) in your environment to enable cover search.
                   </p>
                 </div>
               )}

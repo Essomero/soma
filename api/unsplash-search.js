@@ -3,7 +3,8 @@
 // GET /api/unsplash-search?q=<keyword>
 // Returns Unsplash search results (id, urls, alt_description).
 
-const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY || "";
+// Accepts UNSPLASH_ACCESS_KEY or UNSPLASH_APP_ID (the Unsplash UI labels it "App ID").
+const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY || process.env.UNSPLASH_APP_ID || "";
 const UNSPLASH_SEARCH_URL = "https://api.unsplash.com/search/photos";
 
 export default async function handler(req, res) {
@@ -18,7 +19,7 @@ export default async function handler(req, res) {
   if (!UNSPLASH_ACCESS_KEY) {
     return res.status(501).json({
       error: "Unsplash not configured",
-      message: "Set UNSPLASH_ACCESS_KEY in your environment variables to enable cover image search.",
+      message: "Set UNSPLASH_ACCESS_KEY (or UNSPLASH_APP_ID) in your environment variables to enable cover image search.",
     });
   }
 
