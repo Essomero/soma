@@ -3,6 +3,7 @@ import { Loader2, Sparkles, ArrowRight, AlertCircle, ChevronDown, Lightbulb } fr
 import { buildSystemPrompt } from "@/lib/admin-prompts";
 import { FALLBACK_COVER } from "@/lib/utils";
 import { ModelPicker } from "@/components/ui/ModelPicker";
+import { resolveDefaultModel } from "@/lib/modelPref";
 import type { ContentType } from "@/lib/admin-prompts";
 
 interface ModelInfo {
@@ -25,6 +26,7 @@ export interface AIDraft {
   category: string;
   author: { name: string; handle?: string };
   publishedAt?: string;
+  updatedAt?: string;
   image?: string;
   imageAlt?: string;
   tags?: string[];
@@ -81,8 +83,12 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput }: AIDraf
         setModels(list);
         setModelsReady(true);
         if (list.length > 0) {
-          setSelectedModel(list[0].id);
-          setSelectedProvider(list[0].provider);
+          const pref = resolveDefaultModel(list, "deepseek-flash");
+          const m = pref ? list.find((x) => x.id === pref) : list[0];
+          if (m) {
+            setSelectedModel(m.id);
+            setSelectedProvider(m.provider);
+          }
         }
       })
       .catch(() => {

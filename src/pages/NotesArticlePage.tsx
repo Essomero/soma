@@ -15,7 +15,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { mdBlock } from "@/lib/markdown";
 import { type HighlightData, type HighlightComment } from "@/lib/highlights";
 import { fetchNote, deleteNote, splitMarkdownBlocks, validateHighlights } from "@/lib/notes";
-import { type NoteArticle } from "@/types";
+import { type NoteArticle, type PublishedContentEntry } from "@/types";
 
 function formatDate(iso: string): string {
   if (!iso) return "";
@@ -140,7 +140,71 @@ export default function NotesArticlePage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const blocks = useMemo(() => (article ? splitMarkdownBlocks(article.content) : []), [article]);
+  // ── Published content: merge structured + legacy inline links ──
+
+  // Legacy format in the markdown content:
+  //   ---
+  //   → Published content: [Title](/route/slug)
+  const LEGACY_PUB_RE = /^→\s*Published\s+content:\s*\[([^\]]+)\]\(([^)]+)\)/;
+
+  /** Parse legacy inline published-content links from the note content. */
+  function parseLegacyPublished(content: string): PublishedContentEntry[] {
+    const lines = content.split("\n");
+    const entries: PublishedContentEntry[] = [];
+    for (const line of lines) {
+      const m = line.match(LEGACY_PUB_RE);
+      if (m) {
+        const url = m[2].replace(/^\//, "");
+        const parts = url.split("/");
+        const typeSlug = parts[0];
+        const slug = parts.slice(1).join("/");
+        // Map URL path to content type
+        const type =
+          typeSlug === "stories" ? "story" :
+          typeSlug === "guides" ? "guide" :
+          typeSlug === "courses" ? "course" :
+          typeSlug === "books" ? "book" :
+          typeSlug === "series" ? "series" :
+          typeSlug === "docs" ? "doc" :
+          typeSlug === "featured" ? "featured" :
+          typeSlug === "tests" ? "test" :
+          typeSlug === "podcast" ? "podcast" : typeSlug;
+        entries.push({ title: m[1], slug, type });
+      }
+    }
+    return entries;
+  }
+
+  const legacyEntries = article ? parseLegacyPublished(article.content) : [];
+
+  /** Merged published content: structured array + legacy parsed links. */
+  const allPublished = useMemo(() => {
+    const seen = new Set<string>();
+    const merged: PublishedContentEntry[] = [];
+    for (const e of [...(article?.publishedContent || []), ...legacyEntries]) {
+      const key = `${e.type}:${e.slug}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(e);
+    }
+    return merged;
+  }, [article?.publishedContent, legacyEntries]);
+
+  // Filter legacy inline blocks out of ContentBlocks render.
+  const blocks = useMemo(() => {
+    if (!article) return [];
+    const all = splitMarkdownBlocks(article.content);
+    // Remove the block that contains the legacy published-content link,
+    // and the HR that precedes it (if it's the second-to-last block).
+    const pubIdx = all.findIndex((b) => LEGACY_PUB_RE.test(b.trim()));
+    if (pubIdx === -1) return all;
+    const filtered = all.filter((_, i) => i !== pubIdx);
+    // Also remove the HR block right before the link, if it exists.
+    if (pubIdx > 0 && filtered[pubIdx - 1]?.trim() === "---") {
+      return filtered.filter((_, i) => i !== pubIdx - 1);
+    }
+    return filtered;
+  }, [article]);
 
   // Highlights that still map to live text vs. those that lost their anchor.
   const { mapped, orphans } = useMemo(
@@ -313,6 +377,39 @@ export default function NotesArticlePage() {
           )}
         </div>
       </article>
+
+      {/* Published content generated from this note */}
+      {allPublished.length > 0 && (
+        <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop mb-giant">
+          <h2 className="font-sora text-headline-md text-on-surface mb-md">Published content</h2>
+          <div className="space-y-sm">
+            {allPublished.map((pc, i) => {
+              const baseRoute =
+                pc.type === "story" ? "stories" :
+                pc.type === "guide" ? "guides" :
+                pc.type === "course" ? "courses" :
+                pc.type === "book" ? "books" :
+                pc.type === "series" ? "series" :
+                pc.type === "doc" ? "docs" :
+                pc.type === "featured" ? "featured" :
+                pc.type === "test" ? "tests" :
+                pc.type === "podcast" ? "podcast" : pc.type;
+              return (
+                <Link
+                  key={`${pc.type}:${pc.slug}`}
+                  to={`/${baseRoute}/${pc.slug}`}
+                  className="block p-md bg-surface-container border border-border-default hover:border-primary/40 transition-colors rounded-lg"
+                >
+                  <span className="font-sora text-xs text-primary uppercase tracking-widest">
+                    {pc.type}
+                  </span>
+                  <p className="font-dm-sans text-sm text-on-surface mt-xs">{pc.title}</p>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Unmapped notes : comments whose highlight anchor drifted on edit */}
       {orphans.length > 0 && (

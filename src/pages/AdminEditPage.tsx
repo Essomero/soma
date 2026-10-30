@@ -52,6 +52,7 @@ function rowToDraft(row: Record<string, unknown>, type: ContentType): AIDraft {
     category: str(row.category),
     author: { name: str(author.name), handle: str(author.handle) || undefined },
     publishedAt: str(row.publishedAt),
+    updatedAt: str(row.updatedAt) || undefined,
     image: str(row.image) || undefined,
     imageAlt: str(row.imageAlt) || undefined,
     tags: asStringArray(row.tags),

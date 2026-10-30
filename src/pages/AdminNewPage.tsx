@@ -7,6 +7,7 @@ import ContentForm from "@/components/admin/ContentForm";
 import AccentBar from "@/components/ui/AccentBar";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { invalidateContentCache } from "@/lib/content";
+import { fetchNote, updateNote } from "@/lib/notes";
 import type { AIDraft } from "@/components/admin/AIDraftPanel";
 import type { SavePayload } from "@/components/admin/ContentForm";
 import type { ContentType } from "@/lib/admin-prompts";
@@ -35,7 +36,11 @@ export default function AdminNewPage() {
   usePageMeta({ title: "New Content", description: "Create new content with AI assistance" });
 
   const handleDraft = (newDraft: AIDraft) => {
-    setDraft(newDraft);
+    // Never let the AI set the publish date — always today for new
+    // content. Strip whatever the model guessed so initFromDraft falls
+    // back to `now`.
+    const { publishedAt: _stripped, ...clean } = newDraft;
+    setDraft(clean);
     setError("");
   };
 
@@ -45,6 +50,21 @@ export default function AdminNewPage() {
     setSuccess("");
 
     try {
+      // Slug collision: creating new content must never silently
+      // overwrite an existing item (LLMs frequently regenerate the
+      // same title → same slug). Disambiguate with a numeric suffix.
+      let finalSlug = data.slug;
+      {
+        let n = 2;
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const probe = await fetch(`/api/content?slug=${encodeURIComponent(finalSlug)}`);
+          if (probe.status === 404) break;
+          if (!probe.ok) throw new Error(`Slug check failed (${probe.status})`);
+          finalSlug = `${data.slug}-${n++}`;
+        }
+      }
+
       // Pages read category/author/date/tags/topics from the spread body
       // (mapRow flattens body_json at the top level). meta carries only
       // the featured flag, matching publish-all.ts.
@@ -61,19 +81,42 @@ export default function AdminNewPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          slug: data.slug,
+          slug: finalSlug,
           type: data.type,
           title: data.title,
           excerpt: data.excerpt,
           meta: {},
           body: bodyPayload,
           status: data.status,
+          updatedAt: data.updatedAt,
         }),
       });
 
       if (!res.ok) {
         const errBody = await res.text().catch(() => "");
         throw new Error(`Save failed (${res.status}): ${errBody}`);
+      }
+
+      // If content was generated from a source note, append to the note's
+      // publishedContent array so the note page shows a "Published Content"
+      // section with links to everything generated from it.
+      if (sourceNote) {
+        try {
+          const existing = await fetchNote(sourceNote.slug);
+          const entry = {
+            title: data.title,
+            slug: finalSlug,
+            type: data.type,
+          };
+          const updated = [...(existing.publishedContent || []), entry];
+          await updateNote(sourceNote.slug, {
+            title: existing.title,
+            content: existing.content,
+            publishedContent: updated,
+          });
+        } catch {
+          // Note update is best-effort — don't block the user.
+        }
       }
 
       invalidateContentCache();
@@ -83,7 +126,7 @@ export default function AdminNewPage() {
 
       // Navigate to the content page after a brief delay
       setTimeout(() => {
-        navigate(`/${baseRoute}/${data.slug}`);
+        navigate(`/${baseRoute}/${finalSlug}`);
       }, 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed");

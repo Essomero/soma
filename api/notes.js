@@ -9,9 +9,13 @@ const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS note_articles (
   slug TEXT NOT NULL UNIQUE,
   title TEXT NOT NULL,
   content TEXT NOT NULL,
+  published_content TEXT DEFAULT '[]',
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT
 )`;
+
+// Add published_content column if it doesn't exist (migration for existing DBs).
+const MIGRATE_PUBLISHED = `ALTER TABLE note_articles ADD COLUMN published_content TEXT DEFAULT '[]'`;
 
 // FTS5 full-text search index over note_articles.
 // Backfill works via pure SQL (no custom functions needed for raw text).
@@ -24,13 +28,18 @@ const CREATE_FTS = `CREATE VIRTUAL TABLE IF NOT EXISTS note_fts USING fts5(
 const BACKFILL_FTS = `INSERT OR IGNORE INTO note_fts(slug, title, content)
   SELECT slug, title, content FROM note_articles`;
 
-// ── FTS tracking (process-level flag to run setup once) ──────────
+// ── FTS + schema migration tracking (process-level flag to run setup once) ──
 let _ftsInitialized = false;
+let _schemaMigrated = false;
 
 function prepareNotesPipeline(searchSql, searchArgs) {
   const stmts = [
     { type: "execute", stmt: { sql: CREATE_TABLE } },
   ];
+  if (!_schemaMigrated) {
+    stmts.push({ type: "execute", stmt: { sql: MIGRATE_PUBLISHED } });
+    _schemaMigrated = true;
+  }
   if (!_ftsInitialized) {
     stmts.push({ type: "execute", stmt: { sql: CREATE_FTS } });
     stmts.push({ type: "execute", stmt: { sql: BACKFILL_FTS } });
@@ -219,11 +228,16 @@ async function query(sql, args) {
 
 function mapRow(r) {
   if (!r) return null;
+  let publishedContent = [];
+  try {
+    if (r.published_content) publishedContent = JSON.parse(r.published_content);
+  } catch {}
   return {
     id: r.id,
     slug: r.slug,
     title: r.title,
     content: r.content,
+    publishedContent: Array.isArray(publishedContent) ? publishedContent : [],
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
@@ -279,7 +293,7 @@ export default async function handler(req, res) {
     if (!requireAuth(req, res)) return;
 
     if (req.method === "POST") {
-      const { title, content, slug } = req.body || {};
+      const { title, content, slug, publishedContent } = req.body || {};
       if (!title || content == null) return res.status(400).json({ error: "title and content required" });
 
       const finalSlug = slug && slug.trim() ? slug.trim() : title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -288,9 +302,10 @@ export default async function handler(req, res) {
       const existing = await query("SELECT slug FROM note_articles WHERE slug = ?", [finalSlug]);
       if (existing.length) return res.status(409).json({ error: "slug already exists" });
 
+      const pcJson = Array.isArray(publishedContent) ? JSON.stringify(publishedContent) : '[]';
       const result = await query(
-        "INSERT INTO note_articles (slug, title, content) VALUES (?, ?, ?) RETURNING *",
-        [finalSlug, title, content]
+        "INSERT INTO note_articles (slug, title, content, published_content) VALUES (?, ?, ?, ?) RETURNING *",
+        [finalSlug, title, content, pcJson]
       );
       const noteRow = result[0];
       if (noteRow) await syncNoteFts(noteRow.slug, noteRow.title, noteRow.content);
@@ -298,13 +313,20 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "PUT") {
-      const { slug, title, content } = req.body || {};
+      const { slug, title, content, publishedContent } = req.body || {};
       if (!slug || !title || content == null) return res.status(400).json({ error: "slug, title and content required" });
 
-      const result = await query(
-        "UPDATE note_articles SET title = ?, content = ?, updated_at = datetime('now') WHERE slug = ? RETURNING *",
-        [title, content, slug]
-      );
+      const pcJson = Array.isArray(publishedContent) ? JSON.stringify(publishedContent) : undefined;
+
+      const result = pcJson
+        ? await query(
+            "UPDATE note_articles SET title = ?, content = ?, published_content = ?, updated_at = datetime('now') WHERE slug = ? RETURNING *",
+            [title, content, pcJson, slug]
+          )
+        : await query(
+            "UPDATE note_articles SET title = ?, content = ?, updated_at = datetime('now') WHERE slug = ? RETURNING *",
+            [title, content, slug]
+          );
       const row = result[0];
       if (!row) return res.status(404).json({ error: "Not found" });
       await syncNoteFts(row.slug, row.title, row.content);

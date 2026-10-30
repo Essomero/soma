@@ -3,6 +3,7 @@ import { Loader2, Sparkles, AlertCircle, Wand2, ChevronDown, Lightbulb } from "l
 import { buildSystemPrompt } from "@/lib/admin-prompts";
 import Tooltip from "@/components/ui/Tooltip";
 import { ModelPicker } from "@/components/ui/ModelPicker";
+import { resolveDefaultModel } from "@/lib/modelPref";
 
 interface ModelInfo {
   id: string;
@@ -138,8 +139,12 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
         setModels(list);
         setModelsReady(true);
         if (list.length > 0) {
-          setSelectedModel(list[0].id);
-          setSelectedProvider(list[0].provider);
+          const pref = resolveDefaultModel(list, "deepseek-flash");
+          const m = pref ? list.find((x) => x.id === pref) : list[0];
+          if (m) {
+            setSelectedModel(m.id);
+            setSelectedProvider(m.provider);
+          }
         }
       })
       .catch(() => {

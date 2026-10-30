@@ -313,11 +313,18 @@ export interface StoryContent {
 
 // User-authored notes : stored at runtime in Turso (not shipped as TS files).
 // `slug` is immutable once created (it's the key that links comments/highlights).
+export type PublishedContentEntry = {
+  title: string;
+  slug: string;
+  type: string;
+};
+
 export interface NoteArticle {
   id: number;
   slug: string;
   title: string;
   content: string;      // single raw Markdown document
+  publishedContent: PublishedContentEntry[];
   createdAt: string;
   updatedAt: string | null;
 }

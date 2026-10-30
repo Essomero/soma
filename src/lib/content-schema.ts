@@ -637,6 +637,5 @@ ${buildFieldDescriptions(s.type)}`
 1. Choose the closest-fitting type from the list above.
 2. If the idea fits multiple, pick the best one and explain in reasoning.
 3. Generate REALISTIC, SUBSTANTIVE content — actual paragraphs, not outlines or placeholders.
-4. Use markdown within text fields.
-5. Date must be today's real date.`;
+4. Use markdown within text fields.`;
 }
