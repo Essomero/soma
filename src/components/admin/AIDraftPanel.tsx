@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Loader2, Sparkles, ArrowRight, AlertCircle, ChevronDown, Lightbulb } from "lucide-react";
 import { buildSystemPrompt } from "@/lib/admin-prompts";
 import { FALLBACK_COVER } from "@/lib/utils";
+import { ModelPicker } from "@/components/ui/ModelPicker";
 import type { ContentType } from "@/lib/admin-prompts";
 
 interface ModelInfo {
@@ -64,9 +65,7 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput }: AIDraf
   const [modelsReady, setModelsReady] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [selectedProvider, setSelectedProvider] = useState<string>("");
-  const [menuOpen, setMenuOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   // Sync input when initialInput changes (e.g. navigating from a different note)
   useEffect(() => {
@@ -91,16 +90,6 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput }: AIDraf
         setModelsReady(true);
       });
   }, []);
-
-  // Close menu on outside click
-  useEffect(() => {
-    if (!menuOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [menuOpen]);
 
   const selected = models.find((m) => m.id === selectedModel && m.provider === selectedProvider);
   const aiUnavailable = !modelsReady || models.length === 0;
@@ -250,38 +239,17 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput }: AIDraf
       {/* Model picker + Generate button row */}
       <div className="flex flex-wrap items-center gap-md">
         {/* Model picker dropdown */}
-        <div ref={menuRef} className="relative">
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            disabled={aiUnavailable || status === "generating" || disabled}
-            className="inline-flex items-center gap-sm px-md py-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm hover:border-primary transition-colors disabled:opacity-40"
-          >
-            {selected ? selected.label : modelsReady ? "No models available" : "Loading models..."}
-            <ChevronDown className="w-4 h-4 text-on-surface-muted" />
-          </button>
-          {menuOpen && (
-            <div className="absolute top-full left-0 mt-1 z-50 w-64 bg-surface border border-border-default shadow-brutal max-h-60 overflow-y-auto">
-              {models.map((m) => (
-                <button
-                  key={`${m.provider}/${m.id}`}
-                  onClick={() => {
-                    setSelectedModel(m.id);
-                    setSelectedProvider(m.provider);
-                    setMenuOpen(false);
-                  }}
-                  className={`block w-full text-left px-lg py-sm font-dm-sans text-sm transition-colors hover:bg-surface-container ${
-                    m.id === selectedModel && m.provider === selectedProvider
-                      ? "text-primary bg-surface-container"
-                      : "text-on-surface-variant"
-                  }`}
-                >
-                  <span className="font-sora text-xs text-on-surface-muted uppercase mr-sm">{m.provider}</span>
-                  {m.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <ModelPicker
+          models={models}
+          selectedModel={selectedModel}
+          selectedProvider={selectedProvider}
+          onChange={(id, provider) => {
+            setSelectedModel(id);
+            setSelectedProvider(provider);
+          }}
+          disabled={status === "generating" || disabled}
+          unavailable={aiUnavailable}
+        />
 
         {/* Generate button */}
         <button
