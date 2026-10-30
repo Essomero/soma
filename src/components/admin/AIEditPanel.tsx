@@ -16,105 +16,6 @@ interface AIEditPanelProps {
   onUpdate: (partial: Record<string, unknown>) => void;
 }
 
-/**
- * Quick-action preset instructions for common content refinements.
- * Adapted from the rejections app's RefinePanel presets, reworded for
- * soma's writing tone (Grokking Algorithms standard).
- *
- * Clicking a preset fills the prompt so the user can see what's being
- * sent before clicking Apply Edit.
- */
-const CONTENT_EDIT_PRESETS: { label: string; instruction: string }[] = [
-  {
-    label: 'Strip AI tells',
-    instruction: `Strip every AI tell from this content. Find and delete these patterns:
-
-HEDGE OPENERS — throat-clearing before the actual point:
-- "In today's digital landscape" / "In the modern world of X" / "As technology evolves"
-- "It's worth noting that" / "Let's dive in" / "In this article, we will" / "This section covers"
-- "It is important to understand" / "It is crucial to" / "We need to consider"
-
-FILLER INTENSIFIERS — words that add heat, not light:
-- "very" / "really" / "incredibly" / "extremely" / "highly" (when describing yourself or your work)
-- "truly" / "actually" / "literally" / "essentially"
-- "quite" / "rather" / "somewhat"
-
-EMPTY BUZZWORDS:
-- "cutting-edge" / "next-generation" / "world-class" / "best-in-class"
-- "robust" / "seamless" / "mission-critical" / "game-changer" / "paradigm shift"
-- "leveraging" / "driving" / "empowering" / "supercharging" (when followed by a buzzword combo)
-
-RULE-OF-THREE STACKS — three items of the same grammatical type used as decoration:
-- Three adjectives stacked ("scalable, secure, performant")
-- Three bullet points for a single point that could be one sentence
-- Three examples where one or two would do
-
-ACADEMIC REGISTER — formal language where plain English works:
-- "endeavor" / "utilize" / "commence" / "facilitate" / "leverage" (as verb)
-- "demonstrate" / "exhibit" / "ascertain" / "delineate"
-- Use "use" not "utilize", "start" not "commence", "show" not "demonstrate"
-
-EM DASHES — used as stylistic pauses. Keep em dashes in compound modifiers ("user-facing API") and numeric ranges. Replace every stylistic pause em dash with a period or comma.
-
-Keep every fact. Do NOT introduce new AI tells while cleaning up the old ones.`,
-  },
-  {
-    label: 'Tighten prose',
-    instruction: `Rewrite the content at roughly half its current length. The goal: cut words, keep meaning.
-
-Rules:
-- Cut every adverb that doesn't carry information ("very", "really", "quite", "extremely", "essentially")
-- Cut appositives that restate what the noun already says
-- Merge sentences: if two sentences share a subject, combine them
-- Cut weak verbs: replace "X is used to Y" with "X does Y"
-- Cut prepositional phrases: "the architecture of the system" -> "the system architecture"
-- Cut meta-commentary: "This section explains how" -> remove, just explain
-- Cut hedging: "you can think of it as" -> just say what it is
-- Cut signposting: "First, let's look at" -> just state the thing
-
-Keep every factual claim. Keep the same voice. If the result reads like notes, you cut too much — merge, don't mince.`,
-  },
-  {
-    label: 'Conversational tone',
-    instruction: `Rewrite this content to meet the Grokking Algorithms standard. The goal: simplify the language, never the truth.
-
-TONE:
-- Fewer syllables and fewer prerequisites, not fewer facts
-- Simpler register, same technical depth
-- Contractions always: don't, it's, you're, can't
-- No hedge openers: no "it's worth noting," no "let's dive in." Start with the claim
-- No em dashes anywhere
-- Ban sterile academic placeholders: no foo/bar/baz. Use real situations with real stakes
-
-STRUCTURE:
-- Feel the pain first: open with the natural thing anyone would write, then watch it blow up. The reader must feel the friction before hearing the formal solution
-- Intuition before vocabulary: make the idea land, then name it. Never open with the term
-- Numbers, not scale words: "Row 31,204 of 40,000" beats "some rows"
-
-Keep every fact. If a caveat helps the reader avoid a trap, keep it — simplification is not omission.`,
-  },
-  {
-    label: 'Sharpen the hook',
-    instruction: `Rewrite only the opening (the first paragraph or intro). The goal: grab attention immediately.
-
-Apply the "feel the pain first" pattern: show a natural thing a reader would write or do, then let it fail. The reader must feel the friction before hearing the formal solution.
-
-Avoid:
-- Abstract generalities: "In today's world of X" / "As developers, we often face Y"
-- Definitional openers: "X is a technique for" / "Y refers to"
-- Promise without tension: "This post will show you how to"
-- Reference to the post itself: "In this article" / "This section covers"
-
-Prefer:
-- A concrete scenario the reader recognizes
-- A short piece of code or setup that looks correct but breaks
-- The wrong question leading to the right one
-- The reader's own pain stated plainly
-
-Leave the rest of the content unchanged.`,
-  },
-];
-
 export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps) {
   const [panelOpen, setPanelOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
@@ -311,26 +212,8 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
       {panelOpen && (
         <div className="px-md pb-md space-y-sm">
           <p className="font-dm-sans text-[11px] text-on-surface-muted leading-relaxed">
-            Tell the AI what to change, or pick a quick action below.
+            Tell the AI what to change in the current content. It returns the full modified content with only your requested changes applied.
           </p>
-
-          {/* Quick-action presets */}
-          <div className="flex flex-wrap gap-xs">
-            {CONTENT_EDIT_PRESETS.map((preset) => (
-              <button
-                key={preset.label}
-                type="button"
-                onClick={() => setPrompt(preset.instruction)}
-                className={`px-sm py-xs text-[10px] font-sora uppercase tracking-widest border transition-colors ${
-                  prompt === preset.instruction
-                    ? "bg-primary/10 text-primary border-primary/40"
-                    : "bg-surface text-on-surface-muted border-border-default hover:border-primary/40 hover:text-on-surface"
-                }`}
-              >
-                {preset.label}
-              </button>
-            ))}
-          </div>
 
           {/* Custom model dropdown */}
           <div className="flex items-center gap-sm">
