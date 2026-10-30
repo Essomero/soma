@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { SectionHeader } from "./SectionHeader";
+import { writeModelPref } from "@/lib/modelPref";
 
 export interface ModelInfo {
   id: string;
@@ -148,6 +149,7 @@ export function ModelPicker({
   function commit(idx: number) {
     const m = flatOptions[idx];
     if (!m) return;
+    writeModelPref(m.id);
     onChange(m.id, m.provider);
     setOpen(false);
   }
@@ -232,6 +234,7 @@ export function ModelPicker({
                     role="option"
                     aria-selected={isActive}
                     onClick={() => {
+                      writeModelPref(m.id);
                       onChange(m.id, m.provider);
                       setOpen(false);
                     }}
