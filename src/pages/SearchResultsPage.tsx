@@ -2,8 +2,8 @@ import { md } from "@/lib/markdown";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
-  Search, BookOpen, Mic, Star, ArrowRight, SearchX,
-  Bookmark, User, StickyNote, Loader2,
+  Search, BookOpen, Mic, ArrowRight, SearchX,
+  Bookmark, User, StickyNote,
 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import { fetchContentList } from "@/lib/content";
@@ -201,41 +201,37 @@ export default function SearchResultsPage() {
           </p>
         </header>
 
-        {/* AI Insights */}
-        {hasResults && !loading && (
-          <section className="mb-giant">
-            <div className="glass-card p-xl rounded-xl relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-primary-container" />
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-md mb-md">
-                <div className="flex items-center gap-sm">
-                  <Star className="w-4 h-4 text-primary-container" />
-                  <span className="font-sora text-label-caps text-primary-container uppercase tracking-widest">
-                    Summarized Insights
-                  </span>
+        {/* Skeleton loading state */}
+        {loading && allResults.length === 0 && (
+          <div className="space-y-xxl animate-pulse">
+            {/* Hero skeleton */}
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-xl">
+              <div className="xl:col-span-7 rounded-lg bg-surface-container-high aspect-[16/9]" />
+              <div className="xl:col-span-5 flex flex-col justify-center gap-md">
+                <div className="h-3 w-20 bg-surface-container-high rounded" />
+                <div className="h-8 w-full bg-surface-container-high rounded" />
+                <div className="h-4 w-3/4 bg-surface-container-high rounded" />
+                <div className="h-4 w-1/2 bg-surface-container-high rounded" />
+                <div className="flex gap-md mt-md">
+                  <div className="h-5 w-16 bg-surface-container-high rounded" />
+                  <div className="h-5 w-24 bg-surface-container-high rounded" />
                 </div>
               </div>
-              <h2 className="font-sora text-article-title text-on-surface mb-md leading-snug">
-                {query} is a catalyst for innovation.
-              </h2>
-              <p className="font-dm-sans text-body-base text-on-surface-muted max-w-3xl leading-relaxed">
-                The current landscape suggests that {query.toLowerCase()} isn't just a
-                requirement:it's a competitive advantage. Key themes across the
-                community highlight that by solving for these challenges,
-                developers often discover more efficient workflows.
-              </p>
-              <div className="mt-lg flex flex-wrap gap-md border-t border-border-default pt-lg">
-                <span className="font-sora text-label-caps text-on-surface">Inclusive Architecture</span>
-                <span className="font-sora text-label-caps text-on-surface">Universal UX</span>
-                <span className="font-sora text-label-caps text-on-surface">Dev Tools</span>
-              </div>
             </div>
-          </section>
-        )}
 
-        {/* Loading state */}
-        {loading && allResults.length === 0 && (
-          <div className="flex items-center justify-center py-giant">
-            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <div className="border-t border-border-default" />
+
+            {/* Grid skeletons */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-xl">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="p-lg rounded-lg border border-border-default bg-surface-container-low space-y-md">
+                  <div className="h-3 w-16 bg-surface-container-high rounded" />
+                  <div className="h-5 w-full bg-surface-container-high rounded" />
+                  <div className="h-5 w-3/4 bg-surface-container-high rounded" />
+                  <div className="h-3 w-1/3 bg-surface-container-high rounded" />
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -337,8 +333,15 @@ export default function SearchResultsPage() {
         {/* Infinite scroll sentinel */}
         <div ref={loadMoreRef} className="h-10" />
         {loading && allResults.length > 0 && (
-          <div className="flex justify-center py-lg">
-            <Loader2 className="w-6 h-6 text-primary animate-spin" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-xl animate-pulse mt-xxl">
+            {[1, 2, 3].map((i) => (
+              <div key={`skel-${i}`} className="p-lg rounded-lg border border-border-default bg-surface-container-low space-y-md">
+                <div className="h-3 w-16 bg-surface-container-high rounded" />
+                <div className="h-5 w-full bg-surface-container-high rounded" />
+                <div className="h-5 w-2/3 bg-surface-container-high rounded" />
+                <div className="h-3 w-1/4 bg-surface-container-high rounded" />
+              </div>
+            ))}
           </div>
         )}
       </main>
