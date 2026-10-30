@@ -98,7 +98,7 @@ function initFromDraft(draft: AIDraft | null): FormValues {
     category: draft.category || "Engineering",
     authorName: "Soma Editorial",               // AI never controls this
     authorHandle: "",                            // AI never controls this
-    publishedAt: draft.publishedAt || now,        // preserve for edits; fall back to now for new content
+    publishedAt: now,                           // always today — AI never controls this
     image: draft.image || "",
     imageAlt: draft.imageAlt || "",
     tagsText: (draft.tags || []).join(", "),
@@ -803,18 +803,15 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
             return renderField(f);
           }
           if (f.name === "publishedAt") {
-            const dateVal = str(values.publishedAt).split("T")[0];
+            const displayDate = str(values.publishedAt).split("T")[0];
             return (
-              <div key="publishedAt">
-                <label className="font-sora text-sm text-on-surface block mb-xs">
-                  Date <span className="text-error ml-xs">*</span>
+              <div key="publishedAt" className="flex items-center gap-md">
+                <label className="font-sora text-sm text-on-surface block">
+                  Date
                 </label>
-                <input
-                  type="date"
-                  value={dateVal}
-                  onChange={(e) => setVal("publishedAt", `${e.target.value}T12:00:00.000Z`)}
-                  className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary cursor-pointer dark:[color-scheme:dark] dark:[&::-webkit-calendar-picker-indicator]:[filter:brightness(0)_invert(1)] [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                />
+                <span className="font-dm-sans text-sm text-on-surface-muted">
+                  {displayDate}
+                </span>
               </div>
             );
           }

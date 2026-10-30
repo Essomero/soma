@@ -28,14 +28,18 @@ const CREATE_FTS = `CREATE VIRTUAL TABLE IF NOT EXISTS note_fts USING fts5(
 const BACKFILL_FTS = `INSERT OR IGNORE INTO note_fts(slug, title, content)
   SELECT slug, title, content FROM note_articles`;
 
-// ── FTS tracking (process-level flag to run setup once) ──────────
+// ── FTS + schema migration tracking (process-level flag to run setup once) ──
 let _ftsInitialized = false;
+let _schemaMigrated = false;
 
 function prepareNotesPipeline(searchSql, searchArgs) {
   const stmts = [
     { type: "execute", stmt: { sql: CREATE_TABLE } },
-    { type: "execute", stmt: { sql: MIGRATE_PUBLISHED } },
   ];
+  if (!_schemaMigrated) {
+    stmts.push({ type: "execute", stmt: { sql: MIGRATE_PUBLISHED } });
+    _schemaMigrated = true;
+  }
   if (!_ftsInitialized) {
     stmts.push({ type: "execute", stmt: { sql: CREATE_FTS } });
     stmts.push({ type: "execute", stmt: { sql: BACKFILL_FTS } });
@@ -167,7 +171,6 @@ async function query(sql, args) {
   const body = {
     requests: [
       { type: "execute", stmt: { sql: CREATE_TABLE } },
-      { type: "execute", stmt: { sql: MIGRATE_PUBLISHED } },
       {
         type: "execute",
         stmt: {
@@ -201,7 +204,7 @@ async function query(sql, args) {
       return [];
     }
 
-    const result = data.results && data.results[2] && data.results[2].response && data.results[2].response.result;
+    const result = data.results && data.results[1] && data.results[1].response && data.results[1].response.result;
     if (!result) {
       console.error("Unexpected Turso format:", JSON.stringify(data).slice(0, 300));
       return [];
