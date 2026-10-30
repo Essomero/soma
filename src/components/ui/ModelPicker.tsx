@@ -84,6 +84,7 @@ export function ModelPicker({
 }: ModelPickerProps) {
   const [open, setOpen] = useState(false);
   const [activeIdx, setActiveIdx] = useState(-1);
+  const [openUpward, setOpenUpward] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -128,6 +129,18 @@ export function ModelPicker({
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  // Flip dropdown upward when there isn't enough room below the trigger.
+  useEffect(() => {
+    if (!open || !containerRef.current) return;
+    const trigger = containerRef.current.querySelector("button");
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    // Estimate dropdown max height (matches the max-h-[400px] on the list).
+    // Include the mt-1 gap (4px) + border (1px each side) ≈ 410px.
+    setOpenUpward(spaceBelow < 410);
   }, [open]);
 
   // Reset active index when opening.
@@ -213,9 +226,9 @@ export function ModelPicker({
           ref={listRef}
           role="listbox"
           tabIndex={-1}
-          className={`absolute top-full mt-1 z-50 min-w-[200px] sm:min-w-[260px] max-h-[400px] overflow-y-auto bg-surface border border-border-default rounded-lg shadow-xl py-xs ${
-            align === "right" ? "right-0" : "left-0"
-          }`}
+          className={`absolute z-50 min-w-[200px] sm:min-w-[260px] max-h-[400px] overflow-y-auto bg-surface border border-border-default rounded-lg shadow-xl py-xs ${
+            openUpward ? "bottom-full mb-1" : "top-full mt-1"
+          } ${align === "right" ? "right-0" : "left-0"}`}
         >
           {grouped.map((group) => (
             <div key={group.provider}>
