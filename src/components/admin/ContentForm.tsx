@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Plus, Trash2, GripVertical, X, Eye, Pencil, AlertTriangle } from "lucide-react";
 import BlockEditor from "./BlockEditor";
 import ContentPreview from "./ContentPreview";
+import CoverImagePicker from "./CoverImagePicker";
 import type { ContentBlock } from "@/types";
 import {
   CONTENT_TYPE_LABELS,
@@ -778,7 +779,7 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
 
       {/* Schema-driven metadata fields */}
       {schema.fields
-        .filter((f) => ["title", "excerpt", "category", "author", "publishedAt", "image", "imageAlt", "tags", "topics", "tagline", "format", "estimatedMinutes", "passingScore", "episode", "duration", "summary"].includes(f.name))
+        .filter((f) => ["title", "excerpt", "category", "author", "publishedAt", "image", "tags", "topics", "tagline", "format", "estimatedMinutes", "passingScore", "episode", "duration", "summary"].includes(f.name))
         .map((f) => {
           // Special handling for fields that use sub-keys
           if (f.name === "author") {
@@ -830,6 +831,20 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
                     className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary cursor-pointer dark:[color-scheme:dark] dark:[&::-webkit-calendar-picker-indicator]:[filter:brightness(0)_invert(1)] [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                   />
                 </div>
+              </div>
+            );
+          }
+          if (f.name === "image") {
+            return (
+              <div key="image">
+                <CoverImagePicker
+                  image={str(values.image)}
+                  imageAlt={str(values.imageAlt)}
+                  onChange={(img, alt) => {
+                    setVal("image", img);
+                    setVal("imageAlt", alt);
+                  }}
+                />
               </div>
             );
           }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AlertTriangle, Archive, Loader2, X, Trash2 } from "lucide-react";
+import { useScrollLock } from "@/lib/useScrollLock";
 
 interface ConfirmModalProps {
   title?: string;
@@ -31,6 +32,8 @@ export default function ConfirmModal({
   const [typed, setTyped] = useState("");
   const canConfirm = !confirmText || typed === confirmText;
   const ConfirmIcon = destructive ? Trash2 : Archive;
+
+  useScrollLock(true);
 
   return (
     <div

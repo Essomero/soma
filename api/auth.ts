@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { timingSafeEqual } from "node:crypto";
+// @ts-expect-error — JS module, no declarations alongside serverless functions
 import { createSessionToken, isAuthed } from "./_auth.js";
+// @ts-expect-error — JS module, no declarations alongside serverless functions
 import { rateLimit } from "./_limits.js";
 
 function passwordsMatch(a: unknown, b: string): boolean {

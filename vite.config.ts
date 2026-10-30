@@ -946,6 +946,8 @@ function chatDevPlugin(env: Record<string, string>) {
         try {
           if (req.method === "GET") {
             const u = new URL(req.url, "http://localhost");
+            // Passthrough unsplash search/probe to the fallback handler
+            if (u.searchParams.get("unsplash")) return next();
             const slug = u.searchParams.get("slug");
             if (!slug) return send(400, { error: "Missing slug param" });
             const rows = await tursoRows("SELECT \"public\" FROM public_pages WHERE slug = ?", [slug]);
@@ -972,7 +974,7 @@ function chatDevPlugin(env: Record<string, string>) {
       // with the same owner bypass as `npm run server`, so plain `npm run dev`
       // works with zero extra processes. Routes handled above (chat, models,
       // comments, highlights, notes, public) never reach this.
-      for (const k of ["TURSO_DATABASE_URL", "TURSO_DB", "TURSO_AUTH_TOKEN", "TURSO_TOKEN", "SITE_PASSWORD"]) {
+      for (const k of ["TURSO_DATABASE_URL", "TURSO_DB", "TURSO_AUTH_TOKEN", "TURSO_TOKEN", "SITE_PASSWORD", "UNSPLASH_ACCESS_KEY", "UNSPLASH_APP_ID"]) {
         if (!process.env[k] && env[k]) process.env[k] = env[k];
       }
       const localHandlerCache: Record<string, any> = {};
@@ -984,6 +986,7 @@ function chatDevPlugin(env: Record<string, string>) {
           if (name === "content") localHandlerCache[name] = (await import("./api/content.js")).default;
           else if (name === "progress") localHandlerCache[name] = (await import("./api/progress.js")).default;
           else if (name === "ratings") localHandlerCache[name] = (await import("./api/ratings.js")).default;
+          else if (name === "public") localHandlerCache[name] = (await import("./api/public.js")).default;
           else localHandlerCache[name] = (await import("./api/tests.js")).default;
         }
         return localHandlerCache[name];
@@ -991,7 +994,7 @@ function chatDevPlugin(env: Record<string, string>) {
       server.middlewares.use(async (req: any, res: any, next: any) => {
         const m = /^\/api\/([a-z-]+)/.exec(req.url || "");
         const name = m ? m[1] : "";
-        if (!["content", "progress", "ratings", "tests"].includes(name)) return next();
+        if (!["content", "progress", "ratings", "tests", "public"].includes(name)) return next();
         try {
           const handler = await loadLocalHandler(name);
           const u = new URL(req.url || "", "http://localhost");
