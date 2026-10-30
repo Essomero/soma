@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
-import { Loader2, Sparkles, AlertCircle, Wand2, ChevronDown, Check, Lightbulb } from "lucide-react";
+import { Loader2, Sparkles, AlertCircle, Wand2, ChevronDown, Lightbulb } from "lucide-react";
 import { buildSystemPrompt } from "@/lib/admin-prompts";
 import Tooltip from "@/components/ui/Tooltip";
+import { ModelPicker } from "@/components/ui/ModelPicker";
 
 interface ModelInfo {
   id: string;
@@ -127,8 +128,6 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
   const [modelsReady, setModelsReady] = useState(false);
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedProvider, setSelectedProvider] = useState("");
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -159,16 +158,6 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
 
   const selected = models.find((m) => m.id === selectedModel && m.provider === selectedProvider);
   const aiUnavailable = !modelsReady || models.length === 0;
-
-  // Close menu on outside click
-  useEffect(() => {
-    if (!menuOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [menuOpen]);
 
   const submit = async () => {
     if (!prompt.trim() || status === "sending" || !selected) return;
@@ -335,37 +324,17 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
           {/* Custom model dropdown */}
           <div className="flex items-center gap-sm">
             <span className="font-sora text-[10px] text-on-surface-muted uppercase tracking-wider shrink-0">Model</span>
-            <div ref={menuRef} className="relative">
-              <button
-                type="button"
-                onClick={() => setMenuOpen(!menuOpen)}
-                disabled={aiUnavailable}
-                className="inline-flex items-center gap-sm px-md py-xs font-sora text-xs border border-border-default bg-surface text-on-surface hover:border-primary transition-colors disabled:opacity-40"
-              >
-                {selected ? selected.label : modelsReady ? "No models available" : "Loading models..."}
-                <ChevronDown className="w-3.5 h-3.5 text-on-surface-muted shrink-0" />
-              </button>
-              {menuOpen && (
-                <div className="absolute top-full left-0 mt-1 z-50 bg-surface border border-border-default shadow-xl min-w-[260px] max-h-[300px] overflow-y-auto">
-                  {models.map((m) => {
-                    const isActive = m.id === selectedModel && m.provider === selectedProvider;
-                    return (
-                      <button
-                        key={`${m.provider}-${m.id}`}
-                        type="button"
-                        onClick={() => { setSelectedModel(m.id); setSelectedProvider(m.provider); setMenuOpen(false); }}
-                        className={`w-full text-left px-md py-sm font-dm-sans text-sm transition-colors hover:bg-surface-container flex items-center justify-between ${
-                          isActive ? "text-primary bg-surface-container font-semibold" : "text-on-surface-variant"
-                        }`}
-                      >
-                        <span className="truncate">{m.label}</span>
-                        {isActive && <Check className="w-3.5 h-3.5 shrink-0 text-primary" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            <ModelPicker
+              models={models}
+              selectedModel={selectedModel}
+              selectedProvider={selectedProvider}
+              onChange={(id, provider) => {
+                setSelectedModel(id);
+                setSelectedProvider(provider);
+              }}
+              unavailable={aiUnavailable}
+              className="px-md py-xs font-sora text-xs"
+            />
           </div>
 
           {/* Input */}
