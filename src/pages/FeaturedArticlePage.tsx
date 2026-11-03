@@ -157,73 +157,107 @@ export default function FeaturedArticlePage() {
             quote={somaPullQuotes[1].quote}
           />
 
-          <div className="font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md">
+          <div className="font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl">
             <h2 className="font-sora text-article-title text-on-surface pt-lg pb-md">
               Three pieces, one loop
             </h2>
-            <p>
+            <p className="mb-xl">
               Reading a chapter feels like progress. Then someone asks you to
               explain it a week later and you say, uh, it was about types.
               Nothing stuck.
             </p>
-            <p>
-              Soma is where the learning lives. You write in markdown, drop a
-              Mermaid diagram next to KaTeX math, and add a 3D scene where a
-              picture won&apos;t do. Select any paragraph and the margin AI
-              explains, challenges, or simplifies it. Notes stay private until
-              you flip one toggle, and every word sits in your own Turso
-              database. Point a coding agent at the repo and it drafts content
-              too, staged private until you say otherwise.{" "}
-              <a
-                href="https://github.com/Essomero/soma"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-brand underline hover:opacity-80"
-              >
-                Soma on GitHub
-              </a>{" "}
-              holds the whole thing: fork it, import it into Vercel, add one
-              password, and you&apos;re running.
-            </p>
-            <p>
-              Soma Labs is where you find out whether you actually know it.
-              Each lesson turns into a drill: a failing test, a function you
-              write, then a green check when your version behaves like the real
-              one. Reading about generics is easy. Writing them until the test
-              passes is the part that sticks. The drills live at{" "}
-              <a
-                href="https://github.com/Essomero/soma-labs"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-brand underline hover:opacity-80"
-              >
-                Soma Labs on GitHub
-              </a>
-              .
-            </p>
-            <p>
-              Son is its own thing. It&apos;s a personal speech platform: pick
-              a role, talk to it in the browser, and hear it answer, with
-              barge-in when you cut in. It reads anything you paste out loud
-              and saves the audio as MP3. It dictates your speech straight into
-              whatever box has the cursor. It tags a folder of podcast episodes
-              or an album in one pass. Speech-to-text and text-to-speech are
-              both swappable, from local models to cloud ones, so the whole
-              voice path can run on your machine. Soma borrows it for one job:
-              speaking your oral exam questions. I bundled it here because
-              that&apos;s a good use case, not because either repo needs the
-              other. The repo is{" "}
-              <a
-                href="https://github.com/Essomero/son"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-brand underline hover:opacity-80"
-              >
-                Son on GitHub
-              </a>
-              .
-            </p>
-            <p>
+
+            <div className="space-y-xxl">
+              <div className="border-t border-border-default/70 pt-xl">
+                <p className="font-sora text-metadata-tag uppercase tracking-widest mb-md">
+                  <span className="font-bold text-on-surface">Soma</span>
+                  <span className="text-on-surface-variant"> // the platform</span>
+                </p>
+                <p className="font-sora text-xl md:text-2xl text-on-surface leading-snug mb-md">
+                  <strong>Soma</strong> is where the learning lives.
+                </p>
+                <p>
+                  You write in markdown, drop a Mermaid diagram next to KaTeX
+                  math, and add a 3D scene where a picture won&apos;t do. Select
+                  any paragraph and the margin AI explains, challenges, or
+                  simplifies it. Notes stay private until you flip one toggle,
+                  and every word sits in your own Turso database. Point a
+                  coding agent at the repo and it drafts content too, staged
+                  private until you say otherwise. The repo is{" "}
+                  <a
+                    href="https://github.com/Essomero/soma"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand underline hover:opacity-80"
+                  >
+                    Soma on GitHub
+                  </a>
+                  : fork it, import it into Vercel, add one password, and
+                  you&apos;re running.
+                </p>
+              </div>
+
+              <div className="border-t border-border-default/70 pt-xl">
+                <p className="font-sora text-metadata-tag uppercase tracking-widest mb-md">
+                  <span className="font-bold text-on-surface">Soma Labs</span>
+                  <span className="text-on-surface-variant"> // the drills</span>
+                </p>
+                <p className="font-sora text-xl md:text-2xl text-on-surface leading-snug mb-md">
+                  <strong>Soma Labs</strong> is where you find out whether you
+                  actually know it.
+                </p>
+                <p>
+                  Each lesson turns into a drill: a failing test, a function
+                  you write, then a green check when your version behaves like
+                  the real one. Reading about generics is easy. Writing them
+                  until the test passes is the part that sticks. The drills
+                  live at{" "}
+                  <a
+                    href="https://github.com/Essomero/soma-labs"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand underline hover:opacity-80"
+                  >
+                    Soma Labs on GitHub
+                  </a>
+                  .
+                </p>
+              </div>
+
+              <div className="border-t border-border-default/70 pt-xl">
+                <p className="font-sora text-metadata-tag uppercase tracking-widest mb-md">
+                  <span className="font-bold text-on-surface">Son</span>
+                  <span className="text-on-surface-variant"> // the speech platform</span>
+                </p>
+                <p className="font-sora text-xl md:text-2xl text-on-surface leading-snug mb-md">
+                  <strong>Son</strong> is its own thing. It&apos;s a personal
+                  speech platform.
+                </p>
+                <p>
+                  Pick a role, talk to it in the browser, and hear it answer,
+                  with barge-in when you cut in. It reads anything you paste
+                  out loud and saves the audio as MP3. It dictates your speech
+                  straight into whatever box has the cursor. It tags a folder
+                  of podcast episodes or an album in one pass. Speech-to-text
+                  and text-to-speech are both swappable, from local models to
+                  cloud ones, so the whole voice path can run on your machine.
+                  Soma borrows it for one job: speaking your oral exam
+                  questions. I bundled it here because that&apos;s a good use
+                  case, not because either repo needs the other. The repo is{" "}
+                  <a
+                    href="https://github.com/Essomero/son"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand underline hover:opacity-80"
+                  >
+                    Son on GitHub
+                  </a>
+                  .
+                </p>
+              </div>
+            </div>
+
+            <p className="font-sora text-lg text-on-surface leading-snug mt-xxl">
               Three repos, one loop. Read it in Soma, drill it in Soma Labs,
               explain it to Son. When all three feel easy, you know it.
             </p>
