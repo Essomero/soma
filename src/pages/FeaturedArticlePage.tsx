@@ -25,7 +25,7 @@ const somaAuthor: Author = { name: "Benjamin Mayanja", handle: "@Essomero" };
 
 const somaBentoHighlights: BentoCardData[] = [
   { label: "SOVEREIGN BY DEFAULT", title: "Your Words Live in Your Database", description: "Notes, highlights, and publishing toggles sit in your own Turso edge SQLite behind one password you invent. There is no Soma cloud holding your writing hostage." },
-  { label: "LEARN OUT LOUD", title: "Reading You Can Prove", description: "Margin AI explains any paragraph, Soma Labs turns lessons into runnable drills, and the Son voice agent reads your oral exam questions out loud." },
+  { label: "LEARN OUT LOUD", title: "Reading You Can Prove", description: "Margin AI explains any paragraph, Soma Labs turns lessons into runnable drills, and Son, a standalone speech platform, speaks your oral exam questions." },
   { label: "AGENTS THAT PUBLISH", title: "Staged Private, Shared by Choice", description: "Soma ships the same skills its author writes with, so any coding assistant can draft typed content and stage it into your database as a private piece. One toggle makes it public." },
 ];
 
@@ -202,12 +202,17 @@ export default function FeaturedArticlePage() {
               .
             </p>
             <p>
-              Son is the voice in the room. Soma hands your test question to
-              Son, Son reads it in the voice you pick, and your spoken answer
-              drops into the answer box as text. Son also runs on its own:
-              start it on your machine at localhost:7860, pick a role, and
-              talk. You can cut it off mid-sentence and it stops. Explaining a
-              thing out loud finds gaps that reading never will. The repo is{" "}
+              Son is its own thing. It&apos;s a personal speech platform: pick
+              a role, talk to it in the browser, and hear it answer, with
+              barge-in when you cut in. It reads anything you paste out loud
+              and saves the audio as MP3. It dictates your speech straight into
+              whatever box has the cursor. It tags a folder of podcast episodes
+              or an album in one pass. Speech-to-text and text-to-speech are
+              both swappable, from local models to cloud ones, so the whole
+              voice path can run on your machine. Soma borrows it for one job:
+              speaking your oral exam questions. I bundled it here because
+              that&apos;s a good use case, not because either repo needs the
+              other. The repo is{" "}
               <a
                 href="https://github.com/Essomero/son"
                 target="_blank"
