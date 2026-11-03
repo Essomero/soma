@@ -8,7 +8,7 @@ argument-hint: "[content-type] [title]"
 
 You are creating content for **Soma** — a personal publishing platform for AI-assisted deep research, deployed at `https://soma.mayanja.dev`.
 
-**Writing Voice:** All prose across all content types must strictly match the **Grokking Algorithms standard** (Rule 17 in `AGENTS.md` / `CLAUDE.md`). It is simple without losing complexity, never dumbed down, visual first, and written for the curious, capable mind. Never use em dashes. See *Important Rules* for full details.
+**Writing Voice:** All prose across all content types must strictly match the **Grokking Algorithms standard** (Rule 17 in `AGENTS.md` / `CLAUDE.md`). It is simple without losing complexity, never dumbed down, visual first, and written for the curious, capable mind. Never use em dashes. Reading is a pleasure here, never a chore: give long prose shape with quote-led parts, bold anchors, and enough air to look good before a single sentence is read. See *Important Rules* for full details.
 
 ## Quick Reference
 
@@ -875,6 +875,7 @@ The dark editorial theme uses these Tailwind classes:
    - **Mark the hand-waving:** If a step only works because you waved at it, say which step. Never hide the trick.
    - **One idea per paragraph:** 1 to 3 sentences. Split compound sentences.
    - **Pacing and rhythm:** Vary sentence length on purpose. A punchy three-word sentence after a long one lands.
+   - **Reading must not feel like a chore, it should feel like something you look up to.** A page is chosen over a hundred open tabs, so it has to earn the scroll. Shape every long body: open a part with a short quote pulled from its own text in `font-sora` above the prose, bold the product, file, or concept name so the eye lands on it, split parts with a border or generous `pt-xl`/`space-y-xxl`, and never ship three walls of identical paragraphs in a row. Use pull quotes, bento cards, diagrams, and blockquotes to break the run. Hold the page at arm's length before publishing: if it looks like a wall, it reads like a chore, and the reader leaves even when every sentence is correct. Beauty here is hierarchy and air, not decoration.
    - **Concrete numbers over scale words:** "Row 31,204 of 40,000", not "some rows." "3 of 5 nodes", not "most nodes." Say roughly or work it out loud.
    - **Contractions always:** it's, don't, you'll, can't.
    - **No hedge openers:** No "it's worth noting," no "let's dive in," no "rite of passage" or roadmap announcements. Start with the claim.

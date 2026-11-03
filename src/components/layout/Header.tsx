@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, LogOut, Sun, Moon, Plus } from "lucide-react";
+import { Search, LogOut, Sun, Moon, Plus, Github } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSearch } from "@/lib/SearchContext";
 import { useTheme } from "@/lib/ThemeContext";
@@ -110,6 +110,17 @@ export default function Header() {
             <button onClick={() => setOpen(true)} className="p-2 text-on-surface-variant hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-colors" aria-label="Search (Cmd+K)">
               <Search className="w-5 h-5" />
             </button>
+          </Tooltip>
+          <Tooltip label="GitHub" position="bottom">
+            <a
+              href="https://github.com/Essomero/soma"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 text-on-surface-variant hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-colors"
+              aria-label="Soma on GitHub"
+            >
+              <Github className="w-5 h-5" />
+            </a>
           </Tooltip>
           {authed && (
             <Tooltip label="Sign out" position="bottom" align="end">
