@@ -25,7 +25,7 @@ const somaAuthor: Author = { name: "Benjamin Mayanja", handle: "@Essomero" };
 
 const somaBentoHighlights: BentoCardData[] = [
   { label: "SOVEREIGN BY DEFAULT", title: "Your Words Live in Your Database", description: "Notes, highlights, and publishing toggles sit in your own Turso edge SQLite behind one password you invent. There is no Soma cloud holding your writing hostage." },
-  { label: "LEARN OUT LOUD", title: "Reading You Can Prove", description: "Margin AI explains any paragraph, Soma Labs turns lessons into runnable drills, and the Son voice agent scores your spoken answers in real time." },
+  { label: "LEARN OUT LOUD", title: "Reading You Can Prove", description: "Margin AI explains any paragraph, Soma Labs turns lessons into runnable drills, and the Son voice agent reads your oral exam questions out loud." },
   { label: "AGENTS THAT PUBLISH", title: "Staged Private, Shared by Choice", description: "Soma ships the same skills its author writes with, so any coding assistant can draft typed content and stage it into your database as a private piece. One toggle makes it public." },
 ];
 
@@ -159,22 +159,68 @@ export default function FeaturedArticlePage() {
 
           <div className="font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md">
             <h2 className="font-sora text-article-title text-on-surface pt-lg pb-md">
-              Learn it, prove it, publish it
+              Three pieces, one loop
             </h2>
             <p>
-              Learning here is something you do, not something you consume.
-              Select any paragraph and ask the margin AI to explain, challenge,
-              or simplify it. Open the companion Soma Labs repo and run the
-              drills with your own hands instead of copying code into a void.
+              Reading a chapter feels like progress. Then someone asks you to
+              explain it a week later and you say, uh, it was about types.
+              Nothing stuck.
             </p>
             <p>
-              Then say it out loud. The Son voice agent reads diagnostic test
-              questions to you and scores your spoken answers in real time,
-              all from your own machine. And when the words are ready, any
-              coding assistant can draft them as typed content staged private
-              in your database. One toggle makes them public. If one reader
-              passes an oral screen without ever touching someone else's
-              server, Soma did its job.
+              Soma is where the learning lives. You write in markdown, drop a
+              Mermaid diagram next to KaTeX math, and add a 3D scene where a
+              picture won&apos;t do. Select any paragraph and the margin AI
+              explains, challenges, or simplifies it. Notes stay private until
+              you flip one toggle, and every word sits in your own Turso
+              database. Point a coding agent at the repo and it drafts content
+              too, staged private until you say otherwise.{" "}
+              <a
+                href="https://github.com/Essomero/soma"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brand underline hover:opacity-80"
+              >
+                Soma on GitHub
+              </a>{" "}
+              holds the whole thing: fork it, import it into Vercel, add one
+              password, and you&apos;re running.
+            </p>
+            <p>
+              Soma Labs is where you find out whether you actually know it.
+              Each lesson turns into a drill: a failing test, a function you
+              write, then a green check when your version behaves like the real
+              one. Reading about generics is easy. Writing them until the test
+              passes is the part that sticks. The drills live at{" "}
+              <a
+                href="https://github.com/Essomero/soma-labs"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brand underline hover:opacity-80"
+              >
+                Soma Labs on GitHub
+              </a>
+              .
+            </p>
+            <p>
+              Son is the voice in the room. Soma hands your test question to
+              Son, Son reads it in the voice you pick, and your spoken answer
+              drops into the answer box as text. Son also runs on its own:
+              start it on your machine at localhost:7860, pick a role, and
+              talk. You can cut it off mid-sentence and it stops. Explaining a
+              thing out loud finds gaps that reading never will. The repo is{" "}
+              <a
+                href="https://github.com/Essomero/son"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brand underline hover:opacity-80"
+              >
+                Son on GitHub
+              </a>
+              .
+            </p>
+            <p>
+              Three repos, one loop. Read it in Soma, drill it in Soma Labs,
+              explain it to Son. When all three feel easy, you know it.
             </p>
           </div>
         </article>

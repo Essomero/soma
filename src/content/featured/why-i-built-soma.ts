@@ -86,5 +86,15 @@ export const whyIBuiltSoma: FeaturedContent = {
         "Nothing locks you in either. Copy any page as markdown or export a PDF for print. This is the gap I wanted closed. One centralized place to learn, AI-accelerated, that you own, that works with whatever you already use, that's beautiful by default, and that deploys in 60 seconds. Soma is that place.",
       ],
     },
+    {
+      heading: "Three pieces, one loop",
+      paragraphs: [
+        "Reading a chapter feels like progress. Then someone asks you to explain it a week later and you say, uh, it was about types. Nothing stuck.",
+        "Soma is where the learning lives. You write in markdown, drop a Mermaid diagram next to KaTeX math, and add a 3D scene where a picture won't do. Select any paragraph and the margin AI explains, challenges, or simplifies it. Notes stay private until you flip one toggle, and every word sits in your own Turso database. Point a coding agent at the repo and it drafts content too, staged private until you say otherwise. [Soma on GitHub](https://github.com/Essomero/soma) holds the whole thing: fork it, import it into Vercel, add one password, and you're running.",
+        "Soma Labs is where you find out whether you actually know it. Each lesson turns into a drill: a failing test, a function you write, then a green check when your version behaves like the real one. Reading about generics is easy. Writing them until the test passes is the part that sticks. The drills live at [Soma Labs on GitHub](https://github.com/Essomero/soma-labs).",
+        "Son is the voice in the room. Soma hands your test question to Son, Son reads it in the voice you pick, and your spoken answer drops into the answer box as text. Son also runs on its own: start it on your machine at localhost:7860, pick a role, and talk. You can cut it off mid-sentence and it stops. Explaining a thing out loud finds gaps that reading never will. The repo is [Son on GitHub](https://github.com/Essomero/son).",
+        "Three repos, one loop. Read it in Soma, drill it in Soma Labs, explain it to Son. When all three feel easy, you know it.",
+      ],
+    },
   ],
 };
