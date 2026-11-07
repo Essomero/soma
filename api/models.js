@@ -6,7 +6,7 @@ const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_DISABLED = process.env.GEMINI_DISABLED === "1" || process.env.GEMINI_DISABLED === "true";
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
 const CEREBRAS_KEY = process.env.CEREBRAS_API_KEY || "";
-const STRAITLY_KEY = process.env.STRAITLY_API_KEY || process.env.STRAIGHTLY_API_KEY || "";
+const STRAITLY_KEY = process.env.STRAITLY_API_KEY || process.env.STRAIGHTLY_API_KEY || process.env.STRIGHTLY_API_KEY || "";
 const STRAITLY_URL = "https://api.straitly.ai/v1/models";
 
 // Curated Straitly models (displayed under Straightly section)

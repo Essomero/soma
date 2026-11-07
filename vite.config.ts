@@ -15,7 +15,7 @@ function chatDevPlugin(env: Record<string, string>) {
   const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
   const CEREBRAS_KEY = env.CEREBRAS_API_KEY || "";
   const CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions";
-  const STRAITLY_KEY = env.STRAITLY_API_KEY || env.STRAIGHTLY_API_KEY || "";
+  const STRAITLY_KEY = env.STRAITLY_API_KEY || env.STRAIGHTLY_API_KEY || env.STRIGHTLY_API_KEY || "";
   const STRAITLY_URL = "https://api.straitly.ai/v1/chat/completions";
   const STRAITLY_MODEL_IDS = new Set([
     "deepseek/deepseek-v4-1-flash",
