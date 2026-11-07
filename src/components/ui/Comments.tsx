@@ -767,7 +767,8 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
                   <textarea
                     value={replyBody}
                     onChange={(e) => setReplyBody(e.target.value)}
-                    placeholder="Write a reply..."
+                    onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); (e.target as HTMLTextAreaElement).form?.requestSubmit(); } }}
+                    placeholder="Write a reply... (⌘+Enter to send)"
                     rows={3}
                     className="w-full bg-transparent border-0 p-0 font-dm-sans text-sm text-on-surface placeholder:text-on-surface-muted focus:ring-0 outline-none resize-y"
                   />
@@ -822,9 +823,10 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
                           return next;
                         });
                       }}
+                      onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); postAiReply(comment.id); } }}
                       rows={5}
                       className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-sm text-on-surface focus:ring-0 outline-none resize-y"
-                      placeholder={aiLoading === comment.id ? "Waiting for response..." : ""}
+                      placeholder={aiLoading === comment.id ? "Waiting for response..." : "⌘+Enter to post"}
                     />
                   ) : (
                     <div className="px-xl py-md min-h-[120px]">
@@ -1049,9 +1051,10 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
             <textarea
               value={summaryDraft}
               onChange={(e) => setSummaryDraft(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); postSummary(); } }}
               rows={8}
               className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-sm text-on-surface focus:ring-0 outline-none resize-y"
-              placeholder={summarizing ? "Generating summary..." : ""}
+              placeholder={summarizing ? "Generating summary..." : "⌘+Enter to post"}
             />
           ) : (
             <div className="px-xl py-md min-h-[160px]">
@@ -1109,9 +1112,10 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
             <textarea
               value={explainDraft}
               onChange={(e) => setExplainDraft(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); postExplain(); } }}
               rows={8}
               className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-sm text-on-surface focus:ring-0 outline-none resize-y"
-              placeholder={explaining ? "Generating explanation..." : ""}
+              placeholder={explaining ? "Generating explanation..." : "⌘+Enter to post"}
             />
           ) : (
             <div className="px-xl py-md min-h-[160px]">
@@ -1145,7 +1149,7 @@ A single, sharp, unforgettable sentence summarizing the core insight.`;
             <button type="button" onClick={() => setTab("preview")} className={`inline-flex items-center gap-sm px-lg py-sm font-sora text-xs uppercase tracking-widest border-b-2 transition-colors ${tab === "preview" ? "border-primary text-primary" : "border-transparent text-on-surface-muted hover:text-on-surface"}`}><Eye className="w-3 h-3" /> Preview</button>
           </div>
           {tab === "write" ? (
-            <textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Write a comment... (markdown supported)" rows={5} className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-on-surface placeholder:text-on-surface-muted focus:ring-0 outline-none resize-y" />
+            <textarea value={body} onChange={(e) => setBody(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); (e.currentTarget as HTMLTextAreaElement).form?.requestSubmit(); } }} placeholder="Write a comment... (markdown supported) — ⌘+Enter to post" rows={5} className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-on-surface placeholder:text-on-surface-muted focus:ring-0 outline-none resize-y" />
           ) : (
             <div className="px-xl py-md min-h-[120px]">
               {body.trim()
