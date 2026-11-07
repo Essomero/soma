@@ -1,0 +1,79 @@
+# Soma — Docker Compose: files alone are enough
+#
+# Default: file SQLite via volume (no external account)
+#   cp .env.example .env   # set SITE_PASSWORD
+#   docker compose up --build   # single container: soma (3000) with /app/data/soma.db on volume soma_data
+#   # open http://localhost:3000  -> login with SITE_PASSWORD
+#   # First boot empty? Seed: docker compose exec soma npx tsx scripts/publish-all.ts
+#
+# Stack:
+#   soma (3000): Vite SPA + Node API
+#     - Default USE_TURSO=false -> local SQLite file via volume soma_data:/app/data
+#     - AI keys (OPENROUTER_API_KEY, etc.) auto-loaded from host .env via env_file
+#     - No Turso account needed
+#   sqld (8080, optional): local libSQL server (ghcr.io/tursodatabase/libsql-server)
+#     - Opt-in: docker compose --profile libsql up --build
+#     - Then inside soma: USE_TURSO=true TURSO_DATABASE_URL=libsql://sqld:8080
+#
+# Tradeoffs file SQLite vs sqld:
+# - File SQLite (default, via volume):
+#   + Simplest: one container, no network hop, works in Dockerfile-only platforms (Fly.io, Render, Railway Dockerfile)
+#   + Single file persistence: backup = copy volume, survives restarts
+#   + No auth/service to manage
+#   - Single writer, file lock — fine for Soma (single owner, low concurrency), doesn't scale to multi-replica
+# - sqld (optional, --profile libsql):
+#   + Turso-compatible HTTP API (libsql://sqld:8080), multiple clients possible
+#   + Useful to test Turso protocol locally or share DB among services
+#   - Extra container, more ops, slightly more latency
+#   + Use: docker compose --profile libsql up with USE_TURSO=true TURSO_DATABASE_URL=libsql://sqld:8080
+#
+# For Dockerfile-only platforms (Fly.io, Render, Railway Dockerfile):
+#   They build Dockerfile alone -> file SQLite at SQLITE_PATH=/app/data/soma.db (mount/volume/disk)
+#   Set SITE_PASSWORD + AI keys as secrets, optional TURSO_* if you want remote.
+
+services:
+  soma:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - path: ./.env
+        required: false
+      - path: ./.env.local
+        required: false
+    environment:
+      SITE_PASSWORD: ${SITE_PASSWORD:?Set SITE_PASSWORD in .env — e.g. openssl rand -base64 32}
+      USE_TURSO: ${USE_TURSO:-false}
+      TURSO_DATABASE_URL: ${DOCKER_TURSO_DATABASE_URL:-}
+      TURSO_AUTH_TOKEN: ${DOCKER_TURSO_AUTH_TOKEN:-}
+      TURSO_DB: ""
+      TURSO_TOKEN: ""
+      SQLITE_PATH: /app/data/soma.db
+      PORT: 3000
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_DISABLED: ${GEMINI_DISABLED:-0}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      CEREBRAS_API_KEY: ${CEREBRAS_API_KEY:-}
+      STRAITLY_API_KEY: ${STRAITLY_API_KEY:-}
+      UNSPLASH_ACCESS_KEY: ${UNSPLASH_ACCESS_KEY:-}
+      UNSPLASH_APP_ID: ${UNSPLASH_APP_ID:-}
+    volumes:
+      - soma_data:/app/data
+    restart: unless-stopped
+
+  sqld:
+    image: ghcr.io/tursodatabase/libsql-server:latest
+    profiles: ["libsql"]
+    ports:
+      - "8080:8080"
+    volumes:
+      - sqld_data:/data
+    restart: unless-stopped
+
+volumes:
+  soma_data:
+  sqld_data:

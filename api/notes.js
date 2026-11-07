@@ -1,7 +1,5 @@
 import { isAuthed, requireAuth } from "./_auth.js";
-
-const DB_URL = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").replace("libsql://", "https://");
-const TOKEN = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "";
+import { query as dbQuery, runPipeline as dbRunPipeline, arg as dbArg } from "./_db.js";
 
 // Table is created idempotently on every request : no manual migration needed.
 const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS note_articles (
@@ -45,58 +43,17 @@ function prepareNotesPipeline(searchSql, searchArgs) {
     stmts.push({ type: "execute", stmt: { sql: BACKFILL_FTS } });
     _ftsInitialized = true;
   }
-  stmts.push({ type: "execute", stmt: { sql: searchSql, args: searchArgs.map(arg) } });
+  stmts.push({ type: "execute", stmt: { sql: searchSql, args: searchArgs.map(dbArg) } });
   return stmts;
 }
 
-function arg(a) {
-  if (a === null || a === undefined) return { type: "null" };
-  if (typeof a === "number") return { type: "integer", value: String(a) };
-  return { type: "text", value: String(a) };
-}
-
 async function runTursoPipeline(stmts) {
-  const body = { requests: stmts };
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
-  try {
-    const r = await fetch(DB_URL + "/v2/pipeline", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-    const data = await r.json();
-    if (!r.ok) {
-      console.error("Turso FAIL:", r.status, JSON.stringify(data).slice(0, 500));
-      return [];
-    }
-    const lastResult = data.results && data.results[data.results.length - 1];
-    const result = lastResult && lastResult.response && lastResult.response.result;
-    if (!result) {
-      console.error("Unexpected Turso format:", JSON.stringify(data).slice(0, 300));
-      return [];
-    }
-    const cols = (result.cols || []).map(function(c) { return c.name || c; });
-    const rows = result.rows || [];
-    return rows.map(function(row) {
-      const obj = {};
-      cols.forEach(function(c, i) {
-        const cell = row[i];
-        obj[c] = (cell && typeof cell === "object") ? (cell.type === "null" ? null : (cell.value !== undefined ? cell.value : null)) : (cell !== undefined ? cell : null);
-      });
-      return obj;
-    });
-  } catch (e) {
-    console.error("Notes pipeline error:", e.message);
-    return [];
-  }
+  return dbRunPipeline(stmts);
 }
 
 /** Search notes via FTS5 with ranking. */
 async function notesSearchQuery(sql, args) {
-  const stmts = prepareNotesPipeline(sql, args.map(arg));
+  const stmts = prepareNotesPipeline(sql, args.map(dbArg));
   return runTursoPipeline(stmts);
 }
 
@@ -107,15 +64,11 @@ async function syncNoteFts(slug, title, content) {
     { type: "execute", stmt: { sql: CREATE_FTS } },
     { type: "execute", stmt: {
       sql: `INSERT INTO note_fts(slug, title, content) VALUES (?, ?, ?)`,
-      args: [arg(slug), arg(title), arg(content)],
+      args: [dbArg(slug), dbArg(title), dbArg(content)],
     }},
   ];
   try {
-    await fetch(DB_URL + "/v2/pipeline", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
-      body: JSON.stringify({ requests: stmts }),
-    });
+    await dbRunPipeline(stmts);
   } catch (e) {
     console.error("Note FTS sync error:", e.message);
   }
@@ -128,15 +81,11 @@ async function deleteNoteFts(slug) {
     { type: "execute", stmt: { sql: CREATE_FTS } },
     { type: "execute", stmt: {
       sql: `INSERT INTO note_fts(note_fts, slug, title, content) VALUES ('delete', ?, '', '')`,
-      args: [arg(slug)],
+      args: [dbArg(slug)],
     }},
   ];
   try {
-    await fetch(DB_URL + "/v2/pipeline", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
-      body: JSON.stringify({ requests: stmts }),
-    });
+    await dbRunPipeline(stmts);
   } catch (e) {
     console.error("Note FTS delete error:", e.message);
   }
@@ -168,58 +117,12 @@ function toFtsQuery(input) {
 
 async function query(sql, args) {
   args = args || [];
-  const body = {
-    requests: [
-      { type: "execute", stmt: { sql: CREATE_TABLE } },
-      {
-        type: "execute",
-        stmt: {
-          sql: sql,
-          args: args.map(a => {
-            if (a === null || a === undefined) return { type: "null" };
-            if (typeof a === "number") return { type: "integer", value: String(a) };
-            return { type: "text", value: String(a) };
-          }),
-        },
-      },
-    ],
-  };
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
-
   try {
-    const r = await fetch(DB_URL + "/v2/pipeline", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-
-    const data = await r.json();
-
-    if (!r.ok) {
-      console.error("Turso FAIL:", r.status, JSON.stringify(data).slice(0, 500));
-      return [];
-    }
-
-    const result = data.results && data.results[1] && data.results[1].response && data.results[1].response.result;
-    if (!result) {
-      console.error("Unexpected Turso format:", JSON.stringify(data).slice(0, 300));
-      return [];
-    }
-
-    const cols = (result.cols || []).map(function(c) { return c.name || c; });
-    const rows = result.rows || [];
-    return rows.map(function(row) {
-      const obj = {};
-      cols.forEach(function(c, i) {
-        const cell = row[i];
-        obj[c] = (cell && typeof cell === "object") ? (cell.type === "null" ? null : (cell.value !== undefined ? cell.value : null)) : (cell !== undefined ? cell : null);
-      });
-      return obj;
-    });
+    await dbQuery(CREATE_TABLE);
+  } catch {}
+  try {
+    const rows = await dbQuery(sql, args);
+    return rows || [];
   } catch (e) {
     console.error("Query error:", e.message);
     return [];

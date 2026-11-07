@@ -101,17 +101,58 @@ Soma ships a full content studio at **`/admin`** (owner login required). Every c
 
 ---
 
-## Quick Start (Deploy in Minutes)
+## Quick Start — Pick Your Deploy
+
+Soma runs anywhere Node runs. No Turso, no Vercel required — a single Docker image serves the SPA + API from one process with a local SQLite file. Same image auto-switches to hosted Turso when `TURSO_*` env vars are present.
+
+### Option A: Docker / docker compose (fastest try — no accounts)
+
+```bash
+git clone https://github.com/Essomero/soma.git && cd soma
+# copy the env template and set a password (works for Docker + local dev + any platform)
+cp .env.example .env
+# edit .env -> set SITE_PASSWORD (only required var for Docker path)
+
+SITE_PASSWORD=your-secret-password docker compose up --build
+# open http://localhost:3000 — login with SITE_PASSWORD
+```
+
+Data persists in the `soma_data` Docker volume at `/app/data/soma.db`. No external DB.
+Optional: add Turso creds to `.env` and it switches to remote automatically.
+
+```bash
+# seed content into local SQLite (same command works locally or inside container)
+npm run publish-all   # uses DATABASE_URL / SQLITE_PATH fallback when TURSO_* not set
+```
+
+### Option B: Fly.io (Docker + volume, ~1 click)
+
+```bash
+fly launch --no-deploy   # picks up fly.toml
+fly volumes create soma_data --region iad --size 1
+fly secrets set SITE_PASSWORD=your-strong-password
+# optional AI keys: fly secrets set OPENROUTER_API_KEY=...
+fly deploy
+```
+Docs: `fly.toml`, `docker-compose.yml`.
+
+### Option C: Railway / Render / Coolify
+
+- **Railway:** `railway.toml` included. Create project from GitHub → add volume at `/app/data` → set `SITE_PASSWORD` → deploy. Dockerfile auto-detected.
+- **Render:** New Web Service → Docker → set `SITE_PASSWORD` → add Disk at `/app/data`.
+- **Coolify / self-hosted:** any host that builds a `Dockerfile`. Same env: `SITE_PASSWORD` required, `TURSO_*` optional, data on a volume.
+
+### Option D: Vercel + Turso (original path, still supported)
 
 Three moves: fork, import, deploy. Your notes — and every story, guide, course, and test — live in your database, never in git, so nothing here can touch anyone else's writing. Your fork stays public (GitHub gives you no choice there); your writing stays private until you flip it public.
 
-### Step 0: Fork Soma
+#### Step 0: Fork Soma
 
 [**Fork `Essomero/soma`**](https://github.com/Essomero/soma/fork) (accept the defaults). This is your copy: it stays linked for one-click updates later. No git needed. Agents publish into your database, not into the fork, so unfinished work never touches GitHub.
 
-### Step 1: Import Your Fork Into Vercel
+#### Step 1: Import Your Fork Into Vercel
 
-In Vercel, [Add New → Project](https://vercel.com/new) → **Import** your `soma` fork (pick the one under your account, not `Essomero/soma`). Importing uses your fork as-is: Vercel creates no new repo.
+In Vercel, [Add New -> Project](https://vercel.com/new) -> **Import** your `soma` fork (pick the one under your account, not `Essomero/soma`). Importing uses your fork as-is: Vercel creates no new repo.
 
 On the configure page, open **Environment Variables** and add one variable:
 
@@ -127,13 +168,13 @@ Then press Deploy. Tables initialize automatically on the first API request: no 
 
 Prefer to use a database you already own, or want it under your own Turso account? Skip the card and paste its URL and token as `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` yourself, instead. Either path lands in the same place.
 
-### Step 1.5: Publish demo content
+#### Step 1.5: Publish demo content
 
 Your database starts empty. The first production build (`npm run build`) publishes every `.ts` content file (the essays, guides, course, and tests in this repo) as private rows — nothing goes public on its own. Flip rows to `published` one by one (per slug: `UPDATE content_items SET status='published' WHERE slug='...'`) or all at once (`UPDATE content_items SET status='published'`). Your own writing stays private until you say otherwise.
 
-`npm run publish-all` remains for manual refresh/repair (needs Turso credentials in `.env.local`). If a deployment ever looks empty, log in as owner and open `/api/diag`: it reports database reachability and row counts using booleans and numbers only — no secret values, nothing to copy.
+`npm run publish-all` remains for manual refresh/repair (needs Turso credentials in `.env.local` or uses local SQLite fallback). If a deployment ever looks empty, log in as owner and open `/api/diag`: it reports database reachability and row counts using booleans and numbers only — no secret values, nothing to copy.
 
-### Step 2: (Optional) Add AI Keys
+### Step 2: (Optional) Add AI Keys (all deploy targets)
 
 Without keys, reading, writing, and publishing work as is. Add any one key below and three features light up on your published pages:
 
@@ -141,7 +182,7 @@ Without keys, reading, writing, and publishing work as is. Add any one key below
 - **Comment replies:** answer a reader's comment with one click, using the article as context.
 - **Test grading:** diagnostic tests (`/tests/:slug`) grade written answers and return scored feedback. Without a key the grade button stays quiet and tells you which env var to set.
 
-Add keys in Vercel under Project Settings > Environment Variables, then redeploy. Locally, copy `.env.example` to `.env.local` and fill the same names. You only need one; add more to unlock more models in the picker.
+Add keys in Vercel under Project Settings > Environment Variables, then redeploy. For Docker/Fly/Railway: add to `.env` / `fly secrets` / Railway Variables. Locally, copy `.env.example` to `.env.local` and fill the same names. You only need one; add more to unlock more models in the picker.
 
 | Env var | What you get | Where to get it |
 |---|---|---|
