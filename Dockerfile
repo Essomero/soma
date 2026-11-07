@@ -2,6 +2,8 @@
 # No Turso required: local SQLite file ./data/soma.db by default
 # With TURSO_DATABASE_URL + TURSO_AUTH_TOKEN: switches to remote automatically
 # Works on Fly.io, Railway, Render, Coolify, self-hosted
+# - Railway: volume /app/data mounted as root, needs root to chown/chmod
+# - Fly/Render/Docker Compose: volume mounts /data or /app/data
 
 FROM node:20-alpine AS build
 WORKDIR /app
@@ -29,11 +31,11 @@ COPY --from=build /app/src/types ./src/types
 COPY --from=build /app/scripts ./scripts
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh && mkdir -p /app/data && chown -R node:node /app
-USER node
-VOLUME ["/app/data"]
+# No USER directive — entrypoint runs as root to fix volume perms (Railway mounts as root)
+# Server will run as root inside container (isolated via container boundary)
+# Other platforms: Compose still has soma_data:/app/data, Fly [[mounts]] /data, Render Disks /app/data
 EXPOSE 3000
 ENV SQLITE_PATH=/app/data/soma.db
 ENV USE_TURSO=false
-# Entrypoint seeds file SQLite via volume if empty (/app/data/soma.db), then starts server
 ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["node", "server/index.mjs"]

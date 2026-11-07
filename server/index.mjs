@@ -58,7 +58,7 @@ if (process.env.DEEPSEEK_API_KEY) aiKeys.push("DeepSeek");
 if (process.env.GEMINI_API_KEY && process.env.GEMINI_DISABLED !== "1") aiKeys.push("Gemini");
 if (process.env.GROQ_API_KEY) aiKeys.push("Groq");
 if (process.env.CEREBRAS_API_KEY) aiKeys.push("Cerebras");
-if (process.env.STRAITLY_API_KEY) aiKeys.push("Straitly");
+if (process.env.STRAITLY_API_KEY || process.env.STRAIGHTLY_API_KEY || process.env.STRIGHTLY_API_KEY) aiKeys.push("Straitly");
 
 const dbLabel = hasTurso ? (isSqld ? `sqld at ${tursoUrl}` : "Turso remote") : `local SQLite file ${localPath}`;
 console.log(`[soma] DB: ${dbLabel} (USE_TURSO=${process.env.USE_TURSO || "unset"})`);
