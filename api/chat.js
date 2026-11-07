@@ -11,7 +11,7 @@ const GROQ_KEY = process.env.GROQ_API_KEY || "";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const CEREBRAS_KEY = process.env.CEREBRAS_API_KEY || "";
 const CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions";
-const STRAITLY_KEY = process.env.STRAITLY_API_KEY || process.env.STRAIGHTLY_API_KEY || "";
+const STRAITLY_KEY = process.env.STRAITLY_API_KEY || process.env.STRAIGHTLY_API_KEY || process.env.STRIGHTLY_API_KEY || "";
 const STRAITLY_URL = "https://api.straitly.ai/v1/chat/completions";
 const STRAITLY_MODEL_IDS = new Set([
   "deepseek/deepseek-v4-1-flash",
