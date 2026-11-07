@@ -217,10 +217,9 @@ export async function onRequest(context) {
       }
     }
 
-    // models
+    // models — must return {models: [...]} shape like Vercel api/models.js (frontend does data.models ?? [])
     if(route==="models"){
       if(!authed) return new Response(JSON.stringify({error:"Unauthorized"}), {status:401, headers:{"Content-Type":"application/json"}});
-      // Minimal: return providers if keys present
       const models=[];
       if(env.OPENROUTER_API_KEY) models.push({id:"openrouter-auto", label:"OpenRouter Auto", provider:"openrouter", free:false});
       if(env.DEEPSEEK_API_KEY){
@@ -233,8 +232,9 @@ export async function onRequest(context) {
       }
       if(env.GROQ_API_KEY) models.push({id:"groq-llama", label:"Groq Llama", provider:"groq", free:false});
       if(env.STRAITLY_API_KEY) models.push({id:"straitly-auto", label:"Straitly Auto", provider:"straitly", free:false});
-      return new Response(JSON.stringify(models), {status:200, headers:{"Content-Type":"application/json"}});
+      return new Response(JSON.stringify({models}), {status:200, headers:{"Content-Type":"application/json"}});
     }
+
 
     // For other routes, return 404 but not 500 — helps debug which route is missing
     return new Response(JSON.stringify({error:`Not implemented in Cloudflare shim: ${route}`}), {status:501, headers:{"Content-Type":"application/json"}});
