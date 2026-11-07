@@ -219,7 +219,30 @@ Add in Vercel — Project Settings → Env Vars; Docker/Fly/Railway/Render — `
 | `CEREBRAS_API_KEY` | Fast Cerebras | [cloud.cerebras.ai](https://cloud.cerebras.ai/) |
 | `STRAITLY_API_KEY` | 100+ models gateway | [straitly.ai/app/keys](https://straitly.ai/app/keys) |
 
----
+### Deployment scripts (easy mode)
+
+All platform deploy paths have one-liners in `package.json` — files alone are enough where noted:
+
+```bash
+npm run docker:up          # file SQLite via volume soma_data:/app/data -> /app/data/soma.db (auto-seeds 46, 12 public on :3000)
+npm run docker:up:libsql   # optional sqld at libsql://sqld:8080 (Turso-compatible, pipeline SELECT 1 verified)
+npm run docker:down        # down -v
+npm run docker:logs        # -f soma
+npm run docker:seed        # exec init-docker.ts
+npm run deploy:docker      # same as docker:up
+npm run deploy:fly         # fly deploy (needs fly auth, volume /data/soma.db)
+npm run deploy:fly:launch  # fly launch --no-deploy + volume create + deploy
+npm run deploy:render      # note: Render deploys via GitHub + render.yaml Disk at /app/data (dashboard)
+npm run deploy:railway     # railway up (needs railway link, volume /app/data, USE_TURSO=false default file)
+npm run deploy:vercel      # vercel --prod (Turso remote)
+npm run deploy:netlify     # build:static + netlify deploy --prod (full /api/*, no 501)
+npm run deploy:netlify:draft  # draft
+npm run deploy:cloudflare  # build:static + wrangler pages deploy dist --project-name soma (prod https://soma-2dj.pages.dev)
+npm run deploy:cloudflare:preview  # branch preview
+npm run deploy:all:check   # ci:check + compose config valid
+```
+
+`USE_TURSO=true/false` per preference: `false` = local file even if `TURSO_*` in host `.env` (Docker isolation, fixes prod leak showing other instance's note on :3000), `true` = Turso/sqld when URL present (token optional for local sqld), unset = backward compat Turso if vars present for existing Vercel.
 
 ## Private First, Public on Demand
 
