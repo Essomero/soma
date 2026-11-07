@@ -1,21 +1,24 @@
-# Soma — local SQLite (no Turso, no Vercel)
+# Soma — local SQLite by default (no Turso account needed)
+#
 # Usage:
 #   cp .env.example .env   # set SITE_PASSWORD + optional AI keys
-#   docker compose up --build   # reads .env automatically, no extra flags
+#   docker compose up --build   # uses local SQLite at /app/data/soma.db (USE_TURSO=false default)
 #   # open http://localhost:3000
 #
-# With Turso (optional, same image):
-#   Add TURSO_DATABASE_URL + TURSO_AUTH_TOKEN to .env, then compose up
+# DATABASE:
+# - USE_TURSO=false (default) -> local SQLite, even if TURSO_* in .env (Docker isolation)
+# - USE_TURSO=true docker compose up -> uses TURSO_* from .env
+# - Or set DOCKER_TURSO_DATABASE_URL + DOCKER_TURSO_AUTH_TOKEN to use Turso in Docker
 #
-# With local libSQL server (sqld):
-#   docker compose --profile turso up --build
+# Why blank Turso by default in Docker:
+# Your .env may have production TURSO_* vars. Docker defaults to local to avoid
+# leaking prod DB into container (which caused notes from another instance to appear).
 
 services:
   soma:
     build: .
     ports:
       - "3000:3000"
-    # Load every var from your local .env if present (SITE_PASSWORD + AI keys + Turso)
     env_file:
       - path: ./.env
         required: false
@@ -23,10 +26,14 @@ services:
         required: false
     environment:
       SITE_PASSWORD: ${SITE_PASSWORD:?Set SITE_PASSWORD in .env — e.g. openssl rand -base64 32}
-      TURSO_DATABASE_URL: ${TURSO_DATABASE_URL:-}
-      TURSO_AUTH_TOKEN: ${TURSO_AUTH_TOKEN:-}
-      TURSO_DB: ${TURSO_DB:-}
-      TURSO_TOKEN: ${TURSO_TOKEN:-}
+      USE_TURSO: ${USE_TURSO:-false}
+      # Turso — only forwarded when DOCKER_TURSO_* set or USE_TURSO=true explicitly wants it.
+      # When USE_TURSO=false, api/_db.js ignores these even if present, but we blank them
+      # here so prod URL doesn't leak into container env / logs.
+      TURSO_DATABASE_URL: ${DOCKER_TURSO_DATABASE_URL:-}
+      TURSO_AUTH_TOKEN: ${DOCKER_TURSO_AUTH_TOKEN:-}
+      TURSO_DB: ""
+      TURSO_TOKEN: ""
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
@@ -43,8 +50,6 @@ services:
       - soma_data:/app/data
     restart: unless-stopped
 
-  # Optional: self-hosted libSQL server (compatible with @libsql/client)
-  # Run with: docker compose --profile turso up
   sqld:
     image: ghcr.io/tursodatabase/libsql-server:latest
     profiles: ["turso"]

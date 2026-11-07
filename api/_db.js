@@ -1,14 +1,28 @@
 // Shared DB layer: Turso remote or local SQLite file.
-// - When TURSO_DATABASE_URL + TURSO_AUTH_TOKEN set → Turso HTTP pipeline (Vercel prod)
-// - Otherwise → local file at $DATABASE_URL / $SQLITE_PATH / ./data/soma.db via @libsql/client
-// This makes Docker / Fly / Railway work with just SITE_PASSWORD.
+// USE_TURSO=/=true/false — true/false (also yes/no, 1/0, on/off).
+// - USE_TURSO=false  → force local SQLite even if TURSO_* present (Docker default, isolation)
+// - USE_TURSO=true   → force Turso remote when TURSO_* present
+// - USE_TURSO unset  → backward compat: use Turso if TURSO_* present (Vercel existing deploys)
+// This makes Docker default to local SQLite while Vercel keeps Turso without extra flag.
 
 let _libsqlClient = null;
 let _mode = null; // "remote" | "local"
 let _dirEnsured = false;
 
+function parseUseTurso() {
+  const v = (process.env.USE_TURSO || "").trim().toLowerCase();
+  if (!v) return null;
+  if (["false", "0", "no", "off"].includes(v)) return false;
+  if (["true", "1", "yes", "on"].includes(v)) return true;
+  return null;
+}
+
 export function isTursoConfigured() {
-  return !!(process.env.TURSO_DATABASE_URL || process.env.TURSO_DB) && !!(process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN);
+  const flag = parseUseTurso();
+  if (flag === false) return false; // explicitly forced local
+  const hasVars = !!(process.env.TURSO_DATABASE_URL || process.env.TURSO_DB) && !!(process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN);
+  if (flag === true) return hasVars; // explicitly wants Turso, needs vars
+  return hasVars; // unset → Turso if vars present (Vercel compat)
 }
 
 function getMode() {
@@ -16,6 +30,7 @@ function getMode() {
   _mode = isTursoConfigured() ? "remote" : "local";
   return _mode;
 }
+
 
 function getRemoteConfig() {
   const url = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").trim();
