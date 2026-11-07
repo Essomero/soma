@@ -1,0 +1,16 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "node server/index.mjs"
+restartPolicyType = "on_failure"
+# Healthcheck hits static asset — server returns 200 for SPA routes
+healthcheckPath = "/"
+healthcheckTimeout = 30
+
+# Set these in Railway dashboard > Variables:
+# SITE_PASSWORD (required)
+# Optional: TURSO_DATABASE_URL / TURSO_AUTH_TOKEN (uses hosted Turso if set, else local volume)
+# Optional AI keys: OPENROUTER_API_KEY, DEEPSEEK_API_KEY, etc.
+# Add a volume in Railway dashboard: mount /app/data -> volume soma_data

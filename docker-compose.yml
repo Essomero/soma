@@ -1,0 +1,54 @@
+# Soma — local SQLite (no Turso, no Vercel)
+# Usage:
+#   SITE_PASSWORD=your-secret docker compose up --build
+#   # open http://localhost:3000
+#
+# With Turso (optional, same image):
+#   TURSO_DATABASE_URL=libsql://... TURSO_AUTH_TOKEN=... SITE_PASSWORD=... docker compose up --build
+#
+# With local libSQL server (sqld):
+#   docker compose --profile turso up --build
+
+services:
+  soma:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      # Required
+      SITE_PASSWORD: ${SITE_PASSWORD:?Set SITE_PASSWORD in env — e.g. SITE_PASSWORD=xxx docker compose up}
+      # Optional — if set, uses Turso remote, otherwise local SQLite file
+      TURSO_DATABASE_URL: ${TURSO_DATABASE_URL:-}
+      TURSO_AUTH_TOKEN: ${TURSO_AUTH_TOKEN:-}
+      # Optional AI keys (same as in .env.example)
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      CEREBRAS_API_KEY: ${CEREBRAS_API_KEY:-}
+      STRAITLY_API_KEY: ${STRAITLY_API_KEY:-}
+      UNSPLASH_ACCESS_KEY: ${UNSPLASH_ACCESS_KEY:-}
+      # Local SQLite path (inside container)
+      SQLITE_PATH: /app/data/soma.db
+      PORT: 3000
+    volumes:
+      - soma_data:/app/data
+    restart: unless-stopped
+
+  # Optional: self-hosted libSQL server (compatible with @libsql/client)
+  # Run with: docker compose --profile turso up
+  sqld:
+    image: ghcr.io/tursodatabase/libsql-server:latest
+    profiles: ["turso"]
+    environment:
+      SQLD_NODE: primary
+      SQLD_HTTP_LISTEN_ADDR: 0.0.0.0:8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - sqld_data:/data
+    command: ["sqld"]
+
+volumes:
+  soma_data:
+  sqld_data:

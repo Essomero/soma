@@ -2,8 +2,9 @@
  * Shared setup for content tooling scripts (seed, publish).
  * Reads .env.local then .env (real environment wins), exposes a libsql client.
  * Usage: const { db } = await getDb(); db.execute({ sql, args });
+ * Supports both hosted Turso (TURSO_DATABASE_URL + token) and local file (Docker path).
  */
-import { existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { createClient } from "@libsql/client";
@@ -24,15 +25,33 @@ export function loadEnv() {
   }
 }
 
+function ensureLocalDir(fileUrl: string) {
+  const fp = fileUrl.replace(/^file:/, "").split("?")[0];
+  if (!fp || fp === ":memory:") return;
+  try {
+    const abs = fp.startsWith("/") ? fp : join(rootDir, fp);
+    mkdirSync(dirname(abs), { recursive: true });
+  } catch {}
+}
+
 export async function getDb() {
   loadEnv();
-  const url = process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "";
+  const tursoUrl = process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "";
   const authToken = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "";
-  if (!url || !authToken) {
-    throw new Error("Missing TURSO_DATABASE_URL / TURSO_AUTH_TOKEN (see .env.example)");
+  if (tursoUrl && authToken) {
+    return createClient({ url: tursoUrl, authToken });
   }
-  return createClient({ url, authToken });
+  const rawLocal = (process.env.DATABASE_URL || process.env.SQLITE_PATH || "").trim();
+  const localUrl = rawLocal
+    ? rawLocal.startsWith("file:")
+      ? rawLocal
+      : `file:${rawLocal}`
+    : "file:./data/soma.db";
+  ensureLocalDir(localUrl);
+  return createClient({ url: localUrl });
 }
+
+
 
 export const CREATE_CONTENT_ITEMS = `CREATE TABLE IF NOT EXISTS content_items (
   slug TEXT PRIMARY KEY,

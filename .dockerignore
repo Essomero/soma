@@ -1,0 +1,16 @@
+node_modules
+dist
+.git
+.gitignore
+.env
+.env.local
+drafts
+data
+.venv
+venv
+*.tsbuildinfo
+.local-agent-token
+graphify-out
+.codegenius
+brand
+editorial_dev_story_dark

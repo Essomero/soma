@@ -1,7 +1,5 @@
 import { isAuthed, requireAuth } from "./_auth.js";
-
-const DB_URL = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").replace("libsql://", "https://");
-const TOKEN = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "";
+import { query as dbQuery, runPipeline, arg, isTursoConfigured } from "./_db.js";
 
 // Table is created idempotently on every request : no manual migration needed.
 // body_json holds the full content object as authored (same shape as the
@@ -100,60 +98,42 @@ function toFtsQuery(input) {
 
 let _ftsInitialized = false;
 
-function arg(a) {
-  if (a === null || a === undefined) return { type: "null" };
-  if (typeof a === "number") return { type: "integer", value: String(a) };
-  return { type: "text", value: String(a) };
+async function query(sql, args) {
+  return dbQuery(sql, args);
 }
+
 
 /** Ensure the FTS table exists and backfill any missing rows. */
 async function initFts() {
   if (_ftsInitialized) return;
-  // Create the FTS virtual table (idempotent)
-  const createRes = await fetch(DB_URL + "/v2/pipeline", {
-    method: "POST",
-    headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
-    body: JSON.stringify({ requests: [
-      { type: "execute", stmt: { sql: CREATE_TABLE } },
-      { type: "execute", stmt: { sql: CREATE_FTS } },
-    ]}),
-  });
-  const createData = await createRes.json();
+  // Create tables (idempotent)
+  try { await dbQuery(CREATE_TABLE); } catch {}
+  try { await dbQuery(CREATE_FTS); } catch (e) {
+    console.error("FTS create error:", e && e.message);
+  }
   _ftsInitialized = true;
-  // Backfill only if FTS table is empty. Use a single batched pipeline.
+  // Backfill only if FTS table is empty.
   try {
-    // Quick check: count existing FTS rows
-    const countRes = await fetch(DB_URL + "/v2/pipeline", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
-      body: JSON.stringify({ requests: [
-        { type: "execute", stmt: { sql: "SELECT COUNT(*) AS cnt FROM content_fts" } },
-      ]}),
-    });
-    const countData = await countRes.json();
-    const countResult = countData.results?.[0]?.response?.result;
-    const existing = countResult?.rows?.[0]?.[0]?.value;
-    if (existing && Number(existing) > 0) return; // already backfilled
-
-    // Fetch all content and build a single pipeline with all inserts
-    const rows = await query("SELECT slug, type, title, excerpt, body_json FROM content_items", []);
-    if (rows.length === 0) return;
+    const countRows = await dbQuery("SELECT COUNT(*) AS cnt FROM content_fts", []);
+    const existing = countRows && countRows[0] && (countRows[0].cnt ?? countRows[0]["COUNT(*)"] ?? 0);
+    if (existing && Number(existing) > 0) return;
+    // Fetch all content and build inserts
+    const rows = await dbQuery("SELECT slug, type, title, excerpt, body_json FROM content_items", []);
+    if (!rows || rows.length === 0) return;
     const stmts = rows.map((row) => {
       let body = {};
       try { body = JSON.parse(row.body_json || "{}"); } catch {}
-      return { type: "execute", stmt: {
-        sql: `INSERT INTO content_fts(slug, type, title, excerpt, body) VALUES (?, ?, ?, ?, ?)`,
-        args: [arg(row.slug), arg(row.type), arg(row.title), arg(row.excerpt), arg(extractPlainText(body))],
-      }};
+      return {
+        type: "execute",
+        stmt: {
+          sql: `INSERT INTO content_fts(slug, type, title, excerpt, body) VALUES (?, ?, ?, ?, ?)`,
+          args: [arg(row.slug), arg(row.type), arg(row.title), arg(row.excerpt), arg(extractPlainText(body))],
+        },
+      };
     });
-    await fetch(DB_URL + "/v2/pipeline", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
-      body: JSON.stringify({ requests: stmts }),
-    });
+    await runPipeline(stmts);
   } catch (e) {
-    // Graceful: FTS table exists, content will sync on next edit
-    console.error("FTS backfill error:", e.message);
+    console.error("FTS backfill error:", e && e.message);
   }
 }
 
@@ -162,49 +142,13 @@ async function searchQuery(sql, args) {
   try {
     await initFts();
   } catch {
-    // FTS init failed; fall back to empty results
     return [];
   }
-
-  const body = { requests: [
-    { type: "execute", stmt: { sql: CREATE_TABLE } },
-    { type: "execute", stmt: { sql, args: args.map(arg) } },
-  ] };
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
-
   try {
-    const r = await fetch(DB_URL + "/v2/pipeline", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-    const data = await r.json();
-    if (!r.ok) {
-      console.error("Turso FAIL:", r.status, JSON.stringify(data).slice(0, 500));
-      return [];
-    }
-    const lastResult = data.results && data.results[data.results.length - 1];
-    const result = lastResult && lastResult.response && lastResult.response.result;
-    if (!result) {
-      console.error("Unexpected Turso format:", JSON.stringify(data).slice(0, 300));
-      return [];
-    }
-    const cols = (result.cols || []).map(function(c) { return c.name || c; });
-    const rows = result.rows || [];
-    return rows.map(function(row) {
-      const obj = {};
-      cols.forEach(function(c, i) {
-        const cell = row[i];
-        obj[c] = (cell && typeof cell === "object") ? (cell.type === "null" ? null : (cell.value !== undefined ? cell.value : null)) : (cell !== undefined ? cell : null);
-      });
-      return obj;
-    });
+    const rows = await dbQuery(sql, args);
+    return rows || [];
   } catch (e) {
-    console.error("Search query error:", e.message);
+    console.error("Search query error:", e && e.message);
     return [];
   }
 }
@@ -214,19 +158,24 @@ async function syncFts(slug, type, title, excerpt, bodyJson) {
   try { await initFts(); } catch { return; }
   const plainBody = extractPlainText(bodyJson);
   try {
-    await fetch(DB_URL + "/v2/pipeline", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
-      body: JSON.stringify({ requests: [
-        { type: "execute", stmt: {
-          sql: `INSERT INTO content_fts(slug, type, title, excerpt, body)
-                VALUES (?, ?, ?, ?, ?)`,
+    await runPipeline([
+      {
+        type: "execute",
+        stmt: {
+          sql: `INSERT INTO content_fts(content_fts, slug, type, title, excerpt, body) VALUES ('delete', ?, '', '', '', '')`,
+          args: [arg(slug)],
+        },
+      },
+      {
+        type: "execute",
+        stmt: {
+          sql: `INSERT INTO content_fts(slug, type, title, excerpt, body) VALUES (?, ?, ?, ?, ?)`,
           args: [arg(slug), arg(type), arg(title), arg(excerpt), arg(plainBody)],
-        }},
-      ]}),
-    });
+        },
+      },
+    ]);
   } catch (e) {
-    console.error("FTS sync error:", e.message);
+    console.error("FTS sync error:", e && e.message);
   }
 }
 
@@ -234,19 +183,17 @@ async function syncFts(slug, type, title, excerpt, bodyJson) {
 async function deleteFts(slug) {
   try { await initFts(); } catch { return; }
   try {
-    await fetch(DB_URL + "/v2/pipeline", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
-      body: JSON.stringify({ requests: [
-        { type: "execute", stmt: {
-          sql: `INSERT INTO content_fts(content_fts, slug, type, title, excerpt, body)
-                VALUES ('delete', ?, '', '', '', '')`,
+    await runPipeline([
+      {
+        type: "execute",
+        stmt: {
+          sql: `INSERT INTO content_fts(content_fts, slug, type, title, excerpt, body) VALUES ('delete', ?, '', '', '', '')`,
           args: [arg(slug)],
-        }},
-      ]}),
-    });
+        },
+      },
+    ]);
   } catch (e) {
-    console.error("FTS delete error:", e.message);
+    console.error("FTS delete error:", e && e.message);
   }
 }
 
@@ -268,66 +215,6 @@ const STATUSES = new Set(["private", "published"]);
 
 // No baseline sync: content is published deliberately via npm run publish-all
 // or the studio UI. The database is the only source the GET path reads.
-
-async function query(sql, args) {
-  args = args || [];
-  const body = {
-    requests: [
-      { type: "execute", stmt: { sql: CREATE_TABLE } },
-      {
-        type: "execute",
-        stmt: {
-          sql: sql,
-          args: args.map(a => {
-            if (a === null || a === undefined) return { type: "null" };
-            if (typeof a === "number") return { type: "integer", value: String(a) };
-            return { type: "text", value: String(a) };
-          }),
-        },
-      },
-    ],
-  };
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
-
-  try {
-    const r = await fetch(DB_URL + "/v2/pipeline", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-
-    const data = await r.json();
-
-    if (!r.ok) {
-      console.error("Turso FAIL:", r.status, JSON.stringify(data).slice(0, 500));
-      return [];
-    }
-
-    const result = data.results && data.results[1] && data.results[1].response && data.results[1].response.result;
-    if (!result) {
-      console.error("Unexpected Turso format:", JSON.stringify(data).slice(0, 300));
-      return [];
-    }
-
-    const cols = (result.cols || []).map(function(c) { return c.name || c; });
-    const rows = result.rows || [];
-    return rows.map(function(row) {
-      const obj = {};
-      cols.forEach(function(c, i) {
-        const cell = row[i];
-        obj[c] = (cell && typeof cell === "object") ? (cell.type === "null" ? null : (cell.value !== undefined ? cell.value : null)) : (cell !== undefined ? cell : null);
-      });
-      return obj;
-    });
-  } catch (e) {
-    console.error("Query error:", e.message);
-    return [];
-  }
-}
 
 // Shape matches the registry entries pages already read: full authored
 // object plus computed id/href, so page flips are mechanical.

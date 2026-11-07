@@ -1,43 +1,16 @@
 import { requireAuth } from "./_auth.js";
+import { query, ping, getDbInfo } from "./_db.js";
 
 // GET /api/diag — owner-only deployment health check.
 // Returns booleans and counts only; secret values never leave the server.
 // Use it when a deployment shows no content: it tells you whether the
 // database is reachable and what the store holds.
-const DB_URL = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").replace("libsql://", "https://");
-const TOKEN = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "";
-
-function val(cell) {
-  if (cell && typeof cell === "object") return cell.type === "null" ? null : cell.value;
-  return cell;
-}
-
-async function run(stmt, args) {
-  const started = Date.now();
-  try {
-    const r = await fetch(DB_URL + "/v2/pipeline", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
-      body: JSON.stringify({ requests: [{ type: "execute", stmt: { sql: stmt, args: (args || []).map((a) => (a === null || a === undefined ? { type: "null" } : { type: "text", value: String(a) })) } }] }),
-    });
-    const data = await r.json().catch(() => null);
-    const result = data && data.results && data.results[0] && data.results[0].response && data.results[0].response.result;
-    if (!r.ok || !result) return { ok: false, status: r.status, latencyMs: Date.now() - started };
-    const cols = (result.cols || []).map((c) => c.name || c);
-    return {
-      ok: true,
-      status: r.status,
-      latencyMs: Date.now() - started,
-      rows: (result.rows || []).map((row) => Object.fromEntries(cols.map((c, i) => [c, val(row[i])]))),
-    };
-  } catch (e) {
-    return { ok: false, status: 0, latencyMs: Date.now() - started, error: e.message };
-  }
-}
 
 export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
   if (!requireAuth(req, res)) return;
+
+  const dbInfo = getDbInfo();
 
   const report = {
     env: {
@@ -45,28 +18,39 @@ export default async function handler(req, res) {
       hasToken: Boolean(process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN),
       vercelEnv: process.env.VERCEL_ENV || "local",
       node: process.version,
+      dbMode: dbInfo.mode,
+      localPath: dbInfo.localPath,
     },
-    db: { reachable: false, latencyMs: null },
+    db: { reachable: false, latencyMs: null, mode: dbInfo.mode },
     store: {},
   };
 
-  const ping = await run("SELECT 1 AS one", []);
-  report.db.reachable = ping.ok;
-  report.db.latencyMs = ping.latencyMs;
-  if (!ping.ok) {
-    report.db.status = ping.status;
-    report.db.hint = "Check TURSO_DATABASE_URL / TURSO_AUTH_TOKEN on the deployment (no need to read values — just re-enter them).";
+  const pingRes = await ping();
+  report.db.reachable = pingRes.ok;
+  report.db.latencyMs = pingRes.latencyMs;
+  if (!pingRes.ok) {
+    report.db.error = pingRes.error || undefined;
+    report.db.hint = dbInfo.mode === "local"
+      ? "Local SQLite not reachable at " + (dbInfo.localPath || "unknown") + "."
+      : "Check TURSO_DATABASE_URL / TURSO_AUTH_TOKEN on the deployment (no need to read values — just re-enter them).";
     return res.json(report);
   }
 
-  const counts = await run("SELECT status, COUNT(*) AS n FROM content_items GROUP BY status", []);
-  if (counts.ok) {
-    for (const row of counts.rows) report.store["content:" + row.status] = Number(row.n);
-  } else {
+  try {
+    const counts = await query("SELECT status, COUNT(*) AS n FROM content_items GROUP BY status", []);
+    if (counts && counts.length) {
+      for (const row of counts) report.store["content:" + row.status] = Number(row.n);
+    }
+  } catch {
     report.store.content_items = "missing-or-unreadable";
   }
-  const learn = await run("SELECT COUNT(*) AS n FROM note_articles", []);
-  if (learn.ok) report.store.noteArticles = Number(learn.rows[0] && learn.rows[0].n);
+
+  try {
+    const learn = await query("SELECT COUNT(*) AS n FROM note_articles", []);
+    if (learn && learn.length) report.store.noteArticles = Number(learn[0].n);
+  } catch {
+    report.store.noteArticles = "missing-or-unreadable";
+  }
 
   return res.json(report);
 }

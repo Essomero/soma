@@ -10,14 +10,18 @@
     "dev": "vite",
     "dev:local": "LOCAL_API=1 vite",
     "build": "npx tsx scripts/publish-all.ts --if-empty && npx tsx scripts/validate-content.ts && npx tsx scripts/generate-sitemap.ts && tsc -b && vite build",
+    "build:static": "npx tsx scripts/validate-content.ts && npx tsx scripts/generate-sitemap.ts && tsc -b && vite build",
     "rss": "npx tsx scripts/generate-rss.ts",
     "ci:check": "npx tsx scripts/validate-content.ts && npx tsx scripts/generate-sitemap.ts && tsc -b && vite build",
     "preview": "vite preview",
     "server": "node server/api-dev.mjs",
+    "start": "node server/index.mjs",
     "agent": "node server/local-agent.mjs",
     "publish": "npx tsx scripts/publish-content.ts",
     "publish-all": "npx tsx scripts/publish-all.ts",
-    "sitemap": "npx tsx scripts/generate-sitemap.ts"
+    "sitemap": "npx tsx scripts/generate-sitemap.ts",
+    "docker:build": "docker build -t soma .",
+    "docker:run": "docker run --rm -p 3000:3000 -e SITE_PASSWORD=local-dev-secret -v soma_data:/app/data soma"
   },
   "dependencies": {
     "@libsql/client": "^0.17.4",
