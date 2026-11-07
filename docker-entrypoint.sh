@@ -1,14 +1,23 @@
 #!/bin/sh
 set -e
 
+# Fix volume permissions for platforms like Railway where /app/data may be mounted as root
+# Try to chown if we can, otherwise chmod to make writable
+if [ -d "/app/data" ]; then
+  # On Railway the volume is mounted as root, but app runs as node (1000)
+  # Best effort: make it writable
+  chown -R node:node /app/data 2>/dev/null || chmod -R 775 /app/data 2>/dev/null || true
+fi
+if [ -d "/data" ]; then
+  chown -R node:node /data 2>/dev/null || chmod -R 775 /data 2>/dev/null || true
+fi
+
 # Auto-seed file SQLite via volume at /app/data/soma.db if empty
 # Uses USE_TURSO=false (default in Dockerfile) -> local file, not sqld/Turso
-# Only runs when Turso not configured and DB file is new/empty
 
 DB_FILE="${SQLITE_PATH:-/app/data/soma.db}"
 DB_FILE_PATH=$(echo "$DB_FILE" | sed 's/^file://' | cut -d'?' -f1)
 
-# Check if we should seed: USE_TURSO=false and DB file missing or empty
 if [ "${USE_TURSO:-false}" = "false" ] || [ "${USE_TURSO:-false}" = "0" ] || [ "${USE_TURSO:-false}" = "no" ] || [ "${USE_TURSO:-false}" = "off" ]; then
   if [ ! -f "$DB_FILE_PATH" ] || [ ! -s "$DB_FILE_PATH" ]; then
     echo "[entrypoint] Seeding $DB_FILE_PATH (first boot)..."
