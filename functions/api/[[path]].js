@@ -217,21 +217,139 @@ export async function onRequest(context) {
       }
     }
 
-    // models — must return {models: [...]} shape like Vercel api/models.js (frontend does data.models ?? [])
+    // models — mirrors api/models.js but in Workers (fetches Gemini/OpenRouter lists)
     if(route==="models"){
       if(!authed) return new Response(JSON.stringify({error:"Unauthorized"}), {status:401, headers:{"Content-Type":"application/json"}});
-      const models=[];
-      if(env.OPENROUTER_API_KEY) models.push({id:"openrouter-auto", label:"OpenRouter Auto", provider:"openrouter", free:false});
-      if(env.DEEPSEEK_API_KEY){
-        models.push({id:"deepseek-flash", label:"DeepSeek Flash", provider:"deepseek", free:false});
-        models.push({id:"deepseek-v4-pro", label:"DeepSeek V4 Pro", provider:"deepseek", free:false});
+      const GEMINI_KEY = env.GEMINI_API_KEY || "";
+      const GEMINI_DISABLED = env.GEMINI_DISABLED==="1" || env.GEMINI_DISABLED==="true";
+      const OPENROUTER_KEY = env.OPENROUTER_API_KEY || "";
+      const GROQ_KEY = env.GROQ_API_KEY || "";
+      const CEREBRAS_KEY = env.CEREBRAS_API_KEY || "";
+      const STRAITLY_KEY = env.STRAITLY_API_KEY || env.STRAIGHTLY_API_KEY || "";
+      const DEEPSEEK_MODELS = [
+        {id:"deepseek-flash", label:"DeepSeek Flash", provider:"deepseek", free:false},
+        {id:"deepseek-v4-pro", label:"DeepSeek V4 Pro", provider:"deepseek", free:false},
+      ];
+      const CURATED_OR = new Set(["google/gemini-2.5-flash","google/gemini-2.5-flash-lite","google/gemini-2.5-pro","google/gemini-3-flash-preview","google/gemini-3-pro-preview","google/gemini-3.1-flash-lite","google/gemini-flash-latest","google/gemini-flash-lite-latest","google/gemini-pro-latest","google/gemini-2.5-flash-lite","google/gemini-3-flash-preview","google/gemini-3.1-pro-preview","google/gemini-3.5-flash","google/gemini-3.5-flash-lite","google/gemini-3.6-flash","google/gemini-3.7-flash","google/gemini-3.8-flash","google/gemini-3.1-flash-lite-preview","google/gemini-3.1-pro-preview","google/gemini-3.6-flash","google/gemini-3.6-plus","google/gemini-3.6-max-preview","google/gemini-3-flash-preview","google/gemini-3.1-flash-lite-preview"]);
+
+      const cache = globalThis.__somaModelsCache || (globalThis.__somaModelsCache={});
+
+      async function fetchGeminiModels(){
+        if(!GEMINI_KEY || GEMINI_DISABLED) return [];
+        if(cache.gemini && Date.now()-cache.geminiTime < 300000) return cache.gemini;
+        try{
+          const controller=new AbortController(); const to=setTimeout(()=>controller.abort(),8000);
+          const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_KEY}`, {signal:controller.signal});
+          clearTimeout(to);
+          if(!r.ok) return cache.gemini||[];
+          const data=await r.json();
+          const models=(data.models||[]).filter(m=>{
+            const methods=m.supportedGenerationMethods||[];
+            if(!methods.includes("generateContent")) return false;
+            const name=(m.name||"").toLowerCase(); const disp=(m.displayName||"").toLowerCase();
+            const hay=name+" "+disp;
+            if(hay.includes("tts")||hay.includes("audio")||hay.includes("image")||hay.includes("lyria")||hay.includes("robotics")||hay.includes("deep-research")||hay.includes("antigravity")||hay.includes("nano-banana")) return false;
+            if(name.startsWith("models/gemma")) return false;
+            if(name.includes("embedding")) return false;
+            return true;
+          }).map(m=>{
+            const id=m.name.replace(/^models\//,"");
+            return {id, label:m.displayName||id, provider:"gemini", free:false, context_length:1048576};
+          });
+          cache.gemini=models; cache.geminiTime=Date.now(); return models;
+        }catch{ return cache.gemini||[]; }
       }
-      if(env.GEMINI_API_KEY && env.GEMINI_DISABLED!=="1"){
-        models.push({id:"gemini-2.5-flash", label:"Gemini 2.5 Flash", provider:"gemini", free:false});
-        models.push({id:"gemini-2.5-pro", label:"Gemini 2.5 Pro", provider:"gemini", free:false});
+
+      async function fetchOpenRouterModels(){
+        if(!OPENROUTER_KEY) return [];
+        if(cache.openrouter && Date.now()-cache.orTime < 300000) return cache.openrouter;
+        try{
+          const controller=new AbortController(); const to=setTimeout(()=>controller.abort(),8000);
+          const r=await fetch("https://openrouter.ai/api/v1/models", {headers:{"Authorization":`Bearer ${OPENROUTER_KEY}`}, signal:controller.signal});
+          clearTimeout(to);
+          if(!r.ok) return cache.openrouter||[];
+          const data=await r.json();
+          const seen=new Set();
+          const models=(data.data||[]).filter(m=>!m.id.includes("beta")).filter(m=>{
+            const base=m.id.replace(/^~/,"");
+            return CURATED_OR.has(base) || CURATED_OR.has(m.id);
+          }).map(m=>{
+            const id=m.id.replace(/^~/,"");
+            return {id, label:(m.name||id).replace(/^Google:\s*~/,"Google: "), provider:"openrouter", free:!m.pricing || (parseFloat(m.pricing.prompt)===0 && parseFloat(m.pricing.completion)===0)};
+          }).filter(m=>{ if(seen.has(m.id)) return false; seen.add(m.id); return true; });
+          if(!models.some(m=>m.id==="google/gemini-flash-lite-latest")){
+            models.push({id:"google/gemini-flash-lite-latest", label:"Google: Gemini Flash-Lite Latest", provider:"openrouter", free:false, context_length:1048576});
+          }
+          cache.openrouter=models; cache.orTime=Date.now(); return models;
+        }catch{ return cache.openrouter||[]; }
       }
-      if(env.GROQ_API_KEY) models.push({id:"groq-llama", label:"Groq Llama", provider:"groq", free:false});
-      if(env.STRAITLY_API_KEY) models.push({id:"straitly-auto", label:"Straitly Auto", provider:"straitly", free:false});
+
+      async function fetchGroqModels(){
+        if(!GROQ_KEY) return [];
+        if(cache.groq && Date.now()-cache.groqTime < 300000) return cache.groq;
+        try{
+          const controller=new AbortController(); const to=setTimeout(()=>controller.abort(),8000);
+          const r=await fetch("https://api.groq.com/openai/v1/models", {headers:{"Authorization":`Bearer ${GROQ_KEY}`}, signal:controller.signal});
+          clearTimeout(to);
+          if(!r.ok) return cache.groq||[];
+          const data=await r.json();
+          const models=(data.data||[]).map(m=>({id:m.id, label:m.id, provider:"groq", free:false}));
+          cache.groq=models; cache.groqTime=Date.now(); return models;
+        }catch{ return cache.groq||[]; }
+      }
+
+      async function fetchStraitlyModels(){
+        if(!STRAITLY_KEY) return [];
+        const STATIC=[
+          {id:"deepseek/deepseek-v4-1-flash", label:"DeepSeek V4.1 Flash", provider:"straitly", free:false},
+          {id:"z-ai/glm-5.3-flash", label:"GLM 5.3 Flash", provider:"straitly", free:false},
+          {id:"gpt-6-luna", label:"GPT-6 Luna", provider:"straitly", free:false},
+          {id:"claude-haiku-5-5", label:"Claude Haiku 5.5", provider:"straitly", free:false},
+          {id:"qwen/qwen3.6-35b-a3b", label:"Qwen 3.6 35B A3B", provider:"straitly", free:false},
+          {id:"meta-llama/straitly-meta-llama-muse-spark-1.3-contributor", label:"Muse Spark 1.3", provider:"straitly", free:false},
+          {id:"gemini-3.8-flash", label:"Gemini 3.8 Flash", provider:"straitly", free:false},
+          {id:"deepseek/deepseek-v4-pro", label:"DeepSeek V4 Pro", provider:"straitly", free:false},
+        ];
+        return STATIC;
+      }
+
+      async function fetchCerebrasModels(){
+        if(!CEREBRAS_KEY) return [];
+        if(cache.cerebras && Date.now()-cache.cerebrasTime < 300000) return cache.cerebras;
+        try{
+          const controller=new AbortController(); const to=setTimeout(()=>controller.abort(),8000);
+          const r=await fetch("https://api.cerebras.ai/v1/models", {headers:{"Authorization":`Bearer ${CEREBRAS_KEY}`}, signal:controller.signal});
+          clearTimeout(to);
+          if(!r.ok) return cache.cerebras||[];
+          const data=await r.json();
+          const models=(data.data||[]).map(m=>({id:m.id, label:m.id, provider:"cerebras", free:false}));
+          cache.cerebras=models; cache.cerebrasTime=Date.now(); return models;
+        }catch{ return cache.cerebras||[]; }
+      }
+
+      const [geminiModels, openrouterModels, groqModels, cerebrasModels, straitlyModels] = await Promise.all([fetchGeminiModels(), fetchOpenRouterModels(), fetchGroqModels(), fetchCerebrasModels(), fetchStraitlyModels()]);
+
+      let finalGemini = (GEMINI_KEY && !GEMINI_DISABLED) ? [...geminiModels] : [];
+      if(finalGemini.length>0 && !finalGemini.some(m=>m.id==="gemini-flash-lite-latest")){
+        finalGemini.unshift({id:"gemini-flash-lite-latest", label:"Gemini Flash-Lite Latest", provider:"gemini", free:false, context_length:1048576});
+      }
+      const finalOR = OPENROUTER_KEY ? [...openrouterModels] : [];
+      const models = [...(env.DEEPSEEK_API_KEY ? DEEPSEEK_MODELS : []), ...finalGemini, ...finalOR, ...groqModels, ...cerebrasModels, ...straitlyModels];
+
+      // Ensure minimal curated Gemini set if API fetch yielded nothing but key present (matches Vercel fallback)
+      if(finalGemini.length===0 && GEMINI_KEY && !GEMINI_DISABLED){
+        models.push(
+          {id:"gemini-2.5-flash", label:"Gemini 2.5 Flash", provider:"gemini", free:false},
+          {id:"gemini-2.5-pro", label:"Gemini 2.5 Pro", provider:"gemini", free:false},
+          {id:"gemini-flash-latest", label:"Gemini Flash Latest", provider:"gemini", free:false},
+          {id:"gemini-flash-lite-latest", label:"Gemini Flash-Lite Latest", provider:"gemini", free:false},
+          {id:"gemini-pro-latest", label:"Gemini Pro Latest", provider:"gemini", free:false},
+          {id:"gemini-2.5-flash-lite", label:"Gemini 2.5 Flash-Lite", provider:"gemini", free:false},
+          {id:"gemini-3-flash-preview", label:"Gemini 3 Flash Preview", provider:"gemini", free:false},
+          {id:"gemini-3.1-pro-preview", label:"Gemini 3.1 Pro Preview", provider:"gemini", free:false},
+        );
+      }
+
       return new Response(JSON.stringify({models}), {status:200, headers:{"Content-Type":"application/json"}});
     }
 
