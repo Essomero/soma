@@ -1,7 +1,9 @@
 // Production unified server: serves dist/ + /api/* from one Node process.
 // Used by Docker, Fly.io, Railway, Render, and `npm run start`.
-// Turso optional: falls back to local SQLite file ./data/soma.db (or $DATABASE_URL / $SQLITE_PATH).
-// Reads .env / .env.local if present, so Docker with bind-mounted .env works even without env_file.
+// Supports:
+// - Local SQLite file ./data/soma.db (default in Dockerfile solo)
+// - Local libSQL server sqld at libsql://sqld:8080 (default in docker-compose.yml)
+// - Turso cloud when USE_TURSO=true + TURSO_* vars present (Vercel or explicit opt-in)
 
 import { createServer } from "http";
 import { readFileSync, existsSync, statSync } from "fs";
@@ -10,7 +12,6 @@ import { fileURLToPath } from "url";
 
 const rootDir = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-// Load .env / .env.local if present (env vars win)
 for (const file of [".env.local", ".env"]) {
   const p = join(rootDir, file);
   if (!existsSync(p)) continue;
@@ -31,13 +32,26 @@ if (!existsSync(DIST)) {
   process.exit(1);
 }
 
-const SITE_PASSWORD = process.env.SITE_PASSWORD || "";
-if (!SITE_PASSWORD) {
+if (!process.env.SITE_PASSWORD) {
   console.warn("[soma] SITE_PASSWORD not set — private routes will reject (set it in env)");
 }
 
-const hasTurso = !!(process.env.TURSO_DATABASE_URL || process.env.TURSO_DB) && !!(process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN);
+function parseUseTurso() {
+  const v = (process.env.USE_TURSO || "").trim().toLowerCase();
+  if (!v) return null;
+  if (["false", "0", "no", "off"].includes(v)) return false;
+  if (["true", "1", "yes", "on"].includes(v)) return true;
+  return null;
+}
+
+const useTursoFlag = parseUseTurso();
+const tursoUrl = (process.env.TURSO_DATABASE_URL || "").trim();
+const isSqld = tursoUrl.toLowerCase().includes("sqld") || tursoUrl.includes("localhost:8080") || tursoUrl.includes("127.0.0.1:8080");
+const hasTursoUrl = !!(process.env.TURSO_DATABASE_URL || process.env.TURSO_DB);
+const hasToken = !!(process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN);
+const hasTurso = useTursoFlag === false ? false : useTursoFlag === true ? (hasTursoUrl && (hasToken || isSqld)) : (hasTursoUrl && (hasToken || isSqld));
 const localPath = (process.env.DATABASE_URL || process.env.SQLITE_PATH || "./data/soma.db").replace(/^file:/, "");
+
 const aiKeys = [];
 if (process.env.OPENROUTER_API_KEY) aiKeys.push("OpenRouter");
 if (process.env.DEEPSEEK_API_KEY) aiKeys.push("DeepSeek");
@@ -45,7 +59,9 @@ if (process.env.GEMINI_API_KEY && process.env.GEMINI_DISABLED !== "1") aiKeys.pu
 if (process.env.GROQ_API_KEY) aiKeys.push("Groq");
 if (process.env.CEREBRAS_API_KEY) aiKeys.push("Cerebras");
 if (process.env.STRAITLY_API_KEY) aiKeys.push("Straitly");
-console.log(`[soma] DB: ${hasTurso ? `Turso remote` : `local SQLite file ${localPath}`}`);
+
+const dbLabel = hasTurso ? (isSqld ? `sqld at ${tursoUrl}` : "Turso remote") : `local SQLite file ${localPath}`;
+console.log(`[soma] DB: ${dbLabel} (USE_TURSO=${process.env.USE_TURSO || "unset"})`);
 console.log(`[soma] AI: ${aiKeys.length ? aiKeys.join(" + ") : "none — set OPENROUTER_API_KEY etc. to enable margin AI"}`);
 
 const handlerNames = ["content", "notes", "comments", "highlights", "ratings", "progress", "tests", "public", "diag", "chat", "models", "auth"];
@@ -84,12 +100,7 @@ function serveStatic(req, res) {
   try { pathname = decodeURIComponent(pathname); } catch {}
   if (!pathname || pathname === "/") pathname = "/index.html";
   if (pathname.includes("..")) return false;
-
-  const candidates = [
-    join(DIST, pathname.slice(1)),
-    null,
-  ];
-
+  const candidates = [join(DIST, pathname.slice(1)), null];
   for (const fp of candidates) {
     if (!fp) {
       const idx = join(DIST, "index.html");
@@ -194,7 +205,6 @@ const server = createServer(async (req, res) => {
   }
 
   if (serveStatic(req, res)) return;
-
   res.writeHead(404, { "Content-Type": "text/plain" });
   res.end("Not found");
 });

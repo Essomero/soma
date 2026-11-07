@@ -44,13 +44,23 @@ export async function getDb() {
   const on = raw === "true" || raw === "1" || raw === "yes" || raw === "on";
   const tursoUrl = process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "";
   const authToken = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "";
+  const isLocalSqtyd = (() => {
+    const u = tursoUrl.toLowerCase();
+    return u.includes("sqld") || u.includes("localhost") || u.includes("127.0.0.1") || u.includes(":8080");
+  })();
   // Rule:
-  // - USE_TURSO=false -> force local even if TURSO_* present (Docker isolation, default)
-  // - USE_TURSO=true -> Turso when vars present
-  // - USE_TURSO unset -> Turso when vars present (backward compat for existing Vercel deploys that never set USE_TURSO)
-  const shouldUseTurso = off ? false : on ? true : !!(tursoUrl && authToken);
-  if (shouldUseTurso && tursoUrl && authToken) {
-    return createClient({ url: tursoUrl, authToken });
+  // - USE_TURSO=false -> force local file even if TURSO_* present (Docker isolation, default)
+  // - USE_TURSO=true -> Turso/sqld when URL present (token optional for local sqld)
+  // - USE_TURSO unset -> Turso when URL+token present (backward compat Vercel)
+  const shouldUseTurso = off ? false : on ? !!tursoUrl : !!(tursoUrl && authToken);
+  if (shouldUseTurso && tursoUrl) {
+    if (isLocalSqtyd) {
+      // Local sqld — token optional
+      return createClient({ url: tursoUrl, authToken: authToken || undefined });
+    }
+    if (authToken) {
+      return createClient({ url: tursoUrl, authToken });
+    }
   }
   const rawLocal = (process.env.DATABASE_URL || process.env.SQLITE_PATH || "").trim();
   const localUrl = rawLocal
@@ -61,6 +71,7 @@ export async function getDb() {
   ensureLocalDir(localUrl);
   return createClient({ url: localUrl });
 }
+
 
 export const CREATE_CONTENT_ITEMS = `CREATE TABLE IF NOT EXISTS content_items (
   slug TEXT PRIMARY KEY,

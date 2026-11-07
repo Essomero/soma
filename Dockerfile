@@ -23,13 +23,17 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/api ./api
 COPY --from=build /app/server ./server
-# Keep src/content for publish-all if someone wants to seed local DB after first boot
+# Keep src/content for init-docker auto-seed on first boot (files alone = stories on :3000)
 COPY --from=build /app/src/content ./src/content
 COPY --from=build /app/src/types ./src/types
 COPY --from=build /app/scripts ./scripts
-RUN mkdir -p /app/data && chown -R node:node /app
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh && mkdir -p /app/data && chown -R node:node /app
 USER node
 VOLUME ["/app/data"]
 EXPOSE 3000
 ENV SQLITE_PATH=/app/data/soma.db
+ENV USE_TURSO=false
+# Entrypoint seeds file SQLite via volume if empty (/app/data/soma.db), then starts server
+ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["node", "server/index.mjs"]

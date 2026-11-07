@@ -19,10 +19,17 @@ function parseUseTurso() {
 
 export function isTursoConfigured() {
   const flag = parseUseTurso();
-  if (flag === false) return false; // explicitly forced local
-  const hasVars = !!(process.env.TURSO_DATABASE_URL || process.env.TURSO_DB) && !!(process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN);
-  if (flag === true) return hasVars; // explicitly wants Turso, needs vars
-  return hasVars; // unset → Turso if vars present (Vercel compat)
+  const hasUrl = !!(process.env.TURSO_DATABASE_URL || process.env.TURSO_DB);
+  const hasToken = !!(process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN);
+  // Docker compose full-stack: sqld runs without auth token. Allow URL-only when USE_TURSO is true or host is sqld/local.
+  const isLocalSqtyd = (() => {
+    const u = (process.env.TURSO_DATABASE_URL || "").toLowerCase();
+    return u.includes("sqld") || u.includes("localhost:8080") || u.includes("127.0.0.1:8080");
+  })();
+  if (flag === false) return false; // explicitly forced local file
+  if (flag === true) return hasUrl && (hasToken || isLocalSqtyd); // true + url (+ token unless local sqld)
+  // unset -> backward compat: use remote if url present (even without token for local sqld)
+  return hasUrl && (hasToken || isLocalSqtyd);
 }
 
 function getMode() {
@@ -33,11 +40,17 @@ function getMode() {
 
 
 function getRemoteConfig() {
-  const url = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").trim();
+  const raw = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").trim();
   const token = (process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "").trim();
-  const httpUrl = url.replace(/^libsql:\/\//, "https://");
+  const lower = raw.toLowerCase();
+  const isLocalHost = lower.includes("sqld") || lower.includes("localhost") || lower.includes("127.0.0.1") || lower.startsWith("http://");
+  let httpUrl = raw;
+  if (raw.startsWith("libsql://")) httpUrl = raw.replace(/^libsql:\/\//, isLocalHost ? "http://" : "https://");
+  else if (raw.startsWith("libsql:")) httpUrl = raw.replace(/^libsql:/, isLocalHost ? "http:" : "https:");
+  else if (!raw.startsWith("http")) httpUrl = raw;
   return { url: httpUrl, token };
 }
+
 
 function getLocalPath() {
   const raw = (process.env.DATABASE_URL || process.env.SQLITE_PATH || "").trim();
@@ -127,7 +140,9 @@ function unwrapArg(a) {
 async function remoteQuery(sql, args) {
   args = args || [];
   const { url: DB_URL, token: TOKEN } = getRemoteConfig();
-  if (!DB_URL || !TOKEN) return localQuery(sql, args);
+  if (!DB_URL) return localQuery(sql, args);
+  const headers = { "Content-Type": "application/json" };
+  if (TOKEN) headers["Authorization"] = "Bearer " + TOKEN;
   const requests = [{
     type: "execute",
     stmt: { sql, args: args.map(wrapArg) },
@@ -137,7 +152,7 @@ async function remoteQuery(sql, args) {
   try {
     const r = await fetch(DB_URL + "/v2/pipeline", {
       method: "POST",
-      headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ requests }),
       signal: controller.signal,
     });
@@ -145,6 +160,8 @@ async function remoteQuery(sql, args) {
     const data = await r.json().catch(() => null);
     if (!r.ok) {
       console.error("[_db] remote FAIL:", r.status, JSON.stringify(data).slice(0, 500));
+      // For local sqld, fall back to local only if remote truly unreachable, not on SQL error
+      if (r.status >= 500 || r.status === 0) return localQuery(sql, args);
       return [];
     }
     const result = data?.results?.[0]?.response?.result;
@@ -161,25 +178,27 @@ async function remoteQuery(sql, args) {
   } catch (e) {
     clearTimeout(timeout);
     console.error("[_db] remote query error:", e?.message);
-    return [];
+    return localQuery(sql, args);
   }
 }
 
 async function remotePipeline(stmts) {
   const { url: DB_URL, token: TOKEN } = getRemoteConfig();
-  if (!DB_URL || !TOKEN) {
+  if (!DB_URL) {
     let last = [];
     for (const s of stmts) {
       last = await localQuery(s.sql || s.stmt?.sql, (s.args || s.stmt?.args || []).map(unwrapArg));
     }
     return last;
   }
+  const headers = { "Content-Type": "application/json" };
+  if (TOKEN) headers["Authorization"] = "Bearer " + TOKEN;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
     const r = await fetch(DB_URL + "/v2/pipeline", {
       method: "POST",
-      headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ requests: stmts }),
       signal: controller.signal,
     });
@@ -187,7 +206,12 @@ async function remotePipeline(stmts) {
     const data = await r.json().catch(() => null);
     if (!r.ok) {
       console.error("[_db] pipeline FAIL:", r.status, JSON.stringify(data).slice(0, 500));
-      return [];
+      // Local sqld fallback for pipeline
+      let last = [];
+      for (const s of stmts) {
+        last = await localQuery(s.sql || s.stmt?.sql, (s.args || s.stmt?.args || []).map(unwrapArg));
+      }
+      return last;
     }
     const lastResult = data?.results?.[data.results.length - 1]?.response?.result;
     if (!lastResult) return [];
@@ -200,9 +224,14 @@ async function remotePipeline(stmts) {
   } catch (e) {
     clearTimeout(timeout);
     console.error("[_db] pipeline error:", e?.message);
-    return [];
+    let last = [];
+    for (const s of stmts) {
+      last = await localQuery(s.sql || s.stmt?.sql, (s.args || s.stmt?.args || []).map(unwrapArg));
+    }
+    return last;
   }
 }
+
 
 // ── Local ───────────────────────────────────────────────────────────
 
