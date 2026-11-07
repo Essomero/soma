@@ -97,17 +97,23 @@ function toFtsQuery(input) {
 // pipeline can't run custom SQL functions that triggers need.
 
 let _ftsInitialized = false;
+let _tablesReady = false;
 
-async function query(sql, args) {
-  return dbQuery(sql, args);
+async function ensureTables() {
+  if (_tablesReady) return;
+  try { await dbQuery(CREATE_TABLE); } catch {}
+  _tablesReady = true;
 }
 
+async function query(sql, args) {
+  await ensureTables();
+  return dbQuery(sql, args);
+}
 
 /** Ensure the FTS table exists and backfill any missing rows. */
 async function initFts() {
   if (_ftsInitialized) return;
-  // Create tables (idempotent)
-  try { await dbQuery(CREATE_TABLE); } catch {}
+  await ensureTables();
   try { await dbQuery(CREATE_FTS); } catch (e) {
     console.error("FTS create error:", e && e.message);
   }
@@ -117,7 +123,6 @@ async function initFts() {
     const countRows = await dbQuery("SELECT COUNT(*) AS cnt FROM content_fts", []);
     const existing = countRows && countRows[0] && (countRows[0].cnt ?? countRows[0]["COUNT(*)"] ?? 0);
     if (existing && Number(existing) > 0) return;
-    // Fetch all content and build inserts
     const rows = await dbQuery("SELECT slug, type, title, excerpt, body_json FROM content_items", []);
     if (!rows || rows.length === 0) return;
     const stmts = rows.map((row) => {
@@ -137,7 +142,6 @@ async function initFts() {
   }
 }
 
-/** Run a search query through FTS5. Ensures FTS table exists first. */
 async function searchQuery(sql, args) {
   try {
     await initFts();
