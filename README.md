@@ -103,95 +103,121 @@ Soma ships a full content studio at **`/admin`** (owner login required). Every c
 
 ## Quick Start — Pick Your Deploy
 
-Soma runs anywhere Node runs. No Turso, no Vercel required — a single Docker image serves the SPA + API from one process with a local SQLite file. Same image auto-switches to hosted Turso when `TURSO_*` env vars are present.
+Soma runs anywhere Node runs with one env var. Files alone are enough — no external account needed.
 
-### Option A: Docker / docker compose (fastest try — no accounts)
+### Platform matrix
+
+| Platform | How it runs | DB default | Needs external? | Config file |
+|---|---|---|---|---|
+| **Docker Compose** | `soma` + `sqld` inside containers | file SQLite via volume `soma_data:/app/data` → `/app/data/soma.db` (auto-seeds 46) + `sqld` optional via `--profile libsql` | No | `docker-compose.yml` |
+| **Dockerfile alone** (Fly.io, Render, Railway Dockerfile, Coolify self-hosted) | single image `server/index.mjs` + `dist/` | file SQLite at `SQLITE_PATH=/app/data/soma.db` (Disk/Volume) | No | `Dockerfile`, `docker-entrypoint.sh` |
+| **Fly.io** | Docker + volume `/data` | file SQLite at `/data/soma.db` | No | `fly.toml` |
+| **Railway** | Dockerfile + volume `/app/data` | file SQLite at `/app/data/soma.db` | No | `railway.toml` |
+| **Render** | Docker service + Disk | file SQLite via Render Disk at `/app/data` | No | `render.yaml` |
+| **Vercel** | Serverless Functions + edge SQLite | Turso (libSQL remote) | Yes — Turso (free) | `vercel.json`, `api/` |
+| **Netlify** | Functions + CDN SPA | Turso (libSQL remote) | Yes — Turso (free) | `netlify.toml`, `netlify/functions/` |
+| **Cloudflare Pages** | Pages Functions + Turso | Turso remote or D1 (opt-in) | Yes — Turso or D1 | `wrangler.toml`, `functions/api/` |
+
+All share `USE_TURSO=true/false` (true/false, yes/no, 1/0, on/off — false = local file, true = Turso/sqld, unset = backward compat: Turso if vars present). AI keys (OPENROUTER, DEEPSEEK, GEMINI, GROQ, CEREBRAS, STRAITLY) flow from `.env` into every target.
+
+### Option A: Docker / docker compose (fastest try — no accounts, full-stack inside containers)
 
 ```bash
 git clone https://github.com/Essomero/soma.git && cd soma
-# copy the env template and set a password (works for Docker + local dev + any platform)
-cp .env.example .env
-# edit .env -> set SITE_PASSWORD (only required var for Docker path)
-
-SITE_PASSWORD=your-secret-password docker compose up --build
-# open http://localhost:3000 — login with SITE_PASSWORD
+cp .env.example .env   # set SITE_PASSWORD
+# edit .env -> SITE_PASSWORD is only required var for Docker path
+docker compose up --build   # uses file SQLite at /app/data/soma.db via volume soma_data, auto-seeds 46
+# open http://localhost:3000 — login with SITE_PASSWORD — stories visible immediately
 ```
 
-Data persists in the `soma_data` Docker volume at `/app/data/soma.db`. No external DB.
-Optional: add Turso creds to `.env` and it switches to remote automatically.
+Data persists in `soma_data` volume at `/app/data/soma.db`. No external DB, no Turso leak — Docker blanks `TURSO_*` from host `.env` unless `USE_TURSO=true`.
 
+With local libSQL server (optional, full-stack wired inside containers):
 ```bash
-# seed content into local SQLite (same command works locally or inside container)
-npm run publish-all   # uses DATABASE_URL / SQLITE_PATH fallback when TURSO_* not set
+docker compose --profile libsql up --build   # soma (3000) + sqld (8080) via libsql://sqld:8080
+USE_TURSO=true TURSO_DATABASE_URL=libsql://sqld:8080 docker compose --profile libsql up --build
 ```
 
-### Option B: Fly.io (Docker + volume, ~1 click)
+### Option B: Fly.io (Docker + volume)
 
 ```bash
-fly launch --no-deploy   # picks up fly.toml
+fly launch --no-deploy   # picks up fly.toml (USE_TURSO=false default -> /data/soma.db)
 fly volumes create soma_data --region iad --size 1
 fly secrets set SITE_PASSWORD=your-strong-password
-# optional AI keys: fly secrets set OPENROUTER_API_KEY=...
+# optional AI: fly secrets set OPENROUTER_API_KEY=... etc.
 fly deploy
 ```
-Docs: `fly.toml`, `docker-compose.yml`.
 
-### Option C: Railway / Render / Coolify
+With Turso on Fly: `fly secrets set USE_TURSO=true TURSO_DATABASE_URL=libsql://... TURSO_AUTH_TOKEN=...`
 
-- **Railway:** `railway.toml` included. Create project from GitHub → add volume at `/app/data` → set `SITE_PASSWORD` → deploy. Dockerfile auto-detected.
-- **Render:** New Web Service → Docker → set `SITE_PASSWORD` → add Disk at `/app/data`.
-- **Coolify / self-hosted:** any host that builds a `Dockerfile`. Same env: `SITE_PASSWORD` required, `TURSO_*` optional, data on a volume.
+Docs: `fly.toml`.
+
+### Option C: Railway / Render / Coolify (Dockerfile — file SQLite via volume/disk)
+
+- **Railway:** `railway.toml` included. Create project from GitHub → add Volume mount `/app/data` → set `SITE_PASSWORD` (and `USE_TURSO=false` default) → deploy. Dockerfile auto-detected. Docs in `railway.toml`.
+- **Render:** `render.yaml` included. New Web Service → Docker → set `SITE_PASSWORD` → Disk at `/app/data` (1GB) → deploy. First boot auto-seeds via entrypoint.
+- **Coolify / self-hosted:** any host that builds a `Dockerfile`. Mount volume at `/app/data`, set `SITE_PASSWORD`. Data = single file `/app/data/soma.db` backup = copy file.
 
 ### Option D: Vercel + Turso (original path, still supported)
 
-Three moves: fork, import, deploy. Your notes — and every story, guide, course, and test — live in your database, never in git, so nothing here can touch anyone else's writing. Your fork stays public (GitHub gives you no choice there); your writing stays private until you flip it public.
+Three moves: fork, import, deploy. Your notes live in your database, never in git — your fork stays public (GitHub rule), your writing stays private until you flip it public.
 
 #### Step 0: Fork Soma
 
-[**Fork `Essomero/soma`**](https://github.com/Essomero/soma/fork) (accept the defaults). This is your copy: it stays linked for one-click updates later. No git needed. Agents publish into your database, not into the fork, so unfinished work never touches GitHub.
+[**Fork `Essomero/soma`**](https://github.com/Essomero/soma/fork) (accept defaults).
 
 #### Step 1: Import Your Fork Into Vercel
 
-In Vercel, [Add New -> Project](https://vercel.com/new) -> **Import** your `soma` fork (pick the one under your account, not `Essomero/soma`). Importing uses your fork as-is: Vercel creates no new repo.
-
-On the configure page, open **Environment Variables** and add one variable:
+In Vercel, [Add New → Project](https://vercel.com/new) → **Import** your `soma` fork. On configure page, add:
 
 | Variable | Value | Notes |
 |---|---|---|
-| `SITE_PASSWORD` | Any strong string you invent (e.g. `openssl rand -base64 32`) | Your private studio login. Toggle the lock icon to mark it Sensitive |
+| `SITE_PASSWORD` | `openssl rand -base64 32` | Private studio login, mark Sensitive |
+| `USE_TURSO` | `true` | Force Turso (true/false semantics) |
 
-Do this before pressing Deploy: deploying without it breaks login and forces a redeploy to fix. Do not add any `VITE_*` variables: those are local-development only and baking them into Vercel would expose your database token in the shipped JavaScript.
-
-Further down the same page, under Optional Integrations, click **Add** on the **Turso** card. Vercel provisions the database and injects its URL and token into your project on its own: `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`, no copying. The suggested resource name is random (e.g. `database-celeste-arrow`): it is only a label in the dashboards, so accept it or rename it, the app does not care.
-
-Then press Deploy. Tables initialize automatically on the first API request: no migrations, no SQL to run by hand.
-
-Prefer to use a database you already own, or want it under your own Turso account? Skip the card and paste its URL and token as `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` yourself, instead. Either path lands in the same place.
+Then under Integrations, **Add Turso** card — Vercel injects `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` automatically. Or paste your own Turso creds instead. Tables self-create on first API hit.
 
 #### Step 1.5: Publish demo content
 
-Your database starts empty. The first production build (`npm run build`) publishes every `.ts` content file (the essays, guides, course, and tests in this repo) as private rows — nothing goes public on its own. Flip rows to `published` one by one (per slug: `UPDATE content_items SET status='published' WHERE slug='...'`) or all at once (`UPDATE content_items SET status='published'`). Your own writing stays private until you say otherwise.
+First build (`npm run build`) imports `.ts` content as private rows. Flip via `UPDATE content_items SET status='published'` or per-slug. `npm run publish-all` also works (uses local file fallback when no Turso creds). `/api/diag` shows reachability + row counts (no secrets).
 
-`npm run publish-all` remains for manual refresh/repair (needs Turso credentials in `.env.local` or uses local SQLite fallback). If a deployment ever looks empty, log in as owner and open `/api/diag`: it reports database reachability and row counts using booleans and numbers only — no secret values, nothing to copy.
+### Option E: Netlify (SPA + Functions, Turso required)
+
+Netlify Functions are serverless — no persistent disk, so Turso remote is required.
+
+```bash
+# netlify.toml already has build:static + publish dist + functions netlify/functions/
+# Functions in netlify/functions/api.mjs proxy /api/* to api/*.js handlers via same _db adapter
+```
+
+Deploy: Import `Essomero/soma` into Netlify, set `SITE_PASSWORD`, `USE_TURSO=true`, `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, optional AI keys. Functions auto-deployed. Rewrite: `/api/*` → `/.netlify/functions/:splat`, SPA fallback → `/index.html`.
+
+### Option F: Cloudflare Pages + Functions (Turso or D1)
+
+Two DB options:
+1. **Turso remote** (simpler, same adapter as Vercel/Netlify): `USE_TURSO=true` + `TURSO_*` in Pages dashboard → `functions/api/[[path]].js` proxies to Turso HTTP pipeline.
+2. **D1** (native): `wrangler d1 create soma-db` → uncomment `[[d1_databases]]` in `wrangler.toml` → implement D1 binding in `api/_db.js` when `env.DB` present (second phase).
+
+Build: `npm run build:static` → `dist/`. Deploy via `wrangler pages deploy dist` or GitHub connected to Pages. Rewrites: Pages Functions handle `/api/*`, SPA fallback via `_routes.json` or vercel-like rewrites.
 
 ### Step 2: (Optional) Add AI Keys (all deploy targets)
 
-Without keys, reading, writing, and publishing work as is. Add any one key below and three features light up on your published pages:
+Without keys, reading/writing/publishing works. Add one key → margin AI + comment replies + test grading light up:
 
-- **Margin AI:** select any paragraph on a story, guide, or doc and ask it to explain the passage or distill it to its point.
-- **Comment replies:** answer a reader's comment with one click, using the article as context.
-- **Test grading:** diagnostic tests (`/tests/:slug`) grade written answers and return scored feedback. Without a key the grade button stays quiet and tells you which env var to set.
+- **Margin AI:** select any paragraph → explain / distill.
+- **Comment replies:** one-click AI reply with article context.
+- **Test grading:** `/tests/:slug` grades written answers.
 
-Add keys in Vercel under Project Settings > Environment Variables, then redeploy. For Docker/Fly/Railway: add to `.env` / `fly secrets` / Railway Variables. Locally, copy `.env.example` to `.env.local` and fill the same names. You only need one; add more to unlock more models in the picker.
+Add in Vercel — Project Settings → Env Vars; Docker/Fly/Railway/Render — `.env` / `fly secrets` / Variables; locally — `cp .env.example .env.local`. One key enough, more = more models in picker.
 
 | Env var | What you get | Where to get it |
 |---|---|---|
-| `OPENROUTER_API_KEY` | One key for Claude, GPT, Gemini, Llama, and Qwen through a single router | [openrouter.ai/keys](https://openrouter.ai/keys) |
-| `DEEPSEEK_API_KEY` | Direct DeepSeek models | [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys) |
-| `GEMINI_API_KEY` | Direct Google Gemini models | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
-| `GROQ_API_KEY` | Fast Llama and Mixtral inference | [console.groq.com/keys](https://console.groq.com/keys) |
-| `CEREBRAS_API_KEY` | Fast Cerebras inference | [cloud.cerebras.ai](https://cloud.cerebras.ai/) |
-| `STRAITLY_API_KEY` | Multi-model gateway (100+ models) | [straitly.ai/app/keys](https://straitly.ai/app/keys) |
+| `OPENROUTER_API_KEY` | Claude, GPT, Gemini, Llama, Qwen via one router | [openrouter.ai/keys](https://openrouter.ai/keys) |
+| `DEEPSEEK_API_KEY` | Direct DeepSeek | [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys) |
+| `GEMINI_API_KEY` | Direct Gemini | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+| `GROQ_API_KEY` | Fast Llama/Mixtral | [console.groq.com/keys](https://console.groq.com/keys) |
+| `CEREBRAS_API_KEY` | Fast Cerebras | [cloud.cerebras.ai](https://cloud.cerebras.ai/) |
+| `STRAITLY_API_KEY` | 100+ models gateway | [straitly.ai/app/keys](https://straitly.ai/app/keys) |
 
 ---
 

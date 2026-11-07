@@ -5,12 +5,28 @@ dockerfilePath = "Dockerfile"
 [deploy]
 startCommand = "node server/index.mjs"
 restartPolicyType = "on_failure"
-# Healthcheck hits static asset — server returns 200 for SPA routes
 healthcheckPath = "/"
 healthcheckTimeout = 30
 
-# Set these in Railway dashboard > Variables:
-# SITE_PASSWORD (required)
-# Optional: TURSO_DATABASE_URL / TURSO_AUTH_TOKEN (uses hosted Turso if set, else local volume)
-# Optional AI keys: OPENROUTER_API_KEY, DEEPSEEK_API_KEY, etc.
-# Add a volume in Railway dashboard: mount /app/data -> volume soma_data
+# Full-stack inside containers: files alone are enough
+# - Dockerfile (this config): file SQLite at /app/data/soma.db via volume/disk
+# - Docker Compose: docker compose up --build -> soma (3000) + sqld (8080) inside containers
+#   Compose full-stack wired: soma talks to sqld via libsql://sqld:8080 inside network (no external account)
+# - Both are true/false for USE_TURSO (not 0/1 per preference)
+#
+# Deploy on Railway:
+#   1. Create project from GitHub repo Essomero/soma
+#   2. Add empty Volume in dashboard: mount /app/data -> volume soma_data (for file SQLite persistence)
+#   3. Variables:
+#      SITE_PASSWORD (required) — e.g. openssl rand -base64 32
+#      USE_TURSO=false (default) -> local file SQLite at /app/data/soma.db, auto-seeds on first boot
+#      Optional AI keys: OPENROUTER_API_KEY, DEEPSEEK_API_KEY, GEMINI_API_KEY, GROQ_API_KEY, STRAITLY_API_KEY, UNSPLASH_ACCESS_KEY
+#   4. With Turso cloud (opt-in):
+#      Set USE_TURSO=true + TURSO_DATABASE_URL=libsql://... + TURSO_AUTH_TOKEN=...
+#   5. Deploy — first boot seeds 46 stories (all published) via docker-entrypoint.sh
+#
+# For platforms that deploy from docker-compose.yml (Compose stack):
+#   Railway supports Compose via railway.toml? No — use Dockerfile. But docker-compose.yml in repo
+#   shows full-stack: soma + sqld both inside containers, no external DB needed.
+#   Compose: `docker compose up --build` -> soma (3000) + sqld (8080) wired via libsql://sqld:8080
+#   The files alone (Dockerfile + compose) are enough to get everything up.

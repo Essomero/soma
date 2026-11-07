@@ -1,0 +1,51 @@
+# Soma for Render.com — files alone are enough
+# Render builds Dockerfile by default (no compose), uses file SQLite via volume/disk
+#
+# Deploy:
+#   1. New Web Service -> Connect repo Essomero/soma -> Runtime Docker
+#   2. Environment: SITE_PASSWORD (required), USE_TURSO=false (default = local file)
+#   3. Add Disk: Name soma-data, Mount Path /app/data, Size 1GB
+#   4. Optional AI keys: OPENROUTER_API_KEY, DEEPSEEK_API_KEY, GEMINI_API_KEY, etc.
+#   5. With Turso cloud: set USE_TURSO=true + TURSO_DATABASE_URL + TURSO_AUTH_TOKEN
+#
+# Why file SQLite via volume:
+#   - Single file persistence on Render Disk survives deploys/restarts
+#   - No external DB account needed — first boot auto-seeds via docker-entrypoint.sh
+#   - Backup: Render Dashboard -> Disk -> Snapshot
+
+services:
+  - type: web
+    name: soma
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: SITE_PASSWORD
+        sync: false # set in Render dashboard, required
+      - key: USE_TURSO
+        value: false
+      - key: SQLITE_PATH
+        value: /app/data/soma.db
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: CEREBRAS_API_KEY
+        sync: false
+      - key: STRAITLY_API_KEY
+        sync: false
+      - key: UNSPLASH_ACCESS_KEY
+        sync: false
+    disks:
+      - name: soma-data
+        mountPath: /app/data
+        sizeGB: 1
