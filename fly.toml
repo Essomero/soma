@@ -1,47 +1,33 @@
-app = "soma"
-primary_region = "iad"
+# fly.toml app configuration file generated for soma on 2026-11-07T22:06:37+03:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'soma'
+primary_region = 'iad'
 
 [build]
-dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-PORT = "3000"
-SQLITE_PATH = "/data/soma.db"
-USE_TURSO = "false"
-
-[http_service]
-internal_port = 3000
-force_https = true
-auto_stop_machines = "off"
-auto_start_machines = true
-min_machines_running = 1
-processes = ["app"]
-
-[[vm]]
-memory = "512mb"
-cpu_kind = "shared"
-cpus = 1
+  PORT = '3000'
+  SQLITE_PATH = '/data/soma.db'
+  USE_TURSO = 'false'
 
 [[mounts]]
-source = "soma_data"
-destination = "/data"
-initial_size = "1GB"
+  source = 'soma_data'
+  destination = '/data'
+  initial_size = '1GB'
 
-# Full-stack inside containers: files alone are enough
-# Docker Compose (local): docker compose up --build -> soma (3000) + sqld (8080) via libSQL inside containers
-# Dockerfile alone (Fly.io, Render, Railway Dockerfile): file SQLite at /data/soma.db via volume/mount (this file)
-#
-# Usage on Fly:
-#   fly launch --no-deploy   # picks up this fly.toml
-#   fly volumes create soma_data --region iad --size 1
-#   fly secrets set SITE_PASSWORD=your-strong-password
-#   # Optional AI: fly secrets set OPENROUTER_API_KEY=... DEEPSEEK_API_KEY=... etc.
-#   fly deploy
-#
-# Default: USE_TURSO=false -> local file SQLite at /data/soma.db (volume soma_data)
-#   No Turso account needed. First boot auto-seeds 46 stories via docker-entrypoint.sh
-#
-# With Turso cloud (opt-in):
-#   fly secrets set USE_TURSO=true
-#   fly secrets set TURSO_DATABASE_URL=libsql://your-db.turso.io TURSO_AUTH_TOKEN=your-token
-#   USE_TURSO=true/false (prefers true/false over 0/1), unset = backward compat (Turso if vars present)
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = 'off'
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ['app']
+
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1

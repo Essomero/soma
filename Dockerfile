@@ -30,10 +30,12 @@ COPY --from=build /app/scripts ./scripts
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh && mkdir -p /app/data && chown -R node:node /app
 USER node
-VOLUME ["/app/data"]
 EXPOSE 3000
 ENV SQLITE_PATH=/app/data/soma.db
 ENV USE_TURSO=false
 # Entrypoint seeds file SQLite via volume if empty (/app/data/soma.db), then starts server
+# Note: No VOLUME directive here — Railway rejects Dockerfile VOLUME. Use platform
+# Volumes/Disk mount at /app/data instead (Railway dashboard Add Volume, Render Disk,
+# Fly mounts, Docker Compose volume). Compose still has soma_data:/app/data.
 ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["node", "server/index.mjs"]
