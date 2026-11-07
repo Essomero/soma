@@ -4,7 +4,7 @@
 # Deploy:
 #   1. New Web Service -> Connect repo Essomero/soma -> Runtime Docker
 #   2. Environment: SITE_PASSWORD (required), USE_TURSO=false (default = local file)
-#   3. Add Disk: Name soma-data, Mount Path /app/data, Size 1GB
+#   3. Add Disk: Name soma-data, Mount Path /app/data, Size 1GB (defined below as disk)
 #   4. Optional AI keys: OPENROUTER_API_KEY, DEEPSEEK_API_KEY, GEMINI_API_KEY, etc.
 #   5. With Turso cloud: set USE_TURSO=true + TURSO_DATABASE_URL + TURSO_AUTH_TOKEN
 #
@@ -45,7 +45,7 @@ services:
         sync: false
       - key: UNSPLASH_ACCESS_KEY
         sync: false
-    disks:
-      - name: soma-data
-        mountPath: /app/data
-        sizeGB: 1
+    disk:
+      name: soma-data
+      mountPath: /app/data
+      sizeGB: 1
