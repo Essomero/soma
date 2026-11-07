@@ -109,9 +109,9 @@ Soma runs anywhere Node runs. No Turso, no Vercel required — a single Docker i
 
 ```bash
 git clone https://github.com/Essomero/soma.git && cd soma
-# copy the example env and set a password
-cp .env.docker.example .env
-# edit .env → set SITE_PASSWORD
+# copy the env template and set a password (works for Docker + local dev + any platform)
+cp .env.example .env
+# edit .env -> set SITE_PASSWORD (only required var for Docker path)
 
 SITE_PASSWORD=your-secret-password docker compose up --build
 # open http://localhost:3000 — login with SITE_PASSWORD
