@@ -1,42 +1,13 @@
 # Soma for Cloudflare Pages (Functions + D1 or Turso remote)
 #
-# Two DB options on Cloudflare:
-# 1. Turso remote (simpler, same as Vercel/Netlify): set USE_TURSO=true + TURSO_* vars
-#    - Works out of the box with existing api/_db.js adapter (no D1 code)
-#    - Functions in functions/api/ proxy to Turso HTTP pipeline
-#
-# 2. Cloudflare D1 (native, no Turso account):
-#    - Create D1 database: wrangler d1 create soma-db
-#    - Then bind it in this file: add [[d1_databases]] below (uncomment)
-#    - And implement D1 adapter in api/_db.js when env.DB binding present
-#    - For now, default path uses Turso remote (option 1) — D1 is second phase
-#
 # Deploy:
-#   npm run build:static   # no DB in build step
-#   wrangler pages deploy dist --project-name soma
-#   Or: connect GitHub repo to Cloudflare Pages dashboard, build command build:static, output dist
-#   Environment: SITE_PASSWORD (required), USE_TURSO=true, TURSO_DATABASE_URL, TURSO_AUTH_TOKEN, AI keys
+#   npm run build:static && wrangler pages deploy dist --project-name soma
+#   Env: SITE_PASSWORD, USE_TURSO=true, TURSO_DATABASE_URL, TURSO_AUTH_TOKEN, AI keys
 
 name = "soma"
-type = "javascript"
+pages_build_output_dir = "dist"
 compatibility_date = "2024-11-01"
-
-[build]
-command = "npm run build:static"
-# output dir for Pages
-[site]
-bucket = "./dist"
+compatibility_flags = ["nodejs_compat"]
 
 [vars]
-# NODE_ENV etc can go here, but secrets must go in dashboard > Environment Variables
-# USE_TURSO = "true"  # uncomment if you want Turso remote in Pages Functions
-# SQLITE_PATH = "/data/soma.db" # not used on Cloudflare, but kept for local parity
-
-# Optional D1 — uncomment when you create `wrangler d1 create soma-db` and want native D1
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "soma-db"
-# database_id = "your-d1-id-from-wrangler-d1-create"
-
-# Functions live in functions/api/ — they run on Cloudflare Workers and call api/_db.js
-# For Turso path, they need TURSO_DATABASE_URL + TURSO_AUTH_TOKEN as env vars / secrets
+# USE_TURSO = "true"
