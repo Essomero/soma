@@ -1,10 +1,11 @@
 # Soma — local SQLite (no Turso, no Vercel)
 # Usage:
-#   SITE_PASSWORD=your-secret docker compose up --build
+#   cp .env.example .env   # set SITE_PASSWORD + optional AI keys
+#   docker compose up --build   # reads .env automatically, no extra flags
 #   # open http://localhost:3000
 #
 # With Turso (optional, same image):
-#   TURSO_DATABASE_URL=libsql://... TURSO_AUTH_TOKEN=... SITE_PASSWORD=... docker compose up --build
+#   Add TURSO_DATABASE_URL + TURSO_AUTH_TOKEN to .env, then compose up
 #
 # With local libSQL server (sqld):
 #   docker compose --profile turso up --build
@@ -14,21 +15,28 @@ services:
     build: .
     ports:
       - "3000:3000"
+    # Load every var from your local .env if present (SITE_PASSWORD + AI keys + Turso)
+    env_file:
+      - path: ./.env
+        required: false
+      - path: ./.env.local
+        required: false
     environment:
-      # Required
-      SITE_PASSWORD: ${SITE_PASSWORD:?Set SITE_PASSWORD in env — e.g. SITE_PASSWORD=xxx docker compose up}
-      # Optional — if set, uses Turso remote, otherwise local SQLite file
+      SITE_PASSWORD: ${SITE_PASSWORD:?Set SITE_PASSWORD in .env — e.g. openssl rand -base64 32}
       TURSO_DATABASE_URL: ${TURSO_DATABASE_URL:-}
       TURSO_AUTH_TOKEN: ${TURSO_AUTH_TOKEN:-}
-      # Optional AI keys (same as in .env.example)
+      TURSO_DB: ${TURSO_DB:-}
+      TURSO_TOKEN: ${TURSO_TOKEN:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_DISABLED: ${GEMINI_DISABLED:-0}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       CEREBRAS_API_KEY: ${CEREBRAS_API_KEY:-}
       STRAITLY_API_KEY: ${STRAITLY_API_KEY:-}
       UNSPLASH_ACCESS_KEY: ${UNSPLASH_ACCESS_KEY:-}
-      # Local SQLite path (inside container)
+      UNSPLASH_APP_ID: ${UNSPLASH_APP_ID:-}
+      DATABASE_URL: ${DATABASE_URL:-}
       SQLITE_PATH: /app/data/soma.db
       PORT: 3000
     volumes:

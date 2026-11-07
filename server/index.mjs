@@ -1,6 +1,7 @@
 // Production unified server: serves dist/ + /api/* from one Node process.
 // Used by Docker, Fly.io, Railway, Render, and `npm run start`.
 // Turso optional: falls back to local SQLite file ./data/soma.db (or $DATABASE_URL / $SQLITE_PATH).
+// Reads .env / .env.local if present, so Docker with bind-mounted .env works even without env_file.
 
 import { createServer } from "http";
 import { readFileSync, existsSync, statSync } from "fs";
@@ -37,9 +38,16 @@ if (!SITE_PASSWORD) {
 
 const hasTurso = !!(process.env.TURSO_DATABASE_URL || process.env.TURSO_DB) && !!(process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN);
 const localPath = (process.env.DATABASE_URL || process.env.SQLITE_PATH || "./data/soma.db").replace(/^file:/, "");
+const aiKeys = [];
+if (process.env.OPENROUTER_API_KEY) aiKeys.push("OpenRouter");
+if (process.env.DEEPSEEK_API_KEY) aiKeys.push("DeepSeek");
+if (process.env.GEMINI_API_KEY && process.env.GEMINI_DISABLED !== "1") aiKeys.push("Gemini");
+if (process.env.GROQ_API_KEY) aiKeys.push("Groq");
+if (process.env.CEREBRAS_API_KEY) aiKeys.push("Cerebras");
+if (process.env.STRAITLY_API_KEY) aiKeys.push("Straitly");
 console.log(`[soma] DB: ${hasTurso ? `Turso remote` : `local SQLite file ${localPath}`}`);
+console.log(`[soma] AI: ${aiKeys.length ? aiKeys.join(" + ") : "none — set OPENROUTER_API_KEY etc. to enable margin AI"}`);
 
-// Dynamically import API handlers (same as in api/*.js, work with new _db.js adapter)
 const handlerNames = ["content", "notes", "comments", "highlights", "ratings", "progress", "tests", "public", "diag", "chat", "models", "auth"];
 const handlers = {};
 for (const name of handlerNames) {
@@ -79,7 +87,7 @@ function serveStatic(req, res) {
 
   const candidates = [
     join(DIST, pathname.slice(1)),
-    null, // SPA fallback
+    null,
   ];
 
   for (const fp of candidates) {
@@ -94,7 +102,6 @@ function serveStatic(req, res) {
     if (existsSync(fp)) {
       const stat = statSync(fp);
       if (stat.isDirectory()) {
-        // Try index.html inside dir
         const idxFile = join(fp, "index.html");
         if (existsSync(idxFile)) {
           res.writeHead(200, { "Content-Type": MIME[".html"], "Cache-Control": "no-cache" });
@@ -125,7 +132,6 @@ const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
   const pathname = url.pathname;
 
-  // API
   if (pathname.startsWith("/api/")) {
     const route = pathname.split("/")[2];
     const handler = handlers[route];
@@ -150,7 +156,7 @@ const server = createServer(async (req, res) => {
       headers: {
         cookie: req.headers.cookie || "",
         "x-forwarded-for": req.headers["x-forwarded-for"] || req.headers["x-real-ip"] || "",
-        "x-forwarded-proto": req.headers["x-forwarded-proto"] || (req.headers["x-forwarded-proto"] ? req.headers["x-forwarded-proto"] : ""),
+        "x-forwarded-proto": req.headers["x-forwarded-proto"] || "",
       },
       localBypass: false,
     };
@@ -187,7 +193,6 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  // Static + SPA fallback (skip /api which already handled)
   if (serveStatic(req, res)) return;
 
   res.writeHead(404, { "Content-Type": "text/plain" });
