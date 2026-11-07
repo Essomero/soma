@@ -1,0 +1,44 @@
+# Soma for Netlify — SPA + Functions (Turso remote required for Netlify)
+#
+# Netlify builds SPA via Vite, serves via CDN. API lives in netlify/functions/
+# which re-exports api/*.js handlers with Netlify's event shape.
+#
+# Deploy:
+#   1. Import repo Essomero/soma into Netlify
+#   2. Build command + publish dir auto-detected from here
+#   3. Environment: SITE_PASSWORD (required), USE_TURSO=true,
+#      TURSO_DATABASE_URL=libsql://... , TURSO_AUTH_TOKEN=... (Netlify Functions need remote DB)
+#      Optional AI: OPENROUTER_API_KEY, DEEPSEEK_API_KEY, GEMINI_API_KEY, etc.
+#   4. Functions auto-deployed from netlify/functions/
+#
+# Why Turso required for Netlify:
+#   Netlify Functions are serverless — no persistent file volume like Docker/Railway.
+#   Use Turso cloud (free tier) or any libSQL remote.
+
+[build]
+  command = "npm run build:static"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
