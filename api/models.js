@@ -9,7 +9,7 @@ const CEREBRAS_KEY = process.env.CEREBRAS_API_KEY || "";
 const STRAITLY_KEY = process.env.STRAITLY_API_KEY || process.env.STRAIGHTLY_API_KEY || process.env.STRIGHTLY_API_KEY || "";
 const STRAITLY_URL = "https://api.straitly.ai/v1/models";
 
-// Curated Straitly models (displayed under Straightly section)
+// Curated Straitly models (displayed under Straitly section)
 const STRAITLY_MODELS = [
   { id: "deepseek/deepseek-v4-1-flash", label: "DeepSeek V4.1 Flash", provider: "straitly", free: false },
   { id: "z-ai/glm-5.3-flash", label: "GLM 5.3 Flash", provider: "straitly", free: false },
