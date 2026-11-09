@@ -112,12 +112,21 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
       const isDark = theme === "dark";
       mermaid.default.initialize({
         startOnLoad: false,
-        securityLevel: "strict",
-        theme: isDark ? "dark" : "neutral",
+        securityLevel: "loose",
+        theme: isDark ? "dark" : "base",
         themeVariables: isDark
           ? {
               darkMode: true,
-              background: "#181c22",
+              background: "#151b23",
+              primaryColor: "#1e293b",
+              primaryTextColor: "#e5e7eb",
+              primaryBorderColor: "#334155",
+              lineColor: "#94a3b8",
+              secondaryColor: "#1e293b",
+              tertiaryColor: "#0f172a",
+              noteBkgColor: "#1e293b",
+              noteTextColor: "#e5e7eb",
+              textColor: "#e5e7eb",
             }
           : {
               darkMode: false,
@@ -126,16 +135,25 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
               primaryTextColor: "#0f172a",
               primaryBorderColor: "#cbd5e1",
               lineColor: "#64748b",
-              secondaryColor: "#f8fafc",
-              tertiaryColor: "#ffffff",
+              secondaryColor: "#ffffff",
+              tertiaryColor: "#f8fafc",
+              noteBkgColor: "#ffffff",
+              noteTextColor: "#0f172a",
+              textColor: "#0f172a",
             },
+        flowchart: { htmlLabels: true, curve: "basis" },
       });
       const renderId = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
       mermaid.default
         .render(renderId, diagram)
         .then(({ svg }) => {
           if (ref.current && !cancelled) {
-            const clean = DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true } });
+            // Allow foreignObject/div for htmlLabels, keep SVG
+            const clean = DOMPurify.sanitize(svg, {
+              USE_PROFILES: { svg: true, svgFilters: true },
+              ADD_TAGS: ["foreignObject", "foreignobject", "div", "span", "br"],
+              ADD_ATTR: ["style", "class"],
+            });
             svgRef.current = clean;
             ref.current.innerHTML = clean;
           }
@@ -148,7 +166,6 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
     });
     return () => { cancelled = true; };
   }, [diagram, theme]);
-
   return (
     <>
       <figure className="my-xxl">
