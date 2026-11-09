@@ -53,12 +53,12 @@ function CopyCodeButton({ text }: { text: string }) {
   );
 }
 
-// ── Mermaid diagram renderer (expandable on click) ─────
+// ── Mermaid diagram renderer (expandable on click) — FULL VIEWPORT modal ─────
 function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string }) {
   const { theme } = useTheme();
   const ref = useRef<HTMLDivElement>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState(false);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   useScrollLock(expanded);
 
@@ -71,19 +71,17 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
     return () => window.removeEventListener("keydown", handler);
   }, [expanded]);
 
-  // Clone styled inline SVG into overlay when expanded
   useEffect(() => {
-    if (!expanded) return;
-    if (!ref.current || !overlayRef.current) return;
+    if (!expanded || !ref.current || !overlayRef.current) return;
     overlayRef.current.innerHTML = ref.current.innerHTML;
-    const svg = overlayRef.current.querySelector("svg");
+    const svg = overlayRef.current.querySelector("svg") as SVGElement | null;
     if (svg) {
       svg.removeAttribute("width");
       svg.removeAttribute("height");
-      (svg as SVGElement).style.width = "100%";
-      (svg as SVGElement).style.height = "100%";
-      (svg as SVGElement).style.maxWidth = "90vw";
-      (svg as SVGElement).style.maxHeight = "85vh";
+      svg.style.width = "100%";
+      svg.style.height = "100%";
+      svg.style.maxWidth = "98vw";
+      svg.style.maxHeight = "98vh";
     }
   }, [expanded]);
 
@@ -147,7 +145,6 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
           ref.current.innerHTML = svg;
           const root = ref.current;
           const labelColor = isDark ? "#f1f5f9" : "#0f172a";
-          // Force label visibility — dark was same color as box fill
           root.querySelectorAll("foreignObject div, foreignObject span, .nodeLabel, .edgeLabel, .label, .cluster-label div, .node div").forEach((el) => {
             (el as HTMLElement).style.color = labelColor;
             (el as HTMLElement).style.fontFamily = "DM Sans, sans-serif";
@@ -158,20 +155,11 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
           });
           root.querySelectorAll("g.label text, g.nodeLabel text, g.cluster-label text, text").forEach((el) => {
             (el as SVGTextElement).style.fill = labelColor;
-            try { (el as SVGTextElement).setAttribute("fill", labelColor); } catch {}
+            try {
+              (el as SVGTextElement).setAttribute("fill", labelColor);
+            } catch {}
           });
-          if (overlayRef.current) {
-            overlayRef.current.innerHTML = root.innerHTML;
-            const osvg = overlayRef.current.querySelector("svg");
-            if (osvg) {
-              osvg.removeAttribute("width");
-              osvg.removeAttribute("height");
-              (osvg as SVGElement).style.width = "100%";
-              (osvg as SVGElement).style.height = "100%";
-              (osvg as SVGElement).style.maxWidth = "90vw";
-              (osvg as SVGElement).style.maxHeight = "85vh";
-            }
-          }
+          if (overlayRef.current) overlayRef.current.innerHTML = root.innerHTML;
         })
         .catch(() => {
           if (ref.current && !cancelled) {
@@ -194,31 +182,21 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
             className="flex justify-center p-xl bg-surface-container-low rounded-lg border border-border-default overflow-x-auto cursor-zoom-in hover:border-primary/50 transition-colors min-h-[180px]"
           />
         </Tooltip>
-        {caption && (
-          <figcaption className="mt-md font-dm-sans text-sm text-on-surface-muted italic text-center">
-            {caption}
-          </figcaption>
-        )}
+        {caption && <figcaption className="mt-md font-dm-sans text-sm text-on-surface-muted italic text-center">{caption}</figcaption>}
       </figure>
 
       {expanded && (
-        <div
-          className="fixed inset-0 z-[100] bg-background flex items-center justify-center p-md md:p-xl overflow-hidden cursor-zoom-out"
-          onClick={() => setExpanded(false)}
-        >
+        <div className="fixed inset-0 z-[9999] bg-[#0a0e14] flex items-center justify-center cursor-zoom-out" onClick={() => setExpanded(false)}>
           <button
             type="button"
             aria-label="Close"
-            className="absolute top-md right-md inline-flex items-center justify-center w-9 h-9 rounded-full bg-surface text-on-surface-muted hover:text-on-surface border border-border-default hover:border-primary/50 transition-colors z-[110]"
+            className="absolute top-4 right-4 inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/10 text-white hover:bg-white/20 border border-white/20 transition-colors z-[10000]"
             onClick={() => setExpanded(false)}
           >
-            <X size={18} strokeWidth={2} />
+            <X size={20} strokeWidth={2} />
           </button>
-          <div
-            className="w-full h-full max-w-6xl max-h-[90vh] flex items-center justify-center p-md md:p-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div ref={overlayRef} className="w-full h-full flex items-center justify-center" />
+          <div className="w-screen h-screen flex items-center justify-center p-0" onClick={(e) => e.stopPropagation()}>
+            <div ref={overlayRef} className="w-full h-full flex items-center justify-center [&>svg]:w-full [&>svg]:h-full" />
           </div>
         </div>
       )}
@@ -243,39 +221,17 @@ function ImageBlock({ src, alt, caption }: { src: string; alt: string; caption?:
     <>
       <figure className="my-xxl rounded-lg overflow-hidden border border-border-default">
         <Tooltip label="Click to expand">
-          <img
-            src={src}
-            alt={alt}
-            onClick={() => setExpanded(true)}
-            className="w-full cursor-zoom-in hover:opacity-95 transition-opacity"
-          />
+          <img src={src} alt={alt} onClick={() => setExpanded(true)} className="w-full cursor-zoom-in hover:opacity-95 transition-opacity" />
         </Tooltip>
-        {caption && (
-          <figcaption className="px-xl py-md font-dm-sans text-sm text-on-surface-muted italic bg-surface-container-low border-t border-border-default">
-            {caption}
-          </figcaption>
-        )}
+        {caption && <figcaption className="px-xl py-md font-dm-sans text-sm text-on-surface-muted italic bg-surface-container-low border-t border-border-default">{caption}</figcaption>}
       </figure>
 
       {expanded && (
-        <div
-          className="fixed inset-0 z-[100] bg-background flex items-center justify-center p-xl cursor-zoom-out overflow-hidden"
-          onClick={() => setExpanded(false)}
-        >
-          <button
-            type="button"
-            aria-label="Close"
-            className="absolute top-md right-md inline-flex items-center justify-center w-9 h-9 rounded-full bg-surface text-on-surface-muted hover:text-on-surface border border-border-default hover:border-primary/50 transition-colors z-[110]"
-            onClick={() => setExpanded(false)}
-          >
-            <X size={18} strokeWidth={2} />
+        <div className="fixed inset-0 z-[9999] bg-[#0a0e14] flex items-center justify-center cursor-zoom-out" onClick={() => setExpanded(false)}>
+          <button type="button" aria-label="Close" className="absolute top-4 right-4 inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/10 text-white hover:bg-white/20 border border-white/20 transition-colors z-[10000]" onClick={() => setExpanded(false)}>
+            <X size={20} strokeWidth={2} />
           </button>
-          <img
-            src={src}
-            alt={alt}
-            className="max-w-[92vw] max-h-[88vh] w-auto h-auto object-contain rounded-lg"
-            onClick={(e) => e.stopPropagation()}
-          />
+          <img src={src} alt={alt} className="max-w-[98vw] max-h-[98vh] w-auto h-auto object-contain" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
     </>
@@ -307,20 +263,9 @@ function YouTubeBlock({ videoId, caption }: { videoId: string; caption?: string 
   return (
     <figure className="my-xxl">
       <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-border-default bg-surface-container-low">
-        <iframe
-          className="absolute inset-0 w-full h-full"
-          src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0`}
-          title="YouTube video"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          loading="lazy"
-        />
+        <iframe className="absolute inset-0 w-full h-full" src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0`} title="YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen loading="lazy" />
       </div>
-      {caption && (
-        <figcaption className="mt-md font-dm-sans text-sm text-on-surface-muted italic text-center">
-          {caption}
-        </figcaption>
-      )}
+      {caption && <figcaption className="mt-md font-dm-sans text-sm text-on-surface-muted italic text-center">{caption}</figcaption>}
     </figure>
   );
 }
@@ -343,30 +288,12 @@ export default function ContentBlocks({ blocks, firstDropCap, sectionIndex = 0, 
       const html = mdBlock(block);
       const practice = parsePracticeBlock(block);
       if (practice) {
-        return practice.kind === "hint" ? (
-          <PracticeHintBlock key={idx} text={practice.text} />
-        ) : (
-          <PracticeSolutionBlock key={idx} text={practice.text} />
-        );
+        return practice.kind === "hint" ? <PracticeHintBlock key={idx} text={practice.text} /> : <PracticeSolutionBlock key={idx} text={practice.text} />;
       }
       return (
-        <div
-          key={idx}
-          ref={baseRef as never}
-          data-section-index={sectionIndex}
-          data-paragraph-index={idx}
-          className={`font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md ${isFirstText ? "drop-cap" : ""}`}
-        >
+        <div key={idx} ref={baseRef as never} data-section-index={sectionIndex} data-paragraph-index={idx} className={`font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md ${isFirstText ? "drop-cap" : ""}`}>
           <MarkdownHtml html={html} />
-          {highlights && (
-            <HighlightRenderer
-              sectionIndex={sectionIndex}
-              paragraphIndex={idx}
-              text={block}
-              highlights={highlights}
-              onHighlightClick={onHighlightClick}
-            />
-          )}
+          {highlights && <HighlightRenderer sectionIndex={sectionIndex} paragraphIndex={idx} text={block} highlights={highlights} onHighlightClick={onHighlightClick} />}
         </div>
       );
     }
@@ -374,23 +301,9 @@ export default function ContentBlocks({ blocks, firstDropCap, sectionIndex = 0, 
     switch (block.type) {
       case "paragraph":
         return (
-          <div
-            key={idx}
-            ref={baseRef as never}
-            data-section-index={sectionIndex}
-            data-paragraph-index={idx}
-            className="font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md"
-          >
+          <div key={idx} ref={baseRef as never} data-section-index={sectionIndex} data-paragraph-index={idx} className="font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md">
             <MarkdownHtml html={mdBlock(block.text)} />
-            {highlights && (
-              <HighlightRenderer
-                sectionIndex={sectionIndex}
-                paragraphIndex={idx}
-                text={block.text}
-                highlights={highlights}
-                onHighlightClick={onHighlightClick}
-              />
-            )}
+            {highlights && <HighlightRenderer sectionIndex={sectionIndex} paragraphIndex={idx} text={block.text} highlights={highlights} onHighlightClick={onHighlightClick} />}
           </div>
         );
       case "image":
@@ -411,13 +324,7 @@ export default function ContentBlocks({ blocks, firstDropCap, sectionIndex = 0, 
             </div>
             <div className="relative">
               <pre className="overflow-x-auto p-xl text-sm leading-relaxed">
-                <code
-                  dangerouslySetInnerHTML={{
-                    __html: hljs.highlight(block.code, {
-                      language: (block.language || "plaintext").toLowerCase(),
-                    }).value,
-                  }}
-                />
+                <code dangerouslySetInnerHTML={{ __html: hljs.highlight(block.code, { language: (block.language || "plaintext").toLowerCase() }).value }} />
               </pre>
             </div>
           </div>
@@ -434,13 +341,7 @@ export default function ContentBlocks({ blocks, firstDropCap, sectionIndex = 0, 
             <p className="font-sora text-sm font-bold text-on-surface uppercase tracking-widest mb-md">{block.title}</p>
             <div className="flex flex-wrap gap-sm">
               {block.links.map((l) => (
-                <a
-                  key={l.url}
-                  href={l.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-xs px-md py-sm rounded-full border border-border-default bg-surface text-sm font-sora text-on-surface-muted hover:text-on-surface hover:border-primary/40 transition-colors"
-                >
+                <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-xs px-md py-sm rounded-full border border-border-default bg-surface text-sm font-sora text-on-surface-muted hover:text-on-surface hover:border-primary/40 transition-colors">
                   {l.label}
                   <span className="text-primary">→</span>
                 </a>
@@ -450,33 +351,8 @@ export default function ContentBlocks({ blocks, firstDropCap, sectionIndex = 0, 
         );
       case "callout":
         return (
-          <div
-            key={idx}
-            className={`my-xxl rounded-lg border p-xl ${
-              block.variant === "success"
-                ? "border-secondary/20 bg-secondary/5"
-                : block.variant === "danger"
-                  ? "border-error/20 bg-error/5"
-                  : block.variant === "warning"
-                    ? "border-accent-orange/20 bg-accent-orange/5"
-                    : "border-primary/20 bg-primary/5"
-            }`}
-          >
-            {block.title && (
-              <p
-                className={`font-sora text-sm font-bold uppercase tracking-widest mb-sm ${
-                  block.variant === "success"
-                    ? "text-secondary"
-                    : block.variant === "danger"
-                      ? "text-error"
-                      : block.variant === "warning"
-                        ? "text-accent-orange"
-                        : "text-primary"
-                }`}
-              >
-                {block.title}
-              </p>
-            )}
+          <div key={idx} className={`my-xxl rounded-lg border p-xl ${block.variant === "success" ? "border-secondary/20 bg-secondary/5" : block.variant === "danger" ? "border-error/20 bg-error/5" : block.variant === "warning" ? "border-accent-orange/20 bg-accent-orange/5" : "border-primary/20 bg-primary/5"}`}>
+            {block.title && <p className={`font-sora text-sm font-bold uppercase tracking-widest mb-sm ${block.variant === "success" ? "text-secondary" : block.variant === "danger" ? "text-error" : block.variant === "warning" ? "text-accent-orange" : "text-primary"}`}>{block.title}</p>}
             <div className="font-dm-sans text-sm text-on-surface leading-relaxed">
               <MarkdownHtml html={mdBlock(block.text)} />
             </div>
