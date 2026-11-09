@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
 import katex from "katex";
 import hljs from "highlight.js";
-import DOMPurify from "dompurify";
 import type { ContentBlock } from "@/types";
 import { mdBlock } from "@/lib/markdown";
 import { useScrollLock } from "@/lib/useScrollLock";
@@ -35,7 +34,6 @@ function isContentBlock(item: string | ContentBlock): item is ContentBlock {
   return typeof item !== "string";
 }
 
-// ── Copy-to-clipboard button for code blocks ────────────
 function CopyCodeButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   return (
@@ -59,29 +57,11 @@ function CopyCodeButton({ text }: { text: string }) {
 function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string }) {
   const { theme } = useTheme();
   const ref = useRef<HTMLDivElement>(null);
-  const [expanded, setExpanded] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
-  const svgRef = useRef<string>("");
+  const [expanded, setExpanded] = useState(false);
 
-  // When overlay opens, strip fixed dimensions from the SVG so it scales to fill
-  useEffect(() => {
-    if (expanded && overlayRef.current) {
-      const svg = overlayRef.current.querySelector("svg");
-      if (svg) {
-        svg.removeAttribute("width");
-        svg.removeAttribute("height");
-        svg.style.width = "100%";
-        svg.style.height = "100%";
-        svg.style.maxWidth = "90vw";
-        svg.style.maxHeight = "85vh";
-      }
-    }
-  }, [expanded]);
-
-  // Freeze page scroll behind the zoom overlay — Lenis-aware (see useScrollLock)
   useScrollLock(expanded);
 
-  // Esc to close the zoom overlay
   useEffect(() => {
     if (!expanded) return;
     const handler = (e: KeyboardEvent) => {
@@ -89,6 +69,22 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
+  }, [expanded]);
+
+  // Clone styled inline SVG into overlay when expanded
+  useEffect(() => {
+    if (!expanded) return;
+    if (!ref.current || !overlayRef.current) return;
+    overlayRef.current.innerHTML = ref.current.innerHTML;
+    const svg = overlayRef.current.querySelector("svg");
+    if (svg) {
+      svg.removeAttribute("width");
+      svg.removeAttribute("height");
+      (svg as SVGElement).style.width = "100%";
+      (svg as SVGElement).style.height = "100%";
+      (svg as SVGElement).style.maxWidth = "90vw";
+      (svg as SVGElement).style.maxHeight = "85vh";
+    }
   }, [expanded]);
 
   useEffect(() => {
@@ -148,13 +144,11 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
         .render(renderId, diagram)
         .then(({ svg }) => {
           if (!ref.current || cancelled) return;
-          // Mermaid is trusted authored content — keep raw SVG so foreignObject labels survive.
-          svgRef.current = svg;
           ref.current.innerHTML = svg;
-          // Force label visibility: Mermaid htmlLabels are div > span inside foreignObject.
           const root = ref.current;
           const labelColor = isDark ? "#f1f5f9" : "#0f172a";
-          root.querySelectorAll("foreignObject div, foreignObject span, .nodeLabel, .edgeLabel, .label").forEach((el) => {
+          // Force label visibility — dark was same color as box fill
+          root.querySelectorAll("foreignObject div, foreignObject span, .nodeLabel, .edgeLabel, .label, .cluster-label div, .node div").forEach((el) => {
             (el as HTMLElement).style.color = labelColor;
             (el as HTMLElement).style.fontFamily = "DM Sans, sans-serif";
             (el as HTMLElement).style.fontSize = "13px";
@@ -162,12 +156,22 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
             (el as HTMLElement).style.opacity = "1";
             (el as HTMLElement).style.visibility = "visible";
           });
-          root.querySelectorAll("g.label text, g.nodeLabel text, text").forEach((el) => {
+          root.querySelectorAll("g.label text, g.nodeLabel text, g.cluster-label text, text").forEach((el) => {
             (el as SVGTextElement).style.fill = labelColor;
-            (el as SVGTextElement).setAttribute("fill", labelColor);
+            try { (el as SVGTextElement).setAttribute("fill", labelColor); } catch {}
           });
-          // Clone styled SVG into overlay if already open
-          if (overlayRef.current) overlayRef.current.innerHTML = root.innerHTML;
+          if (overlayRef.current) {
+            overlayRef.current.innerHTML = root.innerHTML;
+            const osvg = overlayRef.current.querySelector("svg");
+            if (osvg) {
+              osvg.removeAttribute("width");
+              osvg.removeAttribute("height");
+              (osvg as SVGElement).style.width = "100%";
+              (osvg as SVGElement).style.height = "100%";
+              (osvg as SVGElement).style.maxWidth = "90vw";
+              (osvg as SVGElement).style.maxHeight = "85vh";
+            }
+          }
         })
         .catch(() => {
           if (ref.current && !cancelled) {
@@ -187,10 +191,8 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
           <div
             ref={ref}
             onClick={() => setExpanded(true)}
-            className="flex justify-center p-xl bg-surface-container-low rounded-lg border border-border-default overflow-x-auto cursor-zoom-in hover:border-primary/50 transition-colors"
-          >
-            <div className="w-full flex justify-center" />
-          </div>
+            className="flex justify-center p-xl bg-surface-container-low rounded-lg border border-border-default overflow-x-auto cursor-zoom-in hover:border-primary/50 transition-colors min-h-[180px]"
+          />
         </Tooltip>
         {caption && (
           <figcaption className="mt-md font-dm-sans text-sm text-on-surface-muted italic text-center">
@@ -216,10 +218,7 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
             className="w-full h-full max-w-6xl max-h-[90vh] flex items-center justify-center p-md md:p-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div
-              ref={overlayRef}
-              className="w-full h-full flex items-center justify-center"
-            />
+            <div ref={overlayRef} className="w-full h-full flex items-center justify-center" />
           </div>
         </div>
       )}
@@ -230,11 +229,7 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
 // ── Image renderer (expandable on click) ───────────────
 function ImageBlock({ src, alt, caption }: { src: string; alt: string; caption?: string }) {
   const [expanded, setExpanded] = useState(false);
-
-  // Freeze page scroll behind the zoom overlay
   useScrollLock(expanded);
-
-  // Esc to close the zoom overlay
   useEffect(() => {
     if (!expanded) return;
     const handler = (e: KeyboardEvent) => {
@@ -264,13 +259,13 @@ function ImageBlock({ src, alt, caption }: { src: string; alt: string; caption?:
 
       {expanded && (
         <div
-          className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-xl cursor-zoom-out"
+          className="fixed inset-0 z-[100] bg-background flex items-center justify-center p-xl cursor-zoom-out overflow-hidden"
           onClick={() => setExpanded(false)}
         >
           <button
             type="button"
             aria-label="Close"
-            className="absolute top-md right-md inline-flex items-center justify-center w-9 h-9 rounded-full bg-surface text-on-surface-muted hover:text-on-surface border border-border-default hover:border-primary/50 transition-colors z-10"
+            className="absolute top-md right-md inline-flex items-center justify-center w-9 h-9 rounded-full bg-surface text-on-surface-muted hover:text-on-surface border border-border-default hover:border-primary/50 transition-colors z-[110]"
             onClick={() => setExpanded(false)}
           >
             <X size={18} strokeWidth={2} />
@@ -288,15 +283,21 @@ function ImageBlock({ src, alt, caption }: { src: string; alt: string; caption?:
 }
 
 // ── Math renderer (KaTeX) ──────────────────────────────
-function MathBlock({ expression, display }: { expression: string; display?: boolean }) {
-  const html = katex.renderToString(expression, {
-    displayMode: !!display,
-    throwOnError: false,
-  });
+function MathBlockSync({ expression, display }: { expression: string; display?: boolean }) {
   return (
     <div
       className={display ? "my-xxl flex justify-center overflow-x-auto" : "inline"}
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={{
+        __html: (() => {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const katex = require("katex");
+            return katex.renderToString(expression, { displayMode: !!display, throwOnError: false });
+          } catch {
+            return `<span>${expression}</span>`;
+          }
+        })(),
+      }}
     />
   );
 }
@@ -418,12 +419,11 @@ export default function ContentBlocks({ blocks, firstDropCap, sectionIndex = 0, 
                   }}
                 />
               </pre>
-              <CopyCodeButton text={block.code} />
             </div>
           </div>
         );
       case "math":
-        return <MathBlock key={idx} expression={block.expression} display={block.display} />;
+        return <MathBlockSync key={idx} expression={block.expression} display={block.display} />;
       case "mermaid":
         return <MermaidBlock key={idx} diagram={block.diagram} caption={block.caption} />;
       case "youtube":

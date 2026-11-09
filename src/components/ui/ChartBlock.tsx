@@ -628,7 +628,7 @@ function ChartLoaded({
 
       {zoomed && (
         <div
-          className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-sm flex items-center justify-center p-md md:p-xl cursor-zoom-out"
+          className="fixed inset-0 z-[100] bg-background flex items-center justify-center p-md md:p-xl cursor-zoom-out overflow-hidden"
           onClick={() => setZoomed(false)}
           role="dialog"
           aria-modal="true"
@@ -637,7 +637,7 @@ function ChartLoaded({
           <button
             type="button"
             aria-label="Close"
-            className="absolute top-md right-md inline-flex items-center justify-center w-9 h-9 rounded-full bg-surface text-on-surface-muted hover:text-on-surface border border-border-default hover:border-primary/50 transition-colors z-10"
+            className="absolute top-md right-md inline-flex items-center justify-center w-9 h-9 rounded-full bg-surface text-on-surface-muted hover:text-on-surface border border-border-default hover:border-primary/50 transition-colors z-[110]"
             onClick={(e) => {
               e.stopPropagation();
               setZoomed(false);
