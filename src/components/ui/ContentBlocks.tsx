@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
+import katex from "katex";
+import { X } from "lucide-react";
 import type { ContentBlock } from "@/types";
 import { mdBlock } from "@/lib/markdown";
 import { useScrollLock } from "@/lib/useScrollLock";
@@ -14,6 +15,7 @@ import Tooltip from "@/components/ui/Tooltip";
 import { PracticeHintBlock, PracticeSolutionBlock, parsePracticeBlock } from "@/components/ui/PracticeBlocks";
 import type { LessonLinks } from "@/lib/storyLinks";
 import { useTheme } from "@/lib/ThemeContext";
+import "katex/dist/katex.min.css";
 
 interface ContentBlocksProps {
   blocks: (string | ContentBlock)[];
@@ -23,31 +25,9 @@ interface ContentBlocksProps {
   onHighlightClick?: (id: number) => void;
   isPractice?: boolean;
   isPrint?: boolean;
-  sectionRefs?: React.MutableRefObject<(HTMLElement | null)[]>;
+  /** Section number → anchor id, forwarded so hints can link their references. */
+  sectionRefs?: Map<string, string>;
   lessonLinks?: LessonLinks;
-}
-
-function isContentBlock(item: string | ContentBlock): item is ContentBlock {
-  return typeof item !== "string";
-}
-
-function CopyCodeButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        void navigator.clipboard.writeText(text).then(() => {
-          setCopied(true);
-          setTimeout(() => setCopied(false), 2000);
-        });
-      }}
-      className="absolute top-xs right-xs inline-flex items-center gap-xs px-sm py-xs rounded-md bg-surface-container-low border border-border-default text-xs font-sora text-on-surface-muted hover:text-on-surface hover:border-primary/40 transition-colors"
-    >
-      {copied ? <CheckCircle2 className="w-3 h-3 text-secondary" /> : null}
-      {copied ? "Copied" : "Copy"}
-    </button>
-  );
 }
 
 // ── Mermaid diagram renderer — full viewport modal, original blur background kept ─────
@@ -235,8 +215,6 @@ function MathBlockSync({ expression, display }: { expression: string; display?: 
       dangerouslySetInnerHTML={{
         __html: (() => {
           try {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            const katex = require("katex");
             return katex.renderToString(expression, { displayMode: !!display, throwOnError: false });
           } catch {
             return `<span>${expression}</span>`;
@@ -265,36 +243,59 @@ export default function ContentBlocks({ blocks, firstDropCap, sectionIndex = 0, 
 
   const renderBlock = (block: ContentBlock | string, idx: number) => {
     const isFirstText = typeof block === "string" && idx === firstTextIndex && !isPractice && !isPrint;
-    const baseRef =
-      isContentBlock(block) && block.type === "paragraph"
-        ? (el: HTMLElement | null) => {
-            if (!sectionRefs) return;
-            if (el) sectionRefs.current[sectionIndex * 100 + idx] = el;
-          }
-        : undefined;
 
     if (typeof block === "string") {
-      const html = mdBlock(block);
-      const practice = parsePracticeBlock(block);
-      if (practice) {
-        return practice.kind === "hint" ? <PracticeHintBlock key={idx} text={practice.text} /> : <PracticeSolutionBlock key={idx} text={practice.text} />;
+      const relevantHighlights = (highlights ?? []).filter((h) => h.sectionIndex === sectionIndex && h.paragraphIndex === idx);
+      if (isPractice && relevantHighlights.length === 0) {
+        const practice = parsePracticeBlock(block);
+        if (practice) {
+          return (
+            <div key={idx} data-section-index={sectionIndex} data-paragraph-index={idx} className="space-y-sm">
+              {practice.question && <MarkdownHtml html={mdBlock(practice.question)} />}
+              {practice.hint && <PracticeHintBlock hint={practice.hint} sectionRefs={sectionRefs} lessonLinks={lessonLinks} />}
+              {practice.solution && <PracticeSolutionBlock label={practice.solLabel} solution={practice.solution} />}
+            </div>
+          );
+        }
       }
+      const html = mdBlock(block);
       return (
-        <div key={idx} ref={baseRef as never} data-section-index={sectionIndex} data-paragraph-index={idx} className={`font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md ${isFirstText ? "drop-cap" : ""}`}>
-          <MarkdownHtml html={html} />
-          {highlights && <HighlightRenderer sectionIndex={sectionIndex} paragraphIndex={idx} text={block} highlights={highlights} onHighlightClick={onHighlightClick} />}
+        <div key={idx} data-section-index={sectionIndex} data-paragraph-index={idx} className={`font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md ${isFirstText ? "drop-cap" : ""}`}>
+          {relevantHighlights.length > 0 ? (
+            <HighlightRenderer html={html} sectionIndex={sectionIndex} paragraphIndex={idx} highlights={relevantHighlights} onHighlightClick={onHighlightClick} />
+          ) : (
+            <MarkdownHtml html={html} />
+          )}
         </div>
       );
     }
 
     switch (block.type) {
-      case "paragraph":
+      case "paragraph": {
+        const relevantHighlights = (highlights ?? []).filter((h) => h.sectionIndex === sectionIndex && h.paragraphIndex === idx);
+        if (isPractice && block.text && relevantHighlights.length === 0) {
+          const practice = parsePracticeBlock(block.text);
+          if (practice) {
+            return (
+              <div key={idx} data-section-index={sectionIndex} data-paragraph-index={idx} className="space-y-sm">
+                {practice.question && <MarkdownHtml html={mdBlock(practice.question)} />}
+                {practice.hint && <PracticeHintBlock hint={practice.hint} sectionRefs={sectionRefs} lessonLinks={lessonLinks} />}
+                {practice.solution && <PracticeSolutionBlock label={practice.solLabel} solution={practice.solution} />}
+              </div>
+            );
+          }
+        }
+        const html = mdBlock(block.text);
         return (
-          <div key={idx} ref={baseRef as never} data-section-index={sectionIndex} data-paragraph-index={idx} className="font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md">
-            <MarkdownHtml html={mdBlock(block.text)} />
-            {highlights && <HighlightRenderer sectionIndex={sectionIndex} paragraphIndex={idx} text={block.text} highlights={highlights} onHighlightClick={onHighlightClick} />}
+          <div key={idx} data-section-index={sectionIndex} data-paragraph-index={idx} className="font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md">
+            {relevantHighlights.length > 0 ? (
+              <HighlightRenderer html={html} sectionIndex={sectionIndex} paragraphIndex={idx} highlights={relevantHighlights} onHighlightClick={onHighlightClick} />
+            ) : (
+              <MarkdownHtml html={html} />
+            )}
           </div>
         );
+      }
       case "image":
         return <ImageBlock key={idx} src={block.src} alt={block.alt} caption={block.caption} />;
       case "horizontalRule":

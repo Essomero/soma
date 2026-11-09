@@ -63,8 +63,11 @@ function ChartBlockImpl({ block }: { block: ChartBlock }) {
   const mergedData = useMemo(() => {
     const family = findChartFamily(block.nodes);
     if (family !== "lineChart" && family !== "areaChart" && family !== "barChart") return null;
-    const root = block.nodes.find((n) => (CHART_FAMILY_KINDS as readonly string[]).includes(n.kind) && n.kind !== "scatterChart");
-    if (root && "data" in root && (root as { data?: unknown }).data) return (root as { data: unknown }).data as ChartBlock["nodes"];
+    const root = block.nodes.find(
+      (n): n is Extract<ChartNode, { kind: "lineChart" | "areaChart" | "barChart" }> =>
+        n.kind === "lineChart" || n.kind === "areaChart" || n.kind === "barChart",
+    );
+    if (root?.data) return root.data;
     const seriesNodes = block.nodes.filter((n): n is Extract<ChartNode, { kind: "series" }> => n.kind === "series");
     return mergeSeriesData(seriesNodes);
   }, [block.nodes]);
