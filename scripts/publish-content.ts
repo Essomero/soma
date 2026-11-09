@@ -108,13 +108,18 @@ async function main() {
     batch.push({ type, slug, body, file: f });
   }
 
-  // Slug uniqueness : collision with a *different* batch entry is an error.
-  const seen = new Map<string, string>();
+  // Slug uniqueness: collision is an error, except story+featured intentionally share the same slug for hero stage.
+  const seen = new Map<string, { file: string; type: string }>();
   for (const b of batch) {
-    if (seen.has(b.slug) && seen.get(b.slug) !== b.file) throw new Error(`duplicate slug ${b.slug} in batch`);
-    seen.set(b.slug, b.file);
+    const prev = seen.get(b.slug);
+    if (prev && prev.file !== b.file) {
+      const isStoryFeaturedPair =
+        (prev.type === "story" && b.type === "featured") ||
+        (prev.type === "featured" && b.type === "story");
+      if (!isStoryFeaturedPair) throw new Error(`duplicate slug ${b.slug} in batch`);
+    }
+    seen.set(b.slug, { file: b.file, type: b.type });
   }
-
   // Reference integrity against DB + batch.
   const batchSlugs = new Set(batch.map((b) => b.slug));
   for (const b of batch) {
