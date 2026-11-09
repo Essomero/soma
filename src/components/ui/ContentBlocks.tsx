@@ -110,12 +110,10 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
     import("mermaid").then((mermaid) => {
       if (cancelled || !ref.current) return;
       const isDark = theme === "dark";
-      // Use SVG text labels (htmlLabels:false) so DOMPurify keeps them — foreignObject divs get stripped otherwise
-      // and dark mode text was invisible because only background was set
       mermaid.default.initialize({
         startOnLoad: false,
         securityLevel: "loose",
-        theme: isDark ? "dark" : "default",
+        theme: isDark ? "dark" : "base",
         themeVariables: isDark
           ? {
               darkMode: true,
@@ -123,7 +121,7 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
               primaryColor: "#1e293b",
               primaryBorderColor: "#475569",
               primaryTextColor: "#f1f5f9",
-              secondaryColor: "#1e293b",
+              secondaryColor: "#233044",
               secondaryBorderColor: "#475569",
               secondaryTextColor: "#f1f5f9",
               tertiaryColor: "#334155",
@@ -137,34 +135,53 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
               clusterBorder: "#334155",
               titleColor: "#f1f5f9",
               edgeLabelBackground: "#151b23",
+              nodeTextColor: "#f1f5f9",
+              labelTextColor: "#f1f5f9",
             }
           : {
               darkMode: false,
               background: "#ffffff",
-              primaryColor: "#ffffff",
-              primaryBorderColor: "#cbd5e1",
+              primaryColor: "#f8fafc",
+              primaryBorderColor: "#94a3b8",
               primaryTextColor: "#0f172a",
-              secondaryColor: "#f8fafc",
-              tertiaryColor: "#f1f5f9",
+              secondaryColor: "#f1f5f9",
+              tertiaryColor: "#e2e8f0",
               lineColor: "#475569",
               textColor: "#0f172a",
               mainBkg: "#ffffff",
               nodeBorder: "#94a3b8",
               clusterBkg: "#f8fafc",
               clusterBorder: "#cbd5e1",
+              nodeTextColor: "#0f172a",
+              labelTextColor: "#0f172a",
             },
-        flowchart: { htmlLabels: false, curve: "basis", padding: 16 },
+        flowchart: { htmlLabels: true, curve: "basis", padding: 12 },
       });
       const renderId = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
       mermaid.default
         .render(renderId, diagram)
         .then(({ svg }) => {
-          if (ref.current && !cancelled) {
-            // No aggressive SVG профиля — keep all SVG text nodes. htmlLabels:false means no foreignObject to strip.
-            const clean = DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true } });
-            svgRef.current = clean;
-            ref.current.innerHTML = clean;
-          }
+          if (!ref.current || cancelled) return;
+          svgRef.current = svg;
+          ref.current.innerHTML = svg;
+          // Force label visibility: Mermaid htmlLabels are div > span inside foreignObject.
+          // Dark mode labels were rendering same color as box fill or with 0 opacity.
+          const root = ref.current;
+          const labelColor = isDark ? "#f1f5f9" : "#0f172a";
+          root.querySelectorAll("foreignObject div, foreignObject span, .nodeLabel, .edgeLabel, .label").forEach((el) => {
+            (el as HTMLElement).style.color = labelColor;
+            (el as HTMLElement).style.fontFamily = "DM Sans, sans-serif";
+            (el as HTMLElement).style.fontSize = "13px";
+            (el as HTMLElement).style.lineHeight = "1.3";
+            (el as HTMLElement).style.opacity = "1";
+            (el as HTMLElement).style.visibility = "visible";
+          });
+          root.querySelectorAll("g.label text, g.nodeLabel text, text").forEach((el) => {
+            (el as SVGTextElement).style.fill = labelColor;
+            (el as SVGTextElement).setAttribute("fill", labelColor);
+          });
+          // Also fix overlay copy after expand open
+          if (overlayRef.current) overlayRef.current.innerHTML = root.innerHTML;
         })
         .catch(() => {
           if (ref.current && !cancelled) {
@@ -174,7 +191,6 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
     });
     return () => { cancelled = true; };
   }, [diagram, theme]);
-
   return (
     <>
       <figure className="my-xxl">
