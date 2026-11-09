@@ -110,50 +110,58 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
     import("mermaid").then((mermaid) => {
       if (cancelled || !ref.current) return;
       const isDark = theme === "dark";
+      // Use SVG text labels (htmlLabels:false) so DOMPurify keeps them — foreignObject divs get stripped otherwise
+      // and dark mode text was invisible because only background was set
       mermaid.default.initialize({
         startOnLoad: false,
         securityLevel: "loose",
-        theme: isDark ? "dark" : "base",
+        theme: isDark ? "dark" : "default",
         themeVariables: isDark
           ? {
               darkMode: true,
               background: "#151b23",
               primaryColor: "#1e293b",
-              primaryTextColor: "#e5e7eb",
-              primaryBorderColor: "#334155",
-              lineColor: "#94a3b8",
+              primaryBorderColor: "#475569",
+              primaryTextColor: "#f1f5f9",
               secondaryColor: "#1e293b",
-              tertiaryColor: "#0f172a",
-              noteBkgColor: "#1e293b",
-              noteTextColor: "#e5e7eb",
-              textColor: "#e5e7eb",
+              secondaryBorderColor: "#475569",
+              secondaryTextColor: "#f1f5f9",
+              tertiaryColor: "#334155",
+              tertiaryBorderColor: "#64748b",
+              tertiaryTextColor: "#f1f5f9",
+              lineColor: "#94a3b8",
+              textColor: "#f1f5f9",
+              mainBkg: "#1e293b",
+              nodeBorder: "#475569",
+              clusterBkg: "#0f172a",
+              clusterBorder: "#334155",
+              titleColor: "#f1f5f9",
+              edgeLabelBackground: "#151b23",
             }
           : {
               darkMode: false,
               background: "#ffffff",
-              primaryColor: "#f1f5f9",
-              primaryTextColor: "#0f172a",
+              primaryColor: "#ffffff",
               primaryBorderColor: "#cbd5e1",
-              lineColor: "#64748b",
-              secondaryColor: "#ffffff",
-              tertiaryColor: "#f8fafc",
-              noteBkgColor: "#ffffff",
-              noteTextColor: "#0f172a",
+              primaryTextColor: "#0f172a",
+              secondaryColor: "#f8fafc",
+              tertiaryColor: "#f1f5f9",
+              lineColor: "#475569",
               textColor: "#0f172a",
+              mainBkg: "#ffffff",
+              nodeBorder: "#94a3b8",
+              clusterBkg: "#f8fafc",
+              clusterBorder: "#cbd5e1",
             },
-        flowchart: { htmlLabels: true, curve: "basis" },
+        flowchart: { htmlLabels: false, curve: "basis", padding: 16 },
       });
       const renderId = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
       mermaid.default
         .render(renderId, diagram)
         .then(({ svg }) => {
           if (ref.current && !cancelled) {
-            // Allow foreignObject/div for htmlLabels, keep SVG
-            const clean = DOMPurify.sanitize(svg, {
-              USE_PROFILES: { svg: true, svgFilters: true },
-              ADD_TAGS: ["foreignObject", "foreignobject", "div", "span", "br"],
-              ADD_ATTR: ["style", "class"],
-            });
+            // No aggressive SVG профиля — keep all SVG text nodes. htmlLabels:false means no foreignObject to strip.
+            const clean = DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true } });
             svgRef.current = clean;
             ref.current.innerHTML = clean;
           }
@@ -166,6 +174,7 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
     });
     return () => { cancelled = true; };
   }, [diagram, theme]);
+
   return (
     <>
       <figure className="my-xxl">
@@ -185,7 +194,6 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
         )}
       </figure>
 
-      {/* Expanded overlay */}
       {expanded && (
         <div
           className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-xl cursor-zoom-out"
@@ -214,7 +222,6 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
     </>
   );
 }
-
 // ── Image renderer (expandable on click) ───────────────
 function ImageBlock({ src, alt, caption }: { src: string; alt: string; caption?: string }) {
   const [expanded, setExpanded] = useState(false);
