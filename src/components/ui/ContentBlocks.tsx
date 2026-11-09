@@ -18,6 +18,7 @@ import type { LessonLinks } from "@/lib/storyLinks";
 import { useTheme } from "@/lib/ThemeContext";
 import "katex/dist/katex.min.css";
 import "highlight.js/styles/github-dark.css";
+
 interface ContentBlocksProps {
   blocks: (string | ContentBlock)[];
   firstDropCap?: boolean;
@@ -26,9 +27,7 @@ interface ContentBlocksProps {
   onHighlightClick?: (id: number) => void;
   isPractice?: boolean;
   isPrint?: boolean;
-  /** Section number → anchor id, forwarded so hints can link their references. */
-  sectionRefs?: Map<string, string>;
-  /** Lessons the story can point at, forwarded to hints. */
+  sectionRefs?: React.MutableRefObject<(HTMLElement | null)[]>;
   lessonLinks?: LessonLinks;
 }
 
@@ -39,33 +38,19 @@ function isContentBlock(item: string | ContentBlock): item is ContentBlock {
 // ── Copy-to-clipboard button for code blocks ────────────
 function CopyCodeButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // clipboard API unavailable : silently ignore
-    }
-  };
-
   return (
     <button
-      onClick={handleCopy}
-      className="text-on-surface-muted hover:text-on-surface transition-colors p-xs rounded"
-      aria-label="Copy code"
+      type="button"
+      onClick={() => {
+        void navigator.clipboard.writeText(text).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        });
+      }}
+      className="absolute top-xs right-xs inline-flex items-center gap-xs px-sm py-xs rounded-md bg-surface-container-low border border-border-default text-xs font-sora text-on-surface-muted hover:text-on-surface hover:border-primary/40 transition-colors"
     >
-      {copied ? (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      ) : (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-        </svg>
-      )}
+      {copied ? <CheckCircle2 className="w-3 h-3 text-secondary" /> : null}
+      {copied ? "Copied" : "Copy"}
     </button>
   );
 }
@@ -77,6 +62,7 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
   const [expanded, setExpanded] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<string>("");
+
   // When overlay opens, strip fixed dimensions from the SVG so it scales to fill
   useEffect(() => {
     if (expanded && overlayRef.current) {
@@ -92,7 +78,7 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
     }
   }, [expanded]);
 
-  // Freeze page scroll behind the zoom overlay
+  // Freeze page scroll behind the zoom overlay — Lenis-aware (see useScrollLock)
   useScrollLock(expanded);
 
   // Esc to close the zoom overlay
@@ -162,10 +148,10 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
         .render(renderId, diagram)
         .then(({ svg }) => {
           if (!ref.current || cancelled) return;
+          // Mermaid is trusted authored content — keep raw SVG so foreignObject labels survive.
           svgRef.current = svg;
           ref.current.innerHTML = svg;
           // Force label visibility: Mermaid htmlLabels are div > span inside foreignObject.
-          // Dark mode labels were rendering same color as box fill or with 0 opacity.
           const root = ref.current;
           const labelColor = isDark ? "#f1f5f9" : "#0f172a";
           root.querySelectorAll("foreignObject div, foreignObject span, .nodeLabel, .edgeLabel, .label").forEach((el) => {
@@ -180,7 +166,7 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
             (el as SVGTextElement).style.fill = labelColor;
             (el as SVGTextElement).setAttribute("fill", labelColor);
           });
-          // Also fix overlay copy after expand open
+          // Clone styled SVG into overlay if already open
           if (overlayRef.current) overlayRef.current.innerHTML = root.innerHTML;
         })
         .catch(() => {
@@ -189,8 +175,11 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
           }
         });
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [diagram, theme]);
+
   return (
     <>
       <figure className="my-xxl">
@@ -212,25 +201,24 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
 
       {expanded && (
         <div
-          className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-xl cursor-zoom-out"
+          className="fixed inset-0 z-[100] bg-background flex items-center justify-center p-md md:p-xl overflow-hidden cursor-zoom-out"
           onClick={() => setExpanded(false)}
         >
           <button
             type="button"
             aria-label="Close"
-            className="absolute top-md right-md inline-flex items-center justify-center w-9 h-9 rounded-full bg-surface text-on-surface-muted hover:text-on-surface border border-border-default hover:border-primary/50 transition-colors z-10"
+            className="absolute top-md right-md inline-flex items-center justify-center w-9 h-9 rounded-full bg-surface text-on-surface-muted hover:text-on-surface border border-border-default hover:border-primary/50 transition-colors z-[110]"
             onClick={() => setExpanded(false)}
           >
             <X size={18} strokeWidth={2} />
           </button>
           <div
-            className="w-full h-full flex items-center justify-center p-xxl"
+            className="w-full h-full max-w-6xl max-h-[90vh] flex items-center justify-center p-md md:p-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div
               ref={overlayRef}
               className="w-full h-full flex items-center justify-center"
-              dangerouslySetInnerHTML={{ __html: svgRef.current }}
             />
           </div>
         </div>
@@ -238,6 +226,7 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
     </>
   );
 }
+
 // ── Image renderer (expandable on click) ───────────────
 function ImageBlock({ src, alt, caption }: { src: string; alt: string; caption?: string }) {
   const [expanded, setExpanded] = useState(false);
@@ -257,23 +246,22 @@ function ImageBlock({ src, alt, caption }: { src: string; alt: string; caption?:
 
   return (
     <>
-      <figure className="my-xxl">
-        <Tooltip label="Click to zoom">
+      <figure className="my-xxl rounded-lg overflow-hidden border border-border-default">
+        <Tooltip label="Click to expand">
           <img
             src={src}
             alt={alt}
             onClick={() => setExpanded(true)}
-            className="w-full h-auto rounded-lg border border-border-default cursor-zoom-in hover:border-primary/50 transition-colors"
+            className="w-full cursor-zoom-in hover:opacity-95 transition-opacity"
           />
         </Tooltip>
         {caption && (
-          <figcaption className="mt-md font-dm-sans text-sm text-on-surface-muted italic text-center">
+          <figcaption className="px-xl py-md font-dm-sans text-sm text-on-surface-muted italic bg-surface-container-low border-t border-border-default">
             {caption}
           </figcaption>
         )}
       </figure>
 
-      {/* Expanded overlay */}
       {expanded && (
         <div
           className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-xl cursor-zoom-out"
@@ -287,16 +275,12 @@ function ImageBlock({ src, alt, caption }: { src: string; alt: string; caption?:
           >
             <X size={18} strokeWidth={2} />
           </button>
-          <div
-            className="w-full h-full flex items-center justify-center p-xxl"
+          <img
+            src={src}
+            alt={alt}
+            className="max-w-[92vw] max-h-[88vh] w-auto h-auto object-contain rounded-lg"
             onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={src}
-              alt={alt}
-              className="max-w-full max-h-full object-contain rounded-lg"
-            />
-          </div>
+          />
         </div>
       )}
     </>
@@ -306,22 +290,12 @@ function ImageBlock({ src, alt, caption }: { src: string; alt: string; caption?:
 // ── Math renderer (KaTeX) ──────────────────────────────
 function MathBlock({ expression, display }: { expression: string; display?: boolean }) {
   const html = katex.renderToString(expression, {
-    displayMode: display ?? true,
+    displayMode: !!display,
     throwOnError: false,
   });
-
-  if (display ?? true) {
-    return (
-      <div
-        className="my-xl py-md text-center overflow-x-auto text-on-surface"
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
-    );
-  }
-
   return (
-    <span
-      className="text-on-surface"
+    <div
+      className={display ? "my-xxl flex justify-center overflow-x-auto" : "inline"}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
@@ -331,16 +305,15 @@ function MathBlock({ expression, display }: { expression: string; display?: bool
 function YouTubeBlock({ videoId, caption }: { videoId: string; caption?: string }) {
   return (
     <figure className="my-xxl">
-      <div className="relative w-full overflow-hidden rounded-lg border border-border-default bg-surface-lowest">
-        <div style={{ paddingBottom: "56.25%" }} className="relative">
-          <iframe
-            src={`https://www.youtube-nocookie.com/embed/${videoId}`}
-            title="YouTube video"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="absolute inset-0 w-full h-full"
-          />
-        </div>
+      <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-border-default bg-surface-container-low">
+        <iframe
+          className="absolute inset-0 w-full h-full"
+          src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0`}
+          title="YouTube video"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          loading="lazy"
+        />
       </div>
       {caption && (
         <figcaption className="mt-md font-dm-sans text-sm text-on-surface-muted italic text-center">
@@ -353,282 +326,172 @@ function YouTubeBlock({ videoId, caption }: { videoId: string; caption?: string 
 
 // ── Main renderer ──────────────────────────────────────
 export default function ContentBlocks({ blocks, firstDropCap, sectionIndex = 0, highlights, onHighlightClick, isPractice, isPrint, sectionRefs, lessonLinks }: ContentBlocksProps) {
-  let isFirstText = firstDropCap ?? false;
-  const hasHighlights = highlights && highlights.length > 0;
-  return (
-    <div className={`story-prose font-dm-sans text-body-base text-on-surface leading-relaxed ${isPrint ? "w-full max-w-none" : "max-w-3xl"} space-y-md`}>
-      {blocks.map((block, i) => {
-        if (!isContentBlock(block)) {
-          const hasRelevantHighlights = hasHighlights && highlights!.some(
-            (h) => h.sectionIndex === sectionIndex && h.paragraphIndex === i,
-          );
+  const firstTextIndex = firstDropCap ? 0 : -1;
 
-          if (isPractice && typeof block === "string") {
-            const parsed = parsePracticeBlock(block);
-            if (parsed && !hasRelevantHighlights) {
-              const p = (
-                <div
-                  key={i}
-                  className="space-y-sm"
-                  data-section-index={sectionIndex}
-                  data-paragraph-index={i}
-                >
-                  {parsed.question ? (
-                    <MarkdownHtml
-                      html={mdBlock(parsed.question)}
-                      className={isFirstText ? "drop-cap-container" : ""}
-                    />
-                  ) : null}
-                  {parsed.hint ? (
-                    <PracticeHintBlock hint={parsed.hint} sectionRefs={sectionRefs} lessonLinks={lessonLinks} />
-                  ) : null}
-                  {parsed.solution ? (
-                    <PracticeSolutionBlock label={parsed.solLabel} solution={parsed.solution} />
-                  ) : null}
-                </div>
-              );
-              isFirstText = false;
-              return p;
-            }
+  const renderBlock = (block: ContentBlock | string, idx: number) => {
+    const isFirstText = typeof block === "string" && idx === firstTextIndex && !isPractice && !isPrint;
+    const baseRef =
+      isContentBlock(block) && block.type === "paragraph"
+        ? (el: HTMLElement | null) => {
+            if (!sectionRefs) return;
+            if (el) sectionRefs.current[sectionIndex * 100 + idx] = el;
           }
+        : undefined;
 
-          // Plain string : parse as full block markdown (handles tables, lists, code, etc.)
-          const html = mdBlock(block);
-          if (hasRelevantHighlights) {
-            const containerClass = isFirstText ? "drop-cap-container" : "";
-            const p = (
-              <HighlightRenderer
-                key={i}
-                html={html}
-                sectionIndex={sectionIndex}
-                paragraphIndex={i}
-                highlights={highlights!}
-                onHighlightClick={onHighlightClick}
-                className={containerClass}
-                containerClassName="paragraph-container"
-              />
-            );
-            isFirstText = false;
-            return p;
-          }
-
-          const containerClass = isFirstText ? "drop-cap-container" : "";
-          const p = (
-            <MarkdownHtml
-              key={i}
-              html={html}
-              className={containerClass}
-              data-section-index={sectionIndex}
-              data-paragraph-index={i}
+    if (typeof block === "string") {
+      const html = mdBlock(block);
+      const practice = parsePracticeBlock(block);
+      if (practice) {
+        return practice.kind === "hint" ? (
+          <PracticeHintBlock key={idx} text={practice.text} />
+        ) : (
+          <PracticeSolutionBlock key={idx} text={practice.text} />
+        );
+      }
+      return (
+        <div
+          key={idx}
+          ref={baseRef as never}
+          data-section-index={sectionIndex}
+          data-paragraph-index={idx}
+          className={`font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md ${isFirstText ? "drop-cap" : ""}`}
+        >
+          <MarkdownHtml html={html} />
+          {highlights && (
+            <HighlightRenderer
+              sectionIndex={sectionIndex}
+              paragraphIndex={idx}
+              text={block}
+              highlights={highlights}
+              onHighlightClick={onHighlightClick}
             />
-          );
-          isFirstText = false;
-          return p;
-        }
+          )}
+        </div>
+      );
+    }
 
-        switch (block.type) {
-          case "paragraph": {
-            const hasRelevantHighlights = hasHighlights && highlights!.some(
-              (h) => h.sectionIndex === sectionIndex && h.paragraphIndex === i,
-            );
-
-            if (isPractice && block.text) {
-              const parsed = parsePracticeBlock(block.text);
-              if (parsed && !hasRelevantHighlights) {
-                const p = (
-                  <div
-                    key={i}
-                    className="space-y-sm"
-                    data-section-index={sectionIndex}
-                    data-paragraph-index={i}
-                  >
-                    {parsed.question ? (
-                      <MarkdownHtml
-                        html={mdBlock(parsed.question)}
-                        className={isFirstText ? "drop-cap-container" : ""}
-                      />
-                    ) : null}
-                    {parsed.hint ? (
-                      <PracticeHintBlock hint={parsed.hint} sectionRefs={sectionRefs} lessonLinks={lessonLinks} />
-                    ) : null}
-                    {parsed.solution ? (
-                      <PracticeSolutionBlock label={parsed.solLabel} solution={parsed.solution} />
-                    ) : null}
-                  </div>
-                );
-                isFirstText = false;
-                return p;
-              }
-            }
-
-            const html = mdBlock(block.text);
-            if (hasRelevantHighlights) {
-              const containerClass = isFirstText ? "drop-cap-container" : "";
-              const p = (
-                <HighlightRenderer
-                  key={i}
-                  html={html}
-                  sectionIndex={sectionIndex}
-                  paragraphIndex={i}
-                  highlights={highlights!}
-                  onHighlightClick={onHighlightClick}
-                  className={containerClass}
-                  containerClassName="paragraph-container"
-                />
-              );
-              isFirstText = false;
-              return p;
-            }
-
-            const containerClass = isFirstText ? "drop-cap-container" : "";
-            const p = (
-              <MarkdownHtml
-                key={i}
-                html={html}
-                className={containerClass}
-                data-section-index={sectionIndex}
-                data-paragraph-index={i}
+    switch (block.type) {
+      case "paragraph":
+        return (
+          <div
+            key={idx}
+            ref={baseRef as never}
+            data-section-index={sectionIndex}
+            data-paragraph-index={idx}
+            className="font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md"
+          >
+            <MarkdownHtml html={mdBlock(block.text)} />
+            {highlights && (
+              <HighlightRenderer
+                sectionIndex={sectionIndex}
+                paragraphIndex={idx}
+                text={block.text}
+                highlights={highlights}
+                onHighlightClick={onHighlightClick}
               />
-            );
-            isFirstText = false;
-            return p;
-          }
-
-          case "image":
-            return <ImageBlock key={i} src={block.src} alt={block.alt} caption={block.caption} />;
-
-          case "horizontalRule":
-            return (
-              <hr key={i} className="my-xxl border-0 h-px bg-gradient-to-r from-transparent via-border-default to-transparent" />
-            );
-
-          case "videoCallout":
-            return (
-              <div key={i} className="my-xl p-xl bg-surface-container-low border border-border-default rounded-lg">
-                <p className="font-sora text-label-caps text-primary uppercase mb-md">
-                  {block.title}
-                </p>
-                <ul className="space-y-sm">
-                  {block.links.map((link) => (
-                    <li key={link.url}>
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline font-dm-sans"
-                      >
-                        {link.label} →
-                      </a>
-                    </li>
-                  ))}
-                </ul>
+            )}
+          </div>
+        );
+      case "image":
+        return <ImageBlock key={idx} src={block.src} alt={block.alt} caption={block.caption} />;
+      case "horizontalRule":
+        return <hr key={idx} className="my-xxl border-0 h-px bg-gradient-to-r from-transparent via-border-default to-transparent" />;
+      case "code":
+        return (
+          <div key={idx} className="my-xxl rounded-lg overflow-hidden border border-border-default bg-surface-container-high">
+            <div className="flex items-center gap-sm px-xl py-sm bg-surface-container-high border-b border-border-default">
+              <div className="flex gap-xs">
+                <div className="w-3 h-3 rounded-full bg-error/50" />
+                <div className="w-3 h-3 rounded-full bg-accent-orange/50" />
+                <div className="w-3 h-3 rounded-full bg-secondary/50" />
               </div>
-            );
-
-          case "callout": {
-            const variants = {
-              success: { Icon: CheckCircle2, edge: "border-l-secondary", surface: "bg-secondary/[0.07]", accent: "text-secondary" },
-              danger: { Icon: XCircle, edge: "border-l-error", surface: "bg-error/[0.07]", accent: "text-error" },
-              warning: { Icon: AlertTriangle, edge: "border-l-accent-orange", surface: "bg-accent-orange/[0.07]", accent: "text-accent-orange" },
-              info: { Icon: Info, edge: "border-l-primary", surface: "bg-primary/[0.07]", accent: "text-primary" },
-            } as const;
-            const v = variants[block.variant];
-            return (
-              <aside
-                key={i}
-                className={`my-xl border border-border-default border-l-4 ${v.edge} ${v.surface} rounded-r-lg rounded-l-sm px-lg py-md`}
+              {block.filename && <span className="ml-md font-sora text-xs text-on-surface-muted">{block.filename}</span>}
+              {block.language && <span className="ml-auto font-sora text-xs text-on-surface-muted">{block.language}</span>}
+            </div>
+            <div className="relative">
+              <pre className="overflow-x-auto p-xl text-sm leading-relaxed">
+                <code
+                  dangerouslySetInnerHTML={{
+                    __html: hljs.highlight(block.code, {
+                      language: (block.language || "plaintext").toLowerCase(),
+                    }).value,
+                  }}
+                />
+              </pre>
+              <CopyCodeButton text={block.code} />
+            </div>
+          </div>
+        );
+      case "math":
+        return <MathBlock key={idx} expression={block.expression} display={block.display} />;
+      case "mermaid":
+        return <MermaidBlock key={idx} diagram={block.diagram} caption={block.caption} />;
+      case "youtube":
+        return <YouTubeBlock key={idx} videoId={block.videoId} caption={block.caption} />;
+      case "videoCallout":
+        return (
+          <div key={idx} className="my-xxl rounded-lg border border-border-default bg-surface-container-low p-xl">
+            <p className="font-sora text-sm font-bold text-on-surface uppercase tracking-widest mb-md">{block.title}</p>
+            <div className="flex flex-wrap gap-sm">
+              {block.links.map((l) => (
+                <a
+                  key={l.url}
+                  href={l.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-xs px-md py-sm rounded-full border border-border-default bg-surface text-sm font-sora text-on-surface-muted hover:text-on-surface hover:border-primary/40 transition-colors"
+                >
+                  {l.label}
+                  <span className="text-primary">→</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        );
+      case "callout":
+        return (
+          <div
+            key={idx}
+            className={`my-xxl rounded-lg border p-xl ${
+              block.variant === "success"
+                ? "border-secondary/20 bg-secondary/5"
+                : block.variant === "danger"
+                  ? "border-error/20 bg-error/5"
+                  : block.variant === "warning"
+                    ? "border-accent-orange/20 bg-accent-orange/5"
+                    : "border-primary/20 bg-primary/5"
+            }`}
+          >
+            {block.title && (
+              <p
+                className={`font-sora text-sm font-bold uppercase tracking-widest mb-sm ${
+                  block.variant === "success"
+                    ? "text-secondary"
+                    : block.variant === "danger"
+                      ? "text-error"
+                      : block.variant === "warning"
+                        ? "text-accent-orange"
+                        : "text-primary"
+                }`}
               >
-                {block.title && (
-                  <p className={`flex items-center gap-sm font-sora text-label-caps uppercase mb-sm ${v.accent}`}>
-                    <v.Icon size={14} aria-hidden="true" />
-                    {block.title}
-                  </p>
-                )}
-                <MarkdownHtml html={mdBlock(block.text)} className="[&_p:first-child]:mt-0 [&_p:last-child]:mb-0" />
-              </aside>
-            );
-          }
+                {block.title}
+              </p>
+            )}
+            <div className="font-dm-sans text-sm text-on-surface leading-relaxed">
+              <MarkdownHtml html={mdBlock(block.text)} />
+            </div>
+          </div>
+        );
+      case "chart":
+        return <ChartBlock key={idx} block={block} />;
+      case "scene3d":
+        return <Scene3DBlock key={idx} block={block} />;
+      case "lab":
+        return <LabBlock key={idx} block={block} lessonLinks={lessonLinks} />;
+      default:
+        return null;
+    }
+  };
 
-          case "code": {
-            const lang = block.language?.toLowerCase() ?? "";
-            const highlighted = (() => {
-              try {
-                if (lang && hljs.getLanguage(lang)) {
-                  return hljs.highlight(block.code, { language: lang }).value;
-                }
-                return hljs.highlightAuto(block.code).value;
-              } catch {
-                return block.code.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-              }
-            })();
-            return (
-              <div key={i} className="my-lg bg-surface-lowest border border-border-default rounded-xl overflow-hidden avoid-break">
-                {(block.filename || block.language) && (
-                  <div className="flex items-center justify-between px-md py-sm bg-surface-container border-b border-border-default">
-                    {isPrint ? (
-                      <span className="font-mono text-xs font-semibold text-on-surface">
-                        {block.filename || block.language}
-                      </span>
-                    ) : (
-                      <div className="flex gap-xs">
-                        <div className="w-3 h-3 rounded-full bg-error/40" />
-                        <div className="w-3 h-3 rounded-full bg-accent-orange/40" />
-                        <div className="w-3 h-3 rounded-full bg-secondary/40" />
-                      </div>
-                    )}
-                    <div className="flex items-center gap-lg">
-                      {!isPrint && <CopyCodeButton text={block.code} />}
-                      {!isPrint && (
-                        <span className="font-sora text-[10px] uppercase text-on-surface-muted">
-                          {block.filename || block.language || ""}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-                <pre className={`${isPrint ? "p-md text-xs" : "p-lg text-sm"} font-mono leading-relaxed overflow-x-auto`}>
-                  <code className={`hljs language-${lang}`} dangerouslySetInnerHTML={{ __html: highlighted }} />
-                </pre>
-              </div>
-            );
-          }
-
-          case "math":
-            return <MathBlock key={i} expression={block.expression} display={block.display} />;
-
-          case "mermaid":
-            return <MermaidBlock key={i} diagram={block.diagram} caption={block.caption} />;
-
-          case "youtube":
-            if (isPrint) {
-              return block.caption ? (
-                <p key={i} className="my-md text-sm italic text-center text-on-surface-muted avoid-break">
-                  [Video: {block.caption}]
-                </p>
-              ) : null;
-            }
-            return <YouTubeBlock key={i} videoId={block.videoId} caption={block.caption} />;
-
-          case "chart":
-            return <ChartBlock key={i} block={block} />;
-
-          case "scene3d":
-            if (isPrint) {
-              return block.caption ? (
-                <p key={i} className="my-md text-sm italic text-center text-on-surface-muted avoid-break">
-                  [Figure: {block.caption}]
-                </p>
-              ) : null;
-            }
-            return <Scene3DBlock key={i} block={block} />;
-
-          case "lab":
-            if (isPrint) return null;
-            return <LabBlock key={i} block={block} />;
-          default:
-            return null;
-        }
-      })}
-    </div>
-  );
+  return <div className="space-y-xl">{blocks.map(renderBlock)}</div>;
 }
