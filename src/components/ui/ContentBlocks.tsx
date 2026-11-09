@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
 import type { ContentBlock } from "@/types";
 import { mdBlock } from "@/lib/markdown";
@@ -177,15 +178,16 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
         {caption && <figcaption className="mt-md font-dm-sans text-sm text-on-surface-muted italic text-center">{caption}</figcaption>}
       </figure>
 
-      {expanded && (
+      {expanded && createPortal(
         <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-sm flex items-center justify-center cursor-zoom-out" onClick={() => setExpanded(false)}>
           <button type="button" aria-label="Close" className="absolute top-4 right-4 inline-flex items-center justify-center w-10 h-10 rounded-full bg-surface text-on-surface-muted hover:text-on-surface border border-border-default hover:border-primary/50 transition-colors z-[110]" onClick={() => setExpanded(false)}>
             <X size={20} strokeWidth={2} />
           </button>
-          <div className="w-screen h-screen flex items-center justify-center p-2" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full h-full flex items-center justify-center p-2" onClick={(e) => e.stopPropagation()}>
             <div ref={overlayRef} className="w-full h-full flex items-center justify-center [&>svg]:w-full [&>svg]:h-full [&>svg]:max-w-[98vw] [&>svg]:max-h-[98vh]" />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
