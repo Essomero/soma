@@ -1,7 +1,7 @@
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import HomePage from "@/pages/HomePage";
-import FeaturedArticlePage from "@/pages/FeaturedArticlePage";
+import GenericFeaturedPage from "@/pages/GenericFeaturedPage";
 import DeveloperStoryPage from "@/pages/DeveloperStoryPage";
 import GuidePage from "@/pages/GuidePage";
 import StoryPage from "@/pages/StoryPage";
@@ -77,10 +77,10 @@ const router = createBrowserRouter([
       // Home
       { index: true, element: <HomePage /> },
 
-      // Featured articles
+      // Featured articles — generic handles any slug including why-i-built-soma and vision roadmap
       {
-        path: "featured/why-i-built-soma",
-        element: <FeaturedArticlePage />,
+        path: "featured/:slug",
+        element: <GenericFeaturedPage />,
       },
       {
         path: "featured/structural-typing",
