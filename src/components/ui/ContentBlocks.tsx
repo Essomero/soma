@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
-import katex from "katex";
-import hljs from "highlight.js";
 import type { ContentBlock } from "@/types";
 import { mdBlock } from "@/lib/markdown";
 import { useScrollLock } from "@/lib/useScrollLock";
@@ -15,8 +13,6 @@ import Tooltip from "@/components/ui/Tooltip";
 import { PracticeHintBlock, PracticeSolutionBlock, parsePracticeBlock } from "@/components/ui/PracticeBlocks";
 import type { LessonLinks } from "@/lib/storyLinks";
 import { useTheme } from "@/lib/ThemeContext";
-import "katex/dist/katex.min.css";
-import "highlight.js/styles/github-dark.css";
 
 interface ContentBlocksProps {
   blocks: (string | ContentBlock)[];
@@ -53,7 +49,7 @@ function CopyCodeButton({ text }: { text: string }) {
   );
 }
 
-// ── Mermaid diagram renderer (expandable on click) — FULL VIEWPORT modal ─────
+// ── Mermaid diagram renderer — full viewport modal, original blur background kept ─────
 function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string }) {
   const { theme } = useTheme();
   const ref = useRef<HTMLDivElement>(null);
@@ -176,27 +172,18 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
     <>
       <figure className="my-xxl">
         <Tooltip label="Click to expand">
-          <div
-            ref={ref}
-            onClick={() => setExpanded(true)}
-            className="flex justify-center p-xl bg-surface-container-low rounded-lg border border-border-default overflow-x-auto cursor-zoom-in hover:border-primary/50 transition-colors min-h-[180px]"
-          />
+          <div ref={ref} onClick={() => setExpanded(true)} className="flex justify-center p-xl bg-surface-container-low rounded-lg border border-border-default overflow-x-auto cursor-zoom-in hover:border-primary/50 transition-colors min-h-[180px]" />
         </Tooltip>
         {caption && <figcaption className="mt-md font-dm-sans text-sm text-on-surface-muted italic text-center">{caption}</figcaption>}
       </figure>
 
       {expanded && (
-        <div className="fixed inset-0 z-[9999] bg-[#0a0e14] flex items-center justify-center cursor-zoom-out" onClick={() => setExpanded(false)}>
-          <button
-            type="button"
-            aria-label="Close"
-            className="absolute top-4 right-4 inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/10 text-white hover:bg-white/20 border border-white/20 transition-colors z-[10000]"
-            onClick={() => setExpanded(false)}
-          >
+        <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-sm flex items-center justify-center cursor-zoom-out" onClick={() => setExpanded(false)}>
+          <button type="button" aria-label="Close" className="absolute top-4 right-4 inline-flex items-center justify-center w-10 h-10 rounded-full bg-surface text-on-surface-muted hover:text-on-surface border border-border-default hover:border-primary/50 transition-colors z-[110]" onClick={() => setExpanded(false)}>
             <X size={20} strokeWidth={2} />
           </button>
-          <div className="w-screen h-screen flex items-center justify-center p-0" onClick={(e) => e.stopPropagation()}>
-            <div ref={overlayRef} className="w-full h-full flex items-center justify-center [&>svg]:w-full [&>svg]:h-full" />
+          <div className="w-screen h-screen flex items-center justify-center p-2" onClick={(e) => e.stopPropagation()}>
+            <div ref={overlayRef} className="w-full h-full flex items-center justify-center [&>svg]:w-full [&>svg]:h-full [&>svg]:max-w-[98vw] [&>svg]:max-h-[98vh]" />
           </div>
         </div>
       )}
@@ -204,7 +191,7 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
   );
 }
 
-// ── Image renderer (expandable on click) ───────────────
+// ── Image renderer ───────────────
 function ImageBlock({ src, alt, caption }: { src: string; alt: string; caption?: string }) {
   const [expanded, setExpanded] = useState(false);
   useScrollLock(expanded);
@@ -227,11 +214,11 @@ function ImageBlock({ src, alt, caption }: { src: string; alt: string; caption?:
       </figure>
 
       {expanded && (
-        <div className="fixed inset-0 z-[9999] bg-[#0a0e14] flex items-center justify-center cursor-zoom-out" onClick={() => setExpanded(false)}>
-          <button type="button" aria-label="Close" className="absolute top-4 right-4 inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/10 text-white hover:bg-white/20 border border-white/20 transition-colors z-[10000]" onClick={() => setExpanded(false)}>
+        <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-sm flex items-center justify-center cursor-zoom-out p-2" onClick={() => setExpanded(false)}>
+          <button type="button" aria-label="Close" className="absolute top-4 right-4 inline-flex items-center justify-center w-10 h-10 rounded-full bg-surface text-on-surface-muted hover:text-on-surface border border-border-default hover:border-primary/50 transition-colors z-[110]" onClick={() => setExpanded(false)}>
             <X size={20} strokeWidth={2} />
           </button>
-          <img src={src} alt={alt} className="max-w-[98vw] max-h-[98vh] w-auto h-auto object-contain" onClick={(e) => e.stopPropagation()} />
+          <img src={src} alt={alt} className="max-w-[98vw] max-h-[98vh] w-auto h-auto object-contain rounded-lg" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
     </>
@@ -324,7 +311,7 @@ export default function ContentBlocks({ blocks, firstDropCap, sectionIndex = 0, 
             </div>
             <div className="relative">
               <pre className="overflow-x-auto p-xl text-sm leading-relaxed">
-                <code dangerouslySetInnerHTML={{ __html: hljs.highlight(block.code, { language: (block.language || "plaintext").toLowerCase() }).value }} />
+                <code className={`language-${(block.language || "plaintext").toLowerCase()}`}>{block.code}</code>
               </pre>
             </div>
           </div>
@@ -363,7 +350,7 @@ export default function ContentBlocks({ blocks, firstDropCap, sectionIndex = 0, 
       case "scene3d":
         return <Scene3DBlock key={idx} block={block} />;
       case "lab":
-        return <LabBlock key={idx} block={block} lessonLinks={lessonLinks} />;
+        return null;
       default:
         return null;
     }
