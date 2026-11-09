@@ -126,19 +126,31 @@ async function existingContent(type) {
 }
 
 async function storeRow(slug) {
-  const rows = await queryRows("SELECT slug, type, status, title, position, updated_at, archived_at FROM content_items WHERE slug = ?", [slug]);
+  const rows = await queryRows(
+    "SELECT slug, type, status, title, position, updated_at, archived_at FROM content_items WHERE slug = ? ORDER BY type",
+    [slug],
+  );
   if (!rows.length) return `No row for '${slug}' in the store. The piece never landed: run publish_manuscript first.`;
-  const r = rows[0];
-  return `Row confirmed: ${JSON.stringify(r, null, 2)}`;
+  // story+featured can share slug now that PK is (type,slug) — return all types
+  if (rows.length === 1) {
+    return `Row confirmed: ${JSON.stringify(rows[0], null, 2)}`;
+  }
+  return `Rows confirmed (${rows.length}) for slug '${slug}' — composite PK (type,slug) allows coexistence:\n${rows.map((r) => JSON.stringify(r, null, 2)).join("\n\n")}`;
 }
 
 async function getContent(slug) {
-  const rows = await queryRows("SELECT slug, type, status, title, excerpt, body_json, meta_json, position, updated_at FROM content_items WHERE slug = ?", [slug]);
+  const rows = await queryRows(
+    "SELECT slug, type, status, title, excerpt, body_json, meta_json, position, updated_at FROM content_items WHERE slug = ? ORDER BY type",
+    [slug],
+  );
   if (!rows.length) return `No row for '${slug}' in the store.`;
-  const r = rows[0];
-  const body = JSON.parse(String(r.body_json));
-  const meta = JSON.parse(String(r.meta_json));
-  return `${r.slug} (${r.type}, ${r.status}, pos ${r.position})\n${r.title}\n${r.excerpt}\n\nbody_json:\n${JSON.stringify(body, null, 2)}\n\nmeta_json:\n${JSON.stringify(meta, null, 2)}`;
+  const fmt = (r) => {
+    const body = JSON.parse(String(r.body_json));
+    const meta = JSON.parse(String(r.meta_json));
+    return `${r.slug} (${r.type}, ${r.status}, pos ${r.position})\n${r.title}\n${r.excerpt}\n\nbody_json:\n${JSON.stringify(body, null, 2)}\n\nmeta_json:\n${JSON.stringify(meta, null, 2)}`;
+  };
+  if (rows.length === 1) return fmt(rows[0]);
+  return rows.map((r) => fmt(r)).join("\n\n---\n\n");
 }
 
 async function drafts(type) {

@@ -7,7 +7,7 @@
  * Status is never touched: existing published rows stay published, new rows
  * land as private. Going public is a human toggle flip, never a CLI flag.
  */
-import { getDb, CREATE_CONTENT_ITEMS } from "./content-db.ts";
+import { getDb, CREATE_CONTENT_ITEMS, migrateContentItemsIfNeeded } from "./content-db.ts";
 import { allStories } from "../src/content/stories/index.ts";
 import { allGuides } from "../src/content/guides/index.ts";
 import { allDocs } from "../src/content/docs/index.ts";
@@ -87,14 +87,18 @@ async function main() {
     throw e;
   }
   await db.execute(CREATE_CONTENT_ITEMS);
+  await migrateContentItemsIfNeeded(db);
+  await db.execute(CREATE_CONTENT_ITEMS);
 
   // Build-time mode: backfill only what's missing (fast path for populated stores).
   // Manual runs: refresh every row. Status is never touched.
   let present = new Set<string>();
   if (ifEmpty) {
-    const existing = await db.execute("SELECT slug FROM content_items");
+    const existing = await db.execute("SELECT type, slug FROM content_items");
     for (const row of existing.rows) {
-      if (typeof row.slug === "string") present.add(row.slug);
+      const t = typeof row.type === "string" ? row.type : "";
+      const s = typeof row.slug === "string" ? row.slug : "";
+      if (t && s) present.add(`${t}:${s}`);
     }
     if (present.size === 0) console.log("publish-all: empty store, importing full corpus");
   }
@@ -111,22 +115,22 @@ async function main() {
     let published = 0;
     const privateSlugs: string[] = [];
     for (const e of entries) {
-      if (ifEmpty && present.has(e.slug)) continue;
+      if (ifEmpty && present.has(`${type}:${e.slug}`)) continue;
       const now = new Date().toISOString();
       // Insert if missing (never overwrite status), then always update fields.
       await db.execute({
         sql: `INSERT INTO content_items (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
-              VALUES (?, ?, 'private', ?, ?, ?, ?, ?, ?) ON CONFLICT(slug) DO NOTHING`,
+              VALUES (?, ?, 'private', ?, ?, ?, ?, ?, ?) ON CONFLICT(type, slug) DO NOTHING`,
         args: [e.slug, type, e.title, e.excerpt, JSON.stringify(e.body), JSON.stringify(e.meta), e.position, now],
       });
       await db.execute({
         sql: `UPDATE content_items SET type = ?, title = ?, excerpt = ?, body_json = ?, meta_json = ?, position = ?, updated_at = ?
-              WHERE slug = ?`,
-        args: [type, e.title, e.excerpt, JSON.stringify(e.body), JSON.stringify(e.meta), e.position, now, e.slug],
+              WHERE type = ? AND slug = ?`,
+        args: [type, e.title, e.excerpt, JSON.stringify(e.body), JSON.stringify(e.meta), e.position, now, type, e.slug],
       });
-      const cur = await db.execute({ sql: "SELECT status FROM content_items WHERE slug = ?", args: [e.slug] });
+      const cur = await db.execute({ sql: "SELECT status FROM content_items WHERE type = ? AND slug = ?", args: [type, e.slug] });
       if (cur.rows[0]?.status === "published") published++;
-      else privateSlugs.push(e.slug);
+      else privateSlugs.push(`${type}:${e.slug}`);
     }
     report.push({ type, published, private: privateSlugs.length, privateSlugs });
   }
@@ -140,19 +144,17 @@ async function main() {
   for (const r of report) {
     console.log(`  ${r.type}: ${r.published} published, ${r.private} private${r.privateSlugs.length ? " (" + r.privateSlugs.join(", ") + ")" : ""}`);
   }
-  console.log("Private rows are invisible until flipped: UPDATE content_items SET status='published' WHERE slug=?");
+  console.log("Private rows are invisible until flipped: UPDATE content_items SET status='published' WHERE type=? AND slug=?");
 }
 
 main().catch((e: unknown) => {
   // Build-time mode must never break the deploy on a transient database
   // error: the runtime path (api/content.js GET) no longer does any seeding,
-  // so a failure here means the DB is truly unreachable for this deploy cycle.
-  // But a deploy without a database is still deployable: the content API
-  // returns empty, which is valid for a new environment before the first run.
+  // so publish-all failing is acceptable at deploy time.
   if (process.argv.includes("--if-empty")) {
-    console.log(`publish-all: skipped during build (${e instanceof Error ? e.message : e})`);
-    process.exit(0);
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn(`publish-all --if-empty: skipped due to transient error: ${msg}`);
+    return;
   }
-  console.error(e instanceof Error ? e.message : e);
-  process.exit(1);
+  throw e;
 });

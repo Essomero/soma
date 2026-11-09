@@ -10,7 +10,7 @@
  */
 import { pathToFileURL } from "url";
 import { basename, dirname, resolve } from "path";
-import { getDb, CREATE_CONTENT_ITEMS } from "./content-db.ts";
+import { getDb, CREATE_CONTENT_ITEMS, migrateContentItemsIfNeeded } from "./content-db.ts";
 
 type Fields = Record<string, unknown>;
 
@@ -79,9 +79,11 @@ async function main() {
     else if (a.startsWith("--")) throw new Error(`unknown flag ${a}`);
     else files.push(a);
   }
-  if (!files.length) throw new Error("usage: npm run publish -- [--type story] [--featured] <file...>");
+  if (!files.length) throw new Error("usage: npm run publish -- [--type story] [--featured] <file...>:");
 
   const db = await getDb();
+  await db.execute(CREATE_CONTENT_ITEMS);
+  await migrateContentItemsIfNeeded(db);
   await db.execute(CREATE_CONTENT_ITEMS);
 
   // Load batch first so cross-file refs resolve within one publish.
@@ -108,24 +110,24 @@ async function main() {
     batch.push({ type, slug, body, file: f });
   }
 
-  // Slug uniqueness: collision is an error, except story+featured intentionally share the same slug for hero stage.
-  const seen = new Map<string, { file: string; type: string }>();
+  // Slug uniqueness per type: duplicate within same type is error.
+  // story+featured intentionally share the same slug for hero stage (composite PK allows coexistence).
+  const seenPerType = new Map<string, { file: string }>();
+  const batchSlugsAll = new Set<string>();
   for (const b of batch) {
-    const prev = seen.get(b.slug);
+    const key = `${b.type}:${b.slug}`;
+    const prev = seenPerType.get(key);
     if (prev && prev.file !== b.file) {
-      const isStoryFeaturedPair =
-        (prev.type === "story" && b.type === "featured") ||
-        (prev.type === "featured" && b.type === "story");
-      if (!isStoryFeaturedPair) throw new Error(`duplicate slug ${b.slug} in batch`);
+      throw new Error(`duplicate slug ${b.slug} in type ${b.type}: ${prev.file} and ${b.file}`);
     }
-    seen.set(b.slug, { file: b.file, type: b.type });
+    seenPerType.set(key, { file: b.file });
+    batchSlugsAll.add(b.slug);
   }
-  // Reference integrity against DB + batch.
-  const batchSlugs = new Set(batch.map((b) => b.slug));
+  // Reference integrity against DB + batch (presence in any type counts).
   for (const b of batch) {
     for (const ref of refsOf(b.type, b.body)) {
-      if (batchSlugs.has(ref)) continue;
-      const hit = await db.execute({ sql: "SELECT slug FROM content_items WHERE slug = ?", args: [ref] });
+      if (batchSlugsAll.has(ref)) continue;
+      const hit = await db.execute({ sql: "SELECT slug FROM content_items WHERE slug = ? LIMIT 1", args: [ref] });
       if (!hit.rows.length) throw new Error(`${b.file}: ${b.type} references unknown slug '${ref}'`);
     }
   }
@@ -143,7 +145,7 @@ async function main() {
     const desc = b.body.excerpt ?? b.body.description;
     const excerpt = typeof desc === "string" ? desc : "";
     const posRow = await db.execute({ sql: "SELECT COALESCE(MAX(position), -1) AS m FROM content_items WHERE type = ?", args: [b.type] });
-    const existing = await db.execute({ sql: "SELECT position, status FROM content_items WHERE slug = ?", args: [b.slug] });
+    const existing = await db.execute({ sql: "SELECT position, status FROM content_items WHERE type = ? AND slug = ?", args: [b.type, b.slug] });
     const rawMax = posRow.rows[0]?.m;
     const existingStatus = existing.rows.length && typeof existing.rows[0]?.status === "string" ? existing.rows[0].status : "";
     const effectiveStatus = existingStatus === "published" ? "published" : "private";
@@ -157,7 +159,7 @@ async function main() {
     await db.execute({
       sql: `INSERT INTO content_items (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(slug) DO UPDATE SET type = excluded.type, status = excluded.status,
+            ON CONFLICT(type, slug) DO UPDATE SET status=excluded.status,
               title = excluded.title, excerpt = excluded.excerpt, body_json = excluded.body_json,
               meta_json = excluded.meta_json, position = excluded.position, updated_at = excluded.updated_at`,
       args: [b.slug, b.type, effectiveStatus, title, excerpt, JSON.stringify(b.body), JSON.stringify(meta), position, now],
