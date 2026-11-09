@@ -95,11 +95,25 @@ function ChartLoaded({ block, Recharts, zoomed, setZoomed, mergedData }: { block
     const smooth = rootNode && "smooth" in rootNode ? (rootNode as { smooth?: boolean }).smooth === true : false;
     const margin = { top: 16, right: 24, bottom: 16, left: 8 };
 
+    // On a numeric x axis, bars sit centered on their x value, so the first and
+    // last bars hang half a bar past the plot. Pad the domain by half the
+    // smallest x gap (half a category band) so the end bars stay fully visible.
+    const xNumbers = (mergedData ?? [])
+      .map((row) => (row && typeof row === "object" && X_COL in row ? row[X_COL] : undefined))
+      .filter((v): v is number => typeof v === "number")
+      .sort((a, b) => a - b);
+    let xPad: number | undefined;
+    for (let i = 1; i < xNumbers.length; i++) {
+      const gap = xNumbers[i] - xNumbers[i - 1];
+      if (gap > 0 && (xPad === undefined || gap < xPad)) xPad = gap;
+    }
+    if (xPad !== undefined) xPad /= 2;
+
     const axesAndChrome = (
       <>
         {grids.length > 0 ? <CartesianGrid stroke={(grids[0] as { stroke?: string }).stroke ?? GRID_STROKE} strokeDasharray={(grids[0] as { strokeDasharray?: string }).strokeDasharray ?? "3 3"} /> : null}
         {xAxes.map((a, i) => (
-          <XAxis key={`x-${i}`} dataKey={i === 0 ? X_COL : undefined} type="number" stroke={AXIS_STROKE} tick={TICK_STYLE} tickLine={{ stroke: AXIS_STROKE }} axisLine={{ stroke: AXIS_STROKE }} scale={a.scale ?? "linear"} domain={a.min !== undefined && a.max !== undefined ? [a.min, a.max] : ["auto", "auto"]} tickCount={a.tickCount} allowDuplicatedCategory={false} orientation={a.side === "top" ? "top" : "bottom"} label={a.label ? { value: a.label, position: a.side === "top" ? "insideTop" : "insideBottom", offset: -5, fill: AXIS_STROKE, fontSize: 12 } : undefined} />
+          <XAxis key={`x-${i}`} dataKey={i === 0 ? X_COL : undefined} type="number" stroke={AXIS_STROKE} tick={TICK_STYLE} tickLine={{ stroke: AXIS_STROKE }} axisLine={{ stroke: AXIS_STROKE }} scale={a.scale ?? "linear"} domain={a.min !== undefined && a.max !== undefined ? [a.min, a.max] : fam === "barChart" && xPad !== undefined ? [(min: number) => min - xPad, (max: number) => max + xPad] : ["auto", "auto"]} tickCount={a.tickCount} allowDuplicatedCategory={false} orientation={a.side === "top" ? "top" : "bottom"} label={a.label ? { value: a.label, position: a.side === "top" ? "insideTop" : "insideBottom", offset: -5, fill: AXIS_STROKE, fontSize: 12 } : undefined} />
         ))}
         {yAxes.map((a, i) => (
           <YAxis key={`y-${i}`} dataKey={i === 0 && seriesNodes[0]?.name ? seriesNodes[0].name : undefined} stroke={AXIS_STROKE} tick={TICK_STYLE} tickLine={{ stroke: AXIS_STROKE }} axisLine={{ stroke: AXIS_STROKE }} scale={a.scale ?? "linear"} domain={a.min !== undefined && a.max !== undefined ? [a.min, a.max] : ["auto", "auto"]} tickCount={a.tickCount} orientation={a.side === "left" || a.side === "right" ? (a.side as "left" | "right") : undefined} label={a.label ? { value: a.label, angle: -90, position: "insideLeft", fill: AXIS_STROKE, fontSize: 12 } : undefined} />
