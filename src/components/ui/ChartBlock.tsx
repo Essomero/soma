@@ -603,7 +603,6 @@ function ChartLoaded({
       {block.caption}
     </figcaption>
   );
-
   return (
     <figure className="my-xxl">
       <Tooltip label="Click to expand">
@@ -629,7 +628,7 @@ function ChartLoaded({
 
       {zoomed && (
         <div
-          className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-xl cursor-zoom-out"
+          className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-sm flex items-center justify-center p-md md:p-xl cursor-zoom-out"
           onClick={() => setZoomed(false)}
           role="dialog"
           aria-modal="true"
@@ -647,18 +646,18 @@ function ChartLoaded({
             <X size={18} strokeWidth={2} />
           </button>
           <div
-            className="w-[90vw] h-[85vh] flex flex-col bg-surface-container-low rounded-lg border border-border-default p-lg"
+            className="w-[92vw] max-w-6xl h-[80vh] max-h-[85vh] flex flex-col bg-surface-container-low rounded-lg border border-border-default p-md md:p-lg overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {block.title && (
-              <p className="font-sora text-base text-on-surface mb-md text-center">{block.title}</p>
+              <p className="font-sora text-base text-on-surface mb-md text-center shrink-0">{block.title}</p>
             )}
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 w-full">
               <Recharts.ResponsiveContainer width="100%" height="100%">
                 {chartBody}
               </Recharts.ResponsiveContainer>
             </div>
-            {figcaption}
+            {figcaption && <div className="shrink-0 mt-sm">{figcaption}</div>}
           </div>
         </div>
       )}
