@@ -1,8 +1,103 @@
 import { isAuthed, requireAuth } from "./_auth.js";
 import { query as dbQuery, runPipeline, arg, isTursoConfigured } from "./_db.js";
 
-// Composite PK (type, slug) so story+featured can share the same slug for the hero stage.
-// Table is created idempotently; legacy single-PK tables are migrated on first hit.
+// Modern migrations: always runs on boot, tracks _migrations table, skips applied.
+const MIGRATIONS = [
+  {
+    id: "001_content_items_composite_pk",
+    description: "Composite PK (type, slug) so story+featured can share slug",
+    up: async (q) => {
+      let sql = "";
+      try {
+        const rows = await q("SELECT sql FROM sqlite_master WHERE type='table' AND name='content_items'", []);
+        sql = rows[0]?.sql || rows[0]?.SQL || "";
+      } catch {}
+      if (!sql) {
+        await q(`CREATE TABLE IF NOT EXISTS content_items (
+          slug TEXT NOT NULL,
+          type TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'private',
+          title TEXT NOT NULL DEFAULT '',
+          excerpt TEXT NOT NULL DEFAULT '',
+          body_json TEXT NOT NULL,
+          meta_json TEXT NOT NULL DEFAULT '{}',
+          position INTEGER NOT NULL DEFAULT 0,
+          updated_at TEXT DEFAULT (datetime('now')),
+          archived_at TEXT,
+          PRIMARY KEY (type, slug)
+        )`, []);
+        return;
+      }
+      const upper = sql.toUpperCase();
+      const isLegacy = upper.includes("SLUG TEXT PRIMARY KEY") || !upper.includes("PRIMARY KEY (TYPE, SLUG)");
+      if (!isLegacy) return;
+      console.log("[migrate] 001 composite PK: migrating legacy slug PK -> (type,slug)");
+      await q(`CREATE TABLE IF NOT EXISTS content_items_new (
+        slug TEXT NOT NULL,
+        type TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'private',
+        title TEXT NOT NULL DEFAULT '',
+        excerpt TEXT NOT NULL DEFAULT '',
+        body_json TEXT NOT NULL,
+        meta_json TEXT NOT NULL DEFAULT '{}',
+        position INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT DEFAULT (datetime('now')),
+        archived_at TEXT,
+        PRIMARY KEY (type, slug)
+      )`, []);
+      // Copy handling both 9-col (no archived_at) and 10-col variants
+      try {
+        await q(`INSERT OR REPLACE INTO content_items_new (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at, archived_at)
+          SELECT slug, type, status, title, excerpt, body_json, meta_json, position, updated_at, archived_at FROM content_items`, []);
+      } catch {
+        try {
+          await q(`INSERT OR REPLACE INTO content_items_new (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
+            SELECT slug, type, status, title, excerpt, body_json, meta_json, position, updated_at FROM content_items`, []);
+        } catch (e) {
+          console.error("[migrate] copy failed", e && e.message);
+        }
+      }
+      await q("DROP TABLE content_items", []);
+      await q("ALTER TABLE content_items_new RENAME TO content_items", []);
+      try { await q("DROP TABLE IF EXISTS content_fts", []); } catch {}
+    },
+  },
+];
+
+let _migrationsEnsured = false;
+async function runMigrations() {
+  if (_migrationsEnsured) return;
+  try {
+    await dbQuery(`CREATE TABLE IF NOT EXISTS _migrations (
+      id TEXT PRIMARY KEY,
+      description TEXT,
+      applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`, []);
+  } catch (e) {
+    console.error("[migrate] _migrations create failed", e && e.message);
+    return;
+  }
+  _migrationsEnsured = true;
+  let applied = new Set();
+  try {
+    const rows = await dbQuery("SELECT id FROM _migrations", []);
+    for (const r of rows || []) if (r.id) applied.add(r.id);
+  } catch {}
+  for (const m of MIGRATIONS) {
+    if (applied.has(m.id)) continue;
+    console.log(`[migrate] applying ${m.id}: ${m.description}`);
+    try {
+      await m.up(dbQuery);
+      try {
+        await dbQuery("INSERT OR IGNORE INTO _migrations (id, description) VALUES (?, ?)", [m.id, m.description]);
+      } catch {}
+      console.log(`[migrate] applied ${m.id}`);
+    } catch (e) {
+      console.error(`[migrate] failed ${m.id}`, e && e.message);
+    }
+  }
+}
+
 const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS content_items (
   slug TEXT NOT NULL,
   type TEXT NOT NULL,
@@ -82,43 +177,10 @@ function toFtsQuery(input) {
 let _ftsInitialized = false;
 let _tablesReady = false;
 
-async function migrateIfNeeded() {
-  try {
-    const rows = await dbQuery("SELECT sql FROM sqlite_master WHERE type='table' AND name='content_items'", []);
-    const createSql = rows && rows[0] && (rows[0].sql || rows[0].SQL || "");
-    if (!createSql) return;
-    const upper = String(createSql).toUpperCase();
-    const isLegacy = upper.includes("SLUG TEXT PRIMARY KEY") || !upper.includes("PRIMARY KEY (TYPE, SLUG)");
-    if (!isLegacy) return;
-    console.log("[content_items] migrating from slug PRIMARY KEY to composite (type, slug)");
-    await dbQuery(`CREATE TABLE IF NOT EXISTS content_items_new (
-      slug TEXT NOT NULL,
-      type TEXT NOT NULL,
-      status TEXT NOT NULL DEFAULT 'private',
-      title TEXT NOT NULL DEFAULT '',
-      excerpt TEXT NOT NULL DEFAULT '',
-      body_json TEXT NOT NULL,
-      meta_json TEXT NOT NULL DEFAULT '{}',
-      position INTEGER NOT NULL DEFAULT 0,
-      updated_at TEXT DEFAULT (datetime('now')),
-      archived_at TEXT,
-      PRIMARY KEY (type, slug)
-    )`, []);
-    // copy deduplicating on (type,slug) last wins
-    await dbQuery(`INSERT OR REPLACE INTO content_items_new (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at, archived_at)
-      SELECT slug, type, status, title, excerpt, body_json, meta_json, position, updated_at, archived_at FROM content_items`, []);
-    await dbQuery("DROP TABLE content_items", []);
-    await dbQuery("ALTER TABLE content_items_new RENAME TO content_items", []);
-    try { await dbQuery("DROP TABLE IF EXISTS content_fts", []); } catch {}
-  } catch (e) {
-    console.error("[content_items] migration check failed:", e && e.message);
-  }
-}
-
 async function ensureTables() {
   if (_tablesReady) return;
   try { await dbQuery(CREATE_TABLE); } catch {}
-  await migrateIfNeeded();
+  await runMigrations();
   try { await dbQuery(CREATE_TABLE); } catch {}
   _tablesReady = true;
 }
@@ -263,7 +325,6 @@ function mapRow(r) {
 
 export default async function handler(req, res) {
   try {
-    // GET ?type=&slug= : single item by composite key. Legacy ?slug= alone still works.
     if (req.method === "GET" && req.query.slug) {
       const slug = req.query.slug;
       const wantedType = req.query.type;
