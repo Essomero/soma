@@ -16,7 +16,7 @@ const abs = fp.startsWith("/") ? fp : join(rootDir, fp);
 try { mkdirSync(dirname(abs), { recursive: true }); } catch {}
 
 const CREATE = `CREATE TABLE IF NOT EXISTS content_items (
-  slug TEXT PRIMARY KEY,
+  slug TEXT NOT NULL,
   type TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'private',
   title TEXT NOT NULL DEFAULT '',
@@ -25,7 +25,8 @@ const CREATE = `CREATE TABLE IF NOT EXISTS content_items (
   meta_json TEXT NOT NULL DEFAULT '{}',
   position INTEGER NOT NULL DEFAULT 0,
   updated_at TEXT DEFAULT (datetime('now')),
-  archived_at TEXT
+  archived_at TEXT,
+  PRIMARY KEY (type, slug)
 )`;
 
 interface ContentLike {
@@ -51,7 +52,61 @@ function countFromRows(rows: readonly unknown[]): number {
   return 0;
 }
 
+async function migrateIfNeeded(client: ReturnType<typeof createClient>) {
+  try {
+    const res = await client.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='content_items'");
+    const raw = res.rows[0] as unknown as Record<string, unknown> | undefined;
+    const createSql = raw?.sql as string | undefined;
+    if (!createSql) return;
+    const upper = createSql.toUpperCase();
+    const isLegacy = upper.includes("SLUG TEXT PRIMARY KEY") || !upper.includes("PRIMARY KEY (TYPE, SLUG)");
+    if (!isLegacy) return;
+    console.log("[init-docker] migrating from slug PK to composite (type, slug)");
+    await client.execute(`CREATE TABLE IF NOT EXISTS content_items_new (
+      slug TEXT NOT NULL,
+      type TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'private',
+      title TEXT NOT NULL DEFAULT '',
+      excerpt TEXT NOT NULL DEFAULT '',
+      body_json TEXT NOT NULL,
+      meta_json TEXT NOT NULL DEFAULT '{}',
+      position INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT DEFAULT (datetime('now')),
+      archived_at TEXT,
+      PRIMARY KEY (type, slug)
+    )`);
+    try {
+      const info = await client.execute("PRAGMA table_info(content_items)");
+      const cols = new Set((info.rows as unknown as Array<Record<string, unknown>>).map((r) => String(r.name || "")));
+      const hasArchived = cols.has("archived_at");
+      if (hasArchived) {
+        await client.execute(`INSERT OR REPLACE INTO content_items_new (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at, archived_at)
+          SELECT slug, type, status, title, excerpt, body_json, meta_json, position, updated_at, archived_at FROM content_items`);
+      } else {
+        await client.execute(`INSERT OR REPLACE INTO content_items_new (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
+          SELECT slug, type, status, title, excerpt, body_json, meta_json, position, updated_at FROM content_items`);
+      }
+    } catch {
+      try {
+        await client.execute(`INSERT OR REPLACE INTO content_items_new (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at, archived_at)
+          SELECT slug, type, status, title, excerpt, body_json, meta_json, position, updated_at, archived_at FROM content_items`);
+      } catch {
+        await client.execute(`INSERT OR REPLACE INTO content_items_new (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
+          SELECT slug, type, status, title, excerpt, body_json, meta_json, position, updated_at FROM content_items`);
+      }
+    }
+    await client.execute("DROP TABLE content_items");
+    await client.execute("ALTER TABLE content_items_new RENAME TO content_items");
+    try { await client.execute("DROP TABLE IF EXISTS content_fts"); } catch {}
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[init-docker] migration check failed:", msg);
+  }
+}
+
 const client = createClient({ url: fileUrl });
+await client.execute(CREATE);
+await migrateIfNeeded(client);
 await client.execute(CREATE);
 
 const existing = await client.execute("SELECT COUNT(*) as n FROM content_items");
@@ -99,7 +154,7 @@ let total = 0;
 for (const [type, list] of srcs) {
   for (let i = 0; i < list.length; i++) {
     const item = list[i];
-    const record = item as Record<string, unknown>;
+    const record = item as unknown as Record<string, unknown>;
     const body: Record<string, unknown> = {};
     for (const k of Object.keys(record)) {
       if (k === "id" || k === "href" || k === "isFeatured") continue;
@@ -113,12 +168,12 @@ for (const [type, list] of srcs) {
     const metaJson = JSON.stringify(meta);
     try {
       await client.execute({
-        sql: "INSERT INTO content_items (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(slug) DO NOTHING",
+        sql: "INSERT INTO content_items (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(type, slug) DO NOTHING",
         args: [item.slug, type, "published", title, excerpt, bodyJson, metaJson, i, now],
       });
       await client.execute({
-        sql: "UPDATE content_items SET type=?, title=?, excerpt=?, body_json=?, meta_json=?, position=?, updated_at=?, status=? WHERE slug=?",
-        args: [type, title, excerpt, bodyJson, metaJson, i, now, "published", item.slug],
+        sql: "UPDATE content_items SET type=?, title=?, excerpt=?, body_json=?, meta_json=?, position=?, updated_at=?, status=? WHERE type=? AND slug=?",
+        args: [type, title, excerpt, bodyJson, metaJson, i, now, "published", type, item.slug],
       });
       total++;
     } catch (e) {

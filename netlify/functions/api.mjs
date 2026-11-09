@@ -109,10 +109,14 @@ export default async (req, context) => {
   try {
     if (route === "content") {
       if (req.method === "GET" && query.slug) {
-        const rows = await tursoQuery("SELECT * FROM content_items WHERE slug=?", [query.slug]);
+        let rows;
+        if (query.type) {
+          rows = await tursoQuery("SELECT * FROM content_items WHERE type=? AND slug=?", [query.type, query.slug]);
+        } else {
+          rows = await tursoQuery("SELECT * FROM content_items WHERE slug=? ORDER BY CASE WHEN type='featured' THEN 0 ELSE 1 END LIMIT 1", [query.slug]);
+        }
         const row = rows[0];
         if (!row) return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
-        if (query.type && row.type !== query.type) return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
         if (row.status !== "published" && !authed) return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
         return new Response(JSON.stringify(mapContentRow(row)), { status: 200, headers: { "Content-Type": "application/json" } });
       }
@@ -148,17 +152,22 @@ export default async (req, context) => {
         const body = await req.json().catch(() => ({}));
         const { slug, type, status, title, excerpt, body: b, meta, position, updatedAt } = body;
         if (!slug || !type || !b) return new Response(JSON.stringify({ error: "slug, type and body required" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        const existing = await tursoQuery("SELECT status FROM content_items WHERE slug=?", [slug]);
+        const existing = await tursoQuery("SELECT status FROM content_items WHERE type=? AND slug=?", [type, slug]);
         const effectiveStatus = status || (existing[0]?.status) || "private";
         const now = updatedAt && typeof updatedAt === "string" ? updatedAt : new Date().toISOString();
-        const rows = await tursoQuery(`INSERT INTO content_items (slug,type,status,title,excerpt,body_json,meta_json,position,updated_at) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT(slug) DO UPDATE SET type=excluded.type, status=excluded.status, title=excluded.title, excerpt=excluded.excerpt, body_json=excluded.body_json, meta_json=excluded.meta_json, position=excluded.position, updated_at=excluded.updated_at RETURNING *`, [slug, type, effectiveStatus, title || b.title || "", excerpt || b.excerpt || b.description || "", JSON.stringify(b), JSON.stringify(meta || {}), Number.isFinite(Number(position)) ? Number(position) : 0, now]);
+        const rows = await tursoQuery(`INSERT INTO content_items (slug,type,status,title,excerpt,body_json,meta_json,position,updated_at) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT(type, slug) DO UPDATE SET status=excluded.status, title=excluded.title, excerpt=excluded.excerpt, body_json=excluded.body_json, meta_json=excluded.meta_json, position=excluded.position, updated_at=excluded.updated_at RETURNING *`, [slug, type, effectiveStatus, title || b.title || "", excerpt || b.excerpt || b.description || "", JSON.stringify(b), JSON.stringify(meta || {}), Number.isFinite(Number(position)) ? Number(position) : 0, now]);
         return new Response(JSON.stringify(mapContentRow(rows[0])), { status: 201, headers: { "Content-Type": "application/json" } });
       }
       if (req.method === "DELETE") {
         const body = await req.json().catch(() => ({}));
         const slug = body.slug || query.slug;
+        const type = body.type || query.type;
         if (!slug) return new Response(JSON.stringify({ error: "slug required" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        await tursoQuery("DELETE FROM content_items WHERE slug=?", [slug]);
+        if (type) {
+          await tursoQuery("DELETE FROM content_items WHERE type=? AND slug=?", [type, slug]);
+        } else {
+          await tursoQuery("DELETE FROM content_items WHERE slug=?", [slug]);
+        }
         return new Response(JSON.stringify({ success: true }), { status: 200, headers: { "Content-Type": "application/json" } });
       }
     }
@@ -273,16 +282,33 @@ export default async (req, context) => {
     if (route === "public") {
       if (req.method === "GET") {
         if (!query.slug) return new Response(JSON.stringify({ error: "Missing slug param" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        const rows = await tursoQuery("SELECT status FROM content_items WHERE slug=?", [query.slug]);
+        let rows;
+        if (query.type) {
+          rows = await tursoQuery("SELECT status FROM content_items WHERE type=? AND slug=?", [query.type, query.slug]);
+        } else {
+          rows = await tursoQuery("SELECT status FROM content_items WHERE slug=? ORDER BY CASE WHEN type='featured' THEN 0 ELSE 1 END LIMIT 1", [query.slug]);
+        }
         return new Response(JSON.stringify({ public: rows.length > 0 && rows[0].status === "published" }), { status: 200, headers: { "Content-Type": "application/json" } });
       }
       if (req.method === "POST") {
         if (!authed) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
         const body = await req.json().catch(() => ({}));
-        const list = body.slugs || (body.slug ? [body.slug] : []);
-        if (!list.length) return new Response(JSON.stringify({ error: "Missing slugs" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        const rawList = body.slugs || (body.slug ? [body.slug] : []);
+        const defaultType = body.type || null;
+        if (!rawList.length) return new Response(JSON.stringify({ error: "Missing slugs" }), { status: 400, headers: { "Content-Type": "application/json" } });
         const newStatus = body.public ? "published" : "private";
-        for (const s of list) await tursoQuery("UPDATE content_items SET status=? WHERE slug=?", [newStatus, s]);
+        const normalized = rawList.map((entry) => {
+          if (typeof entry === "string") return { slug: entry, type: defaultType || null };
+          if (entry && typeof entry === "object") return { slug: entry.slug, type: entry.type || defaultType || null };
+          return { slug: String(entry), type: defaultType || null };
+        }).filter((e) => !!e.slug);
+        for (const { slug, type } of normalized) {
+          if (type) {
+            await tursoQuery("UPDATE content_items SET status=? WHERE type=? AND slug=?", [newStatus, type, slug]);
+          } else {
+            await tursoQuery("UPDATE content_items SET status=? WHERE slug=?", [newStatus, slug]);
+          }
+        }
         return new Response(JSON.stringify({ success: true }), { status: 200, headers: { "Content-Type": "application/json" } });
       }
     }

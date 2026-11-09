@@ -67,34 +67,66 @@ export default async function handler(req, res) {
 
       // ── Public visibility check ───────────────────────────────────
       const slug = req.query.slug;
+      const typeQ = req.query.type;
       if (!slug) return res.status(400).json({ error: "Missing slug param" });
 
-      const rows = await query("SELECT status FROM content_items WHERE slug = ?", [slug]);
+      let rows;
+      if (typeQ) {
+        rows = await query("SELECT status FROM content_items WHERE type = ? AND slug = ?", [typeQ, slug]);
+      } else {
+        // Prefer featured if dupe slug exists (legacy fallback)
+        rows = await query(
+          "SELECT status FROM content_items WHERE slug = ? ORDER BY CASE WHEN type='featured' THEN 0 ELSE 1 END LIMIT 1",
+          [slug]
+        );
+      }
       const isPublic = rows.length > 0 && rows[0].status === "published";
       return res.json({ public: isPublic });
     }
 
     // POST /api/public : set public/private state for one or more slugs (owner only).
-    // Updates content_items.status directly.
+    // Updates content_items.status directly. Supports type-aware payload.
     if (req.method === "POST") {
       if (!requireAuth(req, res)) return;
-      const { slugs, public: isPublic } = req.body || {};
-      const slugList = slugs || (req.body.slug ? [req.body.slug] : []);
-      if (!slugList.length) return res.status(400).json({ error: "Missing slugs" });
+      const { slugs, public: isPublic, type: defaultType } = req.body || {};
+      const rawList = slugs || (req.body.slug ? [req.body.slug] : []);
+      if (!rawList.length) return res.status(400).json({ error: "Missing slugs" });
       const now = new Date().toISOString();
       const newStatus = isPublic ? "published" : "private";
 
-      for (const slug of slugList) {
-        if (isPublic) {
-          await query(
-            "UPDATE content_items SET status = ?, updated_at = ?, archived_at = COALESCE(archived_at, ?) WHERE slug = ?",
-            [newStatus, now, now, slug]
-          );
+      // Normalize to [{slug,type?}]
+      const normalized = rawList.map((entry) => {
+        if (typeof entry === "string") return { slug: entry, type: defaultType || null };
+        if (entry && typeof entry === "object") return { slug: entry.slug, type: entry.type || defaultType || null };
+        return { slug: String(entry), type: defaultType || null };
+      }).filter((e) => !!e.slug);
+
+      for (const { slug, type } of normalized) {
+        if (type) {
+          if (isPublic) {
+            await query(
+              "UPDATE content_items SET status = ?, updated_at = ?, archived_at = COALESCE(archived_at, ?) WHERE type = ? AND slug = ?",
+              [newStatus, now, now, type, slug]
+            );
+          } else {
+            await query(
+              "UPDATE content_items SET status = ?, updated_at = ?, archived_at = NULL WHERE type = ? AND slug = ?",
+              [newStatus, now, type, slug]
+            );
+          }
         } else {
-          await query(
-            "UPDATE content_items SET status = ?, updated_at = ?, archived_at = NULL WHERE slug = ?",
-            [newStatus, now, slug]
-          );
+          // Legacy fallback: update all matching slugs
+          if (isPublic) {
+            await query(
+              "UPDATE content_items SET status = ?, updated_at = ?, archived_at = COALESCE(archived_at, ?) WHERE slug = ?",
+              [newStatus, now, now, slug]
+            );
+          } else {
+            await query(
+              "UPDATE content_items SET status = ?, updated_at = ?, archived_at = NULL WHERE slug = ?",
+              [newStatus, now, slug]
+            );
+          }
         }
       }
 

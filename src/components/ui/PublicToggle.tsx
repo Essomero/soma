@@ -4,9 +4,14 @@ import Tooltip from "@/components/ui/Tooltip";
 import { invalidateContentCache } from "@/lib/content";
 
 // ── API helpers ────────────────────────────────────────
-async function apiGet(slug: string): Promise<boolean> {
+type ApiSlug = string | { slug: string; type?: string };
+
+async function apiGet(slug: string, type?: string): Promise<boolean> {
   try {
-    const r = await fetch(`/api/public?slug=${encodeURIComponent(slug)}`);
+    const q = type
+      ? `slug=${encodeURIComponent(slug)}&type=${encodeURIComponent(type)}`
+      : `slug=${encodeURIComponent(slug)}`;
+    const r = await fetch(`/api/public?${q}`);
     const data = await r.json();
     return !!data.public;
   } catch {
@@ -14,7 +19,8 @@ async function apiGet(slug: string): Promise<boolean> {
   }
 }
 
-async function apiSet(slugs: string[], isPublic: boolean): Promise<void> {
+async function apiSet(slugs: ApiSlug[], isPublic: boolean): Promise<void> {
+  // Accept strings for backwards compat, but new code passes {slug,type}
   await fetch("/api/public", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -24,12 +30,12 @@ async function apiSet(slugs: string[], isPublic: boolean): Promise<void> {
 }
 
 // ── localStorage keys (optimistic UI : API is source of truth) ──
-function storyKey(slug: string) { return `public:story:${slug}`; }
+function storyKey(slug: string, type: string = "story") { return `public:${type}:${slug}`; }
 function collectionKey(slug: string) { return `public:collection:${slug}`; }
 
 // ── Hook: per-story toggle with parent-collection fallback ─
-export function usePublicState(storySlug: string, collectionSlug?: string) {
-  const sKey = storyKey(storySlug);
+export function usePublicState(storySlug: string, collectionSlug?: string, contentType: string = "story") {
+  const sKey = storyKey(storySlug, contentType);
   const cKey = collectionSlug ? collectionKey(collectionSlug) : null;
 
   const [isPublic, setIsPublic] = useState(false);
@@ -38,14 +44,14 @@ export function usePublicState(storySlug: string, collectionSlug?: string) {
   // Read: API → story override → collection override → default private
   useEffect(() => {
     let cancelled = false;
-    apiGet(storySlug).then(serverVal => {
+    apiGet(storySlug, contentType).then(serverVal => {
       if (cancelled) return;
       if (serverVal) { setIsPublic(true); setLoaded(true); return; }
       // Fall back to localStorage (may be from pre-API cookie era)
-      const storyVal = localStorage.getItem(sKey);
+      const storyVal = localStorage.getItem(sKey) ?? localStorage.getItem(`public:story:${storySlug}`);
       if (storyVal === "true") {
         // Migrate: localStorage says public but DB doesn't : sync to server
-        apiSet([storySlug], true);
+        apiSet([{ slug: storySlug, type: contentType }], true);
         setIsPublic(true);
         setLoaded(true);
         return;
@@ -62,20 +68,20 @@ export function usePublicState(storySlug: string, collectionSlug?: string) {
       setLoaded(true);
     });
     return () => { cancelled = true; };
-  }, [sKey, cKey, storySlug]);
+  }, [sKey, cKey, storySlug, contentType]);
 
   const toggle = useCallback(() => {
     const next = !isPublic;
     setIsPublic(next);
     localStorage.setItem(sKey, String(next));
-    apiSet([storySlug], next);
-  }, [isPublic, sKey, storySlug]);
+    apiSet([{ slug: storySlug, type: contentType }], next);
+  }, [isPublic, sKey, storySlug, contentType]);
 
   return { isPublic, toggle, loaded };
 }
 
 // ── Hook: collection-level toggle (for series/course pages) ─
-export function useCollectionPublicState(collectionSlug: string, episodeSlugs?: string[]) {
+export function useCollectionPublicState(collectionSlug: string, episodeSlugs?: string[], collectionType: string = "series") {
   const cKey = collectionKey(collectionSlug);
   const eps = episodeSlugs ?? [];
 
@@ -84,7 +90,7 @@ export function useCollectionPublicState(collectionSlug: string, episodeSlugs?: 
 
   useEffect(() => {
     let cancelled = false;
-    apiGet(collectionSlug).then(serverVal => {
+    apiGet(collectionSlug, collectionType).then(serverVal => {
       if (cancelled) return;
       if (serverVal) { setIsPublic(true); setLoaded(true); return; }
       const stored = localStorage.getItem(cKey);
@@ -92,23 +98,29 @@ export function useCollectionPublicState(collectionSlug: string, episodeSlugs?: 
       setLoaded(true);
     });
     return () => { cancelled = true; };
-  }, [cKey, collectionSlug]);
+  }, [cKey, collectionSlug, collectionType]);
 
   const toggle = useCallback(() => {
     const next = !isPublic;
     setIsPublic(next);
     localStorage.setItem(cKey, String(next));
     // Clear per-story overrides so children inherit the new collection state
-    for (let i = 0; i < localStorage.length; i++) {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
       const k = localStorage.key(i);
-      if (k?.startsWith("public:story:")) localStorage.removeItem(k);
+      if (k?.startsWith("public:")) localStorage.removeItem(k);
     }
-    // Set the collection slug + all episode slugs in the DB
-    apiSet([collectionSlug, ...eps], next);
-  }, [isPublic, cKey, collectionSlug, eps]);
+    // Set the collection slug + all episode slugs in the DB (type-aware)
+    // Episodes are stories; collection uses collectionType
+    const payload: ApiSlug[] = [
+      { slug: collectionSlug, type: collectionType },
+      ...eps.map((s) => ({ slug: s, type: "story" as const })),
+    ];
+    apiSet(payload, next);
+  }, [isPublic, cKey, collectionSlug, eps, collectionType]);
 
   return { isPublic, toggle, loaded };
 }
+
 
 // ── Button component ──────────────────────────────────
 interface PublicToggleButtonProps {

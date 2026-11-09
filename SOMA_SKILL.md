@@ -22,7 +22,7 @@ Match the type to what the reader should walk away able to do. Full rationale wi
 | Course | `src/content/courses/` | `/courses/:slug` | Ordered lessons where each assumes the previous. No prose of its own; lessons teach |
 | Guide | `src/content/guides/` | `/guides/:slug` | Steps followed in order to end somewhere new. Reordering breaks it |
 | Doc | `src/content/docs/` | `/docs/:slug` | Lookup answers. Sections stand alone; reordering changes nothing |
-| Featured | `src/content/featured/` | `/featured/:slug` | A stage, not a topic: any story strong enough to carry the front page hero |
+| Featured | `src/content/featured/` | `/featured/:slug` | A stage, not a topic: any story strong enough to carry the front page hero. MUST pair with a story of the same slug — DB PK is composite (type,slug) so story+featured coexist and share slug for hero |
 | Book | `src/content/books/` | `/books/:slug` | One finished work read in chapter order; chapters are stories that only make sense together |
 | Series | `src/content/series/` | `/series/:slug` | A log of work released over time; episodes stand alone but gain meaning in sequence |
 | Test | `src/content/tests/` | `/tests/:slug` | Proof under time pressure with scoring. Each question maps back to source lessons |
@@ -559,14 +559,14 @@ export const myGuide = {
 
 ### Featured Article (`src/content/featured/my-featured.ts`)
 
-The featured file imports shared content from the story file. There is **one source of truth** for sections, bentoHighlights, and pullQuotes.
+The featured file imports shared content from the story file. There is **one source of truth** for sections, bentoHighlights, and pullQuotes. DB PK is composite `(type,slug)` so story and featured can share the same slug and coexist for the hero. Agent flow is `drafts/story/X.ts + drafts/featured/X.ts -> validate -> batch publish -> toggle both public`. No manual `src/content/index.ts` edit is required — runtime DB is source of truth, sitemap generates from `src/content/**`. `fetchContentItem(type,slug)` is always called with type.
 
 ```ts
 import type { FeaturedContent } from "@/types";
 import { myStory } from "@/content/stories/my-story";
 
 export const myFeatured: FeaturedContent = {
-  slug: "my-featured", // MUST match the story slug
+  slug: "my-featured", // MUST match the story slug — composite PK (type,slug) allows coexistence
   tag: "FEATURED ARTICLE // CATEGORY",
   title: myStory.title,
   description: myStory.excerpt,
@@ -586,12 +586,13 @@ export const myFeatured: FeaturedContent = {
 
 ### Architecture Rule: Data Drives Components
 
-The project uses React for component composition — pages compose sub-components (BentoCard, PullQuote, sections) based on what the content data provides. **There are no hardcoded content maps or per-article fixed layouts.** Every page reads from the content registry and renders accordingly.
+The project uses React for component composition — pages compose sub-components (BentoCard, PullQuote, sections) based on what the content data provides. **There are no hardcoded content maps or per-article fixed layouts.** Every page reads from the content registry and renders accordingly. **DB is source of truth** — no manual `src/content/index.ts` wiring. All content fetches use `fetchContentItem(type,slug)` with type, and sitemap generates from `src/content/**` which includes vision. Slugs are unique **per type** `(type,slug)`, so story+featured can share slug for hero coexistence.
 
+Pages:
 - **`StoryPage`** is the universal story renderer. It adapts to the data: stories with `sections`, `bentoHighlights`, and `pullQuotes` get a rich layout with sidebar and structured sections. Stories with only `intro` + `body[]` get the simple reading layout. Both are valid.
 - **`GenericFeaturedPage`** renders any `FeaturedContent` store row at `/featured/:slug`.
 - **`StoriesIndexPage`** uses `isFeatured` (set with `--featured` at publish time) for the hero card. No hardcoded story IDs.
-- **Every featured article MUST have a corresponding story row** with the same slug, so it appears in `/stories` listings.
+- **Every featured article MUST have a corresponding story row** with the same slug, so it appears in `/stories` listings. They coexist because PK is `(type,slug)`.
 
 ### Step 1: Draft the manuscript (never in git)
 Author the typed object in a staging file outside git (e.g. `drafts/story/my-story.ts`; `drafts/` is gitignored). Unpublished writing MUST NOT touch `src/content/`: the fork is public, and anything committed there is world-readable on push. The `src/content/<type>/` files are the versioned archive of *published* work plus the seed corpus — read-only except when archiving.
@@ -599,7 +600,7 @@ Author the typed object in a staging file outside git (e.g. `drafts/story/my-sto
 ### Step 2: Land it in the store (private, always)
 ```bash
 npm run publish -- drafts/story/my-story.ts
-# validates schema fields, slug uniqueness, and cross-file references
+# validates schema fields, slug uniqueness per type (type,slug), and cross-file references
 # (course lessons, book chapters, test sources) against the DB + batch,
 # then upserts the row as private. Publishing never touches visibility.
 ```
@@ -843,11 +844,11 @@ The dark editorial theme uses these Tailwind classes:
 
 **Agent actions:**
 1. **Draft the story manuscript first**: `drafts/story/wasm-future.ts` with full rich content (sections, bentoHighlights, pullQuotes, topics)
-2. **Draft the featured manuscript**: `drafts/featured/wasm-future.ts` — same sections/bento/quotes, plus featured-only metadata (tag, tagline, hero image). A featured article MUST have a matching story row with the same slug
-3. `npm run publish -- drafts/story/wasm-future.ts drafts/featured/wasm-future.ts` — batch validates both as private
+2. **Draft the featured manuscript**: `drafts/featured/wasm-future.ts` — same sections/bento/quotes, plus featured-only metadata (tag, tagline, hero image). A featured article MUST have a matching story row with the same slug — DB PK is composite (type,slug) so they coexist
+3. `npm run publish -- drafts/story/wasm-future.ts drafts/featured/wasm-future.ts` — batch validates both as private (no manual index.ts edit)
 4. Preview both routes locally, iterate
-5. Owner flips both toggles to public
-6. Archive both manuscripts, commit those files only. Homepage hero derives from the featured row automatically
+5. Owner flips both toggles to public (PublicToggle sends type, store_row verification shows both rows)
+6. Archive both manuscripts, commit those files only. Homepage hero derives from the featured row automatically, sitemap from src/content/**
 
 ## Important Rules
 
@@ -855,7 +856,7 @@ The dark editorial theme uses these Tailwind classes:
 2. **Verify every URL before publishing** (curl images, YouTube embeds, and external links). No exceptions. See Content Verification section.
 3. **Never delete or modify existing content files** unless explicitly asked.
 4. **Validation lives in `npm run publish`** (schema, slug uniqueness, cross-references). `npm run build` must still pass, but it only type-checks app code now — content ships through the store, not the bundle.
-5. **Slugs must be unique** across all content types.
+5. **Slugs must be unique per type** — uniqueness is `(type,slug)`, not global. `story`+`featured` can and should share slug for hero; different types otherwise still avoid collisions.
 6. **Images must use verified Unsplash numeric IDs** (never Picsum seeds or guessed IDs). If stuck, reuse a known working ID.
 7. **Never touch `src/content/` aggregators or seed files.** The `index.ts` files and seed corpus are read-only (`npm run publish-all` owns them). The only file you add under `src/content/` is the archive copy of a *published* manuscript, with owner approval.
 8. **Use the existing components** (don't create new ones unless the design requires it).

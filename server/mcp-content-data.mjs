@@ -27,7 +27,7 @@ export const CONTENT_TYPES = [
   { type: "book", folder: "src/content/books/", route: "/books/:slug", when: "One finished work read in chapter order; chapters are stories that only make sense together." },
   { type: "series", folder: "src/content/series/", route: "/series/:slug", when: "A log of work released over time; episodes stand alone but gain meaning in sequence." },
   { type: "test", folder: "src/content/tests/", route: "/tests/:slug", when: "Proof under time pressure with scoring. Each question maps back to source lessons." },
-  { type: "featured", folder: "src/content/featured/", route: "/featured/:slug", when: "A stage, not a topic: any story strong enough to carry the front page hero. MUST pair with a story row of the same slug." },
+  { type: "featured", folder: "src/content/featured/", route: "/featured/:slug", when: "A stage, not a topic: any story strong enough to carry the front page hero. MUST pair with a story of the same slug — DB PK is composite (type,slug) so story+featured coexist sharing slug for hero. No src/content/index.ts manual edit: DB is source of truth. Flow: drafts/story/X + drafts/featured/X -> validate -> batch publish -> toggle both public." },
   { type: "podcast", folder: "src/content/podcast/", route: "/podcast/:slug", when: "Ideas better heard than read: segments, guests, player." },
   { type: "topic", folder: "src/content/topics/", route: "/topics/:slug", when: "A shelf, not content: groups everything by interest instead of format." },
 ];
@@ -245,14 +245,17 @@ export const mySeries: SeriesContent = {
 };`,
 
   featured: `// A featured article: a stage, not a topic. MUST have a matching story row
-// with the same slug. Batch-publish both files in one publish_manuscript call
-// so cross-references resolve, then preview /featured/:slug.
+// with the same slug. DB PK is composite (type,slug) so story+featured coexist
+// sharing slug for hero. No manual src/content/index.ts edit — DB is source of truth.
+// Batch-publish both files in one publish_manuscript call so cross-references
+// resolve, then preview /featured/:slug and toggle both public via PublicToggle
+// (type-aware). store_row returns both rows when slug shared.
 // Do NOT create featured rows unless the owner explicitly asks for one.
 import type { FeaturedContent } from "@/types";
 import { myStory } from "../stories/my-story"; // import the story manuscript
 
 export const myFeatured: FeaturedContent = {
-  slug: "my-featured",   // MUST match the story slug
+  slug: "my-featured",   // MUST match story slug — composite PK (type,slug) coexistence
   tag: "FEATURED ARTICLE // CATEGORY",
   title: myStory.title,
   description: myStory.excerpt,
