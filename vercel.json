@@ -8,6 +8,22 @@
     }
   ],
   "rewrites": [
+    { "source": "/api/ratings", "destination": "/api/engagement" },
+    { "source": "/api/ratings/:path*", "destination": "/api/engagement" },
+    { "source": "/api/progress", "destination": "/api/engagement" },
+    { "source": "/api/progress/:path*", "destination": "/api/engagement" },
+    { "source": "/api/tests", "destination": "/api/engagement" },
+    { "source": "/api/tests/:path*", "destination": "/api/engagement" },
+    { "source": "/api/notes", "destination": "/api/social" },
+    { "source": "/api/notes/:path*", "destination": "/api/social" },
+    { "source": "/api/highlights", "destination": "/api/social" },
+    { "source": "/api/highlights/:path*", "destination": "/api/social" },
+    { "source": "/api/comments", "destination": "/api/social" },
+    { "source": "/api/comments/:path*", "destination": "/api/social" },
+    { "source": "/api/diag", "destination": "/api/system" },
+    { "source": "/api/diag/:path*", "destination": "/api/system" },
+    { "source": "/api/public", "destination": "/api/system" },
+    { "source": "/api/public/:path*", "destination": "/api/system" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "headers": [
