@@ -979,24 +979,27 @@ function chatDevPlugin(env: Record<string, string>) {
       }
       const localHandlerCache: Record<string, any> = {};
       async function loadLocalHandler(name: string) {
-      // Dynamic import is required here, not stylistic: api/*.js capture
-      // process.env at module load, and env is populated above at server
-      // start, after static imports would already have evaluated.
         if (!localHandlerCache[name]) {
           if (name === "content") localHandlerCache[name] = (await import("./api/content.js")).default;
-          else if (name === "progress") localHandlerCache[name] = (await import("./api/progress.js")).default;
-          else if (name === "ratings") localHandlerCache[name] = (await import("./api/ratings.js")).default;
-          else if (name === "public") localHandlerCache[name] = (await import("./api/public.js")).default;
-          else localHandlerCache[name] = (await import("./api/tests.js")).default;
+          else if (name === "engagement") localHandlerCache[name] = (await import("./api/engagement.js")).default;
+          else if (name === "social") localHandlerCache[name] = (await import("./api/social.js")).default;
+          else if (name === "system") localHandlerCache[name] = (await import("./api/system.js")).default;
+          else localHandlerCache[name] = (await import("./api/content.js")).default;
         }
         return localHandlerCache[name];
       }
       server.middlewares.use(async (req: any, res: any, next: any) => {
         const m = /^\/api\/([a-z-]+)/.exec(req.url || "");
         const name = m ? m[1] : "";
-        if (!["content", "progress", "ratings", "tests", "public"].includes(name)) return next();
+        // Map old routes to new merged handlers via dev fallback too
+        const mapped =
+          name === "progress" || name === "ratings" || name === "tests" ? "engagement" :
+          name === "notes" || name === "highlights" || name === "comments" ? "social" :
+          name === "diag" || name === "public" ? "system" :
+          name;
+        if (!["content", "engagement", "social", "system", "progress", "ratings", "tests", "diag", "public", "notes", "highlights", "comments"].includes(name)) return next();
         try {
-          const handler = await loadLocalHandler(name);
+          const handler = await loadLocalHandler(mapped);
           const u = new URL(req.url || "", "http://localhost");
           let body: any = {};
           if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method || "")) {

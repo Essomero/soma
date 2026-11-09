@@ -16,3 +16,4 @@ drafts/
 graphify-out/cache/
 
 .codegenius
+.netlify/
