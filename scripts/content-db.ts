@@ -84,4 +84,4 @@ export const CREATE_CONTENT_ITEMS = `CREATE TABLE IF NOT EXISTS content_items (
   position INTEGER NOT NULL DEFAULT 0,
   updated_at TEXT DEFAULT (datetime('now')),
   archived_at TEXT
-:)`;
+)`;

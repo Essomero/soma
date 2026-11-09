@@ -11,8 +11,9 @@ import { prophet3OnChildren } from "./prophet-3-on-children";
 import { prophet4OnWork } from "./prophet-4-on-work";
 import { prophet5OnReasonAndPassion } from "./prophet-5-on-reason-and-passion";
 import { prophet6OnSorrow } from "./prophet-6-on-sorrow";
-
+import { somaVisionRoadmap } from "./soma-vision-roadmap";
 const rawStories = [
+  somaVisionRoadmap,
   benjaminMayanja,
   fs1WhyThisTypeError,
   fs2Generics,
@@ -26,7 +27,6 @@ const rawStories = [
   prophet5OnReasonAndPassion,
   prophet6OnSorrow,
 ];
-
 // Inject computed fields. Validate every story has fields pages assume exist
 // without optional chaining, so a missing field crashes at build time, not
 // at runtime on a user's browser.
