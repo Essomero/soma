@@ -64,7 +64,7 @@ const dbLabel = hasTurso ? (isSqld ? `sqld at ${tursoUrl}` : "Turso remote") : `
 console.log(`[soma] DB: ${dbLabel} (USE_TURSO=${process.env.USE_TURSO || "unset"})`);
 console.log(`[soma] AI: ${aiKeys.length ? aiKeys.join(" + ") : "none — set OPENROUTER_API_KEY etc. to enable margin AI"}`);
 
-const handlerNames = ["content", "notes", "comments", "highlights", "ratings", "progress", "tests", "public", "diag", "chat", "models", "auth"];
+const handlerNames = ["content", "notes", "comments", "highlights", "ratings", "progress", "tests", "public", "diag", "chat", "models", "auth", "export"];
 const handlers = {};
 for (const name of handlerNames) {
   try {

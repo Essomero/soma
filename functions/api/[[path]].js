@@ -722,6 +722,33 @@ export async function onRequest(context) {
       });
     }
 
+    // ── export ──
+    if (route === "export") {
+      if (method !== "GET") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "Content-Type": "application/json" } });
+      if (!requireAuth()) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+      try {
+        const rows = await tursoQuery(env, "SELECT * FROM content_items ORDER BY type ASC, position ASC", []);
+        const parts = [];
+        parts.push("# Soma Export\n> Exported: " + new Date().toISOString() + "\n> Total items: " + rows.length + "\n\n---\n\n");
+        for (const row of rows) {
+          parts.push("# " + (row.title || row.slug) + "\n> " + (row.excerpt || "") + "\n\n");
+          parts.push("- **Type:** " + (row.type || "") + "\n- **Status:** " + (row.status || "") + "\n- **Slug:** " + (row.slug || "") + "\n");
+          if (row.updated_at) parts.push("- **Updated:** " + row.updated_at + "\n");
+          parts.push("\n\n---\n\n");
+        }
+        const body = parts.join("");
+        return new Response(body, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/markdown; charset=utf-8",
+            "Content-Disposition": 'attachment; filename="soma-export-' + new Date().toISOString().slice(0, 10) + '.md"',
+          },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: "Export failed: " + (e.message || e) }), { status: 500, headers: { "Content-Type": "application/json" } });
+      }
+    }
+
     return new Response(JSON.stringify({ error: `Route not implemented: ${route}` }), { status: 501, headers: { "Content-Type": "application/json" } });
   } catch (e) {
     console.error("[cloudflare]", e);
