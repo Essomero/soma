@@ -46,7 +46,7 @@ function buildCommentTree(flat: any[]): ThreadedComment[] {
   const map: Record<number, ThreadedComment> = {};
   const roots: ThreadedComment[] = [];
   for (const c of flat) {
-    map[c.id] = { id: c.id, body: c.body, parentId: c.parentId ?? null, isAi: c.isAi ?? false, aiModel: c.aiModel ?? null, createdAt: c.createdAt, updatedAt: c.updatedAt ?? null, replies: [] };
+    map[c.id] = { id: c.id, body: c.body, parentId: c.parentId ?? null, isAi: c.isAi ?? false, aiModel: c.aiModel ?? null, mode: c.mode ?? null, createdAt: c.createdAt, updatedAt: c.updatedAt ?? null, replies: [] };
   }
   for (const c of flat) {
     const node = map[c.id];
@@ -399,6 +399,7 @@ export default function InlineHighlights({
   const handlePostDraft = useCallback(async (highlightId: number, tempId: number, body: string, mode: TutorMode) => {
     if (!slug || draftPosting !== null) return;
     setDraftPosting(tempId);
+    const source = highlights.find((h) => h.id === highlightId);
     try {
       const r = await fetch("/api/comments", {
         method: "POST",
@@ -407,6 +408,8 @@ export default function InlineHighlights({
           storySlug: slug,
           body,
           highlightId,
+          sectionIndex: source?.sectionIndex ?? null,
+          paragraphIndex: source?.paragraphIndex ?? null,
           isAi: true,
           aiModel: inlineAiModel,
           mode,
@@ -437,7 +440,7 @@ export default function InlineHighlights({
       }
     } catch {}
     setDraftPosting(null);
-  }, [slug, draftPosting, inlineAiModel]);
+  }, [slug, draftPosting, inlineAiModel, highlights]);
 
   const handleCancelDraft = useCallback((highlightId: number, tempId: number) => {
     setHighlights((prev) => prev.map((hl) =>
