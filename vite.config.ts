@@ -3,6 +3,7 @@ import type { Connect } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { runChat } from "./shared/chat/core.js";
+import { isTutorMode } from "./shared/tutor/modes.js";
 
 // Inline chat + models handler for local dev — no separate API server needed
 function chatDevPlugin(env: Record<string, string>) {
@@ -13,6 +14,7 @@ function chatDevPlugin(env: Record<string, string>) {
   const GROQ_KEY = env.GROQ_API_KEY || "";
   const CEREBRAS_KEY = env.CEREBRAS_API_KEY || "";
   const STRAITLY_KEY = env.STRAITLY_API_KEY || env.STRAIGHTLY_API_KEY || env.STRIGHTLY_API_KEY || "";
+  let commentsModeReady = false;
 
   const keys: string[] = [];
   if (DEEPSEEK_KEY) keys.push("DeepSeek");
@@ -448,6 +450,11 @@ function chatDevPlugin(env: Record<string, string>) {
           return data.results?.[0]?.response?.result;
         }
 
+        if (!commentsModeReady) {
+          try { await turso("ALTER TABLE comments ADD COLUMN mode TEXT DEFAULT 'explain'", []); } catch {}
+          commentsModeReady = true;
+        }
+
         // GET — list comments for a story as a threaded tree (same shape as /api/comments).
         // Without this, GET falls through to the proxy below and reloads show nothing.
         if (req.method === "GET") {
@@ -488,15 +495,16 @@ function chatDevPlugin(env: Record<string, string>) {
         if (req.method === "POST") {
           try {
             const body = req._body ? JSON.parse(req._body) : {};
-            const { storySlug, body: text, parentId, isAi, aiModel, highlightId, sectionIndex, paragraphIndex, startOffset, endOffset, selectedText } = body;
+            const { storySlug, body: text, parentId, isAi, aiModel, mode, highlightId, sectionIndex, paragraphIndex, startOffset, endOffset, selectedText } = body;
             if (!storySlug || !text) { res.writeHead(400, { "Content-Type": "application/json" }); return res.end(JSON.stringify({ error: "storySlug and body required" })); }
+            if (mode != null && !isTutorMode(mode)) { res.writeHead(400, { "Content-Type": "application/json" }); return res.end(JSON.stringify({ error: "invalid mode" })); }
             const now = new Date().toISOString();
             const args = [
-              storySlug, text, parentId ?? null, isAi ? 1 : 0, aiModel ?? null,
+              storySlug, text, parentId ?? null, isAi ? 1 : 0, aiModel ?? null, mode || "explain",
               highlightId ?? null, sectionIndex ?? null, paragraphIndex ?? null,
               startOffset ?? null, endOffset ?? null, selectedText ?? null, now,
             ];
-            const result = await turso("INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *", args);
+            const result = await turso("INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, mode, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *", args);
             const cols = (result?.cols || []).map((c: any) => c.name || c);
             const cells: any[] = result?.rows?.[0] || [];
             const row: Record<string, any> = {};

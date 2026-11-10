@@ -4,6 +4,9 @@
 // Matches Vercel handlers in api/*.js one-for-one
 
 import { runChat } from "../../shared/chat/core.js";
+import { isTutorMode } from "../../shared/tutor/modes.js";
+
+let commentsModeReady = false;
 
 function chatKeys(env) {
   return {
@@ -284,7 +287,11 @@ export async function onRequest(context) {
     // ── comments (full) ──
     if (route === "comments") {
       // Ensure table exists
-      await tursoQuery(env, `CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY AUTOINCREMENT, story_slug TEXT NOT NULL, body TEXT NOT NULL, parent_id INTEGER, is_ai INTEGER DEFAULT 0, ai_model TEXT, highlight_id INTEGER, section_index INTEGER, paragraph_index INTEGER, start_offset INTEGER, end_offset INTEGER, selected_text TEXT, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT)` , []);
+      await tursoQuery(env, `CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY AUTOINCREMENT, story_slug TEXT NOT NULL, body TEXT NOT NULL, parent_id INTEGER, is_ai INTEGER DEFAULT 0, ai_model TEXT, mode TEXT DEFAULT 'explain', highlight_id INTEGER, section_index INTEGER, paragraph_index INTEGER, start_offset INTEGER, end_offset INTEGER, selected_text TEXT, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT)` , []);
+      if (!commentsModeReady) {
+        await tursoQuery(env, "ALTER TABLE comments ADD COLUMN mode TEXT DEFAULT 'explain'", []);
+        commentsModeReady = true;
+      }
       if (method === "GET") {
         const story = query.story;
         if (!story) return new Response(JSON.stringify({ error: "story required" }), { status: 400, headers: { "Content-Type": "application/json" } });
@@ -315,11 +322,12 @@ export async function onRequest(context) {
       if (method === "POST") {
         if (!rateLimit(env, ip, "comments-post", 20, 60000)) return new Response(JSON.stringify({ error: "Too many requests" }), { status: 429, headers: { "Content-Type": "application/json" } });
         const body = await request.json().catch(() => ({}));
-        const { storySlug, body: b, parentId, isAi, aiModel, highlightId, sectionIndex, paragraphIndex, startOffset, endOffset, selectedText } = body;
+        const { storySlug, body: b, parentId, isAi, aiModel, mode, highlightId, sectionIndex, paragraphIndex, startOffset, endOffset, selectedText } = body;
         if (!storySlug || !b) return new Response(JSON.stringify({ error: "storySlug and body required" }), { status: 400, headers: { "Content-Type": "application/json" } });
         if (typeof b !== "string" || b.length > MAX_BODY) return new Response(JSON.stringify({ error: "body too long" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        if (mode != null && !isTutorMode(mode)) return new Response(JSON.stringify({ error: "invalid mode" }), { status: 400, headers: { "Content-Type": "application/json" } });
         const now = new Date().toISOString();
-        const rows = await tursoQuery(env, "INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?) RETURNING *", [storySlug, b, parentId || null, isAi ? 1 : 0, aiModel || null, highlightId || null, sectionIndex ?? null, paragraphIndex ?? null, startOffset ?? null, endOffset ?? null, selectedText || null, now]);
+        const rows = await tursoQuery(env, "INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, mode, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING *", [storySlug, b, parentId || null, isAi ? 1 : 0, aiModel || null, mode || "explain", highlightId || null, sectionIndex ?? null, paragraphIndex ?? null, startOffset ?? null, endOffset ?? null, selectedText || null, now]);
         return new Response(JSON.stringify(rows[0] || { success: true }), { status: 201, headers: { "Content-Type": "application/json" } });
       }
       if (method === "PUT" || method === "DELETE") {
