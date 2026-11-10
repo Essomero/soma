@@ -634,8 +634,8 @@ function chatDevPlugin(env: Record<string, string>) {
                 color: h.color, createdAt: h.created_at,
                 comments: comments.map((c: any) => ({
                   id: c.id, body: c.body,
-                  parentId: c.parent_id, isAi: c.is_ai === 1,
-                  aiModel: c.ai_model, createdAt: c.created_at,
+                  parentId: c.parent_id, isAi: c.is_ai === 1 || c.is_ai === "1" || c.is_ai === true,
+                  aiModel: c.ai_model, mode: c.mode, createdAt: c.created_at,
                   updatedAt: c.updated_at,
                 })),
               });
