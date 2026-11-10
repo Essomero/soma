@@ -3,6 +3,43 @@
 // Env vars in process.env: SITE_PASSWORD, USE_TURSO, TURSO_*, AI keys
 // Returns {models: [...]} shape (not bare array) to match Vercel frontend expectation
 
+import { runChat } from "../../shared/chat/core.js";
+
+function chatKeys() {
+  return {
+    deepseek: process.env.DEEPSEEK_API_KEY || "",
+    openrouter: process.env.OPENROUTER_API_KEY || "",
+    gemini: process.env.GEMINI_API_KEY || "",
+    groq: process.env.GROQ_API_KEY || "",
+    cerebras: process.env.CEREBRAS_API_KEY || "",
+    straitly:
+      process.env.STRAITLY_API_KEY ||
+      process.env.STRAIGHTLY_API_KEY ||
+      process.env.STRIGHTLY_API_KEY ||
+      "",
+  };
+}
+
+function chatOptions() {
+  return {
+    geminiDisabled:
+      process.env.GEMINI_DISABLED === "1" || process.env.GEMINI_DISABLED === "true",
+    reasoningEffort: process.env.DEEPSEEK_REASONING_EFFORT,
+    referer: "https://soma.mayanja.dev",
+    title: "Soma",
+  };
+}
+
+function chatResponse(result) {
+  if (result.kind === "stream") {
+    return new Response(result.stream, { status: result.status, headers: result.headers });
+  }
+  return new Response(JSON.stringify(result.body), {
+    status: result.status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
 function val(cell) {
   if (cell && typeof cell === "object") {
     if (cell.type === "null") return null;
@@ -378,52 +415,20 @@ export default async (req, context) => {
     }
 
     if (route === "chat") {
-      if (!authed) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+      if (!authed) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (req.method !== "POST") {
+        return new Response(JSON.stringify({ error: "Method not allowed" }), {
+          status: 405,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
       const body = await req.json().catch(() => ({}));
-      const { systemPrompt, userMessage, selectedModel, stream } = body;
-      const shouldStream = stream !== false;
-      const modelId = selectedModel || "deepseek-flash";
-      let providerKey = "";
-      let providerUrl = "";
-      if (modelId.startsWith("deepseek-")) {
-        providerKey = process.env.DEEPSEEK_API_KEY || "";
-        providerUrl = "https://api.deepseek.com/v1/chat/completions";
-      } else if (modelId.startsWith("gemini-")) {
-        const apiKey = process.env.GEMINI_API_KEY || "";
-        if (!apiKey) return new Response(JSON.stringify({ error: "Gemini not configured" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        const contents = [{ parts: [{ text: userMessage || "" }], role: "user" }];
-        const gemBody = { contents, generationConfig: { temperature: 0.7, maxOutputTokens: 2000 } };
-        if (systemPrompt) gemBody.systemInstruction = { parts: [{ text: systemPrompt }] };
-        const endpoint = shouldStream ? `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:streamGenerateContent?alt=sse&key=${apiKey}` : `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
-        const r = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(gemBody) });
-        if (!r.ok) {
-          const txt = await r.text().catch(() => "");
-          return new Response(JSON.stringify({ error: txt.slice(0, 500) }), { status: r.status, headers: { "Content-Type": "application/json" } });
-        }
-        if (!shouldStream) {
-          const gData = await r.json().catch(() => ({}));
-          const text = gData.candidates?.[0]?.content?.parts?.[0]?.text || "";
-          return new Response(JSON.stringify({ choices: [{ message: { content: text } }] }), { status: 200, headers: { "Content-Type": "application/json" } });
-        }
-        return new Response(r.body, { status: 200, headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" } });
-      } else {
-        providerKey = process.env.OPENROUTER_API_KEY || process.env.DEEPSEEK_API_KEY || "";
-        providerUrl = process.env.OPENROUTER_API_KEY ? "https://openrouter.ai/api/v1/chat/completions" : "https://api.deepseek.com/v1/chat/completions";
-      }
-      if (!providerKey) return new Response(JSON.stringify({ error: "No AI provider configured" }), { status: 400, headers: { "Content-Type": "application/json" } });
-      const payload = {
-        model: modelId,
-        messages: [...(systemPrompt ? [{ role: "system", content: systemPrompt }] : []), { role: "user", content: userMessage || "" }],
-        temperature: 0.7,
-        max_tokens: 2000,
-        stream: shouldStream,
-      };
-      const r = await fetch(providerUrl, { method: "POST", headers: { Authorization: `Bearer ${providerKey}`, "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      if (!r.ok) {
-        const txt = await r.text().catch(() => "");
-        return new Response(JSON.stringify({ error: txt.slice(0, 500) }), { status: r.status, headers: { "Content-Type": "application/json" } });
-      }
-      return new Response(r.body, { status: 200, headers: { "Content-Type": r.headers.get("Content-Type") || (shouldStream ? "text/event-stream" : "application/json"), "Cache-Control": "no-cache" } });
+      return chatResponse(await runChat({ body, keys: chatKeys(), options: chatOptions() }));
     }
 
     // ── export ──
