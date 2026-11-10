@@ -1,5 +1,6 @@
 import { isAuthed, requireAuth } from "./_auth.js";
 import { rateLimit } from "./_limits.js";
+import { isTutorMode } from "../shared/tutor/modes.js";
 import { query as dbQueryRaw, runPipeline as dbRunPipeline, arg as dbArg } from "./_db.js";
 import { query as simpleQuery } from "./_db.js";
 
@@ -273,6 +274,7 @@ async function ensureHighlightsTables() {
     parent_id INTEGER,
     is_ai INTEGER DEFAULT 0,
     ai_model TEXT,
+    mode TEXT DEFAULT 'explain',
     highlight_id INTEGER,
     section_index INTEGER,
     paragraph_index INTEGER,
@@ -404,6 +406,7 @@ async function ensureCommentsSchema() {
     parent_id INTEGER,
     is_ai INTEGER DEFAULT 0,
     ai_model TEXT,
+    mode TEXT DEFAULT 'explain',
     highlight_id INTEGER,
     section_index INTEGER,
     paragraph_index INTEGER,
@@ -422,6 +425,7 @@ async function ensureCommentsSchema() {
     ["parent_id", "INTEGER"],
     ["is_ai", "INTEGER DEFAULT 0"],
     ["ai_model", "TEXT"],
+    ["mode", "TEXT DEFAULT 'explain'"],
   ];
   for (const [name, ddl] of wanted) {
     if (!existing.includes(name)) {
@@ -461,6 +465,7 @@ async function handleComments(req, res) {
       parentId,
       isAi,
       aiModel,
+      mode,
       highlightId,
       sectionIndex,
       paragraphIndex,
@@ -476,16 +481,18 @@ async function handleComments(req, res) {
       if (typeof f !== "undefined" && f !== null && (typeof f !== "string" || f.length > MAX_FIELD))
         return res.status(400).json({ error: "field too long" });
     }
+    if (mode != null && !isTutorMode(mode)) return res.status(400).json({ error: "invalid mode" });
 
     const now = new Date().toISOString();
     const result = await query(
-      "INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
+      "INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, mode, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
       [
         storySlug,
         body,
         parentId || null,
         isAi ? 1 : 0,
         aiModel || null,
+        mode || "explain",
         highlightId || null,
         sectionIndex ?? null,
         paragraphIndex ?? null,

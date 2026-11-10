@@ -11,6 +11,7 @@ import {
 } from "./providers.js";
 import { extractErrorMessage } from "./errors.js";
 import { buildGeminiBody, translateGeminiStream } from "./gemini.js";
+import { buildActionPrompt } from "../tutor/actions.js";
 
 const MAX_USER_MESSAGE = 20000;
 const MAX_SYSTEM_PROMPT = 60000;
@@ -31,9 +32,24 @@ export async function runChat({
   options = {},
   fetchImpl = fetch,
 } = {}) {
-  let { systemPrompt, userMessage, messages: reqMessages, model, stream: shouldStreamRaw, provider } = body || {};
+  let {
+    systemPrompt,
+    userMessage,
+    messages: reqMessages,
+    model,
+    stream: shouldStreamRaw,
+    provider,
+    action,
+    mode,
+    context,
+  } = body || {};
 
-  if (!userMessage && Array.isArray(reqMessages)) {
+  if (action) {
+    const built = buildActionPrompt({ action, mode, context });
+    if (built.error) return error(400, built.error);
+    systemPrompt = built.systemPrompt;
+    userMessage = built.userMessage;
+  } else if (!userMessage && Array.isArray(reqMessages)) {
     const sys = reqMessages.find((m) => m.role === "system");
     const usr = reqMessages.find((m) => m.role === "user");
     if (sys && !systemPrompt) systemPrompt = sys.content;

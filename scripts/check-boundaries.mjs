@@ -38,7 +38,11 @@ function checkShared(file, text) {
 function checkSrc(file, text) {
   for (const match of text.matchAll(IMPORT_RE)) {
     const spec = match[1];
-    if (spec.includes("shared/chat")) {
+    if (
+      spec.includes("shared/chat") ||
+      spec.includes("shared/tutor/prompts") ||
+      spec.includes("shared/tutor/actions")
+    ) {
       violations.push(`${file}: imports server-only "${spec}"`);
     }
   }
