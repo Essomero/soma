@@ -12,6 +12,7 @@ import { useScrollLock } from "@/lib/useScrollLock";
 import { streamChat } from "@/lib/tutor/client";
 import { TUTOR_MODES } from "../../../shared/tutor/modes.js";
 import type { TutorMode } from "../../../shared/tutor/modes.js";
+import { collectPriorTurns } from "../../../shared/tutor/memory.js";
 
 interface ModelInfo {
   id: string;
@@ -363,6 +364,7 @@ export default function InlineHighlights({
           articleExcerpt: storyText.slice(0, 4000),
           sectionIndex: selection.sectionIndex,
           paragraphIndex: selection.paragraphIndex,
+          priorTurns: collectPriorTurns(highlights, selection.sectionIndex),
         },
         model: inlineAiModel,
         provider: inlineAiProvider,
@@ -392,7 +394,7 @@ export default function InlineHighlights({
           : hl,
       ));
     }
-  }, [selection, slug, clearSelection, storyText, storyTitle, inlineAiModel, inlineAiProvider]);
+  }, [selection, slug, clearSelection, storyText, storyTitle, inlineAiModel, inlineAiProvider, highlights]);
 
   const handlePostDraft = useCallback(async (highlightId: number, tempId: number, body: string, mode: TutorMode) => {
     if (!slug || draftPosting !== null) return;
