@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Highlighter, MessageSquare, X, Brain, ListCollapse, Bot, ChevronDown } from "lucide-react";
 import Tooltip from "@/components/ui/Tooltip";
 import { SectionHeader } from "@/components/ui/SectionHeader";
+import { TUTOR_MODES } from "../../../shared/tutor/modes.js";
+import type { TutorMode } from "../../../shared/tutor/modes.js";
 
 interface ModelInfo {
   id: string;
@@ -16,6 +18,7 @@ interface SelectionToolbarProps {
   y: number;
   onHighlight: (color: string) => void;
   onComment: () => void;
+  onTutorMode?: (mode: TutorMode) => void;
   onExplain?: () => void;
   onSummarize?: () => void;
   onDismiss: () => void;
@@ -44,6 +47,7 @@ export default function SelectionToolbar({
   y,
   onHighlight,
   onComment,
+  onTutorMode,
   onExplain,
   onSummarize,
   onDismiss,
@@ -54,9 +58,11 @@ export default function SelectionToolbar({
   aiDisabled = false,
 }: SelectionToolbarProps) {
   const [showColors, setShowColors] = useState(false);
+  const [showModes, setShowModes] = useState(false);
   const [showModelMenu, setShowModelMenu] = useState(false);
   const [dropdownAlign, setDropdownAlign] = useState<"left" | "right" | "center">("right");
   const toolbarRef = useRef<HTMLDivElement>(null);
+  const modesMenuRef = useRef<HTMLDivElement>(null);
   const modelMenuRef = useRef<HTMLDivElement>(null);
   const modelBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -109,6 +115,17 @@ export default function SelectionToolbar({
     return () => document.removeEventListener("mousedown", handler);
   }, [showModelMenu]);
 
+  useEffect(() => {
+    if (!showModes) return;
+    const handler = (e: MouseEvent) => {
+      if (modesMenuRef.current && !modesMenuRef.current.contains(e.target as Node)) {
+        setShowModes(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showModes]);
+
   const handleHighlight = useCallback((color: string) => {
     onHighlight(color);
     setShowColors(false);
@@ -117,7 +134,7 @@ export default function SelectionToolbar({
   if (!visible) return null;
 
   const toolbarY = Math.max(y - 40, 8);
-  const hasAiActions = !!(onExplain || onSummarize);
+  const hasAiActions = !!(onTutorMode || onExplain || onSummarize);
   const currentModel = models?.find(m => m.id === aiModel);
 
   // Clamp horizontal position so toolbar doesn't overflow viewport
@@ -153,30 +170,66 @@ export default function SelectionToolbar({
         </div>
       )}
 
-      {onExplain && (
-        <Tooltip label={aiDisabled ? "Add an AI provider key to enable" : "Explain with AI"} position="bottom">
-        <button
-          onClick={onExplain}
-          disabled={aiDisabled}
-          className="flex items-center gap-xs px-sm sm:px-md py-sm font-sora text-[11px] text-on-surface hover:bg-surface-container transition-colors border-r border-border-default disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <Brain className="w-3.5 h-3.5 text-amber-400" />
-          <span className="hidden sm:inline">Explain</span>
-        </button>
-        </Tooltip>
-      )}
+      {onTutorMode ? (
+        <div className="relative" ref={modesMenuRef}>
+          <Tooltip label={aiDisabled ? "Add an AI provider key to enable" : "Ask the tutor"} position="bottom">
+          <button
+            onClick={() => setShowModes(!showModes)}
+            disabled={aiDisabled}
+            className="flex items-center gap-xs px-sm sm:px-md py-sm font-sora text-[11px] text-on-surface hover:bg-surface-container transition-colors border-r border-border-default disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Brain className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Tutor</span>
+            <ChevronDown className="w-2.5 h-2.5" />
+          </button>
+          </Tooltip>
+          {showModes && (
+            <div className="absolute top-full left-0 mt-1 w-60 bg-surface border border-border-default rounded-lg shadow-xl z-50 py-xs">
+              {TUTOR_MODES.map((mode) => (
+                <button
+                  key={mode.id}
+                  type="button"
+                  onClick={() => {
+                    onTutorMode(mode.id);
+                    setShowModes(false);
+                  }}
+                  className="w-full text-left px-md py-sm hover:bg-surface-container transition-colors"
+                >
+                  <span className="block font-sora text-[11px] text-on-surface">{mode.label}</span>
+                  <span className="block font-dm-sans text-[10px] text-on-surface-muted">{mode.description}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
+          {onExplain && (
+            <Tooltip label={aiDisabled ? "Add an AI provider key to enable" : "Explain with AI"} position="bottom">
+            <button
+              onClick={onExplain}
+              disabled={aiDisabled}
+              className="flex items-center gap-xs px-sm sm:px-md py-sm font-sora text-[11px] text-on-surface hover:bg-surface-container transition-colors border-r border-border-default disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Brain className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">Explain</span>
+            </button>
+            </Tooltip>
+          )}
 
-      {onSummarize && (
-        <Tooltip label={aiDisabled ? "Add an AI provider key to enable" : "Summarize with AI"} position="bottom">
-        <button
-          onClick={onSummarize}
-          disabled={aiDisabled}
-          className="flex items-center gap-xs px-sm sm:px-md py-sm font-sora text-[11px] text-on-surface hover:bg-surface-container transition-colors border-r border-border-default disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <ListCollapse className="w-3.5 h-3.5 text-amber-400" />
-          <span className="hidden sm:inline">Summarize</span>
-        </button>
-        </Tooltip>
+          {onSummarize && (
+            <Tooltip label={aiDisabled ? "Add an AI provider key to enable" : "Summarize with AI"} position="bottom">
+            <button
+              onClick={onSummarize}
+              disabled={aiDisabled}
+              className="flex items-center gap-xs px-sm sm:px-md py-sm font-sora text-[11px] text-on-surface hover:bg-surface-container transition-colors border-r border-border-default disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ListCollapse className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">Summarize</span>
+            </button>
+            </Tooltip>
+          )}
+        </>
       )}
 
       <Tooltip label="Comment" position="bottom">

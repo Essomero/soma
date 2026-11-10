@@ -9,6 +9,9 @@ import MarkdownHtml from "@/components/ui/MarkdownHtml";
 import Tooltip from "@/components/ui/Tooltip";
 import { getSelectionOffsets, type HighlightData, COMMENT_MAX_DEPTH } from "@/lib/highlights";
 import { useScrollLock } from "@/lib/useScrollLock";
+import { streamChat } from "@/lib/tutor/client";
+import { TUTOR_MODES } from "../../../shared/tutor/modes.js";
+import type { TutorMode } from "../../../shared/tutor/modes.js";
 
 interface ModelInfo {
   id: string;
@@ -29,8 +32,10 @@ interface ThreadedComment {
   parentId: number | null;
   isAi: boolean;
   aiModel: string | null;
-  /** Present only on temp selection-AI drafts (Explain / Summarize). */
-  aiAction?: "explain" | "summarize";
+  /** Present only on temp selection-AI drafts. */
+  aiAction?: TutorMode;
+  /** Persisted tutor mode returned by the API. */
+  mode?: TutorMode | null;
   createdAt: string;
   updatedAt: string | null;
   replies: ThreadedComment[];
@@ -276,8 +281,8 @@ export default function InlineHighlights({
   }, [activeHighlight, deleting]);
 
 
-  // ── Selection AI (Explain / Summarize) ─────────────
-  const handleAiAction = useCallback(async (action: "explain" | "summarize") => {
+  // ── Tutor modes ─────────────
+  const handleTutorMode = useCallback(async (mode: TutorMode) => {
     if (!selection.container || !slug) return;
 
     const offsets = getSelectionOffsets(selection.container, window.getSelection()!);
@@ -327,17 +332,17 @@ export default function InlineHighlights({
       return;
     }
 
-    // 2. Stream AI response : render draft as a temp comment
-    const TEMP_ID = -(Date.now()); // negative ID = temp, won't collide with real DB ids
+    // 2. Stream the tutor answer into a temp comment
+    const TEMP_ID = -(Date.now());
 
-    // Seed a temp comment so it renders inline immediately
     const tempComment: ThreadedComment = {
       id: TEMP_ID,
       body: "",
       parentId: null,
       isAi: true,
       aiModel: inlineAiModel,
-      aiAction: action,
+      aiAction: mode,
+      mode,
       createdAt: new Date().toISOString(),
       updatedAt: null,
       replies: [],
@@ -349,122 +354,47 @@ export default function InlineHighlights({
     ));
 
     try {
-      const articleExcerpt = storyText.slice(0, 4000) + (storyText.length > 4000 ? "..." : "");
-
-      const systemPrompt = action === "explain"
-        ? `You explain concepts in the distinctive style of Aditya Bhargava's "Grokking Algorithms": simple, not easy, never dumbed down, and relentlessly illustrative.
-
-Core philosophy:
-- Simplify the language, never the truth. Keep full technical depth, edge cases, and real trade-offs, but cut academic jargon, dense abstractions, and needless filler.
-- Intuition before vocabulary: ground the idea in a physical object, everyday metaphor, or small napkin sketch before naming the formal engineering term.
-- The marker-and-napkin test: break down what's actually happening step-by-step with concrete numbers, real cause-and-effect, and small ASCII sketches or flow boxes.
-- Swap abstract nouns for real things you can picture.
-- Say what it isn't: call out the near-miss, subtle trap, or common misunderstanding.
-- Contractions always (it's, don't, you're). Active voice. Short, punchy paragraphs (1-3 sentences).
-- Zero hedge openers ("In this passage", "It's worth noting", "Let's look at"). Never use em dashes.
-
-Structure your response using these markdown ## headings:
-
-## The Napkin Sketch
-The intuitive physical mental model or everyday analogy that makes this passage instantly click (include a tiny ASCII diagram or sketch if helpful).
-
-## The Mechanics (Under The Hood)
-What is actually happening step-by-step with concrete cause-and-effect. Simplify the language, not the facts.
-
-## What It Isn't & Why It Matters
-The common misconception or near-miss to avoid, and the real-world trade-off or reason this matters.
-
-## The One Takeaway
-One memorable sentence capturing the core insight.`
-        : `You are a skilled editor summarizing a passage from an article. Distill the highlighted text down to its essential point in 1-3 sentences. Be concise and clear. Use markdown formatting.`;
-
-      const userMessage = action === "explain"
-        ? "Explain what this passage means and why it matters in Grokking Algorithms style (simple, illustrative, concrete, not dumbed down)."
-        : "Summarize this passage concisely.";
-
-      const systemPromptFull = `${systemPrompt}
-
---- HIGHLIGHTED TEXT ---
-"${offsets.text.slice(0, 2000)}"
-
---- ARTICLE CONTEXT ---
-${storyTitle ? `Title: ${storyTitle}\n` : ""}${articleExcerpt}
---- END CONTEXT ---`;
-
-      const r = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          systemPrompt: systemPromptFull,
-          userMessage,
-          model: inlineAiModel,
-          provider: inlineAiProvider,
-          stream: true,
-        }),
+      const full = await streamChat({
+        action: "tutor",
+        mode,
+        context: {
+          selectedText: offsets.text,
+          articleTitle: storyTitle,
+          articleExcerpt: storyText.slice(0, 4000),
+          sectionIndex: selection.sectionIndex,
+          paragraphIndex: selection.paragraphIndex,
+        },
+        model: inlineAiModel,
+        provider: inlineAiProvider,
+        onToken: (body) => {
+          setHighlights((prev) => prev.map((hl) =>
+            hl.id === highlightId
+              ? { ...hl, comments: (hl.comments || []).map((c) =>
+                  (c as ThreadedComment).id === TEMP_ID ? { ...(c as ThreadedComment), body } : c,
+                )}
+              : hl,
+          ));
+        },
       });
 
-      if (!r.ok) throw new Error(`AI service error (HTTP ${r.status})`);
-
-      const reader = r.body?.getReader();
-      if (!reader) throw new Error("No response body");
-
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let fullResponse = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") continue;
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const token = parsed.choices?.[0]?.delta?.content || "";
-            if (token) {
-              fullResponse += token;
-              // Update the temp comment body inline
-              setHighlights((prev) => prev.map((hl) =>
-                hl.id === highlightId
-                  ? { ...hl, comments: (hl.comments || []).map((c) =>
-                      (c as ThreadedComment).id === TEMP_ID
-                        ? { ...(c as ThreadedComment), body: fullResponse }
-                        : c,
-                    )}
-                  : hl,
-              ));
-            }
-          } catch {}
-        }
-      }
-
-      // 3. Empty response : remove the temp comment
-      if (!fullResponse.trim()) {
+      if (!full.trim()) {
         setHighlights((prev) => prev.map((hl) =>
           hl.id === highlightId
             ? { ...hl, comments: (hl.comments || []).filter((c) => (c as ThreadedComment).id !== TEMP_ID) }
             : hl,
         ));
       }
-    } catch (e: any) {
-      console.error(`${action === "explain" ? "Explain" : "Summarize"} failed:`, e);
-      // Remove the temp comment on failure
+    } catch (e) {
+      console.error(`Tutor ${mode} failed:`, e);
       setHighlights((prev) => prev.map((hl) =>
         hl.id === highlightId
           ? { ...hl, comments: (hl.comments || []).filter((c) => (c as ThreadedComment).id !== TEMP_ID) }
           : hl,
       ));
     }
-  }, [selection, slug, clearSelection, storyText, storyTitle, inlineAiModel, inlineModels]);
+  }, [selection, slug, clearSelection, storyText, storyTitle, inlineAiModel, inlineAiProvider]);
 
-  const handlePostDraft = useCallback(async (highlightId: number, tempId: number, body: string, action: "explain" | "summarize") => {
+  const handlePostDraft = useCallback(async (highlightId: number, tempId: number, body: string, mode: TutorMode) => {
     if (!slug || draftPosting !== null) return;
     setDraftPosting(tempId);
     try {
@@ -477,6 +407,7 @@ ${storyTitle ? `Title: ${storyTitle}\n` : ""}${articleExcerpt}
           highlightId,
           isAi: true,
           aiModel: inlineAiModel,
+          mode,
         }),
       });
       if (r.ok) {
@@ -491,7 +422,8 @@ ${storyTitle ? `Title: ${storyTitle}\n` : ""}${articleExcerpt}
                       parentId: null,
                       isAi: true,
                       aiModel: inlineAiModel,
-                      aiAction: action,
+                      aiAction: mode,
+                      mode,
                       createdAt: new Date().toISOString(),
                       updatedAt: null,
                       replies: [],
@@ -539,26 +471,21 @@ ${storyTitle ? `Title: ${storyTitle}\n` : ""}${articleExcerpt}
         for (const c of chain) { tc += `\n[${c.isAi ? (inlineModels.find(m => m.id === c.aiModel)?.label || "AI") : "User"}]: ${c.body}\n`; }
         tc += "--- END THREAD ---\n\n";
       }
-      const sp = `You are a helpful assistant replying to a comment on a highlighted passage. Use the context below. Write a concise, friendly reply. Reference the highlighted text when relevant. Use markdown formatting.\n\n--- HIGHLIGHTED TEXT ---\n"${highlightedText.slice(0, 2000)}"\n\n--- ARTICLE EXCERPT ---\n${storyTitle ? `Title: ${storyTitle}\n` : ""}${articleExcerpt}\n--- END CONTEXT ---`;
-      const r = await fetch("/api/chat", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ systemPrompt: sp, userMessage: `Reply to this comment:\n\n${comment.body}${tc}`, model: inlineAiModel, provider: inlineAiProvider, stream: true }),
+      await streamChat({
+        action: "highlight-reply",
+        context: {
+          commentBody: comment.body,
+          highlightedText,
+          articleTitle: storyTitle,
+          articleExcerpt,
+          threadContext: tc,
+        },
+        model: inlineAiModel,
+        provider: inlineAiProvider,
+        onToken: (full) => setInlineAiDrafts(prev => new Map(prev).set(comment.id, full)),
       });
-      if (!r.ok) { let msg = `AI service error (HTTP ${r.status})`; try { const ed = await r.json(); if (ed.error) msg = ed.error; } catch {} throw new Error(msg); }
-      const reader = r.body?.getReader(); if (!reader) throw new Error("No response body");
-      const decoder = new TextDecoder(); let buffer = "";
-      while (true) {
-        const { done, value } = await reader.read(); if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n"); buffer = lines.pop() || "";
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const js = line.slice(6).trim(); if (js === "[DONE]") continue;
-          try { const p = JSON.parse(js); const t = p.choices?.[0]?.delta?.content || ""; if (t) setInlineAiDrafts(prev => { const n = new Map(prev); n.set(comment.id, (n.get(comment.id) || "") + t); return n; }); } catch {}
-        }
-      }
-    } catch (e: any) {
-      setInlineAiError({ id: comment.id, message: e.message || "Unknown error" });
+    } catch (e) {
+      setInlineAiError({ id: comment.id, message: e instanceof Error ? e.message : "Unknown error" });
       setInlineAiDrafts(prev => { const n = new Map(prev); n.delete(comment.id); return n; });
       setInlineAiDraftTabs(prev => { const n = new Map(prev); n.delete(comment.id); return n; });
     }
@@ -669,9 +596,9 @@ ${storyTitle ? `Title: ${storyTitle}\n` : ""}${articleExcerpt}
               {comment.isAi ? (
                 <span className="flex items-center gap-xs">
                   <span className="font-sora text-[10px] text-brand uppercase tracking-widest">{inlineModels.find(m => m.id === comment.aiModel)?.label || "AI"}</span>
-                  {comment.aiAction && (
+                  {(comment.aiAction || comment.mode) && (
                     <span className="font-sora text-[9px] text-brand/70 uppercase tracking-wider bg-brand/10 px-xs py-px rounded">
-                      {comment.aiAction === "explain" ? "Explain" : "Summary"}
+                      {TUTOR_MODES.find((m) => m.id === (comment.aiAction || comment.mode))?.label || "AI"}
                     </span>
                   )}
                 </span>
@@ -800,8 +727,7 @@ ${storyTitle ? `Title: ${storyTitle}\n` : ""}${articleExcerpt}
       {isOwner && (
         <SelectionToolbar visible={selection.visible} x={selection.x} y={selection.y}
           onHighlight={handleHighlight} onComment={handleCommentOnSelection}
-          onExplain={selectionAi ? () => handleAiAction("explain") : undefined}
-          onSummarize={selectionAi ? () => handleAiAction("summarize") : undefined}
+          onTutorMode={selectionAi ? handleTutorMode : undefined}
           onDismiss={clearSelection}
           models={selectionAi ? inlineModels : undefined}
           aiModel={selectionAi ? inlineAiModel : undefined}
