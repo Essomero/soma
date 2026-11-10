@@ -7,6 +7,7 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import Tooltip from "@/components/ui/Tooltip";
 import { COMMENT_MAX_DEPTH } from "@/lib/highlights";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import { streamChat } from "@/lib/tutor/client";
 
 interface Comment {
   id: number;
@@ -312,67 +313,26 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
         ? storyContext.body.slice(0, 8000) + (storyContext.body.length > 8000 ? "..." : "")
         : "";
 
-      const systemPrompt = storyContext
-        ? `You are a helpful assistant replying to a comment on the article "${storyContext.title}". Use the article content below as context for your reply.\n\n--- ARTICLE ---\n${articleExcerpt}\n--- END ARTICLE ---\n\nWrite a concise, friendly reply. Reference specific parts of the article when relevant. Use markdown formatting.`
-        : "You are a helpful assistant replying to a blog comment. Write a concise, friendly reply.";
-
-      const r = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          systemPrompt,
-          userMessage: `Reply to this comment:\n\n${comment.body}${threadContext}`,
-          model: aiModel,
-          provider: aiProvider,
-          stream: true,
-        }),
+      await streamChat({
+        action: "comment-reply",
+        context: {
+          commentBody: comment.body,
+          articleTitle: storyContext?.title,
+          articleExcerpt: articleExcerpt,
+          threadContext,
+        },
+        model: aiModel,
+        provider: aiProvider,
+        onToken: (full) => {
+          setAiDrafts(prev => {
+            const next = new Map(prev);
+            next.set(comment.id, full);
+            return next;
+          });
+        },
       });
-
-      if (!r.ok) {
-        let msg = `AI service error (HTTP ${r.status})`;
-        try {
-          const errData = await r.json();
-          if (errData.error) msg = errData.error;
-        } catch {}
-        throw new Error(msg);
-      }
-
-      const reader = r.body?.getReader();
-      if (!reader) throw new Error("No response body");
-
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") continue;
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const token = parsed.choices?.[0]?.delta?.content || "";
-            if (token) {
-              setAiDrafts(prev => {
-                const next = new Map(prev);
-                const current = next.get(comment.id) || "";
-                next.set(comment.id, current + token);
-                return next;
-              });
-            }
-          } catch {}
-        }
-      }
-    } catch (e: any) {
-      setAiError({ id: comment.id, message: e.message || "Unknown error" });
+    } catch (e) {
+      setAiError({ id: comment.id, message: e instanceof Error ? e.message : "Unknown error" });
       setAiDrafts(prev => {
         const next = new Map(prev);
         next.delete(comment.id);
@@ -396,60 +356,18 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
     setSummaryTab("write");
 
     try {
-      const systemPrompt = `You are a helpful assistant. Write a concise summary of the article below. Rules:
-- Start with a # title and a 2-3 sentence overview under ## Overview
-- Then 3-5 sections with ## headings covering the key topics
-- Under each section: 1-2 short paragraphs OR 3-5 tight bullet points, not both
-- Be specific : mention names, numbers, features, trade-offs
-- No fluff, no "in conclusion" wrap-up paragraph
-- Total output: roughly the length of a detailed tweet thread`;
-
-      const r = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          systemPrompt,
-          userMessage: `Please summarize this article:\n\n# ${storyContext.title}\n\n${storyContext.body.slice(0, 12000)}`,
-          model: aiModel,
-          provider: aiProvider,
-          stream: true,
-        }),
+      await streamChat({
+        action: "article-summary",
+        context: {
+          articleTitle: storyContext.title,
+          articleBody: storyContext.body,
+        },
+        model: aiModel,
+        provider: aiProvider,
+        onToken: (full) => setSummaryDraft(full),
       });
-
-      if (!r.ok) {
-        let msg = `AI service error (HTTP ${r.status})`;
-        try {
-          const errData = await r.json();
-          if (errData.error) msg = errData.error;
-        } catch {}
-        throw new Error(msg);
-      }
-
-      const reader = r.body?.getReader();
-      if (!reader) throw new Error("No response body");
-
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") continue;
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const token = parsed.choices?.[0]?.delta?.content || "";
-            if (token) setSummaryDraft(prev => prev + token);
-          } catch {}
-        }
-      }
-    } catch (e: any) {
-      setAiError({ id: -1, message: e.message || "Unknown error" });
+    } catch (e) {
+      setAiError({ id: -1, message: e instanceof Error ? e.message : "Unknown error" });
     }
     setSummarizing(false);
   };
@@ -483,86 +401,29 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
   };
 
   const handleExplain = async () => {
-    if (explaining || aiLoading !== null) return;
-    if (!storyContext) return;
+      if (explaining || aiLoading !== null) return;
+      if (!storyContext) return;
 
-    setExplaining(true);
-    setExplainDraft("");
-    setExplainTab("write");
+      setExplaining(true);
+      setExplainDraft("");
+      setExplainTab("write");
 
-    try {
-      const systemPrompt = `You explain concepts in the distinctive style of Aditya Bhargava's "Grokking Algorithms": simple, not easy, never dumbed down, and relentlessly illustrative.
-
-Core philosophy:
-- Simplify the language, never the truth. Keep full technical depth and real trade-offs, but strip all academic puffery, dense abstractions, and needless jargon.
-- Intuition before vocabulary: make the concept click with a concrete physical metaphor or everyday picture first, then give it its real engineering name.
-- The marker-and-napkin test: walk through how it actually works step-by-step using concrete numbers and small illustrative ASCII diagrams or flow boxes wherever a napkin sketch makes it click instantly.
-- Swap abstract nouns for real things (e.g. "five servers trying to agree on who leads" instead of "distributed consensus").
-- Say what it isn't: call out the common trap, misconception, or near-miss.
-- Contractions always (it's, don't, you're). Active voice. Short, punchy paragraphs (1-3 sentences).
-- Never use hedge openers ("It's worth noting", "Let's dive in", "In this article"). Never use em dashes.
-- Write for a reader who is smart enough for the real technical idea and just wants it explained without the tax of academic fog.
-
-Structure your explanation with these markdown ## headings:
-
-## The Napkin Sketch
-Anchor the whole article with one memorable physical metaphor or everyday picture. Include a small ASCII diagram or flow box showing the core setup.
-
-## How It Works (Step by Step)
-Walk through the mechanics cleanly. Use concrete numbers, real examples, and cause-and-effect steps. Show what actually happens from input to output.
-
-## What It Isn't & The Trade-off
-What problem it solves, what it gets confused with (and why that distinction matters), and the honest trade-off or catch.
-
-## The One Takeaway
-A single, sharp, unforgettable sentence summarizing the core insight.`;
-
-      const r = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          systemPrompt,
-          userMessage: `Explain what this article is about and why it matters using the Grokking Algorithms style:\n\n# ${storyContext.title}\n\n${storyContext.body.slice(0, 12000)}`,
+      try {
+        await streamChat({
+          action: "article-explain",
+          context: {
+            articleTitle: storyContext.title,
+            articleBody: storyContext.body,
+          },
           model: aiModel,
           provider: aiProvider,
-          stream: true,
-        }),
-      });
-
-      if (!r.ok) {
-        let msg = `AI service error (HTTP ${r.status})`;
-        try { const errData = await r.json(); if (errData.error) msg = errData.error; } catch {}
-        throw new Error(msg);
+          onToken: (full) => setExplainDraft(full),
+        });
+      } catch (e) {
+        setAiError({ id: -2, message: e instanceof Error ? e.message : "Unknown error" });
       }
-
-      const reader = r.body?.getReader();
-      if (!reader) throw new Error("No response body");
-
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") continue;
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const token = parsed.choices?.[0]?.delta?.content || "";
-            if (token) setExplainDraft(prev => prev + token);
-          } catch {}
-        }
-      }
-    } catch (e: any) {
-      setAiError({ id: -2, message: e.message || "Unknown error" });
-    }
-    setExplaining(false);
-  };
+      setExplaining(false);
+    };
 
   const postExplain = async () => {
     if (!explainDraft.trim()) return;
