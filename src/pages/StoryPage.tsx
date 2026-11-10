@@ -31,6 +31,7 @@ import { getSelectionOffsets, type HighlightData, COMMENT_MAX_DEPTH } from "@/li
 import { streamChat } from "@/lib/tutor/client";
 import { TUTOR_MODES } from "../../shared/tutor/modes.js";
 import type { TutorMode } from "../../shared/tutor/modes.js";
+import { collectPriorTurns } from "../../shared/tutor/memory.js";
 import { useScrollLock } from "@/lib/useScrollLock";
 import { buildLessonIndex, resolveSectionAnchors, storyCodePrefix } from "@/lib/storyLinks";
 import SafeImage from "@/components/ui/SafeImage";
@@ -517,6 +518,7 @@ export default function StoryPage() {
             articleExcerpt: storyText.slice(0, 4000),
             sectionIndex: selection.sectionIndex,
             paragraphIndex: selection.paragraphIndex,
+            priorTurns: collectPriorTurns(highlights, selection.sectionIndex),
           },
           model: inlineAiModel,
           provider: inlineAiProvider,
@@ -546,7 +548,7 @@ export default function StoryPage() {
             : hl,
         ));
       }
-    }, [selection, slug, clearSelection, storyText, story, inlineAiModel, inlineAiProvider]);
+    }, [selection, slug, clearSelection, storyText, story, inlineAiModel, inlineAiProvider, highlights]);
 
   // ── Post / cancel AI draft ──────────────────────────
   const [draftPosting, setDraftPosting] = useState<number | null>(null);
