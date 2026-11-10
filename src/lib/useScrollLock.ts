@@ -40,6 +40,10 @@ export function useScrollLock(locked: boolean) {
           getLenis()?.stop();
         } catch {}
         hiddenHeaders = Array.from(document.querySelectorAll("header")) as HTMLElement[];
+        hiddenHeaders = hiddenHeaders.filter((h) => {
+          const pos = getComputedStyle(h).position;
+          return pos === "sticky" || pos === "fixed";
+        });
         hiddenHeaders.forEach((h) => {
           h.style.visibility = "hidden";
           h.style.pointerEvents = "none";

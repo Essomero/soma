@@ -984,6 +984,7 @@ function chatDevPlugin(env: Record<string, string>) {
           else if (name === "engagement") localHandlerCache[name] = (await import("./api/engagement.js")).default;
           else if (name === "social") localHandlerCache[name] = (await import("./api/social.js")).default;
           else if (name === "system") localHandlerCache[name] = (await import("./api/system.js")).default;
+          else if (name === "export") localHandlerCache[name] = (await import("./api/export.js")).default;
           else localHandlerCache[name] = (await import("./api/content.js")).default;
         }
         return localHandlerCache[name];
@@ -997,7 +998,7 @@ function chatDevPlugin(env: Record<string, string>) {
           name === "notes" || name === "highlights" || name === "comments" ? "social" :
           name === "diag" || name === "public" ? "system" :
           name;
-        if (!["content", "engagement", "social", "system", "progress", "ratings", "tests", "diag", "public", "notes", "highlights", "comments"].includes(name)) return next();
+        if (!["content", "engagement", "social", "system", "progress", "ratings", "tests", "diag", "public", "notes", "highlights", "comments", "export"].includes(name)) return next();
         try {
           const handler = await loadLocalHandler(mapped);
           const u = new URL(req.url || "", "http://localhost");

@@ -5,6 +5,7 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import { SkeletonAdminRows } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import LocalAgentPanel from "@/components/admin/LocalAgentPanel";
+import ExportModal from "@/components/admin/ExportModal";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { invalidateContentCache } from "@/lib/content";
 import { CONTENT_TYPES, CONTENT_TYPE_LABELS, ROUTE_BASE, type ContentType } from "@/lib/admin-prompts";
@@ -86,6 +87,7 @@ export default function AdminDashboardPage() {
   const [busySlug, setBusySlug] = useState<string | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<ContentItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ContentItem | null>(null);
+  const [showExport, setShowExport] = useState(false);
 
   const toggleStatus = async (item: ContentItem) => {
     setBusySlug(item.slug);
@@ -207,6 +209,18 @@ export default function AdminDashboardPage() {
             <Plus className="w-4 h-4" />
             New Content
           </Link>
+          <button
+            onClick={() => setShowExport(true)}
+            className="inline-flex items-center gap-sm px-xl py-md border border-border-default text-on-surface font-sora text-label-caps uppercase tracking-widest hover:border-primary hover:text-primary transition-colors bg-transparent cursor-pointer"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Export
+          </button>
+          {showExport && <ExportModal onClose={() => setShowExport(false)} />}
         </div>
       </header>
 
