@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, CornerDownLeft, StickyNote, BookOpen, Mic, Bookmark, Compass, Loader2 } from "lucide-react";
+import { Search, CornerDownLeft, Command, StickyNote, BookOpen, Mic, Bookmark, Compass, Loader2 } from "lucide-react";
 import { fetchNotesSearch } from "@/lib/notes";
 import { createNote } from "@/lib/notes";
 import { cn } from "@/lib/utils";
@@ -133,6 +133,104 @@ export default function LandingSearch() {
     [navigate]
   );
 
+  // ── Canvas shooting star ────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+    const later = (fn: () => void, ms: number) => {
+      const id = setTimeout(() => { if (!cancelled) fn(); }, ms);
+      timeouts.push(id);
+    };
+
+    const canvas = document.getElementById("shooting-star-canvas") as HTMLCanvasElement | null;
+    if (!canvas) return;
+
+    const parent = canvas.parentElement!;
+    const resize = () => {
+      canvas.width = parent.offsetWidth;
+      canvas.height = parent.offsetHeight;
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(parent);
+
+    const ctx = canvas.getContext("2d")!;
+    let animId = 0;
+
+    interface Star {
+      x: number; y: number; vx: number; vy: number; age: number;
+    }
+    let star: Star | null = null;
+
+    const spawn = () => {
+      const angle = (25 + Math.random() * 20) * (Math.PI / 180);
+      const speed = 500 + Math.random() * 300;
+      star = {
+        x: canvas.width * (0.6 + Math.random() * 0.3),
+        y: canvas.height * (0.05 + Math.random() * 0.12),
+        vx: -Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        age: 0,
+      };
+    };
+
+    const tick = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (star) {
+        star.x += star.vx / 60;
+        star.y += star.vy / 60;
+        star.age += 1 / 60;
+
+        const len = 70; // trail length in px
+        const nx = star.vx / Math.hypot(star.vx, star.vy);
+        const ny = star.vy / Math.hypot(star.vx, star.vy);
+
+        // Trail — fades from white at head to transparent at tail
+        const grad = ctx.createLinearGradient(star.x, star.y, star.x - nx * len, star.y - ny * len);
+        grad.addColorStop(0, "rgba(255,255,255,0.9)");
+        grad.addColorStop(0.5, "rgba(255,255,255,0.25)");
+        grad.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.beginPath();
+        ctx.moveTo(star.x, star.y);
+        ctx.lineTo(star.x - nx * len, star.y - ny * len);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Star head
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = "#fff";
+        ctx.fill();
+        // Glow
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,255,255,0.15)";
+        ctx.fill();
+
+        // Despawn when off-screen or after 1.5s
+        if (star.x < -100 || star.y > canvas.height + 100 || star.age > 1.5) {
+          star = null;
+          later(() => { spawn(); animId = requestAnimationFrame(tick); }, 8000 + Math.random() * 7000);
+          return;
+        }
+      }
+
+      animId = requestAnimationFrame(tick);
+    };
+
+    // Start after a short delay
+    later(() => { spawn(); animId = requestAnimationFrame(tick); }, 3000);
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(animId);
+      timeouts.forEach(clearTimeout);
+      ro.disconnect();
+    };
+  }, []);
+
   const handleCreateNote = useCallback(
     async (title: string) => {
       setCreating(true);
@@ -249,6 +347,16 @@ export default function LandingSearch() {
             backgroundRepeat: "no-repeat",
           }}
         />
+        {/* Shooting star — canvas for pixel-perfect trail */}
+        <canvas
+          id="shooting-star-canvas"
+          className="absolute inset-0 w-full h-full pointer-events-none z-[1]"
+        />
+        <style>{`
+          #shooting-star-canvas {
+            opacity: 0.9;
+          }
+        `}</style>
         {/* Bottom fade to blend with content section */}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
       </div>
@@ -306,8 +414,9 @@ export default function LandingSearch() {
                 </svg>
               </button>
             )}
-            <kbd className="hidden sm:inline-flex items-center gap-1 mr-4 bg-surface-variant text-on-surface-muted px-2 py-1 rounded text-[10px] font-bold border border-border-default">
-              {MOD}K
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 mr-4 bg-surface-variant text-on-surface-muted px-2 py-1 rounded text-[10px] font-bold border border-border-default">
+              {isMac ? <Command className="w-3 h-3" /> : <span>Ctrl</span>}
+              <span>K</span>
             </kbd>
           </div>
 
@@ -422,9 +531,17 @@ export default function LandingSearch() {
                         Opens the editor to refine your idea
                       </span>
                     </div>
-                    <kbd className="hidden sm:inline-flex items-center gap-1 bg-surface-variant text-on-surface-muted px-2 py-1 rounded text-[10px] font-bold border border-border-default shrink-0">
-                      {MOD}+↵
-                    </kbd>
+                    <div className="flex items-center justify-center min-w-[4rem] px-3 py-2 rounded-lg border border-border-default bg-surface shrink-0">
+                      <kbd className="flex items-center gap-1 text-[11px] font-mono font-semibold text-on-surface-muted">
+                        {isMac ? (
+                          <Command className="w-3.5 h-3.5" />
+                        ) : (
+                          <span>Ctrl</span>
+                        )}
+                        <span>+</span>
+                        <CornerDownLeft className="w-3.5 h-3.5" />
+                      </kbd>
+                    </div>
                   </button>
                 </div>
               )}
@@ -434,7 +551,7 @@ export default function LandingSearch() {
 
         {/* Keyboard shortcut hint */}
         <p className="text-center text-xs text-on-surface-muted mt-6">
-          Press <kbd className="bg-surface-variant px-1.5 py-0.5 rounded text-[10px] font-bold border border-border-default">{MOD}K</kbd> to search from anywhere
+          Press <kbd className="inline-flex items-center gap-0.5 bg-surface-variant px-1.5 py-0.5 rounded text-[10px] font-bold border border-border-default">{isMac ? <Command className="w-3 h-3" /> : <span>Ctrl</span>}<span>K</span></kbd> to search from anywhere
         </p>
       </div>
     </header>
