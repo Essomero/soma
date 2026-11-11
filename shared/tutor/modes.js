@@ -29,14 +29,6 @@ export const TUTOR_MODES = [
   },
 ];
 
-export const MODE_COLOR = {
-  explain: "text-brand/70 bg-brand/10",
-  simplify: "text-secondary/70 bg-secondary/10",
-  challenge: "text-accent-orange/70 bg-accent-orange/10",
-  counter: "text-tertiary/70 bg-tertiary/10",
-  socratic: "text-accent-blue-neon/70 bg-accent-blue-neon/10",
-};
-
 export function isTutorMode(value) {
   return TUTOR_MODES.some((mode) => mode.id === value);
 }

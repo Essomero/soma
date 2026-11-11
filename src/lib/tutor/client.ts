@@ -78,18 +78,27 @@ export async function streamChat(options: StreamChatOptions): Promise<string> {
         const delta = parsed.choices?.[0]?.delta;
         // reasoning_content (DeepSeek, some providers)
         const rc = delta?.reasoning_content || "";
-        // reasoning_details (OpenRouter streaming shape)
-        const rd = delta?.reasoning_details;
-        let reasoningDelta = rc;
-        if (rd && Array.isArray(rd)) {
-          reasoningDelta = rd.map((r: unknown) => {
-            if (r && typeof r === "object" && "text" in r) {
-              const t = (r as Record<string, unknown>).text;
-              return typeof t === "string" ? t : "";
+        // delta.reasoning (OpenRouter simple reasoning delta)
+        const dr = delta?.reasoning || "";
+        // reasoning_details (OpenRouter detailed reasoning shape)
+        let rd = "";
+        const rdetails = delta?.reasoning_details;
+        if (rdetails && Array.isArray(rdetails)) {
+          rd = rdetails.map((r: unknown) => {
+            if (r && typeof r === "object") {
+              if ("text" in r) {
+                const t = (r as Record<string, unknown>).text;
+                if (typeof t === "string") return t;
+              }
+              if ("summary" in r) {
+                const s = (r as Record<string, unknown>).summary;
+                if (typeof s === "string") return s;
+              }
             }
             return "";
           }).join("");
         }
+        const reasoningDelta = rc || dr || rd;
         if (reasoningDelta && onReasoningToken) {
           fullReasoning += reasoningDelta;
           onReasoningToken(fullReasoning);

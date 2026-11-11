@@ -8,7 +8,8 @@ import Tooltip from "@/components/ui/Tooltip";
 import { COMMENT_MAX_DEPTH } from "@/lib/highlights";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { streamChat } from "@/lib/tutor/client";
-import { TUTOR_MODES, MODE_COLOR } from "../../../shared/tutor/modes.js";
+import { TUTOR_MODES } from "../../../shared/tutor/modes.js";
+import { MODE_COLOR } from "@/lib/tutor/modeStyles";
 
 interface Comment {
   id: number;
