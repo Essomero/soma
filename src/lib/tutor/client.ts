@@ -21,6 +21,8 @@ export interface StreamChatOptions {
   provider?: string;
   signal?: AbortSignal;
   onToken: (fullText: string) => void;
+  /** Called with accumulated reasoning/thinking content as it streams in. */
+  onReasoningToken?: (fullReasoning: string) => void;
 }
 
 async function readError(response: Response): Promise<string> {
@@ -33,7 +35,7 @@ async function readError(response: Response): Promise<string> {
 }
 
 export async function streamChat(options: StreamChatOptions): Promise<string> {
-  const { action, mode, context, model, provider, signal, onToken } = options;
+  const { action, mode, context, model, provider, signal, onToken, onReasoningToken } = options;
 
   const response = await fetch("/api/chat", {
     method: "POST",
@@ -72,6 +74,10 @@ export async function streamChat(options: StreamChatOptions): Promise<string> {
       if (!payload || payload === "[DONE]") continue;
       try {
         const parsed = JSON.parse(payload);
+        const reasoningContent = parsed.choices?.[0]?.delta?.reasoning_content || "";
+        if (reasoningContent && onReasoningToken) {
+          onReasoningToken(reasoningContent);
+        }
         const token = parsed.choices?.[0]?.delta?.content || "";
         if (token) {
           full += token;

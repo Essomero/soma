@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Loader2, Trash2, Bot, PenLine, Eye, Send, X, Check, Copy, ChevronDown, Reply, Maximize2 } from "lucide-react";
+import { Loader2, Trash2, Bot, PenLine, Eye, Send, X, Check, Copy, ChevronDown, ChevronRight, Reply, Maximize2 } from "lucide-react";
 import SelectionToolbar from "@/components/ui/SelectionToolbar";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -86,6 +86,27 @@ interface InlineHighlightsProps {
   selectionAi?: boolean;
 }
 
+function ThinkingSection({ reasoning }: { reasoning: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mb-sm border border-brand/10 rounded-lg overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-xs w-full px-md py-xs bg-brand/[0.03] hover:bg-brand/[0.06] transition-colors text-left"
+      >
+        {open ? <ChevronDown className="w-3 h-3 text-brand/70" /> : <ChevronRight className="w-3 h-3 text-brand/70" />}
+        <span className="font-sora text-[10px] uppercase tracking-widest text-brand/70">Thought</span>
+      </button>
+      {open && (
+        <div className="px-md py-sm text-[11px] font-dm-sans text-brand/60 leading-relaxed whitespace-pre-wrap border-t border-brand/10 max-h-40 overflow-y-auto thin-scrollbar">
+          {reasoning}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function InlineHighlights({
   slug, storyText, storyTitle, articleRef, isOwner,
   onHighlightsChange, highlightClickRef, selectionAi = false,
@@ -106,6 +127,8 @@ export default function InlineHighlights({
   const [inlineAiReady, setInlineAiReady] = useState(false);
   const [inlineAiModel, setInlineAiModel] = useState<string>("deepseek-flash");
   const [inlineAiProvider, setInlineAiProvider] = useState<string>("deepseek");
+  /** Accumulated reasoning/thinking content for draft comments (map: tempId → text). */
+  const [thinkingDrafts, setThinkingDrafts] = useState<Map<number, string>>(new Map());
   const inlineModelMenuRef = useRef<HTMLDivElement>(null);
   const [inlineModelMenuOpen, setInlineModelMenuOpen] = useState(false);
   // No provider keys configured yet: AI actions stay visible but disabled.
@@ -377,6 +400,9 @@ export default function InlineHighlights({
               : hl,
           ));
         },
+        onReasoningToken: (reasoning) => {
+          setThinkingDrafts((prev) => new Map(prev).set(TEMP_ID, reasoning));
+        },
       });
 
       if (!full.trim()) {
@@ -385,6 +411,7 @@ export default function InlineHighlights({
             ? { ...hl, comments: (hl.comments || []).filter((c) => (c as ThreadedComment).id !== TEMP_ID) }
             : hl,
         ));
+        setThinkingDrafts((prev) => { const n = new Map(prev); n.delete(TEMP_ID); return n; });
       }
     } catch (e) {
       console.error(`Tutor ${mode} failed:`, e);
@@ -393,6 +420,7 @@ export default function InlineHighlights({
           ? { ...hl, comments: (hl.comments || []).filter((c) => (c as ThreadedComment).id !== TEMP_ID) }
           : hl,
       ));
+      setThinkingDrafts((prev) => { const n = new Map(prev); n.delete(TEMP_ID); return n; });
     }
   }, [selection, slug, clearSelection, storyText, storyTitle, inlineAiModel, inlineAiProvider, highlights]);
 
@@ -448,6 +476,7 @@ export default function InlineHighlights({
         ? { ...hl, comments: (hl.comments || []).filter((c) => (c as ThreadedComment).id !== tempId) }
         : hl,
     ));
+    setThinkingDrafts((prev) => { const n = new Map(prev); n.delete(tempId); return n; });
   }, []);
 
   // ── AI reply ─────────────────────────────────────
@@ -651,7 +680,19 @@ export default function InlineHighlights({
               </div>
             )}
           </div>
-          <MarkdownHtml html={mdBlock(comment.body)} className="font-dm-sans text-sm text-on-surface leading-relaxed" />
+          {comment.id < 0 && !comment.body.trim() ? (
+            <div className="flex items-center gap-sm py-sm">
+              <Loader2 className="w-3 h-3 animate-spin text-brand" />
+              <span className="font-sora text-[10px] text-brand animate-pulse">Generating...</span>
+            </div>
+          ) : (
+            <>
+              {thinkingDrafts.has(comment.id) && (
+                <ThinkingSection reasoning={thinkingDrafts.get(comment.id) ?? ""} />
+              )}
+              <MarkdownHtml html={mdBlock(comment.body)} className="font-dm-sans text-sm text-on-surface leading-relaxed" />
+            </>
+          )}
           {comment.id < 0 && (
             <div className="flex items-center gap-xs mt-sm pt-sm border-t border-border-default">
               {draftPosting === comment.id ? (
