@@ -177,34 +177,66 @@ export default function LandingSearch() {
   const showDropdown = focused && (hasQuery || loading);
 
   return (
-    <header className="relative w-full min-h-[90vh] overflow-hidden flex items-center justify-center">
-      {/* Cosmic decorative background — pure CSS, no broken external images */}
-      <div className="absolute inset-0 z-0 bg-gradient-to-b from-background via-background to-background">
+    <header className="relative w-full min-h-[90vh] flex items-center justify-center">
+      {/* Cosmic decorative background — dark space gradient with visible nebula */}
+      <div className="absolute inset-0 z-0">
+        {/* Deep space base gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#e8e4f0] via-[#d4d0e8] to-[#e8e4f0] dark:from-[#0a0a1a] dark:via-[#0f0f2e] dark:to-[#0a0a1a]" />
         {/* Nebula glow spots */}
-        <div className="absolute top-1/4 -left-1/4 w-1/2 h-1/2 rounded-full bg-purple-600/8 blur-[120px]" />
-        <div className="absolute bottom-1/3 -right-1/4 w-1/2 h-1/3 rounded-full bg-blue-500/6 blur-[100px]" />
-        <div className="absolute top-1/2 left-1/3 w-1/4 h-1/4 rounded-full bg-cyan-400/5 blur-[80px]" />
-        {/* Star field via repeating dot pattern */}
+        <div className="absolute top-1/4 -left-1/4 w-3/5 h-3/5 rounded-full bg-[#6b3fa0]/30 blur-[120px]" />
+        <div className="absolute bottom-1/4 -right-1/4 w-3/5 h-2/3 rounded-full bg-[#2563eb]/25 blur-[120px]" />
+        <div className="absolute top-1/2 left-1/3 w-1/3 h-1/3 rounded-full bg-[#06b6d4]/20 blur-[100px]" />
+        {/* Bright core hotspots */}
+        <div className="absolute top-1/3 left-1/4 w-1/4 h-1/4 rounded-full bg-[#a855f7]/15 blur-[80px]" />
+        <div className="absolute bottom-1/3 right-1/4 w-1/5 h-1/4 rounded-full bg-[#3b82f6]/15 blur-[80px]" />
+        {/* Star field — bright white dots */}
         <div
-          className="absolute inset-0 opacity-40"
+          className="absolute inset-0"
           style={{
-            backgroundImage:
-              "radial-gradient(1px 1px at 10% 20%, var(--on-surface-muted, #888) 50%, transparent 50%)," +
-              "radial-gradient(1px 1px at 30% 70%, var(--on-surface-muted, #888) 50%, transparent 50%)," +
-              "radial-gradient(1.5px 1.5px at 50% 10%, var(--on-surface-muted, #888) 50%, transparent 50%)," +
-              "radial-gradient(1px 1px at 70% 40%, var(--on-surface-muted, #888) 50%, transparent 50%)," +
-              "radial-gradient(1.5px 1.5px at 90% 80%, var(--on-surface-muted, #888) 50%, transparent 50%)," +
-              "radial-gradient(1px 1px at 15% 50%, var(--on-surface-muted, #888) 50%, transparent 50%)," +
-              "radial-gradient(1px 1px at 60% 60%, var(--on-surface-muted, #888) 50%, transparent 50%)," +
-              "radial-gradient(1px 1px at 80% 15%, var(--on-surface-muted, #888) 50%, transparent 50%)," +
-              "radial-gradient(1.5px 1.5px at 40% 90%, var(--on-surface-muted, #888) 50%, transparent 50%)," +
-              "radial-gradient(1px 1px at 25% 35%, var(--on-surface-muted, #888) 50%, transparent 50%)",
+            backgroundImage: [
+              "radial-gradient(1.5px 1.5px at 12% 8%, #fff 50%, transparent 50%)",
+              "radial-gradient(1px 1px at 22% 15%, #e0e0e0 50%, transparent 50%)",
+              "radial-gradient(2px 2px at 35% 5%, #fff 50%, transparent 50%)",
+              "radial-gradient(1px 1px at 48% 12%, #ddd 50%, transparent 50%)",
+              "radial-gradient(1.5px 1.5px at 60% 3%, #fff 50%, transparent 50%)",
+              "radial-gradient(1px 1px at 75% 9%, #ccc 50%, transparent 50%)",
+              "radial-gradient(2px 2px at 88% 6%, #fff 50%, transparent 50%)",
+              "radial-gradient(1px 1px at 5% 25%, #ddd 50%, transparent 50%)",
+              "radial-gradient(1.5px 1.5px at 18% 32%, #fff 50%, transparent 50%)",
+              "radial-gradient(1px 1px at 30% 22%, #e0e0e0 50%, transparent 50%)",
+              "radial-gradient(1px 1px at 42% 28%, #ccc 50%, transparent 50%)",
+              "radial-gradient(2px 2px at 55% 35%, #fff 50%, transparent 50%)",
+              "radial-gradient(1px 1px at 68% 20%, #ddd 50%, transparent 50%)",
+              "radial-gradient(1.5px 1.5px at 82% 30%, #fff 50%, transparent 50%)",
+              "radial-gradient(1px 1px at 95% 18%, #ccc 50%, transparent 50%)",
+              "radial-gradient(1.5px 1.5px at 8% 45%, #fff 50%, transparent 50%)",
+              "radial-gradient(1px 1px at 20% 50%, #ddd 50%, transparent 50%)",
+              "radial-gradient(2px 2px at 33% 40%, #fff 50%, transparent 50%)",
+              "radial-gradient(1px 1px at 45% 55%, #ccc 50%, transparent 50%)",
+              "radial-gradient(1.5px 1.5px at 58% 48%, #fff 50%, transparent 50%)",
+              "radial-gradient(1px 1px at 72% 52%, #ddd 50%, transparent 50%)",
+              "radial-gradient(1px 1px at 85% 42%, #ccc 50%, transparent 50%)",
+              "radial-gradient(2px 2px at 15% 65%, #fff 50%, transparent 50%)",
+              "radial-gradient(1.5px 1.5px at 28% 72%, #fff 50%, transparent 50%)",
+              "radial-gradient(1px 1px at 40% 62%, #ddd 50%, transparent 50%)",
+              "radial-gradient(1px 1px at 52% 75%, #ccc 50%, transparent 50%)",
+              "radial-gradient(1.5px 1.5px at 65% 68%, #fff 50%, transparent 50%)",
+              "radial-gradient(2px 2px at 78% 58%, #fff 50%, transparent 50%)",
+              "radial-gradient(1px 1px at 90% 70%, #ddd 50%, transparent 50%)",
+              "radial-gradient(1px 1px at 10% 82%, #ccc 50%, transparent 50%)",
+              "radial-gradient(1.5px 1.5px at 25% 88%, #fff 50%, transparent 50%)",
+              "radial-gradient(1px 1px at 38% 80%, #ddd 50%, transparent 50%)",
+              "radial-gradient(2px 2px at 50% 90%, #fff 50%, transparent 50%)",
+              "radial-gradient(1.5px 1.5px at 62% 85%, #fff 50%, transparent 50%)",
+              "radial-gradient(1px 1px at 75% 92%, #ccc 50%, transparent 50%)",
+              "radial-gradient(1px 1px at 88% 78%, #ddd 50%, transparent 50%)",
+            ].join(","),
             backgroundSize: "100% 100%",
             backgroundRepeat: "no-repeat",
           }}
         />
-        {/* Bottom fade to solid background */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
+        {/* Bottom fade to blend with content section */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
       </div>
 
       {/* Content */}
