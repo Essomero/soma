@@ -191,20 +191,20 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export function fetchNotesList(): Promise<NoteArticle[]> {
-  return api("/");
+  return api("");
 }
 
 /** Search notes via FTS5. Returns ranked results with rank field. */
 export function fetchNotesSearch(q: string): Promise<(NoteArticle & { rank?: number })[]> {
-  return api(`/?q=${encodeURIComponent(q)}`);
+  return api(`?q=${encodeURIComponent(q)}`);
 }
 
 export function fetchNote(slug: string): Promise<NoteArticle> {
-  return api(`/?slug=${encodeURIComponent(slug)}`);
+  return api(`?slug=${encodeURIComponent(slug)}`);
 }
 
 export function createNote(input: { title: string; content: string; publishedContent?: PublishedContentEntry[] }): Promise<NoteArticle> {
-  return api("/", {
+  return api("", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -212,7 +212,7 @@ export function createNote(input: { title: string; content: string; publishedCon
 }
 
 export function updateNote(slug: string, input: { title: string; content: string; publishedContent?: PublishedContentEntry[] }): Promise<NoteArticle> {
-  return api("/", {
+  return api("", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ slug, ...input }),
@@ -220,7 +220,7 @@ export function updateNote(slug: string, input: { title: string; content: string
 }
 
 export function deleteNote(slug: string): Promise<{ success: boolean }> {
-  return api("/", {
+  return api("", {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ slug }),

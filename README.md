@@ -187,7 +187,8 @@ Netlify Functions are serverless — no persistent disk, so Turso remote is requ
 
 ```bash
 # netlify.toml already has build:static + publish dist + functions netlify/functions/
-# Functions in netlify/functions/api.mjs proxy /api/* to api/*.js handlers via same _db adapter
+# netlify/functions/api.mjs implements /api/* over the Turso HTTP pipeline
+# (scripts/check-api-routes.mjs fails the build if a route is missing there)
 ```
 
 Deploy: Import `Essomero/soma` into Netlify, set `SITE_PASSWORD`, `USE_TURSO=true`, `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, optional AI keys. Functions auto-deployed. Rewrite: `/api/*` → `/.netlify/functions/:splat`, SPA fallback → `/index.html`.
@@ -331,12 +332,25 @@ npm run build   # Type-checks and builds the production bundle
 
 Soma has two local modes. Pick deliberately:
 
-- **`npm run dev` (no setup):** the frontend proxies `/api` to the production deployment. Use it to browse and write UI code with zero configuration. Warning: notes, highlights, and toggles you create go to the live production database. Never use this mode for testing data flows.
+- **`npm run dev` (no setup):** `/api/*` is served in-process by the real `api/*.js` handlers, using whatever database `.env` points at (Turso when the vars are set, otherwise a local file at `data/soma.db`). Routes the in-process server does not handle fall through to the production deployment. Warning: with production Turso credentials in `.env`, the notes, highlights, and toggles you create land in that database.
 - **`npm run dev:local` plus `npm run server` (your own database):** the frontend proxies `/api` to `http://localhost:3001`, served from your own Turso database. The API server reads `.env.local` on its own and warns at startup if the Turso vars are missing. Use it for anything that writes data:
 ```bash
 npm run server    # terminal 1: local edge API on :3001
 npm run dev:local # terminal 2: frontend on :5173 wired to :3001
 ```
+
+### API Routing Contract
+
+The API is eight function files, not thirteen. To stay under Vercel's Hobby limit, notes + highlights + comments share `api/social.js`, ratings + progress + tests share `api/engagement.js`, and diag + public share `api/system.js`. Public URLs did not change.
+
+`shared/api-routes.js` is the only place that mapping lives. Hosts read it: `vercel.json` rewrites, `server/index.mjs`, `server/api-dev.mjs`, the Vite dev middleware, and `netlify/functions/api.mjs`. Handlers resolve their own sub-route from the request path through the same table.
+
+Two checks protect it, and both run in CI:
+
+- **`npm run check:api-routes`** (`.github/workflows/ci.yml`, blocks deploy). Fails when a route has no handler, a handler file is not declared (the Hobby limit), `vercel.json` does not route a path with AND without a trailing slash, the Netlify function misses a route, or a client `fetch()` calls an undefined route.
+- **`npm run smoke:api`** (`.github/workflows/smoke-api.yml`; after each deploy, daily, on demand). Requests every route plus its trailing-slash twin on the live host and fails on platform 404s, 5xx, or "unknown route" replies.
+
+Why both: on 2026-11-11 every notes request hit `/api/notes/` and Vercel answered 404. Vercel does not normalize trailing slashes for rewrites, and local dev answered from a hand-written copy of the handler, so every local check passed. The static check models that rewrite behaviour; the smoke test proves the deployed host agrees.
 
 ### First-Run Smoke Test
 

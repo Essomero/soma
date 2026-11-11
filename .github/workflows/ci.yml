@@ -30,6 +30,13 @@ jobs:
       - name: TypeScript type check
         run: npx tsc -b
 
+      - name: API route contract
+        # Fails when an /api route, its handler file, vercel.json's rewrites, the
+        # Netlify function, or a client fetch path disagree. See
+        # scripts/check-api-routes.mjs — /api/notes/ 404'd in production because
+        # the rewrites were not trailing-slash tolerant.
+        run: node scripts/check-api-routes.mjs
+
       - name: Content validation
         run: npx tsx scripts/validate-content.ts
         env:

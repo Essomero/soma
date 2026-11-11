@@ -1,6 +1,7 @@
 import { isAuthed, requireAuth } from "./_auth.js";
 import { rateLimit } from "./_limits.js";
 import { isTutorMode } from "../shared/tutor/modes.js";
+import { apiRouteFromPath } from "../shared/api-routes.js";
 import { query as dbQueryRaw, runPipeline as dbRunPipeline, arg as dbArg } from "./_db.js";
 import { query as simpleQuery } from "./_db.js";
 
@@ -51,8 +52,9 @@ async function runTursoPipeline(stmts) {
 }
 
 async function notesSearchQuery(sql, args) {
-  const stmts = prepareNotesPipeline(sql, args.map(dbArg));
-  return runTursoPipeline(stmts);
+  // prepareNotesPipeline wraps args with dbArg(); wrapping them here too would
+  // stringify objects, so every FTS search queried for "[object Object]".
+  return runTursoPipeline(prepareNotesPipeline(sql, args));
 }
 
 async function syncNoteFts(slug, title, content) {
@@ -526,11 +528,7 @@ async function handleComments(req, res) {
 }
 
 function getSubRoute(req) {
-  const raw = (req.url || "").toString();
-  if (raw.includes("/api/notes") || raw.includes("/notes")) return "notes";
-  if (raw.includes("/api/highlights") || raw.includes("/highlights")) return "highlights";
-  if (raw.includes("/api/comments") || raw.includes("/comments")) return "comments";
-  return "unknown";
+  return apiRouteFromPath(req.url);
 }
 
 export default async function handler(req, res) {
