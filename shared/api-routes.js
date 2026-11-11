@@ -25,6 +25,7 @@ export const ROUTE_HANDLERS = {
   comments: "social",
   highlights: "social",
   notes: "social",
+  proof: "proof",
   diag: "system",
   public: "system",
   progress: "engagement",
@@ -40,6 +41,7 @@ export const HANDLER_FILES = [
   "engagement",
   "export",
   "models",
+  "proof",
   "social",
   "system",
 ];
