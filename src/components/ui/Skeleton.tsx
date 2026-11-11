@@ -588,10 +588,13 @@ export function SkeletonNotesArticle() {
         <Skeleton className="h-4 w-16 mb-sm" />
         <Skeleton className="h-10 md:h-12 w-3/5 max-w-4xl mb-md leading-tight" />
         <Skeleton className="h-3 w-48" />
-        <div className="flex items-center gap-xs mt-lg">
-          <Skeleton className="h-8 w-20" />
-          <Skeleton className="h-8 w-24" />
-          <Skeleton className="h-8 w-24" />
+        <div className="flex items-center justify-between mt-lg">
+          <div className="flex items-center gap-xs">
+            <Skeleton className="h-8 w-16 rounded-md" />
+            <Skeleton className="h-8 w-20 rounded-md" />
+            <Skeleton className="h-8 w-20 rounded-md" />
+          </div>
+          <Skeleton className="h-8 w-28 rounded-lg" />
         </div>
       </section>
       <article className="max-w-readme mx-auto px-gutter md:px-margin-desktop mb-giant">
@@ -684,25 +687,23 @@ export function SkeletonTestDrill() {
   );
 }
 
-/** Homepage : hero (7-col text + 5-col 4:5 cover), staggered story grid, podcast section, secondary grid. */
+/** Homepage : full-bleed search hero, then staggered story grid, podcast section, secondary grid. */
 export function SkeletonHome() {
   return (
-    <div className="mx-auto max-w-readme px-6 py-12">
-      {/* Hero : mirrors HeroSection */}
-      <section className="mb-24">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-7">
-            <Skeleton className="h-6 w-24 mb-4" />
-            <Skeleton className="h-12 md:h-14 w-full mb-6" />
-            <Skeleton className="h-5 w-4/5 mb-md" />
-            <Skeleton className="h-5 w-1/2 mb-8" />
-            <Skeleton className="h-11 w-40" />
-          </div>
-          <div className="lg:col-span-5">
-            <Skeleton className="aspect-[4/5] w-full rounded-lg" />
-          </div>
+    <>
+      {/* Search hero skeleton */}
+      <header className="relative w-full min-h-[90vh] overflow-hidden flex items-center justify-center">
+        <div className="absolute inset-0 z-0 bg-surface-container-low" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-background/60 to-background" />
+        <div className="relative z-10 w-full max-w-2xl mx-auto px-6 -mt-16">
+          <Skeleton className="h-12 md:h-14 w-3/4 mx-auto mb-3" />
+          <Skeleton className="h-5 w-2/5 mx-auto mb-10" />
+          <Skeleton className="h-14 w-full rounded-xl mb-6" />
+          <Skeleton className="h-3 w-32 mx-auto" />
         </div>
-      </section>
+      </header>
+
+      <div className="mx-auto max-w-readme px-6 py-24">
 
       {/* Staggered stories grid */}
       <section className="mb-24">
@@ -770,6 +771,7 @@ export function SkeletonHome() {
           ))}
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 }

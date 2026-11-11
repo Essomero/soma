@@ -3,6 +3,46 @@
 // Env vars in process.env: SITE_PASSWORD, USE_TURSO, TURSO_*, AI keys
 // Returns {models: [...]} shape (not bare array) to match Vercel frontend expectation
 
+import { runChat } from "../../shared/chat/core.js";
+import { isTutorMode } from "../../shared/tutor/modes.js";
+
+let commentsModeReady = false;
+
+function chatKeys() {
+  return {
+    deepseek: process.env.DEEPSEEK_API_KEY || "",
+    openrouter: process.env.OPENROUTER_API_KEY || "",
+    gemini: process.env.GEMINI_API_KEY || "",
+    groq: process.env.GROQ_API_KEY || "",
+    cerebras: process.env.CEREBRAS_API_KEY || "",
+    straitly:
+      process.env.STRAITLY_API_KEY ||
+      process.env.STRAIGHTLY_API_KEY ||
+      process.env.STRIGHTLY_API_KEY ||
+      "",
+  };
+}
+
+function chatOptions() {
+  return {
+    geminiDisabled:
+      process.env.GEMINI_DISABLED === "1" || process.env.GEMINI_DISABLED === "true",
+    reasoningEffort: process.env.DEEPSEEK_REASONING_EFFORT,
+    referer: "https://soma.mayanja.dev",
+    title: "Soma",
+  };
+}
+
+function chatResponse(result) {
+  if (result.kind === "stream") {
+    return new Response(result.stream, { status: result.status, headers: result.headers });
+  }
+  return new Response(JSON.stringify(result.body), {
+    status: result.status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
 function val(cell) {
   if (cell && typeof cell === "object") {
     if (cell.type === "null") return null;
@@ -73,12 +113,32 @@ function mapContentRow(r) {
   const base = ROUTE_BASE[r.type] || r.type;
   return { ...body, slug: r.slug, type: r.type, status: r.status, title: r.title, excerpt: r.excerpt, meta, isFeatured: meta.featured === true, position: Number(r.position) || 0, updatedAt: r.updated_at, id: r.slug, href: `/${base}/${r.slug}` };
 }
+function mapCommentRow(row) {
+  return {
+    id: row.id,
+    storySlug: row.story_slug,
+    body: row.body,
+    parentId: row.parent_id,
+    isAi: row.is_ai === 1 || row.is_ai === "1" || row.is_ai === true,
+    aiModel: row.ai_model,
+    mode: row.mode,
+    highlightId: row.highlight_id,
+    sectionIndex: row.section_index,
+    paragraphIndex: row.paragraph_index,
+    startOffset: row.start_offset,
+    endOffset: row.end_offset,
+    selectedText: row.selected_text,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
 function buildTree(rows) {
   const map = {}; const roots = [];
-  for (const row of rows) map[row.id] = { ...row, replies: [] };
-  for (const row of rows) {
+  const mapped = rows.map(mapCommentRow);
+  for (const row of mapped) map[row.id] = { ...row, replies: [] };
+  for (const row of mapped) {
     const node = map[row.id];
-    if (row.parent_id && map[row.parent_id]) map[row.parent_id].replies.push(node);
+    if (row.parentId && map[row.parentId]) map[row.parentId].replies.push(node);
     else roots.push(node);
   }
   return roots;
@@ -173,7 +233,15 @@ export default async (req, context) => {
     }
 
     if (route === "comments") {
-      await tursoQuery(`CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY AUTOINCREMENT, story_slug TEXT NOT NULL, body TEXT NOT NULL, parent_id INTEGER, is_ai INTEGER DEFAULT 0, ai_model TEXT, highlight_id INTEGER, section_index INTEGER, paragraph_index INTEGER, start_offset INTEGER, end_offset INTEGER, selected_text TEXT, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT)`, []);
+      await tursoQuery(`CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY AUTOINCREMENT, story_slug TEXT NOT NULL, body TEXT NOT NULL, parent_id INTEGER, is_ai INTEGER DEFAULT 0, ai_model TEXT, mode TEXT DEFAULT 'explain', highlight_id INTEGER, section_index INTEGER, paragraph_index INTEGER, start_offset INTEGER, end_offset INTEGER, selected_text TEXT, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT)`, []);
+      if (!commentsModeReady) {
+        try {
+          await tursoQuery("ALTER TABLE comments ADD COLUMN mode TEXT DEFAULT 'explain'", []);
+        } catch {
+          // Column already exists — safe to ignore
+        }
+        commentsModeReady = true;
+      }
       if (req.method === "GET") {
         const story = query.story;
         if (!story) return new Response(JSON.stringify({ error: "story required" }), { status: 400, headers: { "Content-Type": "application/json" } });
@@ -185,11 +253,13 @@ export default async (req, context) => {
       if (req.method === "POST") {
         if (!rateLimit(ip, "comments-post", 20, 60000)) return new Response(JSON.stringify({ error: "Too many requests" }), { status: 429, headers: { "Content-Type": "application/json" } });
         const body = await req.json().catch(() => ({}));
-        const { storySlug, body: b, parentId, isAi, aiModel, highlightId, sectionIndex, paragraphIndex, startOffset, endOffset, selectedText } = body;
+        const { storySlug, body: b, parentId, isAi, aiModel, mode, highlightId, sectionIndex, paragraphIndex, startOffset, endOffset, selectedText } = body;
         if (!storySlug || !b) return new Response(JSON.stringify({ error: "storySlug and body required" }), { status: 400, headers: { "Content-Type": "application/json" } });
         if (typeof b !== "string" || b.length > MAX_BODY) return new Response(JSON.stringify({ error: "body too long" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        const rows = await tursoQuery("INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?) RETURNING *", [storySlug, b, parentId || null, isAi ? 1 : 0, aiModel || null, highlightId || null, sectionIndex ?? null, paragraphIndex ?? null, startOffset ?? null, endOffset ?? null, selectedText || null, new Date().toISOString()]);
-        return new Response(JSON.stringify(rows[0] || { success: true }), { status: 201, headers: { "Content-Type": "application/json" } });
+        if (mode != null && !isTutorMode(mode)) return new Response(JSON.stringify({ error: "invalid mode" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        const rows = await tursoQuery("INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, mode, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING *", [storySlug, b, parentId || null, isAi ? 1 : 0, aiModel || null, mode || "explain", highlightId || null, sectionIndex ?? null, paragraphIndex ?? null, startOffset ?? null, endOffset ?? null, selectedText || null, new Date().toISOString()]);
+        const created = rows[0];
+        return new Response(JSON.stringify(created ? mapCommentRow(created) : { success: true }), { status: 201, headers: { "Content-Type": "application/json" } });
       }
       if (req.method === "PUT" || req.method === "DELETE") {
         if (!authed) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
@@ -378,52 +448,20 @@ export default async (req, context) => {
     }
 
     if (route === "chat") {
-      if (!authed) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+      if (!authed) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (req.method !== "POST") {
+        return new Response(JSON.stringify({ error: "Method not allowed" }), {
+          status: 405,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
       const body = await req.json().catch(() => ({}));
-      const { systemPrompt, userMessage, selectedModel, stream } = body;
-      const shouldStream = stream !== false;
-      const modelId = selectedModel || "deepseek-flash";
-      let providerKey = "";
-      let providerUrl = "";
-      if (modelId.startsWith("deepseek-")) {
-        providerKey = process.env.DEEPSEEK_API_KEY || "";
-        providerUrl = "https://api.deepseek.com/v1/chat/completions";
-      } else if (modelId.startsWith("gemini-")) {
-        const apiKey = process.env.GEMINI_API_KEY || "";
-        if (!apiKey) return new Response(JSON.stringify({ error: "Gemini not configured" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        const contents = [{ parts: [{ text: userMessage || "" }], role: "user" }];
-        const gemBody = { contents, generationConfig: { temperature: 0.7, maxOutputTokens: 2000 } };
-        if (systemPrompt) gemBody.systemInstruction = { parts: [{ text: systemPrompt }] };
-        const endpoint = shouldStream ? `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:streamGenerateContent?alt=sse&key=${apiKey}` : `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
-        const r = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(gemBody) });
-        if (!r.ok) {
-          const txt = await r.text().catch(() => "");
-          return new Response(JSON.stringify({ error: txt.slice(0, 500) }), { status: r.status, headers: { "Content-Type": "application/json" } });
-        }
-        if (!shouldStream) {
-          const gData = await r.json().catch(() => ({}));
-          const text = gData.candidates?.[0]?.content?.parts?.[0]?.text || "";
-          return new Response(JSON.stringify({ choices: [{ message: { content: text } }] }), { status: 200, headers: { "Content-Type": "application/json" } });
-        }
-        return new Response(r.body, { status: 200, headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" } });
-      } else {
-        providerKey = process.env.OPENROUTER_API_KEY || process.env.DEEPSEEK_API_KEY || "";
-        providerUrl = process.env.OPENROUTER_API_KEY ? "https://openrouter.ai/api/v1/chat/completions" : "https://api.deepseek.com/v1/chat/completions";
-      }
-      if (!providerKey) return new Response(JSON.stringify({ error: "No AI provider configured" }), { status: 400, headers: { "Content-Type": "application/json" } });
-      const payload = {
-        model: modelId,
-        messages: [...(systemPrompt ? [{ role: "system", content: systemPrompt }] : []), { role: "user", content: userMessage || "" }],
-        temperature: 0.7,
-        max_tokens: 2000,
-        stream: shouldStream,
-      };
-      const r = await fetch(providerUrl, { method: "POST", headers: { Authorization: `Bearer ${providerKey}`, "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      if (!r.ok) {
-        const txt = await r.text().catch(() => "");
-        return new Response(JSON.stringify({ error: txt.slice(0, 500) }), { status: r.status, headers: { "Content-Type": "application/json" } });
-      }
-      return new Response(r.body, { status: 200, headers: { "Content-Type": r.headers.get("Content-Type") || (shouldStream ? "text/event-stream" : "application/json"), "Cache-Control": "no-cache" } });
+      return chatResponse(await runChat({ body, keys: chatKeys(), options: chatOptions() }));
     }
 
     // ── export ──

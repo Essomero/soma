@@ -317,21 +317,29 @@ export default function NotesArticlePage() {
         </div>
 
         {isOwner && (
-          <div className="flex items-center gap-xs mt-lg">
-            <Link
-              to={`/notes/${article.slug}/edit`}
-              className="inline-flex items-center gap-xs px-md py-sm rounded-md font-sora text-xs bg-surface border border-border-default text-on-surface-muted hover:text-primary hover:border-primary/50 transition-colors"
-            >
-              <Edit3 className="w-3.5 h-3.5" /> Edit
-            </Link>
-            <Tooltip label={noteCopied ? "Copied!" : "Copy note as Markdown"}>
-              <button
-                onClick={handleCopyNote}
-                className="inline-flex items-center gap-xs px-md py-sm rounded-md font-sora text-xs bg-surface border border-border-default text-on-surface-muted hover:text-secondary hover:border-secondary/50 transition-colors"
+          <div className="flex items-center justify-between mt-lg">
+            <div className="flex items-center gap-xs">
+              <Link
+                to={`/notes/${article.slug}/edit`}
+                className="inline-flex items-center gap-xs px-md py-sm rounded-md font-sora text-xs bg-surface border border-border-default text-on-surface-muted hover:text-primary hover:border-primary/50 transition-colors"
               >
-                {noteCopied ? <Check className="w-3.5 h-3.5 text-secondary" /> : <Clipboard className="w-3.5 h-3.5" />} {noteCopied ? "Copied" : "Copy"}
+                <Edit3 className="w-3.5 h-3.5" /> Edit
+              </Link>
+              <Tooltip label={noteCopied ? "Copied!" : "Copy note as Markdown"}>
+                <button
+                  onClick={handleCopyNote}
+                  className="inline-flex items-center gap-xs px-md py-sm rounded-md font-sora text-xs bg-surface border border-border-default text-on-surface-muted hover:text-secondary hover:border-secondary/50 transition-colors"
+                >
+                  {noteCopied ? <Check className="w-3.5 h-3.5 text-secondary" /> : <Clipboard className="w-3.5 h-3.5" />} {noteCopied ? "Copied" : "Copy"}
+                </button>
+              </Tooltip>
+              <button
+                onClick={() => setDeleteTarget(true)}
+                className="inline-flex items-center gap-xs px-md py-sm rounded-md font-sora text-xs bg-surface border border-border-default text-on-surface-muted hover:text-error hover:border-error/50 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Delete
               </button>
-            </Tooltip>
+            </div>
             <Tooltip label="Generate AI content from this note">
               <button
                 onClick={() =>
@@ -345,17 +353,11 @@ export default function NotesArticlePage() {
                     },
                   })
                 }
-                className="inline-flex items-center gap-xs px-md py-sm rounded-md font-sora text-xs bg-surface border border-border-default text-on-surface-muted hover:text-primary hover:border-primary/50 transition-colors"
+                className="inline-flex items-center gap-md px-lg py-sm rounded-lg font-sora text-sm bg-primary text-on-primary hover:bg-primary-hover transition-all duration-200"
               >
-                <Sparkles className="w-3.5 h-3.5" /> Generate
+                <Sparkles className="w-4 h-4" /> Generate
               </button>
             </Tooltip>
-            <button
-              onClick={() => setDeleteTarget(true)}
-              className="inline-flex items-center gap-xs px-md py-sm rounded-md font-sora text-xs bg-surface border border-border-default text-on-surface-muted hover:text-error hover:border-error/50 transition-colors"
-            >
-              <Trash2 className="w-3.5 h-3.5" /> Delete
-            </button>
           </div>
         )}
       </section>

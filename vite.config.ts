@@ -1,32 +1,20 @@
 import { defineConfig, loadEnv } from "vite";
+import type { Connect } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { runChat } from "./shared/chat/core.js";
+import { isTutorMode } from "./shared/tutor/modes.js";
 
 // Inline chat + models handler for local dev — no separate API server needed
 function chatDevPlugin(env: Record<string, string>) {
   const DEEPSEEK_KEY = env.DEEPSEEK_API_KEY || "";
-  const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
   const OPENROUTER_KEY = env.OPENROUTER_API_KEY || "";
-  const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
   const GEMINI_KEY = env.GEMINI_API_KEY || "";
   const GEMINI_DISABLED = env.GEMINI_DISABLED === "1" || env.GEMINI_DISABLED === "true";
-  const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models";
   const GROQ_KEY = env.GROQ_API_KEY || "";
-  const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
   const CEREBRAS_KEY = env.CEREBRAS_API_KEY || "";
-  const CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions";
   const STRAITLY_KEY = env.STRAITLY_API_KEY || env.STRAIGHTLY_API_KEY || env.STRIGHTLY_API_KEY || "";
-  const STRAITLY_URL = "https://api.straitly.ai/v1/chat/completions";
-  const STRAITLY_MODEL_IDS = new Set([
-    "deepseek/deepseek-v4-1-flash",
-    "z-ai/glm-5.3-flash",
-    "gpt-6-luna",
-    "claude-haiku-5-5",
-    "qwen/qwen3.6-35b-a3b",
-    "meta-llama/muse-spark-1.3-contributor",
-    "gemini-3.8-flash",
-    "deepseek/deepseek-v4-pro",
-  ]);
+  let commentsModeReady = false;
 
   const keys: string[] = [];
   if (DEEPSEEK_KEY) keys.push("DeepSeek");
@@ -372,8 +360,8 @@ function chatDevPlugin(env: Record<string, string>) {
         res.end(JSON.stringify({ models }));
       });
 
-      // Chat endpoint
-      server.middlewares.use("/api/chat", async (req: any, res: any, next: any) => {
+      // Chat endpoint (shared core)
+      server.middlewares.use("/api/chat", async (req: Connect.IncomingMessage, res: Connect.ServerResponse, next: Connect.NextFunction) => {
         if (req.method === "OPTIONS") {
           res.writeHead(204, {
             "Access-Control-Allow-Origin": "*",
@@ -385,181 +373,52 @@ function chatDevPlugin(env: Record<string, string>) {
 
         if (req.method !== "POST") return next();
 
-        // Read body
         const chunks: Buffer[] = [];
         for await (const chunk of req) chunks.push(chunk);
-        let body: any = {};
+        let body: unknown = {};
         try { body = JSON.parse(Buffer.concat(chunks).toString()); } catch {}
 
-        let { systemPrompt, userMessage, messages: reqMessages, model, stream, provider, apiKey: customApiKey, apiUrl: customApiUrl } = body;
-        if (!userMessage && Array.isArray(reqMessages)) {
-          const sys = reqMessages.find((m: any) => m.role === "system");
-          const usr = reqMessages.find((m: any) => m.role === "user");
-          if (sys && !systemPrompt) systemPrompt = sys.content;
-          if (usr) userMessage = usr.content;
-        }
-        if (!userMessage) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          return res.end(JSON.stringify({ error: "userMessage required" }));
-        }
+        const result = await runChat({
+          body,
+          keys: {
+            deepseek: DEEPSEEK_KEY,
+            openrouter: OPENROUTER_KEY,
+            gemini: GEMINI_KEY,
+            groq: GROQ_KEY,
+            cerebras: CEREBRAS_KEY,
+            straitly: STRAITLY_KEY,
+          },
+          options: {
+            geminiDisabled: GEMINI_DISABLED,
+            reasoningEffort: env.DEEPSEEK_REASONING_EFFORT,
+            referer: "http://localhost:5173",
+            title: "Soma (dev)",
+          },
+        });
 
-        // Determine provider: explicit param first, fallback to inference only if omitted
-        let resolvedProvider = provider;
-        if (!resolvedProvider) {
-          if (customApiUrl) {
-            resolvedProvider = "custom";
-          } else if (model && (model.startsWith("straitly/") || STRAITLY_MODEL_IDS.has(model))) {
-            resolvedProvider = "straitly";
-          } else if (model && model.startsWith("gemini-")) {
-            resolvedProvider = "gemini";
-          } else if (model && model.includes("/")) {
-            resolvedProvider = "openrouter";
-          } else {
-            resolvedProvider = "deepseek";
-          }
-        }
-
-        const isCustom = resolvedProvider === "custom";
-        const isStraitly = resolvedProvider === "straitly";
-        const isGemini = resolvedProvider === "gemini";
-        const isOpenRouter = resolvedProvider === "openrouter";
-        const isGroq = resolvedProvider === "groq";
-        const isCerebras = resolvedProvider === "cerebras";
-        const isDeepSeek = resolvedProvider === "deepseek";
-
-        let apiKey: string, apiUrl: string;
-        if (isCustom) {
-          apiKey = customApiKey || "custom-key";
-          apiUrl = customApiUrl || "https://api.openai.com/v1/chat/completions";
-        } else if (isGemini) {
-          apiKey = customApiKey || GEMINI_KEY;
-          apiUrl = customApiUrl || GEMINI_URL;
-        } else if (isOpenRouter) {
-          apiKey = customApiKey || OPENROUTER_KEY;
-          apiUrl = customApiUrl || OPENROUTER_URL;
-        } else if (isGroq) {
-          apiKey = customApiKey || GROQ_KEY;
-          apiUrl = customApiUrl || GROQ_URL;
-        } else if (isCerebras) {
-          apiKey = customApiKey || CEREBRAS_KEY;
-          apiUrl = customApiUrl || CEREBRAS_URL;
-        } else if (isStraitly) {
-          apiKey = customApiKey || STRAITLY_KEY;
-          apiUrl = customApiUrl || STRAITLY_URL;
-        } else {
-          apiKey = customApiKey || DEEPSEEK_KEY;
-          apiUrl = customApiUrl || DEEPSEEK_URL;
-        }
-
-        if (!apiKey) {
-          const name = isGemini ? "GEMINI_API_KEY" : isOpenRouter ? "OPENROUTER_API_KEY" : isGroq ? "GROQ_API_KEY" : isCerebras ? "CEREBRAS_API_KEY" : isStraitly ? "STRAITLY_API_KEY" : "DEEPSEEK_API_KEY";
-          console.error(`[chat-dev] ${name} not configured`);
-          res.writeHead(500, { "Content-Type": "application/json" });
-          return res.end(JSON.stringify({ error: `AI service not configured (${name})` }));
-        }
-        if (isGemini && GEMINI_DISABLED) {
-          res.writeHead(503, { "Content-Type": "application/json" });
-          return res.end(JSON.stringify({ error: "Gemini is temporarily disabled (GEMINI_DISABLED=1)." }));
-        }
-
-        let selectedModel: string = model || (isGemini ? "gemini-2.5-flash" : isStraitly ? "deepseek/deepseek-v4-1-flash" : isOpenRouter ? "deepseek/deepseek-v4-flash" : isGroq ? "llama-3.1-8b-instant" : isCerebras ? "gemma-4-31b" : "deepseek-flash");
-        if (isStraitly) {
-          selectedModel = selectedModel.replace(/^straitly\//, "");
-        }
-        if (isOpenRouter) {
-          selectedModel = selectedModel.replace(/:free$/, "");
-          if (selectedModel === "google/gemini-flash-lite-latest" || selectedModel === "~google/gemini-flash-lite-latest") {
-            selectedModel = "google/gemini-2.5-flash-lite";
-          } else if (selectedModel === "google/gemini-flash-latest" || selectedModel === "~google/gemini-flash-latest") {
-            selectedModel = "google/gemini-2.5-flash";
-          } else if (selectedModel === "google/gemini-pro-latest" || selectedModel === "~google/gemini-pro-latest") {
-            selectedModel = "google/gemini-2.5-pro";
-          }
-        }
-        const shouldStream = stream !== false;
-
-        // ── Gemini path ──
-        if (isGemini) {
-          return handleGeminiDev(res, { systemPrompt, userMessage, selectedModel, shouldStream, apiKey, apiUrl });
-        }
-
-        // ── OpenAI-compatible path ──
-        const messages: { role: string; content: string }[] = [];
-        if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
-        messages.push({ role: "user", content: userMessage });
-
-        const headers: Record<string, string> = {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        };
-        if (isOpenRouter) {
-          headers["HTTP-Referer"] = "http://localhost:5173";
-          headers["X-Title"] = "Soma (dev)";
-        }
-
-        try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 60000);
-
-          const r = await fetch(apiUrl, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              model: selectedModel,
-              messages,
-              temperature: 0.7,
-              max_tokens: body.max_tokens || 3500,
-              stream: shouldStream,
-            }),
-            signal: controller.signal,
+        if (result.kind === "stream") {
+          res.writeHead(result.status, {
+            ...result.headers,
+            "Access-Control-Allow-Origin": "*",
           });
-
-          clearTimeout(timeout);
-
-          if (!r.ok) {
-            const err = await r.text();
-            const detail = extractErrorMsg(err, r.status);
-            console.error(`[chat-dev] API error ${r.status} (${selectedModel}): ${err.slice(0, 300)}`);
-            res.writeHead(502, { "Content-Type": "application/json" });
-            return res.end(JSON.stringify({ error: detail }));
-          }
-
-          if (shouldStream && r.body) {
-            res.writeHead(200, {
-              "Content-Type": "text/event-stream",
-              "Cache-Control": "no-cache",
-              "Connection": "keep-alive",
-              "Access-Control-Allow-Origin": "*",
-            });
-
-            const reader = r.body.getReader();
-            const decoder = new TextDecoder();
-            try {
-              while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                res.write(decoder.decode(value, { stream: true }));
-              }
-            } catch (e: any) {
-              console.error("Stream read error:", e.message);
+          const reader = result.stream.getReader();
+          try {
+            for (;;) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              res.write(value);
             }
+          } finally {
             res.end();
-          } else {
-            const data: any = await r.json();
-            const reply = data.choices?.[0]?.message?.content || "";
-            res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ reply }));
           }
-        } catch (e: any) {
-          if (e.name === "AbortError") {
-            console.error("[chat-dev] Request timed out");
-            res.writeHead(504, { "Content-Type": "application/json" });
-            return res.end(JSON.stringify({ error: "AI service timeout" }));
-          }
-          console.error("[chat-dev] Handler error:", e.message);
-          res.writeHead(500, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: e.message || "Internal server error" }));
+          return;
         }
+
+        res.writeHead(result.status, {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        });
+        res.end(JSON.stringify(result.body));
       });
 
       // Buffer request bodies for our API handlers
@@ -589,6 +448,11 @@ function chatDevPlugin(env: Record<string, string>) {
           });
           const data = await r.json();
           return data.results?.[0]?.response?.result;
+        }
+
+        if (!commentsModeReady) {
+          try { await turso("ALTER TABLE comments ADD COLUMN mode TEXT DEFAULT 'explain'", []); } catch {}
+          commentsModeReady = true;
         }
 
         // GET — list comments for a story as a threaded tree (same shape as /api/comments).
@@ -631,15 +495,16 @@ function chatDevPlugin(env: Record<string, string>) {
         if (req.method === "POST") {
           try {
             const body = req._body ? JSON.parse(req._body) : {};
-            const { storySlug, body: text, parentId, isAi, aiModel, highlightId, sectionIndex, paragraphIndex, startOffset, endOffset, selectedText } = body;
+            const { storySlug, body: text, parentId, isAi, aiModel, mode, highlightId, sectionIndex, paragraphIndex, startOffset, endOffset, selectedText } = body;
             if (!storySlug || !text) { res.writeHead(400, { "Content-Type": "application/json" }); return res.end(JSON.stringify({ error: "storySlug and body required" })); }
+            if (mode != null && !isTutorMode(mode)) { res.writeHead(400, { "Content-Type": "application/json" }); return res.end(JSON.stringify({ error: "invalid mode" })); }
             const now = new Date().toISOString();
             const args = [
-              storySlug, text, parentId ?? null, isAi ? 1 : 0, aiModel ?? null,
+              storySlug, text, parentId ?? null, isAi ? 1 : 0, aiModel ?? null, mode || "explain",
               highlightId ?? null, sectionIndex ?? null, paragraphIndex ?? null,
               startOffset ?? null, endOffset ?? null, selectedText ?? null, now,
             ];
-            const result = await turso("INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *", args);
+            const result = await turso("INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, mode, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *", args);
             const cols = (result?.cols || []).map((c: any) => c.name || c);
             const cells: any[] = result?.rows?.[0] || [];
             const row: Record<string, any> = {};
@@ -769,8 +634,8 @@ function chatDevPlugin(env: Record<string, string>) {
                 color: h.color, createdAt: h.created_at,
                 comments: comments.map((c: any) => ({
                   id: c.id, body: c.body,
-                  parentId: c.parent_id, isAi: c.is_ai === 1,
-                  aiModel: c.ai_model, createdAt: c.created_at,
+                  parentId: c.parent_id, isAi: c.is_ai === 1 || c.is_ai === "1" || c.is_ai === true,
+                  aiModel: c.ai_model, mode: c.mode, createdAt: c.created_at,
                   updatedAt: c.updated_at,
                 })),
               });
@@ -1022,141 +887,6 @@ function chatDevPlugin(env: Record<string, string>) {
       });
     },
   };
-}
-
-function extractErrorMsg(raw: string, status: number): string {
-  try {
-    const parsed = JSON.parse(raw);
-    if (parsed.error?.message) return parsed.error.message;
-  } catch {}
-  if (status === 429) return "Rate limit exceeded — try again later or switch models.";
-  if (status === 401 || status === 403) return "Invalid or missing API key.";
-  return `AI service error (HTTP ${status})`;
-}
-
-// Gemini handler for dev server (same logic as api/chat.js)
-async function handleGeminiDev(
-  res: any,
-  opts: { systemPrompt: string; userMessage: string; selectedModel: string; shouldStream: boolean; apiKey: string; apiUrl: string }
-) {
-  const { systemPrompt, userMessage, selectedModel, shouldStream, apiKey, apiUrl } = opts;
-
-  // Strip models/ prefix if present (Gemini API returns names like "models/gemini-2.5-flash")
-  const modelId = selectedModel.replace(/^models\//, "");
-
-  const contents = [{ parts: [{ text: userMessage }], role: "user" }];
-  const generationConfig = { temperature: 0.7, maxOutputTokens: 2000 };
-  const geminiBody: any = { contents, generationConfig };
-
-  if (systemPrompt) {
-    geminiBody.systemInstruction = { parts: [{ text: systemPrompt }] };
-  }
-
-  const endpoint = shouldStream
-    ? `${apiUrl}/${modelId}:streamGenerateContent?alt=sse`
-    : `${apiUrl}/${modelId}:generateContent`;
-
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 60000);
-
-    const r = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-goog-api-key": apiKey,
-      },
-      body: JSON.stringify(geminiBody),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeout);
-
-    if (!r.ok) {
-      const err = await r.text();
-      const detail = extractErrorMsg(err, r.status);
-      console.error(`[chat-dev] Gemini API error ${r.status} (${modelId}): ${err.slice(0, 300)}`);
-      res.writeHead(502, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ error: detail }));
-    }
-
-    if (!shouldStream) {
-      const data: any = await r.json();
-      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      res.writeHead(200, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ reply }));
-    }
-
-    // Streaming: transform Gemini SSE → OpenAI-compatible SSE
-    if (!r.body) {
-      res.writeHead(500, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ error: "No response body" }));
-    }
-
-    res.writeHead(200, {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      "Connection": "keep-alive",
-      "Access-Control-Allow-Origin": "*",
-    });
-
-    const reader = r.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const jsonStr = line.slice(6).trim();
-          if (!jsonStr) continue;
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            // Gemini 2.x and 3.x both emit PER-CHUNK deltas — each chunk's
-            // parts[*].text is the new text to append, NOT a cumulative
-            // running total. Concatenate parts within a chunk directly
-            // and emit as the SSE delta. (See api/chat.js for the
-            // production handler.)
-            const parts = parsed.candidates?.[0]?.content?.parts ?? [];
-            const text = parts.map((p) => p.text ?? "").join("");
-
-            if (text) {
-              const chunk = JSON.stringify({
-                id: "gemini-" + Date.now(),
-                object: "chat.completion.chunk",
-                created: Math.floor(Date.now() / 1000),
-                model: modelId,
-                choices: [{ index: 0, delta: { content: text }, finish_reason: null }],
-              });
-              res.write(`data: ${chunk}\n\n`);
-            }
-          } catch {}
-        }
-      }
-    } catch (e: any) {
-      console.error("[chat-dev] Gemini stream read error:", e.message);
-    }
-
-    res.write("data: [DONE]\n\n");
-    res.end();
-  } catch (e: any) {
-    if (e.name === "AbortError") {
-      console.error("[chat-dev] Gemini request timed out");
-      res.writeHead(504, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ error: "AI service timeout" }));
-    }
-    console.error("[chat-dev] Gemini handler error:", e.message);
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: e.message || "Internal server error" }));
-  }
-
 }
 
 export default defineConfig(({ mode }) => {

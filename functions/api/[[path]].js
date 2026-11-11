@@ -3,6 +3,41 @@
 // Reads env vars from Cloudflare env binding: SITE_PASSWORD, USE_TURSO, TURSO_*, AI keys
 // Matches Vercel handlers in api/*.js one-for-one
 
+import { runChat } from "../../shared/chat/core.js";
+import { isTutorMode } from "../../shared/tutor/modes.js";
+
+let commentsModeReady = false;
+
+function chatKeys(env) {
+  return {
+    deepseek: env.DEEPSEEK_API_KEY || "",
+    openrouter: env.OPENROUTER_API_KEY || "",
+    gemini: env.GEMINI_API_KEY || "",
+    groq: env.GROQ_API_KEY || "",
+    cerebras: env.CEREBRAS_API_KEY || "",
+    straitly: env.STRAITLY_API_KEY || env.STRAIGHTLY_API_KEY || env.STRIGHTLY_API_KEY || "",
+  };
+}
+
+function chatOptions(env) {
+  return {
+    geminiDisabled: env.GEMINI_DISABLED === "1" || env.GEMINI_DISABLED === "true",
+    reasoningEffort: env.DEEPSEEK_REASONING_EFFORT,
+    referer: "https://soma.mayanja.dev",
+    title: "Soma",
+  };
+}
+
+function chatResponse(result) {
+  if (result.kind === "stream") {
+    return new Response(result.stream, { status: result.status, headers: result.headers });
+  }
+  return new Response(JSON.stringify(result.body), {
+    status: result.status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
 function val(cell) {
   if (cell && typeof cell === "object") {
     if (cell.type === "null") return null;
@@ -91,12 +126,33 @@ function mapContentRow(r) {
   };
 }
 
+function mapCommentRow(row) {
+  return {
+    id: row.id,
+    storySlug: row.story_slug,
+    body: row.body,
+    parentId: row.parent_id,
+    isAi: row.is_ai === 1 || row.is_ai === "1" || row.is_ai === true,
+    aiModel: row.ai_model,
+    mode: row.mode,
+    highlightId: row.highlight_id,
+    sectionIndex: row.section_index,
+    paragraphIndex: row.paragraph_index,
+    startOffset: row.start_offset,
+    endOffset: row.end_offset,
+    selectedText: row.selected_text,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 function buildTree(rows) {
   const map = {}; const roots = [];
-  for (const row of rows) map[row.id] = { ...row, replies: [] };
-  for (const row of rows) {
+  const mapped = rows.map(mapCommentRow);
+  for (const row of mapped) map[row.id] = { ...row, replies: [] };
+  for (const row of mapped) {
     const node = map[row.id];
-    if (row.parent_id && map[row.parent_id]) map[row.parent_id].replies.push(node);
+    if (row.parentId && map[row.parentId]) map[row.parentId].replies.push(node);
     else roots.push(node);
   }
   return roots;
@@ -252,7 +308,15 @@ export async function onRequest(context) {
     // ── comments (full) ──
     if (route === "comments") {
       // Ensure table exists
-      await tursoQuery(env, `CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY AUTOINCREMENT, story_slug TEXT NOT NULL, body TEXT NOT NULL, parent_id INTEGER, is_ai INTEGER DEFAULT 0, ai_model TEXT, highlight_id INTEGER, section_index INTEGER, paragraph_index INTEGER, start_offset INTEGER, end_offset INTEGER, selected_text TEXT, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT)` , []);
+      await tursoQuery(env, `CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY AUTOINCREMENT, story_slug TEXT NOT NULL, body TEXT NOT NULL, parent_id INTEGER, is_ai INTEGER DEFAULT 0, ai_model TEXT, mode TEXT DEFAULT 'explain', highlight_id INTEGER, section_index INTEGER, paragraph_index INTEGER, start_offset INTEGER, end_offset INTEGER, selected_text TEXT, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT)` , []);
+      if (!commentsModeReady) {
+        try {
+          await tursoQuery(env, "ALTER TABLE comments ADD COLUMN mode TEXT DEFAULT 'explain'", []);
+        } catch {
+          // Column already exists — safe to ignore
+        }
+        commentsModeReady = true;
+      }
       if (method === "GET") {
         const story = query.story;
         if (!story) return new Response(JSON.stringify({ error: "story required" }), { status: 400, headers: { "Content-Type": "application/json" } });
@@ -283,12 +347,14 @@ export async function onRequest(context) {
       if (method === "POST") {
         if (!rateLimit(env, ip, "comments-post", 20, 60000)) return new Response(JSON.stringify({ error: "Too many requests" }), { status: 429, headers: { "Content-Type": "application/json" } });
         const body = await request.json().catch(() => ({}));
-        const { storySlug, body: b, parentId, isAi, aiModel, highlightId, sectionIndex, paragraphIndex, startOffset, endOffset, selectedText } = body;
+        const { storySlug, body: b, parentId, isAi, aiModel, mode, highlightId, sectionIndex, paragraphIndex, startOffset, endOffset, selectedText } = body;
         if (!storySlug || !b) return new Response(JSON.stringify({ error: "storySlug and body required" }), { status: 400, headers: { "Content-Type": "application/json" } });
         if (typeof b !== "string" || b.length > MAX_BODY) return new Response(JSON.stringify({ error: "body too long" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        if (mode != null && !isTutorMode(mode)) return new Response(JSON.stringify({ error: "invalid mode" }), { status: 400, headers: { "Content-Type": "application/json" } });
         const now = new Date().toISOString();
-        const rows = await tursoQuery(env, "INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?) RETURNING *", [storySlug, b, parentId || null, isAi ? 1 : 0, aiModel || null, highlightId || null, sectionIndex ?? null, paragraphIndex ?? null, startOffset ?? null, endOffset ?? null, selectedText || null, now]);
-        return new Response(JSON.stringify(rows[0] || { success: true }), { status: 201, headers: { "Content-Type": "application/json" } });
+        const rows = await tursoQuery(env, "INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, mode, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING *", [storySlug, b, parentId || null, isAi ? 1 : 0, aiModel || null, mode || "explain", highlightId || null, sectionIndex ?? null, paragraphIndex ?? null, startOffset ?? null, endOffset ?? null, selectedText || null, now]);
+        const created = rows[0];
+        return new Response(JSON.stringify(created ? mapCommentRow(created) : { success: true }), { status: 201, headers: { "Content-Type": "application/json" } });
       }
       if (method === "PUT" || method === "DELETE") {
         if (!requireAuth()) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
@@ -594,132 +660,20 @@ export async function onRequest(context) {
 
     // ── chat ──
     if (route === "chat") {
-      if (!requireAuth()) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+      if (!requireAuth()) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (method !== "POST") {
+        return new Response(JSON.stringify({ error: "Method not allowed" }), {
+          status: 405,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
       const body = await request.json().catch(() => ({}));
-      const { systemPrompt, userMessage, selectedModel, stream } = body;
-      const shouldStream = stream !== false;
-
-      // Pick provider from model id
-      let providerKey = "";
-      let providerUrl = "";
-      let modelId = selectedModel || "deepseek-flash";
-
-      if (modelId.startsWith("deepseek-")) {
-        providerKey = env.DEEPSEEK_API_KEY || "";
-        providerUrl = "https://api.deepseek.com/v1/chat/completions";
-      } else if (modelId.startsWith("gemini-") || modelId.startsWith("models/gemini")) {
-        // Gemini handler
-        const apiKey = env.GEMINI_API_KEY || "";
-        if (!apiKey) return new Response(JSON.stringify({ error: "Gemini key not configured" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        const gemModel = modelId.replace(/^models\//, "");
-        const contents = [{ parts: [{ text: userMessage || "" }], role: "user" }];
-        const genConfig = { temperature: 0.7, maxOutputTokens: 2000 };
-        const gemBody = { contents, generationConfig: genConfig };
-        if (systemPrompt) gemBody.systemInstruction = { parts: [{ text: systemPrompt }] };
-        const endpoint = shouldStream
-          ? `https://generativelanguage.googleapis.com/v1beta/models/${gemModel}:streamGenerateContent?alt=sse&key=${apiKey}`
-          : `https://generativelanguage.googleapis.com/v1beta/models/${gemModel}:generateContent?key=${apiKey}`;
-        const r = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(gemBody) });
-        if (!r.ok) {
-          const txt = await r.text().catch(() => "");
-          return new Response(JSON.stringify({ error: txt.slice(0, 500) || "Gemini error" }), { status: r.status, headers: { "Content-Type": "application/json" } });
-        }
-        if (!shouldStream) {
-          const gData = await r.json().catch(() => ({}));
-          const text = gData.candidates?.[0]?.content?.parts?.[0]?.text || "";
-          return new Response(JSON.stringify({ choices: [{ message: { content: text } }] }), { status: 200, headers: { "Content-Type": "application/json" } });
-        }
-        // Stream: transform Gemini SSE to OpenAI-compatible SSE
-        const { readable, writable } = new TransformStream();
-        const writer = writable.getWriter();
-        const reader = r.body.getReader();
-        const decoder = new TextDecoder();
-        let buf = "";
-        (async () => {
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              buf += decoder.decode(value, { stream: true });
-              const lines = buf.split("\n");
-              buf = lines.pop() || "";
-              for (const line of lines) {
-                if (!line.trim()) continue;
-                if (line.startsWith("data: ")) {
-                  const jsonStr = line.slice(6).trim();
-                  if (jsonStr === "[DONE]") continue;
-                  try {
-                    const gJson = JSON.parse(jsonStr);
-                    const txt = gJson.candidates?.[0]?.content?.parts?.[0]?.text || "";
-                    if (txt) {
-                      const out = JSON.stringify({ choices: [{ delta: { content: txt } }] });
-                      await writer.write(new TextEncoder().encode(`data: ${out}\n\n`));
-                    }
-                  } catch {}
-                }
-              }
-            }
-            await writer.write(new TextEncoder().encode("data: [DONE]\n\n"));
-          } catch {} finally { try { await writer.close(); } catch {} }
-        })();
-        return new Response(readable, { status: 200, headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" } });
-      } else if (modelId.includes("/")) {
-        // OpenRouter style id like google/gemini-... or mistral
-        providerKey = env.OPENROUTER_API_KEY || "";
-        providerUrl = "https://openrouter.ai/api/v1/chat/completions";
-      } else if (modelId.startsWith("groq") || modelId.includes("llama") && env.GROQ_API_KEY) {
-        providerKey = env.GROQ_API_KEY || "";
-        providerUrl = "https://api.groq.com/openai/v1/chat/completions";
-      } else {
-        // Default to OpenRouter if available, else DeepSeek
-        if (env.OPENROUTER_API_KEY) {
-          providerKey = env.OPENROUTER_API_KEY;
-          providerUrl = "https://openrouter.ai/api/v1/chat/completions";
-        } else if (env.DEEPSEEK_API_KEY) {
-          providerKey = env.DEEPSEEK_API_KEY;
-          providerUrl = "https://api.deepseek.com/v1/chat/completions";
-        }
-      }
-
-      if (!providerKey) return new Response(JSON.stringify({ error: "No AI provider key configured for model " + modelId }), { status: 400, headers: { "Content-Type": "application/json" } });
-
-      const bodyPayload = {
-        model: modelId,
-        messages: [
-          ...(systemPrompt ? [{ role: "system", content: systemPrompt }] : []),
-          { role: "user", content: userMessage || "" },
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
-        stream: shouldStream,
-      };
-
-      const r = await fetch(providerUrl, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${providerKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify(bodyPayload),
-      });
-
-      if (!r.ok) {
-        const txt = await r.text().catch(() => "");
-        console.error("[chat] provider error", r.status, txt.slice(0, 300));
-        return new Response(JSON.stringify({ error: txt.slice(0, 500) || `Provider error ${r.status}` }), { status: r.status, headers: { "Content-Type": "application/json" } });
-      }
-
-      if (!shouldStream) {
-        const data = await r.json().catch(() => ({}));
-        return new Response(JSON.stringify(data), { status: 200, headers: { "Content-Type": "application/json" } });
-      }
-
-      // Stream through
-      return new Response(r.body, {
-        status: 200,
-        headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          Connection: "keep-alive",
-        },
-      });
+      return chatResponse(await runChat({ body, keys: chatKeys(env), options: chatOptions(env) }));
     }
 
     // ── export ──
