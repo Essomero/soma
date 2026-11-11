@@ -81,8 +81,6 @@ All content lives in `src/content/` organized by type:
 - `src/content/podcast/`: Audio episodes, transcripts, and show notes
 - `src/content/registry.ts`: Single unified export registry
 
-**Sync to database**: After modifying any content file (story, doc, guide, etc.), run `npm run publish-all` to update the database. The build-only `publish-all --if-empty` skips existing rows; `publish-all` without the flag refreshes every row including changed meta, body, and fields. Without this step, the live site shows stale content.
-
 ## Agent MCP Server
 
 Content workflows are exposed to coding agents through a stdio MCP server at `server/mcp-server.mjs`. For content tasks, use its tools instead of reading `SOMA_SKILL.md` or scraping the site. The tools mirror the skill's workflow and shell out to the repo's own scripts; `SOMA_SKILL.md` stays the source of truth.
