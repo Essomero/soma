@@ -113,12 +113,32 @@ function mapContentRow(r) {
   const base = ROUTE_BASE[r.type] || r.type;
   return { ...body, slug: r.slug, type: r.type, status: r.status, title: r.title, excerpt: r.excerpt, meta, isFeatured: meta.featured === true, position: Number(r.position) || 0, updatedAt: r.updated_at, id: r.slug, href: `/${base}/${r.slug}` };
 }
+function mapCommentRow(row) {
+  return {
+    id: row.id,
+    storySlug: row.story_slug,
+    body: row.body,
+    parentId: row.parent_id,
+    isAi: row.is_ai === 1 || row.is_ai === "1" || row.is_ai === true,
+    aiModel: row.ai_model,
+    mode: row.mode,
+    highlightId: row.highlight_id,
+    sectionIndex: row.section_index,
+    paragraphIndex: row.paragraph_index,
+    startOffset: row.start_offset,
+    endOffset: row.end_offset,
+    selectedText: row.selected_text,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
 function buildTree(rows) {
   const map = {}; const roots = [];
-  for (const row of rows) map[row.id] = { ...row, replies: [] };
-  for (const row of rows) {
+  const mapped = rows.map(mapCommentRow);
+  for (const row of mapped) map[row.id] = { ...row, replies: [] };
+  for (const row of mapped) {
     const node = map[row.id];
-    if (row.parent_id && map[row.parent_id]) map[row.parent_id].replies.push(node);
+    if (row.parentId && map[row.parentId]) map[row.parentId].replies.push(node);
     else roots.push(node);
   }
   return roots;
@@ -238,7 +258,8 @@ export default async (req, context) => {
         if (typeof b !== "string" || b.length > MAX_BODY) return new Response(JSON.stringify({ error: "body too long" }), { status: 400, headers: { "Content-Type": "application/json" } });
         if (mode != null && !isTutorMode(mode)) return new Response(JSON.stringify({ error: "invalid mode" }), { status: 400, headers: { "Content-Type": "application/json" } });
         const rows = await tursoQuery("INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, mode, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING *", [storySlug, b, parentId || null, isAi ? 1 : 0, aiModel || null, mode || "explain", highlightId || null, sectionIndex ?? null, paragraphIndex ?? null, startOffset ?? null, endOffset ?? null, selectedText || null, new Date().toISOString()]);
-        return new Response(JSON.stringify(rows[0] || { success: true }), { status: 201, headers: { "Content-Type": "application/json" } });
+        const created = rows[0];
+        return new Response(JSON.stringify(created ? mapCommentRow(created) : { success: true }), { status: 201, headers: { "Content-Type": "application/json" } });
       }
       if (req.method === "PUT" || req.method === "DELETE") {
         if (!authed) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });

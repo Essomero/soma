@@ -401,29 +401,29 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
   };
 
   const handleExplain = async () => {
-      if (explaining || aiLoading !== null) return;
-      if (!storyContext) return;
+    if (explaining || aiLoading !== null) return;
+    if (!storyContext) return;
 
-      setExplaining(true);
-      setExplainDraft("");
-      setExplainTab("write");
+    setExplaining(true);
+    setExplainDraft("");
+    setExplainTab("write");
 
-      try {
-        await streamChat({
-          action: "article-explain",
-          context: {
-            articleTitle: storyContext.title,
-            articleBody: storyContext.body,
-          },
-          model: aiModel,
-          provider: aiProvider,
-          onToken: (full) => setExplainDraft(full),
-        });
-      } catch (e) {
-        setAiError({ id: -2, message: e instanceof Error ? e.message : "Unknown error" });
-      }
-      setExplaining(false);
-    };
+    try {
+      await streamChat({
+        action: "article-explain",
+        context: {
+          articleTitle: storyContext.title,
+          articleBody: storyContext.body,
+        },
+        model: aiModel,
+        provider: aiProvider,
+        onToken: (full) => setExplainDraft(full),
+      });
+    } catch (e) {
+      setAiError({ id: -2, message: e instanceof Error ? e.message : "Unknown error" });
+    }
+    setExplaining(false);
+  };
 
   const postExplain = async () => {
     if (!explainDraft.trim()) return;
