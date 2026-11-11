@@ -25,6 +25,7 @@ export async function initDB() {
       parent_id INTEGER,
       is_ai INTEGER DEFAULT 0,
       ai_model TEXT,
+      mode TEXT DEFAULT 'explain',
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT
     );
@@ -68,6 +69,9 @@ export async function initDB() {
   } catch { /* column already exists */ }
   try {
     await client.execute("ALTER TABLE comments ADD COLUMN selected_text TEXT");
+  } catch { /* column already exists */ }
+  try {
+    await client.execute("ALTER TABLE comments ADD COLUMN mode TEXT DEFAULT 'explain'");
   } catch { /* column already exists */ }
 }
 
@@ -113,6 +117,7 @@ export interface CommentRow {
   parent_id: number | null;
   is_ai: number;
   ai_model: string | null;
+  mode: string | null;
   highlight_id: number | null;
   section_index: number | null;
   paragraph_index: number | null;
@@ -169,6 +174,7 @@ export async function getComments(storySlug: string): Promise<ThreadedComment[]>
     parent_id: (row.parent_id as number) ?? null,
     is_ai: (row.is_ai as number) || 0,
     ai_model: (row.ai_model as string) ?? null,
+    mode: (row.mode as string) ?? null,
     highlight_id: (row.highlight_id as number) ?? null,
     section_index: (row.section_index as number) ?? null,
     paragraph_index: (row.paragraph_index as number) ?? null,
@@ -187,12 +193,12 @@ export async function getComments(storySlug: string): Promise<ThreadedComment[]>
 
 export async function addComment(
   storySlug: string, body: string, parentId?: number | null, isAi?: boolean, aiModel?: string | null,
-  highlightId?: number | null, sectionIndex?: number | null, paragraphIndex?: number | null,
+  mode?: string | null, highlightId?: number | null, sectionIndex?: number | null, paragraphIndex?: number | null,
   startOffset?: number | null, endOffset?: number | null, selectedText?: string | null,
 ) {
   const r = await client.execute({
-    sql: "INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
-    args: [storySlug, body, parentId ?? null, isAi ? 1 : 0, aiModel ?? null, highlightId ?? null, sectionIndex ?? null, paragraphIndex ?? null, startOffset ?? null, endOffset ?? null, selectedText ?? null],
+    sql: "INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, mode, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
+    args: [storySlug, body, parentId ?? null, isAi ? 1 : 0, aiModel ?? null, mode ?? null, highlightId ?? null, sectionIndex ?? null, paragraphIndex ?? null, startOffset ?? null, endOffset ?? null, selectedText ?? null],
   });
   const row = r.rows[0];
   return { id: row.id as number, storySlug: row.story_slug as string, body: row.body as string, parentId: (row.parent_id as number) ?? null, createdAt: row.created_at as string };
