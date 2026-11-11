@@ -55,6 +55,9 @@ All prose across guides, stories, courses, documentation, and agent-generated le
 Commit your own changes as soon as the work is verified: one surgical commit per change, nothing unrelated bundled in.
 Never leave your changes uncommitted at the end of a task. Never commit someone else's changes.
 
+## Rule 10: Feature Branches Only — No Direct Pushes to main
+Never push commits directly to `main`. All changes go through feature branches and pull requests, even one-liners and single-file fixes. The only exception is when explicitly asked to push to main.
+
 ---
 
 # Soma Project Architecture
