@@ -232,6 +232,92 @@ export default async (req, context) => {
       }
     }
 
+    if (route === "notes") {
+      // Merged into api/social.js on Vercel; Netlify functions keep their own
+      // Turso-pipeline implementation, so the route has to exist here too.
+      // scripts/check-api-routes.mjs fails the build if a route is missing.
+      await tursoQuery(`CREATE TABLE IF NOT EXISTS note_articles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        slug TEXT NOT NULL UNIQUE,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        published_content TEXT DEFAULT '[]',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT
+      )`, []);
+      const send = (data, status = 200) =>
+        new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
+      const mapNote = (row) => {
+        let publishedContent = [];
+        try { publishedContent = JSON.parse(row.published_content || "[]"); } catch {}
+        return {
+          id: row.id,
+          slug: row.slug,
+          title: row.title,
+          content: row.content,
+          publishedContent: Array.isArray(publishedContent) ? publishedContent : [],
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        };
+      };
+      if (req.method === "GET") {
+        const slug = query.slug;
+        if (slug) {
+          const rows = await tursoQuery("SELECT * FROM note_articles WHERE slug=?", [slug]);
+          if (!rows[0]) return send({ error: "Not found" }, 404);
+          if (!authed) {
+            const vis = await tursoQuery('SELECT "public" FROM public_pages WHERE slug=?', [slug]);
+            if (!(vis.length > 0 && vis[0].public == 1)) return send({ error: "Not found" }, 404);
+          }
+          return send(mapNote(rows[0]));
+        }
+        const q = typeof query.q === "string" ? query.q.trim() : "";
+        const like = q ? `%${q.replace(/%/g, "").replace(/"/g, "")}%` : "";
+        const rows = q
+          ? authed
+            ? await tursoQuery("SELECT * FROM note_articles WHERE title LIKE ? OR content LIKE ? ORDER BY updated_at DESC, created_at DESC LIMIT 20", [like, like])
+            : await tursoQuery('SELECT la.* FROM note_articles la JOIN public_pages pp ON pp.slug = la.slug WHERE pp."public" = 1 AND (la.title LIKE ? OR la.content LIKE ?) ORDER BY la.updated_at DESC, la.created_at DESC LIMIT 20', [like, like])
+          : authed
+            ? await tursoQuery("SELECT * FROM note_articles ORDER BY updated_at DESC, created_at DESC", [])
+            : await tursoQuery('SELECT la.* FROM note_articles la JOIN public_pages pp ON pp.slug = la.slug WHERE pp."public" = 1 ORDER BY la.updated_at DESC, la.created_at DESC', []);
+        return send(rows.map(mapNote));
+      }
+      if (!authed) return send({ error: "Unauthorized" }, 401);
+      const body = await req.json().catch(() => ({}));
+      if (req.method === "POST") {
+        const { title, content, slug: rawSlug, publishedContent } = body;
+        if (!title || content == null) return send({ error: "title and content required" }, 400);
+        const finalSlug = rawSlug && rawSlug.trim()
+          ? rawSlug.trim()
+          : title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+        if (!finalSlug) return send({ error: "title must produce a slug" }, 400);
+        const existing = await tursoQuery("SELECT slug FROM note_articles WHERE slug=?", [finalSlug]);
+        if (existing.length) return send({ error: "slug already exists" }, 409);
+        const pcJson = Array.isArray(publishedContent) ? JSON.stringify(publishedContent) : "[]";
+        const rows = await tursoQuery("INSERT INTO note_articles (slug, title, content, published_content) VALUES (?,?,?,?) RETURNING *", [finalSlug, title, content, pcJson]);
+        return send(mapNote(rows[0]), 201);
+      }
+      if (req.method === "PUT") {
+        const { slug, title, content, publishedContent } = body;
+        if (!slug || !title || content == null) return send({ error: "slug, title and content required" }, 400);
+        const pcJson = Array.isArray(publishedContent) ? JSON.stringify(publishedContent) : null;
+        const rows = pcJson
+          ? await tursoQuery("UPDATE note_articles SET title=?, content=?, published_content=?, updated_at=datetime('now') WHERE slug=? RETURNING *", [title, content, pcJson, slug])
+          : await tursoQuery("UPDATE note_articles SET title=?, content=?, updated_at=datetime('now') WHERE slug=? RETURNING *", [title, content, slug]);
+        if (!rows[0]) return send({ error: "Not found" }, 404);
+        return send(mapNote(rows[0]));
+      }
+      if (req.method === "DELETE") {
+        const { slug } = body;
+        if (!slug) return send({ error: "slug required" }, 400);
+        await tursoQuery("DELETE FROM comments WHERE story_slug=?", [slug]);
+        await tursoQuery("DELETE FROM highlights WHERE story_slug=?", [slug]);
+        await tursoQuery("DELETE FROM note_articles WHERE slug=?", [slug]);
+        return send({ success: true });
+      }
+      return send({ error: "Method not allowed" }, 405);
+    }
+
     if (route === "comments") {
       await tursoQuery(`CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY AUTOINCREMENT, story_slug TEXT NOT NULL, body TEXT NOT NULL, parent_id INTEGER, is_ai INTEGER DEFAULT 0, ai_model TEXT, mode TEXT DEFAULT 'explain', highlight_id INTEGER, section_index INTEGER, paragraph_index INTEGER, start_offset INTEGER, end_offset INTEGER, selected_text TEXT, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT)`, []);
       if (!commentsModeReady) {

@@ -6,6 +6,7 @@ import { createServer } from "http";
 import { readFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { HANDLER_FILES, handlerForRoute } from "../shared/api-routes.js";
 
 // Vite loads .env files on its own, but plain `node` does not. Read them
 // here so `npm run server` works straight after `cp .env.example .env.local`
@@ -25,11 +26,13 @@ for (const file of [".env.local", ".env"]) {
 
 const PORT = 3001;
 
-// Dynamically import API handlers
-// Note: auth.ts is TypeScript and needs the Vercel build; local DEV mode
-// bypasses the auth gate in AuthGuard, so it is intentionally not served here.
+// Dynamically import API handlers.
+// Note: auth.js needs the session cookie and is not served here: this server
+// exists for localhost dev, where the frontend bypasses the login gate.
+// The list comes from shared/api-routes.js so a merged handler cannot leave a
+// dead route behind (it did: this file imported api/notes.js after the merge).
 const handlers = {};
-for (const name of ["progress", "ratings", "comments", "chat", "models", "tests", "notes", "public", "highlights", "content", "diag"]) {
+for (const name of HANDLER_FILES) {
   const mod = await import(`../api/${name}.js`);
   handlers[name] = mod.default;
 }
@@ -47,8 +50,9 @@ const server = createServer(async (req, res) => {
   const path = url.pathname;
 
   // Route to handler
-  const route = path.split("/")[2]; // /api/progress → progress
-  const handler = handlers[route];
+  const route = path.split("/")[2] || ""; // /api/notes → notes
+  const handlerName = handlerForRoute(route);
+  const handler = handlerName ? handlers[handlerName] : null;
 
   if (!handler) {
     res.writeHead(404).end(JSON.stringify({ error: "Not found" }));
@@ -66,7 +70,7 @@ const server = createServer(async (req, res) => {
   // Build Vercel-compatible request/response objects.
   // localBypass mirrors production auth without a login flow: localhost is
   // single-user, and Vercel never sets this flag (it builds req itself).
-  const vercelReq = { method: req.method, query: Object.fromEntries(url.searchParams), body, headers: { cookie: req.headers.cookie || "" }, localBypass: true };
+  const vercelReq = { method: req.method, url: req.url, query: Object.fromEntries(url.searchParams), body, headers: { cookie: req.headers.cookie || "" }, localBypass: true };
   const vercelRes = {
     status(code) { res.statusCode = code; return this; },
     json(data) { res.setHeader("Content-Type", "application/json"); res.end(JSON.stringify(data)); },

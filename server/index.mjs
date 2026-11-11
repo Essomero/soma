@@ -9,6 +9,7 @@ import { createServer } from "http";
 import { readFileSync, existsSync, statSync } from "fs";
 import { join, dirname, extname } from "path";
 import { fileURLToPath } from "url";
+import { HANDLER_FILES, handlerForRoute } from "../shared/api-routes.js";
 
 const rootDir = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -64,14 +65,16 @@ const dbLabel = hasTurso ? (isSqld ? `sqld at ${tursoUrl}` : "Turso remote") : `
 console.log(`[soma] DB: ${dbLabel} (USE_TURSO=${process.env.USE_TURSO || "unset"})`);
 console.log(`[soma] AI: ${aiKeys.length ? aiKeys.join(" + ") : "none — set OPENROUTER_API_KEY etc. to enable margin AI"}`);
 
-const handlerNames = ["content", "notes", "comments", "highlights", "ratings", "progress", "tests", "public", "diag", "chat", "models", "auth", "export"];
 const handlers = {};
-for (const name of handlerNames) {
+for (const name of HANDLER_FILES) {
   try {
     const mod = await import(`../api/${name}.js`);
     handlers[name] = mod.default;
   } catch (e) {
-    console.warn(`[soma] Skipping api/${name}.js: ${e.message}`);
+    // Every route in shared/api-routes.js points at one of these files. A load
+    // failure means those routes would 404 silently, so refuse to boot.
+    console.error(`[soma] Failed to load api/${name}.js: ${e.message}`);
+    process.exit(1);
   }
 }
 
@@ -144,8 +147,9 @@ const server = createServer(async (req, res) => {
   const pathname = url.pathname;
 
   if (pathname.startsWith("/api/")) {
-    const route = pathname.split("/")[2];
-    const handler = handlers[route];
+    const route = pathname.split("/")[2] || "";
+    const handlerName = handlerForRoute(route);
+    const handler = handlerName ? handlers[handlerName] : null;
     if (!handler) {
       res.writeHead(404, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "Not found" }));
@@ -162,6 +166,7 @@ const server = createServer(async (req, res) => {
     }
     const vercelReq = {
       method: req.method,
+      url: req.url,
       query: Object.fromEntries(url.searchParams),
       body,
       headers: {

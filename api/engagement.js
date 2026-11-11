@@ -1,6 +1,7 @@
 import { isAuthed, requireAuth } from "./_auth.js";
 import { rateLimit } from "./_limits.js";
 import { query } from "./_db.js";
+import { apiRouteFromPath } from "../shared/api-routes.js";
 
 // ---- ratings ----
 let ratingsTablesReady = false;
@@ -158,11 +159,7 @@ async function handleTests(req, res) {
 }
 
 function getSubRoute(req) {
-  const raw = (req.url || "").toString();
-  if (raw.includes("/api/ratings") || raw.includes("/ratings")) return "ratings";
-  if (raw.includes("/api/progress") || raw.includes("/progress")) return "progress";
-  if (raw.includes("/api/tests") || raw.includes("/tests")) return "tests";
-  return "unknown";
+  return apiRouteFromPath(req.url);
 }
 
 export default async function handler(req, res) {

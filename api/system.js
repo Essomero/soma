@@ -1,5 +1,6 @@
 import { requireAuth } from "./_auth.js";
 import { query, ping, getDbInfo } from "./_db.js";
+import { apiRouteFromPath } from "../shared/api-routes.js";
 
 const UNSPLASH_KEY = process.env.UNSPLASH_ACCESS_KEY || process.env.UNSPLASH_APP_ID || "";
 const UNSPLASH_SEARCH_URL = "https://api.unsplash.com/search/photos";
@@ -176,18 +177,7 @@ async function handlePublic(req, res) {
 }
 
 function getSubRoute(req) {
-  const raw = (req.url || "").toString();
-  if (raw.includes("/api/diag") || raw.includes("/diag")) return "diag";
-  if (raw.includes("/api/public") || raw.includes("/public")) return "public";
-  // Unsplash requests come via /api/public?unsplash=... but after rewrite they land here;
-  // detect by query params.
-  if (req.query && (req.query.unsplash === "search" || req.query.unsplash === "probe")) return "public";
-  // Default: if slug has no unsplash, disambiguate by checking if it looks like
-  // public flow (slug param) vs diag (no slug). Diag has no slug.
-  // Fallback — if method GET and no slug and no unsplash, treat as diag (owner health).
-  // Otherwise public.
-  if (req.method === "GET" && !req.query?.slug && !req.query?.unsplash) return "diag";
-  return "public";
+  return apiRouteFromPath(req.url);
 }
 
 export default async function handler(req, res) {
@@ -202,7 +192,9 @@ export default async function handler(req, res) {
       return handleDiag(req, res);
     }
 
-    return handlePublic(req, res);
+    if (route === "public") return handlePublic(req, res);
+
+    return res.status(404).json({ error: "Unknown system route — use /api/diag or /api/public" });
   } catch (e) {
     console.error("System handler error:", e instanceof Error ? e.message : String(e));
     return res.status(500).json({ error: "Internal server error" });

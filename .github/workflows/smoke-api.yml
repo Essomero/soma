@@ -1,0 +1,37 @@
+name: API smoke
+
+# Proves the deployed host actually serves every public /api/* route, with and
+# without a trailing slash. The static check (ci.yml) catches mapping mistakes
+# before merge; this catches what only the platform can show — edge rewrites,
+# function limits, cold-start crashes, missing env.
+#
+# 2026-11-11 incident: /api/notes/ returned Vercel's platform 404 while local
+# dev passed, because local dev answered from a hand-written handler copy.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 6 * * *"
+
+concurrency:
+  group: api-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # No npm install: the script only imports shared/api-routes.js.
+      # --wait 600 polls for up to 10 minutes so a push-to-main run waits for
+      # the Vercel deployment instead of racing it.
+      - name: Smoke deployed API
+        run: node scripts/smoke-api.mjs --base https://soma.mayanja.dev --wait 600
