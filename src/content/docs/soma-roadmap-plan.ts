@@ -75,15 +75,15 @@ export const somaRoadmapPlan: DocContent = {
 
     {
       number: "C",
-      heading: "Phase 2 — Proof Graph v0",
+      heading: "Phase 2 — Proof Graph v0 (done)",
       anchor: "phase-2-proof-graph",
       intro:
-        "On private pages, show a quiet summary: \"3 drills · 2 oral proofs · 12 notes.\" Not a scoreboard, not a gate. Just visibility that says \"you've proved this — publish when ready?\"",
+        "A quiet proof summary showing how much engagement exists per content slug: highlights, comments, test submissions, lab attempts, and linked notes. No gating, just visibility.",
       items: [
         {
-          question: "What changes?",
+          question: "What changed?",
           answer: [
-            "Extend `api/progress.js` to aggregate per-slug — lab runs, oral scores, highlight count, note count. Show it in two places:\n\n- `/learn` page gets a proof dashboard view\n- Private page header gets an ambient proof badge\n\nThen the `PublicToggle.tsx` copy shifts from \"publish?\" to \"you've proved this — publish when ready?\" when proof exists. No dark patterns, no XP bar.",
+            "New `api/proof.js` endpoint with `lab_attempts` table (ready for Phase 3). Aggregates per-slug counts from highlights, comments, test submissions, note references, and lab runs.\n\nProof summary shows in two places:\n\n- Private page header (StoryPage): below owner edit/archive buttons\n- Notes article page: per linked content card in \"Published content\" section\n\nThe component renders \"3 drills · 2 oral proofs · 5 highlights · 12 notes\" and returns null when there's nothing to show.\n\nAPI deployed to all targets: Vite dev, server/index.mjs, Vercel, Netlify, Cloudflare Pages.",
           ],
         },
         {
