@@ -588,10 +588,13 @@ export function SkeletonNotesArticle() {
         <Skeleton className="h-4 w-16 mb-sm" />
         <Skeleton className="h-10 md:h-12 w-3/5 max-w-4xl mb-md leading-tight" />
         <Skeleton className="h-3 w-48" />
-        <div className="flex items-center gap-xs mt-lg">
-          <Skeleton className="h-8 w-20" />
-          <Skeleton className="h-8 w-24" />
-          <Skeleton className="h-8 w-24" />
+        <div className="flex items-center justify-between mt-lg">
+          <div className="flex items-center gap-xs">
+            <Skeleton className="h-8 w-16 rounded-md" />
+            <Skeleton className="h-8 w-20 rounded-md" />
+            <Skeleton className="h-8 w-20 rounded-md" />
+          </div>
+          <Skeleton className="h-8 w-28 rounded-lg" />
         </div>
       </section>
       <article className="max-w-readme mx-auto px-gutter md:px-margin-desktop mb-giant">

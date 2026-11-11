@@ -353,7 +353,7 @@ export default function NotesArticlePage() {
                     },
                   })
                 }
-                className="inline-flex items-center gap-md px-lg py-sm rounded-lg font-sora text-sm bg-brand text-white shadow-lg shadow-brand/25 hover:shadow-xl hover:shadow-brand/30 hover:brightness-110 transition-all duration-200"
+                className="inline-flex items-center gap-md px-lg py-sm rounded-lg font-sora text-sm bg-primary text-on-primary hover:bg-primary-hover transition-all duration-200"
               >
                 <Sparkles className="w-4 h-4" /> Generate
               </button>
