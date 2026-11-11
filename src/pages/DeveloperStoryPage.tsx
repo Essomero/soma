@@ -18,11 +18,11 @@ import type { StoryContent } from "@/types";
 import { md, contentToMarkdown } from "@/lib/markdown";
 import { usePageMeta } from "@/hooks/usePageMeta";
 
-const STORY_SLUG = "benjamin-mayanja";
+const STORY_SLUG = "origin-story";
 
 // Author-profile config for this bespoke page (not prose content).
 const benjaminStory = {
-  id: "benjamin-mayanja",
+  id: "origin-story",
   title: "Think on paper, but digital: why I built Soma",
   description:
     "Most tools force a trade: publish before you understand, or understand in a silo nobody can see. I built Soma so learning and publishing live in the same place, on infrastructure you own.",

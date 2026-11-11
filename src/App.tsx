@@ -93,12 +93,12 @@ const router = createBrowserRouter([
         element: <StoriesIndexPage />,
       },
       {
-        path: "stories/benjamin-mayanja",
+        path: "stories/origin-story",
         element: <DeveloperStoryPage />,
       },
       {
         path: "stories/ruth-ikegah",
-        element: <Navigate to="/stories/benjamin-mayanja" replace />,
+        element: <Navigate to="/stories/origin-story" replace />,
       },
       {
         path: "stories/:slug",
