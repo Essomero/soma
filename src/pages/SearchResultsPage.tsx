@@ -1,14 +1,14 @@
 import { md } from "@/lib/markdown";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import {
-  Search, BookOpen, Mic, ArrowRight, SearchX,
-  Bookmark, User, StickyNote,
+  Search, BookOpen, Mic, ArrowRight, SearchX, Plus,
+  Bookmark, User, StickyNote, Sparkles, Loader2,
 } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import { fetchContentList } from "@/lib/content";
 import type { StoryContent, GuideContent } from "@/types";
-import { fetchNotesList, fetchNotesSearch, deriveExcerpt } from "@/lib/notes";
+import { fetchNotesList, fetchNotesSearch, deriveExcerpt, createNote } from "@/lib/notes";
 import { type NoteArticle } from "@/types";
 
 // Mirrors ROUTE_BASE in api/content.js so the client knows how to link.
@@ -71,6 +71,8 @@ export default function SearchResultsPage() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
   const [activeFilter, setActiveFilter] = useState("All Results");
+  const [creatingNote, setCreatingNote] = useState(false);
+  const navigate = useNavigate();
   usePageMeta({ title: query ? `Search: ${query}` : "Search" });
 
   const [allResults, setAllResults] = useState<SearchResult[]>([]);
@@ -121,6 +123,19 @@ export default function SearchResultsPage() {
     setPage((p) => (reset ? 1 : p + 1));
     setLoading(false);
   }, [page]);
+
+  const handleCreateNote = useCallback(async () => {
+    if (!query.trim() || creatingNote) return;
+    setCreatingNote(true);
+    try {
+      const note = await createNote({ title: query, content: "" });
+      navigate(`/notes/${note.slug}/edit`, { replace: true });
+    } catch {
+      navigate("/notes/new", { state: { title: query } });
+    } finally {
+      setCreatingNote(false);
+    }
+  }, [query, creatingNote, navigate]);
 
   useEffect(() => {
     doSearch(query, true);
@@ -192,7 +207,23 @@ export default function SearchResultsPage() {
       <main className="flex-1 p-xl lg:px-giant overflow-hidden">
         {/* Header */}
         <header className="mb-xxl">
-          <AccentBar variant="small" className="mb-sm" />
+          <div className="flex items-center justify-between mb-sm">
+            <AccentBar variant="small" />
+            {query.trim() && (
+              <button
+                onClick={handleCreateNote}
+                disabled={creatingNote}
+                className="inline-flex items-center gap-md px-lg py-sm rounded-lg font-sora text-sm bg-primary text-on-primary hover:bg-primary-hover transition-all duration-200"
+              >
+                {creatingNote ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4" />
+                )}
+                Create note
+              </button>
+            )}
+          </div>
           <h1 className="font-sora text-headline-md text-on-surface flex items-center gap-md">
             Search results for: <span className="text-primary italic">{query}</span>
           </h1>

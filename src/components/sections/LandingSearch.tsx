@@ -41,6 +41,10 @@ const TYPE_COLORS: Record<string, string> = {
   podcast: "text-accent-orange",
 };
 
+/** True on macOS/iOS — shows ⌘ in keyboard hints; shows Ctrl elsewhere. */
+const isMac = typeof navigator !== "undefined" && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+const MOD = isMac ? "\u2318" : "Ctrl";
+
 interface LiveResult {
   slug: string;
   type: string;
@@ -147,6 +151,16 @@ export default function LandingSearch() {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault();
+      // Cmd/Ctrl+Enter always creates a note.
+      if (e.metaKey || e.ctrlKey) {
+        if (showCreateOption) {
+          handleCreateNote(trimmed);
+          return;
+        }
+        submitSearch(trimmed);
+        return;
+      }
+      // Plain Enter: navigate the selected item, or show all results.
       if (selectedIdx >= 0) {
         if (showCreateOption && selectedIdx === combinedResults.length) {
           handleCreateNote(trimmed);
@@ -157,12 +171,6 @@ export default function LandingSearch() {
           navigate(match.href);
           return;
         }
-      }
-      // No explicit selection: default to creating a note when the
-      // option is visible (it's the most prominent action in the dropdown).
-      if (showCreateOption) {
-        handleCreateNote(trimmed);
-        return;
       }
       submitSearch(trimmed);
     }
@@ -299,7 +307,7 @@ export default function LandingSearch() {
               </button>
             )}
             <kbd className="hidden sm:inline-flex items-center gap-1 mr-4 bg-surface-variant text-on-surface-muted px-2 py-1 rounded text-[10px] font-bold border border-border-default">
-              <span className="text-[11px]">⌘</span>K
+              {MOD}K
             </kbd>
           </div>
 
@@ -381,7 +389,7 @@ export default function LandingSearch() {
                 </div>
               )}
 
-              {/* "Create a note" — always shown when there's text, whether results exist or not */}
+              {/* "Create a note" — always shown when there's text */}
               {showCreateOption && (
                 <div className={cn("px-5 pt-3 pb-4", combinedResults.length === 0 && "pt-4")}>
                   <div className="flex items-center gap-2 mb-3">
@@ -414,7 +422,9 @@ export default function LandingSearch() {
                         Opens the editor to refine your idea
                       </span>
                     </div>
-                    <CornerDownLeft className="w-4 h-4 text-on-surface-muted shrink-0" />
+                    <kbd className="hidden sm:inline-flex items-center gap-1 bg-surface-variant text-on-surface-muted px-2 py-1 rounded text-[10px] font-bold border border-border-default shrink-0">
+                      {MOD}+↵
+                    </kbd>
                   </button>
                 </div>
               )}
@@ -424,7 +434,7 @@ export default function LandingSearch() {
 
         {/* Keyboard shortcut hint */}
         <p className="text-center text-xs text-on-surface-muted mt-6">
-          Press <kbd className="bg-surface-variant px-1.5 py-0.5 rounded text-[10px] font-bold border border-border-default">⌘K</kbd> to search from anywhere
+          Press <kbd className="bg-surface-variant px-1.5 py-0.5 rounded text-[10px] font-bold border border-border-default">{MOD}K</kbd> to search from anywhere
         </p>
       </div>
     </header>
