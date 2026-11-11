@@ -109,25 +109,6 @@ export async function setRating(slug: string, rating: number) {
   });
 }
 
-// ── Comments ───────────────────────────────────────────
-export interface CommentRow {
-  id: number;
-  story_slug: string;
-  body: string;
-  parent_id: number | null;
-  is_ai: number;
-  ai_model: string | null;
-  mode: string | null;
-  highlight_id: number | null;
-  section_index: number | null;
-  paragraph_index: number | null;
-  start_offset: number | null;
-  end_offset: number | null;
-  selected_text: string | null;
-  created_at: string;
-  updated_at: string | null;
-}
-
 export interface HighlightRow {
   id: number;
   story_slug: string;
@@ -139,78 +120,6 @@ export interface HighlightRow {
   text_hash: string;
   color: string;
   created_at: string;
-}
-
-export interface ThreadedComment extends CommentRow {
-  replies: ThreadedComment[];
-}
-
-function buildTree(rows: CommentRow[]): ThreadedComment[] {
-  const map: Record<number, ThreadedComment> = {};
-  const roots: ThreadedComment[] = [];
-
-  for (const row of rows) {
-    map[row.id] = { ...row, replies: [] };
-  }
-
-  for (const row of rows) {
-    const node = map[row.id];
-    if (row.parent_id != null && map[row.parent_id]) {
-      map[row.parent_id].replies.push(node);
-    } else {
-      roots.push(node);
-    }
-  }
-
-  return roots;
-}
-
-export async function getComments(storySlug: string): Promise<ThreadedComment[]> {
-  const r = await client.execute({ sql: "SELECT * FROM comments WHERE story_slug = ? ORDER BY created_at DESC", args: [storySlug] });
-  const rows: CommentRow[] = r.rows.map(row => ({
-    id: row.id as number,
-    story_slug: row.story_slug as string,
-    body: row.body as string,
-    parent_id: (row.parent_id as number) ?? null,
-    is_ai: (row.is_ai as number) || 0,
-    ai_model: (row.ai_model as string) ?? null,
-    mode: (row.mode as string) ?? null,
-    highlight_id: (row.highlight_id as number) ?? null,
-    section_index: (row.section_index as number) ?? null,
-    paragraph_index: (row.paragraph_index as number) ?? null,
-    start_offset: (row.start_offset as number) ?? null,
-    end_offset: (row.end_offset as number) ?? null,
-    selected_text: (row.selected_text as string) ?? null,
-    created_at: row.created_at as string,
-    updated_at: row.updated_at as string | null,
-  }));
-  const tree = buildTree(rows);
-  for (const root of tree) {
-    root.replies.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-  }
-  return tree;
-}
-
-export async function addComment(
-  storySlug: string, body: string, parentId?: number | null, isAi?: boolean, aiModel?: string | null,
-  mode?: string | null, highlightId?: number | null, sectionIndex?: number | null, paragraphIndex?: number | null,
-  startOffset?: number | null, endOffset?: number | null, selectedText?: string | null,
-) {
-  const r = await client.execute({
-    sql: "INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, mode, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
-    args: [storySlug, body, parentId ?? null, isAi ? 1 : 0, aiModel ?? null, mode ?? null, highlightId ?? null, sectionIndex ?? null, paragraphIndex ?? null, startOffset ?? null, endOffset ?? null, selectedText ?? null],
-  });
-  const row = r.rows[0];
-  return { id: row.id as number, storySlug: row.story_slug as string, body: row.body as string, parentId: (row.parent_id as number) ?? null, createdAt: row.created_at as string };
-}
-
-export async function updateComment(id: number, body: string) {
-  await client.execute({ sql: "UPDATE comments SET body = ?, updated_at = ? WHERE id = ?", args: [body, new Date().toISOString(), id] });
-}
-
-export async function deleteComment(id: number) {
-  await client.execute({ sql: "DELETE FROM comments WHERE parent_id = ?", args: [id] });
-  await client.execute({ sql: "DELETE FROM comments WHERE id = ?", args: [id] });
 }
 
 // ── Highlights ─────────────────────────────────────────
