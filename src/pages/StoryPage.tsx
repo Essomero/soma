@@ -29,20 +29,12 @@ import { useTextSelection } from "@/lib/useTextSelection";
 import { formatDate } from "@/lib/format-date";
 import { getSelectionOffsets, type HighlightData, COMMENT_MAX_DEPTH } from "@/lib/highlights";
 import { streamChat } from "@/lib/tutor/client";
-import { TUTOR_MODES } from "../../shared/tutor/modes.js";
+import { TUTOR_MODES, MODE_COLOR } from "../../shared/tutor/modes.js";
 import type { TutorMode } from "../../shared/tutor/modes.js";
 import { collectPriorTurns } from "../../shared/tutor/memory.js";
 import { useScrollLock } from "@/lib/useScrollLock";
 import { buildLessonIndex, resolveSectionAnchors, storyCodePrefix } from "@/lib/storyLinks";
 import SafeImage from "@/components/ui/SafeImage";
-
-const MODE_COLOR: Record<string, string> = {
-  explain: "text-brand/70 bg-brand/10",
-  simplify: "text-secondary/70 bg-secondary/10",
-  challenge: "text-accent-orange/70 bg-accent-orange/10",
-  counter: "text-tertiary/70 bg-tertiary/10",
-  socratic: "text-accent-blue-neon/70 bg-accent-blue-neon/10",
-};
 
 interface ModelInfo {
   id: string;
@@ -635,6 +627,7 @@ export default function StoryPage() {
       }
     } catch {}
     setDraftPosting(null);
+    setThinkingDrafts((prev) => { const n = new Map(prev); n.delete(tempId); return n; });
   }, [slug, draftPosting, inlineAiModel, highlights]);
 
   const handleCancelDraft = useCallback((highlightId: number, tempId: number) => {
@@ -1697,16 +1690,14 @@ export default function StoryPage() {
                               </div>
                             )}
                           </div>
+                          {thinkingDrafts.has(comment.id) && <ThinkingSection reasoning={thinkingDrafts.get(comment.id) ?? ""} />}
                           {comment.id < 0 && !comment.body.trim() ? (
                             <div className="flex items-center gap-sm py-sm">
                               <Loader2 className="w-3 h-3 animate-spin text-brand" />
                               <span className="font-sora text-[10px] text-brand animate-pulse">Generating...</span>
                             </div>
                           ) : (
-                            <>
-                              {thinkingDrafts.has(comment.id) && <ThinkingSection reasoning={thinkingDrafts.get(comment.id) ?? ""} />}
-                              <MarkdownHtml html={mdBlock(comment.body)} className="prose prose-sm font-dm-sans text-sm text-on-surface leading-relaxed" />
-                            </>
+                            <MarkdownHtml html={mdBlock(comment.body)} className="prose prose-sm font-dm-sans text-sm text-on-surface leading-relaxed" />
                           )}
                           {comment.id < 0 && (
                             <div className="flex items-center gap-xs mt-sm pt-sm border-t border-border-default">
@@ -1997,16 +1988,14 @@ export default function StoryPage() {
                               </div>
                             )}
                           </div>
+                          {thinkingDrafts.has(comment.id) && <ThinkingSection reasoning={thinkingDrafts.get(comment.id) ?? ""} />}
                           {comment.id < 0 && !comment.body.trim() ? (
                             <div className="flex items-center gap-sm py-sm">
                               <Loader2 className="w-3 h-3 animate-spin text-brand" />
                               <span className="font-sora text-[10px] text-brand animate-pulse">Generating...</span>
                             </div>
                           ) : (
-                            <>
-                              {thinkingDrafts.has(comment.id) && <ThinkingSection reasoning={thinkingDrafts.get(comment.id) ?? ""} />}
-                              <MarkdownHtml html={mdBlock(comment.body)} className="prose prose-sm font-dm-sans text-sm text-on-surface leading-relaxed" />
-                            </>
+                            <MarkdownHtml html={mdBlock(comment.body)} className="prose prose-sm font-dm-sans text-sm text-on-surface leading-relaxed" />
                           )}
                           {comment.id < 0 && (
                             <div className="flex items-center gap-xs mt-sm pt-sm border-t border-border-default">

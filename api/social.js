@@ -495,7 +495,7 @@ async function handleComments(req, res) {
         parentId || null,
         isAi ? 1 : 0,
         aiModel || null,
-        mode || "explain",
+        mode ?? null,
         highlightId || null,
         sectionIndex ?? null,
         paragraphIndex ?? null,

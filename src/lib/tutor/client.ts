@@ -59,6 +59,7 @@ export async function streamChat(options: StreamChatOptions): Promise<string> {
   const decoder = new TextDecoder();
   let buffer = "";
   let full = "";
+  let fullReasoning = "";
 
   for (;;) {
     const { done, value } = await reader.read();
@@ -74,11 +75,26 @@ export async function streamChat(options: StreamChatOptions): Promise<string> {
       if (!payload || payload === "[DONE]") continue;
       try {
         const parsed = JSON.parse(payload);
-        const reasoningContent = parsed.choices?.[0]?.delta?.reasoning_content || "";
-        if (reasoningContent && onReasoningToken) {
-          onReasoningToken(reasoningContent);
+        const delta = parsed.choices?.[0]?.delta;
+        // reasoning_content (DeepSeek, some providers)
+        const rc = delta?.reasoning_content || "";
+        // reasoning_details (OpenRouter streaming shape)
+        const rd = delta?.reasoning_details;
+        let reasoningDelta = rc;
+        if (rd && Array.isArray(rd)) {
+          reasoningDelta = rd.map((r: unknown) => {
+            if (r && typeof r === "object" && "text" in r) {
+              const t = (r as Record<string, unknown>).text;
+              return typeof t === "string" ? t : "";
+            }
+            return "";
+          }).join("");
         }
-        const token = parsed.choices?.[0]?.delta?.content || "";
+        if (reasoningDelta && onReasoningToken) {
+          fullReasoning += reasoningDelta;
+          onReasoningToken(fullReasoning);
+        }
+        const token = delta?.content || "";
         if (token) {
           full += token;
           onToken(full);

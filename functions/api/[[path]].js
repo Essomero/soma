@@ -352,7 +352,7 @@ export async function onRequest(context) {
         if (typeof b !== "string" || b.length > MAX_BODY) return new Response(JSON.stringify({ error: "body too long" }), { status: 400, headers: { "Content-Type": "application/json" } });
         if (mode != null && !isTutorMode(mode)) return new Response(JSON.stringify({ error: "invalid mode" }), { status: 400, headers: { "Content-Type": "application/json" } });
         const now = new Date().toISOString();
-        const rows = await tursoQuery(env, "INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, mode, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING *", [storySlug, b, parentId || null, isAi ? 1 : 0, aiModel || null, mode || "explain", highlightId || null, sectionIndex ?? null, paragraphIndex ?? null, startOffset ?? null, endOffset ?? null, selectedText || null, now]);
+        const rows = await tursoQuery(env, "INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, mode, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING *", [storySlug, b, parentId || null, isAi ? 1 : 0, aiModel || null, mode ?? null, highlightId || null, sectionIndex ?? null, paragraphIndex ?? null, startOffset ?? null, endOffset ?? null, selectedText || null, now]);
         const created = rows[0];
         return new Response(JSON.stringify(created ? mapCommentRow(created) : { success: true }), { status: 201, headers: { "Content-Type": "application/json" } });
       }
