@@ -276,7 +276,7 @@ async function ensureHighlightsTables() {
     parent_id INTEGER,
     is_ai INTEGER DEFAULT 0,
     ai_model TEXT,
-    mode TEXT DEFAULT 'explain',
+    mode TEXT,
     highlight_id INTEGER,
     section_index INTEGER,
     paragraph_index INTEGER,
@@ -409,7 +409,7 @@ async function ensureCommentsSchema() {
     parent_id INTEGER,
     is_ai INTEGER DEFAULT 0,
     ai_model TEXT,
-    mode TEXT DEFAULT 'explain',
+    mode TEXT,
     highlight_id INTEGER,
     section_index INTEGER,
     paragraph_index INTEGER,
@@ -428,7 +428,7 @@ async function ensureCommentsSchema() {
     ["parent_id", "INTEGER"],
     ["is_ai", "INTEGER DEFAULT 0"],
     ["ai_model", "TEXT"],
-    ["mode", "TEXT DEFAULT 'explain'"],
+    ["mode", "TEXT"],
   ];
   for (const [name, ddl] of wanted) {
     if (!existing.includes(name)) {

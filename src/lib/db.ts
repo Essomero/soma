@@ -25,7 +25,7 @@ export async function initDB() {
       parent_id INTEGER,
       is_ai INTEGER DEFAULT 0,
       ai_model TEXT,
-      mode TEXT DEFAULT 'explain',
+      mode TEXT,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT
     );
@@ -71,7 +71,7 @@ export async function initDB() {
     await client.execute("ALTER TABLE comments ADD COLUMN selected_text TEXT");
   } catch { /* column already exists */ }
   try {
-    await client.execute("ALTER TABLE comments ADD COLUMN mode TEXT DEFAULT 'explain'");
+    await client.execute("ALTER TABLE comments ADD COLUMN mode TEXT");
   } catch { /* column already exists */ }
 }
 

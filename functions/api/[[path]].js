@@ -311,7 +311,7 @@ export async function onRequest(context) {
       await tursoQuery(env, `CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY AUTOINCREMENT, story_slug TEXT NOT NULL, body TEXT NOT NULL, parent_id INTEGER, is_ai INTEGER DEFAULT 0, ai_model TEXT, mode TEXT, highlight_id INTEGER, section_index INTEGER, paragraph_index INTEGER, start_offset INTEGER, end_offset INTEGER, selected_text TEXT, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT)` , []);
       if (!commentsModeReady) {
         try {
-          await tursoQuery(env, "ALTER TABLE comments ADD COLUMN mode TEXT DEFAULT 'explain'", []);
+          await tursoQuery(env, "ALTER TABLE comments ADD COLUMN mode TEXT", []);
         } catch {
           // Column already exists — safe to ignore
         }

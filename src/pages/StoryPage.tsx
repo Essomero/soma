@@ -1,6 +1,6 @@
 import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { useState, useEffect, useRef, useCallback, useMemo, useId } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
 import PullQuote from "@/components/ui/PullQuote";
@@ -16,7 +16,7 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import PrintButton from "@/components/ui/PrintButton";
 import { useContentItem, useContentList, invalidateContentCache } from "@/lib/content";
 import type { StoryContent, CourseContent, BookContent, SeriesContent, TestContent } from "@/types";
-import { ArrowLeft, ArrowRight, ExternalLink, Check, Copy, Bookmark, Loader2, Trash2, Bot, PenLine, Eye, Send, X, ChevronDown, ChevronRight, Reply, Maximize2, Sparkles, Edit3, Archive } from "lucide-react";
+import { ArrowLeft, ArrowRight, ExternalLink, Check, Copy, Bookmark, Loader2, Trash2, Bot, PenLine, Eye, Send, X, ChevronDown, Reply, Maximize2, Sparkles, Edit3, Archive } from "lucide-react";
 import { SkeletonStoryLayout } from "@/components/ui/Skeleton";
 import { mdBlock, contentToMarkdown, md } from "@/lib/markdown";
 import MarkdownHtml from "@/components/ui/MarkdownHtml";
@@ -31,6 +31,7 @@ import { getSelectionOffsets, type HighlightData, COMMENT_MAX_DEPTH } from "@/li
 import { streamChat } from "@/lib/tutor/client";
 import { TUTOR_MODES } from "../../shared/tutor/modes.js";
 import { MODE_COLOR } from "@/lib/tutor/modeStyles";
+import { ThinkingSection } from "@/lib/tutor/ThinkingSection";
 import type { TutorMode } from "../../shared/tutor/modes.js";
 import { collectPriorTurns } from "../../shared/tutor/memory.js";
 import { useScrollLock } from "@/lib/useScrollLock";
@@ -93,31 +94,6 @@ function removeCommentFromTree(comments: ThreadedComment[], commentId: number): 
   return comments
     .filter(c => c.id !== commentId)
     .map(c => c.replies.length ? { ...c, replies: removeCommentFromTree(c.replies, commentId) } : c);
-}
-
-function ThinkingSection({ reasoning }: { reasoning: string }) {
-  const [open, setOpen] = useState(false);
-  const toggleId = useId();
-  return (
-    <div className="mb-sm border border-brand/10 rounded-lg overflow-hidden">
-      <button
-        type="button"
-        id={toggleId}
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-        aria-controls={toggleId + "-content"}
-        className="flex items-center gap-xs w-full px-md py-xs bg-brand/[0.03] hover:bg-brand/[0.06] transition-colors text-left"
-      >
-        {open ? <ChevronDown className="w-3 h-3 text-brand/70" /> : <ChevronRight className="w-3 h-3 text-brand/70" />}
-        <span className="font-sora text-[10px] uppercase tracking-widest text-brand/70">Thought</span>
-      </button>
-      {open && (
-        <div id={toggleId + "-content"} role="region" aria-labelledby={toggleId} className="px-md py-sm text-[11px] font-dm-sans text-brand/60 leading-relaxed whitespace-pre-wrap border-t border-brand/10 max-h-40 overflow-y-auto thin-scrollbar">
-          {reasoning}
-        </div>
-      )}
-    </div>
-  );
 }
 
 function StoryProgressButton({ slug }: { slug: string }) {
