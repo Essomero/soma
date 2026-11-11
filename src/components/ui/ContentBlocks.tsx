@@ -353,7 +353,7 @@ export default function ContentBlocks({ blocks, firstDropCap, sectionIndex = 0, 
       case "scene3d":
         return <Scene3DBlock key={idx} block={block} />;
       case "lab":
-        return <LabBlock key={idx} block={block} />;
+        return null;
       default:
         return null;
     }

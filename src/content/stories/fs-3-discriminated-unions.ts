@@ -64,7 +64,6 @@ export const fs3DiscriminatedUnions = {
           command: "npm run lab:dispatcher",
           output:
             "================================================================================\n  [Probe 1/4] Narrowing: Circle Variant Dispatch\n================================================================================\n\nCode Under Test (src/dispatcher.ts):\n  type Shape = Circle | Square | Rect;\n  function area(shape: Shape): number\n\nExecution at Call Site:\n  const shape = { kind: \"circle\", radius: 5 };\n  const result = area(shape);\n\nBehind the Scenes in the TypeScript Compiler:\n  1. DISCRIMINANT EVALUATION: Checks shape.kind === \"circle\".\n  2. CONTROL-FLOW ANALYSIS:   Eliminates Square and Rect variants.\n  3. PROVEN TYPE:             Narrowed to Circle ({ kind: \"circle\", radius: number }).\n  4. LICENSED ACCESS:         Accessing shape.radius is statically proven safe (value: 5).\n  5. COMPUTED RESULT:         78.54",
-          evaluator: "exact",
           files: [
             {
               path: "src/dispatcher.ts",
@@ -104,7 +103,6 @@ export const fs3DiscriminatedUnions = {
           command: "npm run lab:async-state",
           output:
             "================================================================================\n  [Probe 5/6] Async State Union: Mutual Exclusivity\n================================================================================\n\nCode Under Test (src/async_state.ts):\n  type AsyncState<T> = Idle | Loading | Success<T> | Error;\n  function view(state: AsyncState<T>)\n\nSimulated State Transitions:\n  • Idle:    { status: \"idle\" }                 -> view: { kind: \"placeholder\" }\n  • Loading: { status: \"loading\" }              -> view: { kind: \"spinner\" }\n  • Success: { status: \"success\", data: {...} } -> view: { kind: \"data\", value: {...} }\n  • Error:   { status: \"error\", error: Error }  -> view: { kind: \"error\", message: \"timeout\" }\n\nWhy this beats boolean flags (isLoading, isError, hasData):\n  With 3 booleans, 2^3 = 8 combinations exist (e.g. isLoading=true AND isError=true).\n  With a discriminated union, only the 4 valid states are representable in code.\n\n================================================================================\n  [Probe 6/6] The Destructuring Trap Simulation\n================================================================================\n\nCode Pattern Under Test:\n  // TRAP: Destructuring state before narrowing\n  const { status, data } = state;\n  if (status === \"success\") {\n    console.log(data); // In TypeScript, 'data' is disconnected from 'status'!\n  }\n\nWhy Narrowing Breaks:\n  1. Destructuring extracts local variables 'status' and 'data' BEFORE the if-check.\n  2. When 'if (status === \"success\")' runs, TypeScript narrows the local variable 'status'.\n  3. The local variable 'data' is NOT narrowed, because TypeScript tracks properties on the object, not disconnected locals.\n  4. Result: 'data' remains 'T | undefined', forcing ugly casts or causing undefined bugs.\n\nThe Senior Fix:\n  Keep the object intact and narrow on the property:\n  if (state.status === \"success\") {\n    console.log(state.data); // Narrowed cleanly to T!\n  }",
-          evaluator: "exact",
           files: [
             {
               path: "src/async_state.ts",
@@ -147,7 +145,6 @@ export const fs3DiscriminatedUnions = {
           command: "npm run test:p1",
           output:
             "✖ Problem 1: a status the union does not cover is unreachable, not a failure\n  AssertionError [ERR_ASSERTION]: Missing expected exception: Expected an uncovered status to be refused as unreachable, but the call returned \"failed undefined\".\n\nℹ tests 4\nℹ pass 3\nℹ fail 1",
-          evaluator: "exact",
           files: [
             {
               path: "src/p1_api_response.ts",
@@ -172,7 +169,6 @@ export const fs3DiscriminatedUnions = {
           command: "npm run test:p2",
           output:
             "✖ Problem 2: an image without alt omits the suffix instead of printing undefined\n  AssertionError [ERR_ASSERTION]: Expected \"a.png\" when alt is absent, but got \"a.png (undefined)\".\n✖ Problem 2: a document type outside the union is unreachable, not echoed back\n  AssertionError [ERR_ASSERTION]: Missing expected exception: Expected an unknown document type to be refused as unreachable, but the call returned \"video\".\n\nℹ tests 4\nℹ pass 2\nℹ fail 2",
-          evaluator: "exact",
           files: [
             {
               path: "src/p2_trap_hunt.ts",
@@ -197,7 +193,6 @@ export const fs3DiscriminatedUnions = {
           command: "npm run test:p3",
           output:
             "✖ Problem 3: a new event type is a handled gap, not a silent empty line\n  AssertionError [ERR_ASSERTION]: Missing expected exception: Expected a new event type to be refused as unhandled, but the call returned \"\".\n\nℹ tests 3\nℹ pass 2\nℹ fail 1",
-          evaluator: "exact",
           files: [
             {
               path: "src/p3_event_log.ts",

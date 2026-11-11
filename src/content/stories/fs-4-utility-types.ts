@@ -71,7 +71,6 @@ export const fs4UtilityTypes = {
           command: "npm run lab:machinery",
           output:
             "================================================================================\n  [Probe 1/5] Mapped Types: How Partial<T> Rebuilds Shapes\n================================================================================\n\nCode Under Test (src/shape_ops.ts):\n  type Partial<T> = { [K in keyof T]?: T[K] };\n  function myPartial(shape: ShapeDescriptor): ShapeDescriptor;\n\nExecution at Call Site:\n  const User = { id: \"string\", email: \"string\", role: \"string\", age: \"number\" };\n  const result = myPartial(User);\n\nBehind the Scenes in the TypeScript Compiler:\n  1. QUERY KEYS:       keyof User -> [\"id\", \"email\", \"role\", \"age\"]\n  2. MAPPED LOOP:      Iterates each member K in keyof T.\n  3. PROPERTY ACCESS:  T[K] indexes the original property type.\n  4. MODIFIER:         Appends '?' making each property optional.\n  5. TRANSFORMED TYPE: { id?: string; email?: string; role?: string; age?: number }",
-          evaluator: "exact",
           files: [
             {
               path: "src/shape_ops.ts",
@@ -147,7 +146,6 @@ export const fs4UtilityTypes = {
             "ℹ tests 3\n" +
             "ℹ pass 1\n" +
             "ℹ fail 2",
-          evaluator: "exact",
           files: [
             {
               path: "src/p1_my_utilities.ts",
@@ -177,7 +175,6 @@ export const fs4UtilityTypes = {
             "ℹ tests 2\n" +
             "ℹ pass 1\n" +
             "ℹ fail 1",
-          evaluator: "exact",
           files: [
             {
               path: "src/p2_distribution.ts",
@@ -207,7 +204,6 @@ export const fs4UtilityTypes = {
             "ℹ tests 3\n" +
             "ℹ pass 2\n" +
             "ℹ fail 1",
-          evaluator: "exact",
           files: [
             {
               path: "src/p3_deep_keys.ts",

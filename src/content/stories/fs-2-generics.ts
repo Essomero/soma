@@ -71,7 +71,6 @@ export const fs2Generics = {
           command: "npm run lab:relationship",
           output:
             "================================================================================\n  [Probe 1/3] Primitive Value: The Identity Relationship\n================================================================================\n\nCode Under Test (src/relationship.ts):\n  function identity<T>(value: T): { tag: string; value: T } { return { tag: tagOf(value), value }; }\n  function identityAny(value: any): { tag: string; value: any } { return { tag: \"any\", value }; }\n  function identityUnknown(value: unknown): { tag: string; value: unknown } { return { tag: \"unknown\", value }; }\n\nExecution at Call Site:\n  const input = \"hello\";\n  const result = identity(input);\n\nBehind the Scenes in the TypeScript Compiler:\n  1. CALL SITE:       identity(\"hello\") is evaluated.\n  2. INFERENCE SITE:  The argument \"hello\" is inspected.\n  3. TYPE INFERRED:   T is bound to string.\n  4. PRESERVED TYPE:  result.value is proven to be string.\n  5. CONTRAST:        identityAny loses the type (returns any).\n                      identityUnknown blocks property access (returns unknown).",
-          evaluator: "exact",
           files: [
             {
               path: "src/relationship.ts",
@@ -114,7 +113,6 @@ export const fs2Generics = {
           command: "npm run lab:constraints",
           output:
             "================================================================================\n  TypeScript Generics Lab: The Constraint as License and Gate\n================================================================================\n\n[Probe 1] Keyed Constraint: at(obj, key) with valid key 'name'\nTested Function: at(obj, key): representing <T, K extends keyof T>(obj: T, key: K): T[K]\nTarget object:   {\"id\":\"u1\",\"name\":\"Ada Lovelace\",\"role\":\"admin\"}\nAllowed keys (keyof T): [\"id\", \"name\", \"role\"]\nRequested key K: \"name\"\n  Entrance Gate:    PASS (\"name\" satisfies 'K extends keyof T')\n  Internal License: GRANTED (safe to index obj[\"name\"])\n  Result value:     \"Ada Lovelace\" (type: string)\n\n[Probe 2] Keyed Constraint: at(obj, key) with missing key 'salary'\nTested Function: at(obj, key): representing <T, K extends keyof T>(obj: T, key: K): T[K]\nTarget object:   {\"id\":\"u1\",\"name\":\"Ada Lovelace\",\"role\":\"admin\"}\nAllowed keys (keyof T): [\"id\", \"name\", \"role\"]\nRequested key K: \"salary\"\n  Entrance Gate:    REFUSED (TS2345: Argument of type '\"salary\"' is not assignable to keyof T)\n  Runtime Guard:    Blocked before access (RangeError: key 'salary' is not a key of the object)\n\n[Probe 3] Entrance Requirement: requireMembers(value, ['id', 'role'])\nTested Function: requireMembers(value, members): representing <T extends { id, role }>(val: T): T\nInput value:     {\"id\":\"u1\",\"name\":\"Ada Lovelace\",\"role\":\"admin\"}\nConstraint:      T extends { id, role }\n  Entrance Gate:    PASS (satisfies required members: [id, role])\n\n[Probe 4] Entrance Requirement: requireMembers(value, ['id', 'department'])\nTested Function: requireMembers(value, members): representing <T extends { id, department }>(val: T): T\nInput value:     {\"id\":\"u1\",\"name\":\"Ada Lovelace\",\"role\":\"admin\"}\nConstraint:      T extends { id, department }\n  Entrance Gate:    REFUSED (does not satisfy the constraint: missing department)",
-          evaluator: "exact",
           files: [
             {
               path: "src/constraints.ts",
@@ -157,7 +155,6 @@ export const fs2Generics = {
           command: "npm run test:p1",
           output:
             "✖ Problem 1: an item that does not satisfy the constraint is refused, naming the index\n  AssertionError [ERR_ASSERTION]: Missing expected exception: Expected the malformed list to be refused with \"item at index 1 does not satisfy { id: string }\", but the call returned {\"id\":\"u1\"}.\n\nℹ tests 3\nℹ pass 2\nℹ fail 1",
-          evaluator: "exact",
           files: [
             {
               path: "src/p1_constrained_wrapper.ts",
@@ -182,7 +179,6 @@ export const fs2Generics = {
           command: "npm run test:p2",
           output:
             "✖ Problem 2: a placeholder with no param is refused, naming the key\n  AssertionError [ERR_ASSERTION]: Missing expected exception: Expected a refusal naming \"postId\", but the call returned \"/users/42/posts/undefined\".\n\nℹ tests 3\nℹ pass 2\nℹ fail 1",
-          evaluator: "exact",
           files: [
             {
               path: "src/p2_over_generalized.ts",
@@ -207,7 +203,6 @@ export const fs2Generics = {
           command: "npm run test:p3",
           output:
             "✖ Problem 3: a key the object does not have is refused, naming the key\n  AssertionError [ERR_ASSERTION]: Missing expected exception: Expected the unknown key to be refused, but the call returned keys [\"nonexistent\"].\n\nℹ tests 3\nℹ pass 2\nℹ fail 1",
-          evaluator: "exact",
           files: [
             {
               path: "src/p3_build_pick.ts",
