@@ -30,6 +30,8 @@ import { formatDate } from "@/lib/format-date";
 import { getSelectionOffsets, type HighlightData, COMMENT_MAX_DEPTH } from "@/lib/highlights";
 import { streamChat } from "@/lib/tutor/client";
 import { TUTOR_MODES } from "../../shared/tutor/modes.js";
+import { modeColor } from "@/lib/tutor/modeStyles";
+import { ThinkingSection } from "@/components/ui/ThinkingSection";
 import type { TutorMode } from "../../shared/tutor/modes.js";
 import { collectPriorTurns } from "../../shared/tutor/memory.js";
 import { useScrollLock } from "@/lib/useScrollLock";
@@ -328,6 +330,8 @@ export default function StoryPage() {
   const [inlineAiReady, setInlineAiReady] = useState(false);
   const [inlineAiModel, setInlineAiModel] = useState<string>("deepseek-flash");
   const [inlineAiProvider, setInlineAiProvider] = useState<string>("deepseek");
+  /** Accumulated reasoning/thinking content for draft comments (map: tempId → text). */
+  const [thinkingDrafts, setThinkingDrafts] = useState<Map<number, string>>(new Map());
   const [inlineModelMenuOpen, setInlineModelMenuOpen] = useState(false);
   const inlineModelMenuRef = useRef<HTMLDivElement>(null);
   // No provider keys configured yet: AI actions stay visible but disabled,
@@ -531,6 +535,9 @@ export default function StoryPage() {
                 : hl,
             ));
           },
+          onReasoningToken: (reasoning) => {
+            setThinkingDrafts((prev) => new Map(prev).set(TEMP_ID, reasoning));
+          },
         });
 
         if (!full.trim()) {
@@ -539,6 +546,7 @@ export default function StoryPage() {
               ? { ...hl, comments: (hl.comments || []).filter((c) => (c as ThreadedComment).id !== TEMP_ID) }
               : hl,
           ));
+          setThinkingDrafts((prev) => { const n = new Map(prev); n.delete(TEMP_ID); return n; });
         }
       } catch (e) {
         console.error("Tutor request failed:", mode, e);
@@ -547,6 +555,7 @@ export default function StoryPage() {
             ? { ...hl, comments: (hl.comments || []).filter((c) => (c as ThreadedComment).id !== TEMP_ID) }
             : hl,
         ));
+        setThinkingDrafts((prev) => { const n = new Map(prev); n.delete(TEMP_ID); return n; });
       }
     }, [selection, slug, clearSelection, storyText, story, inlineAiModel, inlineAiProvider, highlights]);
 
@@ -599,6 +608,7 @@ export default function StoryPage() {
       }
     } catch {}
     setDraftPosting(null);
+    setThinkingDrafts((prev) => { const n = new Map(prev); n.delete(tempId); return n; });
   }, [slug, draftPosting, inlineAiModel, highlights]);
 
   const handleCancelDraft = useCallback((highlightId: number, tempId: number) => {
@@ -607,6 +617,7 @@ export default function StoryPage() {
         ? { ...hl, comments: (hl.comments || []).filter((c) => (c as ThreadedComment).id !== tempId) }
         : hl,
     ));
+    setThinkingDrafts((prev) => { const n = new Map(prev); n.delete(tempId); return n; });
   }, []);
 
   const handleHighlightClick = useCallback((highlightId: number) => {
@@ -1586,7 +1597,7 @@ export default function StoryPage() {
                                     {inlineModels.find(m => m.id === comment.aiModel)?.label || "AI"}
                                   </span>
                                   {(comment.aiAction || comment.mode) && (
-                                    <span className="font-sora text-[9px] text-brand/70 uppercase tracking-wider bg-brand/10 px-xs py-px rounded">
+                                    <span className={`font-sora text-[9px] uppercase tracking-wider px-xs py-px rounded ${modeColor(comment.aiAction || comment.mode)}`}>
                                       {TUTOR_MODES.find((m) => m.id === (comment.aiAction || comment.mode))?.label || "AI"}
                                     </span>
                                   )}
@@ -1660,7 +1671,15 @@ export default function StoryPage() {
                               </div>
                             )}
                           </div>
-                          <MarkdownHtml html={mdBlock(comment.body)} className="prose prose-sm font-dm-sans text-sm text-on-surface leading-relaxed" />
+                          {thinkingDrafts.has(comment.id) && <ThinkingSection reasoning={thinkingDrafts.get(comment.id) ?? ""} />}
+                          {comment.id < 0 && !comment.body.trim() ? (
+                            <div className="flex items-center gap-sm py-sm">
+                              <Loader2 className="w-3 h-3 animate-spin text-brand" />
+                              <span className="font-sora text-[10px] text-brand animate-pulse">Generating...</span>
+                            </div>
+                          ) : (
+                            <MarkdownHtml html={mdBlock(comment.body)} className="prose prose-sm font-dm-sans text-sm text-on-surface leading-relaxed" />
+                          )}
                           {comment.id < 0 && (
                             <div className="flex items-center gap-xs mt-sm pt-sm border-t border-border-default">
                               {draftPosting === comment.id ? (
@@ -1670,15 +1689,15 @@ export default function StoryPage() {
                                   <button
                                     onClick={() => handlePostDraft(activeHighlight!.id, comment.id, comment.body, comment.aiAction!)}
                                     disabled={!comment.body.trim()}
-                                    className="inline-flex items-center gap-xs text-[10px] bg-primary text-on-primary px-sm py-xs rounded-md hover:opacity-90 disabled:opacity-50 font-sora"
+                                    className="inline-flex items-center gap-xs text-xs bg-primary text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50 font-sora"
                                   >
-                                    <Send className="w-2.5 h-2.5" /> Post
+                                    <Send className="w-3 h-3" /> Post
                                   </button>
                                   <button
                                     onClick={() => handleCancelDraft(activeHighlight!.id, comment.id)}
-                                    className="inline-flex items-center gap-xs text-[10px] bg-surface border border-border-default text-on-surface-muted px-sm py-xs rounded-md hover:bg-surface-container font-sora"
+                                    className="inline-flex items-center gap-xs text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container font-sora"
                                   >
-                                    <X className="w-2.5 h-2.5" /> Cancel
+                                    <X className="w-3 h-3" /> Cancel
                                   </button>
                                 </>
                               )}
@@ -1886,7 +1905,7 @@ export default function StoryPage() {
                                     {inlineModels.find(m => m.id === comment.aiModel)?.label || "AI"}
                                   </span>
                                   {(comment.aiAction || comment.mode) && (
-                                    <span className="font-sora text-[9px] text-brand/70 uppercase tracking-wider bg-brand/10 px-xs py-px rounded">
+                                    <span className={`font-sora text-[9px] uppercase tracking-wider px-xs py-px rounded ${modeColor(comment.aiAction || comment.mode)}`}>
                                       {TUTOR_MODES.find((m) => m.id === (comment.aiAction || comment.mode))?.label || "AI"}
                                     </span>
                                   )}
@@ -1950,7 +1969,15 @@ export default function StoryPage() {
                               </div>
                             )}
                           </div>
-                          <MarkdownHtml html={mdBlock(comment.body)} className="prose prose-sm font-dm-sans text-sm text-on-surface leading-relaxed" />
+                          {thinkingDrafts.has(comment.id) && <ThinkingSection reasoning={thinkingDrafts.get(comment.id) ?? ""} />}
+                          {comment.id < 0 && !comment.body.trim() ? (
+                            <div className="flex items-center gap-sm py-sm">
+                              <Loader2 className="w-3 h-3 animate-spin text-brand" />
+                              <span className="font-sora text-[10px] text-brand animate-pulse">Generating...</span>
+                            </div>
+                          ) : (
+                            <MarkdownHtml html={mdBlock(comment.body)} className="prose prose-sm font-dm-sans text-sm text-on-surface leading-relaxed" />
+                          )}
                           {comment.id < 0 && (
                             <div className="flex items-center gap-xs mt-sm pt-sm border-t border-border-default">
                               {draftPosting === comment.id ? (
@@ -1960,15 +1987,15 @@ export default function StoryPage() {
                                   <button
                                     onClick={() => handlePostDraft(activeHighlight!.id, comment.id, comment.body, comment.aiAction!)}
                                     disabled={!comment.body.trim()}
-                                    className="inline-flex items-center gap-xs text-[10px] bg-primary text-on-primary px-sm py-xs rounded-md hover:opacity-90 disabled:opacity-50 font-sora"
+                                    className="inline-flex items-center gap-xs text-xs bg-primary text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50 font-sora"
                                   >
-                                    <Send className="w-2.5 h-2.5" /> Post
+                                    <Send className="w-3 h-3" /> Post
                                   </button>
                                   <button
                                     onClick={() => handleCancelDraft(activeHighlight!.id, comment.id)}
-                                    className="inline-flex items-center gap-xs text-[10px] bg-surface border border-border-default text-on-surface-muted px-sm py-xs rounded-md hover:bg-surface-container font-sora"
+                                    className="inline-flex items-center gap-xs text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container font-sora"
                                   >
-                                    <X className="w-2.5 h-2.5" /> Cancel
+                                    <X className="w-3 h-3" /> Cancel
                                   </button>
                                 </>
                               )}

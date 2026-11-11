@@ -21,6 +21,8 @@ export interface StreamChatOptions {
   provider?: string;
   signal?: AbortSignal;
   onToken: (fullText: string) => void;
+  /** Called with accumulated reasoning/thinking content as it streams in. */
+  onReasoningToken?: (fullReasoning: string) => void;
 }
 
 async function readError(response: Response): Promise<string> {
@@ -33,7 +35,7 @@ async function readError(response: Response): Promise<string> {
 }
 
 export async function streamChat(options: StreamChatOptions): Promise<string> {
-  const { action, mode, context, model, provider, signal, onToken } = options;
+  const { action, mode, context, model, provider, signal, onToken, onReasoningToken } = options;
 
   const response = await fetch("/api/chat", {
     method: "POST",
@@ -57,6 +59,7 @@ export async function streamChat(options: StreamChatOptions): Promise<string> {
   const decoder = new TextDecoder();
   let buffer = "";
   let full = "";
+  let fullReasoning = "";
 
   for (;;) {
     const { done, value } = await reader.read();
@@ -72,7 +75,35 @@ export async function streamChat(options: StreamChatOptions): Promise<string> {
       if (!payload || payload === "[DONE]") continue;
       try {
         const parsed = JSON.parse(payload);
-        const token = parsed.choices?.[0]?.delta?.content || "";
+        const delta = parsed.choices?.[0]?.delta;
+        // reasoning_content (DeepSeek, some providers)
+        const rc = delta?.reasoning_content || "";
+        // delta.reasoning (OpenRouter simple reasoning delta)
+        const dr = delta?.reasoning || "";
+        // reasoning_details (OpenRouter detailed reasoning shape)
+        let rd = "";
+        const rdetails = delta?.reasoning_details;
+        if (rdetails && Array.isArray(rdetails)) {
+          rd = rdetails.map((r: unknown) => {
+            if (r && typeof r === "object") {
+              if ("text" in r) {
+                const t = (r as Record<string, unknown>).text;
+                if (typeof t === "string") return t;
+              }
+              if ("summary" in r) {
+                const s = (r as Record<string, unknown>).summary;
+                if (typeof s === "string") return s;
+              }
+            }
+            return "";
+          }).join("");
+        }
+        const reasoningDelta = rc || dr || rd;
+        if (reasoningDelta && onReasoningToken) {
+          fullReasoning += reasoningDelta;
+          onReasoningToken(fullReasoning);
+        }
+        const token = delta?.content || "";
         if (token) {
           full += token;
           onToken(full);

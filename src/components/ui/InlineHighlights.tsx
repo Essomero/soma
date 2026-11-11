@@ -11,6 +11,8 @@ import { getSelectionOffsets, type HighlightData, COMMENT_MAX_DEPTH } from "@/li
 import { useScrollLock } from "@/lib/useScrollLock";
 import { streamChat } from "@/lib/tutor/client";
 import { TUTOR_MODES } from "../../../shared/tutor/modes.js";
+import { modeColor } from "@/lib/tutor/modeStyles";
+import { ThinkingSection } from "@/components/ui/ThinkingSection";
 import type { TutorMode } from "../../../shared/tutor/modes.js";
 import { collectPriorTurns } from "../../../shared/tutor/memory.js";
 
@@ -106,6 +108,8 @@ export default function InlineHighlights({
   const [inlineAiReady, setInlineAiReady] = useState(false);
   const [inlineAiModel, setInlineAiModel] = useState<string>("deepseek-flash");
   const [inlineAiProvider, setInlineAiProvider] = useState<string>("deepseek");
+  /** Accumulated reasoning/thinking content for draft comments (map: tempId → text). */
+  const [thinkingDrafts, setThinkingDrafts] = useState<Map<number, string>>(new Map());
   const inlineModelMenuRef = useRef<HTMLDivElement>(null);
   const [inlineModelMenuOpen, setInlineModelMenuOpen] = useState(false);
   // No provider keys configured yet: AI actions stay visible but disabled.
@@ -377,6 +381,9 @@ export default function InlineHighlights({
               : hl,
           ));
         },
+        onReasoningToken: (reasoning) => {
+          setThinkingDrafts((prev) => new Map(prev).set(TEMP_ID, reasoning));
+        },
       });
 
       if (!full.trim()) {
@@ -385,6 +392,7 @@ export default function InlineHighlights({
             ? { ...hl, comments: (hl.comments || []).filter((c) => (c as ThreadedComment).id !== TEMP_ID) }
             : hl,
         ));
+        setThinkingDrafts((prev) => { const n = new Map(prev); n.delete(TEMP_ID); return n; });
       }
     } catch (e) {
       console.error(`Tutor ${mode} failed:`, e);
@@ -393,6 +401,7 @@ export default function InlineHighlights({
           ? { ...hl, comments: (hl.comments || []).filter((c) => (c as ThreadedComment).id !== TEMP_ID) }
           : hl,
       ));
+      setThinkingDrafts((prev) => { const n = new Map(prev); n.delete(TEMP_ID); return n; });
     }
   }, [selection, slug, clearSelection, storyText, storyTitle, inlineAiModel, inlineAiProvider, highlights]);
 
@@ -440,6 +449,7 @@ export default function InlineHighlights({
       }
     } catch {}
     setDraftPosting(null);
+    setThinkingDrafts((prev) => { const n = new Map(prev); n.delete(tempId); return n; });
   }, [slug, draftPosting, inlineAiModel, highlights]);
 
   const handleCancelDraft = useCallback((highlightId: number, tempId: number) => {
@@ -448,6 +458,7 @@ export default function InlineHighlights({
         ? { ...hl, comments: (hl.comments || []).filter((c) => (c as ThreadedComment).id !== tempId) }
         : hl,
     ));
+    setThinkingDrafts((prev) => { const n = new Map(prev); n.delete(tempId); return n; });
   }, []);
 
   // ── AI reply ─────────────────────────────────────
@@ -602,7 +613,7 @@ export default function InlineHighlights({
                 <span className="flex items-center gap-xs">
                   <span className="font-sora text-[10px] text-brand uppercase tracking-widest">{inlineModels.find(m => m.id === comment.aiModel)?.label || "AI"}</span>
                   {(comment.aiAction || comment.mode) && (
-                    <span className="font-sora text-[9px] text-brand/70 uppercase tracking-wider bg-brand/10 px-xs py-px rounded">
+                    <span className={`font-sora text-[9px] uppercase tracking-wider px-xs py-px rounded ${modeColor(comment.aiAction || comment.mode)}`}>
                       {TUTOR_MODES.find((m) => m.id === (comment.aiAction || comment.mode))?.label || "AI"}
                     </span>
                   )}
@@ -651,7 +662,17 @@ export default function InlineHighlights({
               </div>
             )}
           </div>
-          <MarkdownHtml html={mdBlock(comment.body)} className="font-dm-sans text-sm text-on-surface leading-relaxed" />
+          {thinkingDrafts.has(comment.id) && (
+            <ThinkingSection reasoning={thinkingDrafts.get(comment.id) ?? ""} />
+          )}
+          {comment.id < 0 && !comment.body.trim() ? (
+            <div className="flex items-center gap-sm py-sm">
+              <Loader2 className="w-3 h-3 animate-spin text-brand" />
+              <span className="font-sora text-[10px] text-brand animate-pulse">Generating...</span>
+            </div>
+          ) : (
+            <MarkdownHtml html={mdBlock(comment.body)} className="font-dm-sans text-sm text-on-surface leading-relaxed" />
+          )}
           {comment.id < 0 && (
             <div className="flex items-center gap-xs mt-sm pt-sm border-t border-border-default">
               {draftPosting === comment.id ? (
