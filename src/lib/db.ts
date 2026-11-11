@@ -109,6 +109,7 @@ export async function setRating(slug: string, rating: number) {
   });
 }
 
+
 export interface HighlightRow {
   id: number;
   story_slug: string;
@@ -121,6 +122,7 @@ export interface HighlightRow {
   color: string;
   created_at: string;
 }
+
 
 // ── Highlights ─────────────────────────────────────────
 export async function getHighlights(storySlug: string): Promise<HighlightRow[]> {
