@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import hljs from "highlight.js";
 import katex from "katex";
 import { X } from "lucide-react";
 import type { ContentBlock } from "@/types";
@@ -300,7 +301,18 @@ export default function ContentBlocks({ blocks, firstDropCap, sectionIndex = 0, 
         return <ImageBlock key={idx} src={block.src} alt={block.alt} caption={block.caption} />;
       case "horizontalRule":
         return <hr key={idx} className="my-xxl border-0 h-px bg-gradient-to-r from-transparent via-border-default to-transparent" />;
-      case "code":
+      case "code": {
+        const lang = (block.language || "plaintext").toLowerCase();
+        const highlighted = (() => {
+          try {
+            if (lang && hljs.getLanguage(lang)) {
+              return hljs.highlight(block.code, { language: lang }).value;
+            }
+            return hljs.highlightAuto(block.code).value;
+          } catch {
+            return block.code.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          }
+        })();
         return (
           <div key={idx} className="my-xxl rounded-lg overflow-hidden border border-border-default bg-surface-container-high">
             <div className="flex items-center gap-sm px-xl py-sm bg-surface-container-high border-b border-border-default">
@@ -314,11 +326,12 @@ export default function ContentBlocks({ blocks, firstDropCap, sectionIndex = 0, 
             </div>
             <div className="relative">
               <pre className="overflow-x-auto p-xl text-sm leading-relaxed">
-                <code className={`language-${(block.language || "plaintext").toLowerCase()}`}>{block.code}</code>
+                <code className={`hljs language-${lang}`} dangerouslySetInnerHTML={{ __html: highlighted }} />
               </pre>
             </div>
           </div>
         );
+      }
       case "math":
         return <MathBlockSync key={idx} expression={block.expression} display={block.display} />;
       case "mermaid":
