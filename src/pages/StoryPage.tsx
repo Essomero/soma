@@ -30,8 +30,8 @@ import { formatDate } from "@/lib/format-date";
 import { getSelectionOffsets, type HighlightData, COMMENT_MAX_DEPTH } from "@/lib/highlights";
 import { streamChat } from "@/lib/tutor/client";
 import { TUTOR_MODES } from "../../shared/tutor/modes.js";
-import { MODE_COLOR } from "@/lib/tutor/modeStyles";
-import { ThinkingSection } from "@/lib/tutor/ThinkingSection";
+import { modeColor } from "@/lib/tutor/modeStyles";
+import { ThinkingSection } from "@/components/ui/ThinkingSection";
 import type { TutorMode } from "../../shared/tutor/modes.js";
 import { collectPriorTurns } from "../../shared/tutor/memory.js";
 import { useScrollLock } from "@/lib/useScrollLock";
@@ -1597,7 +1597,7 @@ export default function StoryPage() {
                                     {inlineModels.find(m => m.id === comment.aiModel)?.label || "AI"}
                                   </span>
                                   {(comment.aiAction || comment.mode) && (
-                                    <span className={`font-sora text-[9px] uppercase tracking-wider px-xs py-px rounded ${MODE_COLOR[(comment.aiAction || comment.mode) ?? ""] || "text-brand/70 bg-brand/10"}`}>
+                                    <span className={`font-sora text-[9px] uppercase tracking-wider px-xs py-px rounded ${modeColor(comment.aiAction || comment.mode)}`}>
                                       {TUTOR_MODES.find((m) => m.id === (comment.aiAction || comment.mode))?.label || "AI"}
                                     </span>
                                   )}
@@ -1905,7 +1905,7 @@ export default function StoryPage() {
                                     {inlineModels.find(m => m.id === comment.aiModel)?.label || "AI"}
                                   </span>
                                   {(comment.aiAction || comment.mode) && (
-                                    <span className={`font-sora text-[9px] uppercase tracking-wider px-xs py-px rounded ${MODE_COLOR[(comment.aiAction || comment.mode) ?? ""] || "text-brand/70 bg-brand/10"}`}>
+                                    <span className={`font-sora text-[9px] uppercase tracking-wider px-xs py-px rounded ${modeColor(comment.aiAction || comment.mode)}`}>
                                       {TUTOR_MODES.find((m) => m.id === (comment.aiAction || comment.mode))?.label || "AI"}
                                     </span>
                                   )}

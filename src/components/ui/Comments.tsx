@@ -9,7 +9,7 @@ import { COMMENT_MAX_DEPTH } from "@/lib/highlights";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { streamChat } from "@/lib/tutor/client";
 import { TUTOR_MODES } from "../../../shared/tutor/modes.js";
-import { MODE_COLOR } from "@/lib/tutor/modeStyles";
+import { modeColor } from "@/lib/tutor/modeStyles";
 
 interface Comment {
   id: number;
@@ -569,7 +569,7 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
                       {models.find(m => m.id === comment.ai_model)?.label || "AI"}
                     </span>
                     {comment.mode && (
-                      <span className={`font-sora text-[9px] uppercase tracking-wider px-xs py-px rounded ${MODE_COLOR[comment.mode] || "text-brand/70 bg-brand/10"}`}>
+                      <span className={`font-sora text-[9px] uppercase tracking-wider px-xs py-px rounded ${modeColor(comment.mode)}`}>
                         {TUTOR_MODES.find((m) => m.id === comment.mode)?.label || "AI"}
                       </span>
                     )}
