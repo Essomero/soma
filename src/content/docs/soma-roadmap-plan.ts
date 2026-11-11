@@ -97,21 +97,21 @@ export const somaRoadmapPlan: DocContent = {
 
     {
       number: "D",
-      heading: "Phase 3 — Labs Runner v0.5 (done)",
+      heading: "Phase 3 — Labs Runner v0.5",
       anchor: "phase-3-labs-runner",
       intro:
-        "Lab blocks now have expected-output display, a got-input field, and a check button that evaluates via the existing `testEvaluation.ts`.",
+        "Lab blocks today are just metadata — title, path, command. They don't run anything. Target: show expected output vs got, a check button that evaluates via the existing `testEvaluation.ts`.",
       items: [
         {
-          question: "What changed?",
+          question: "What changes?",
           answer: [
-            "Implemented. Lab blocks are no longer just static metadata. When a lab has `evaluator: \"exact\"` set, a got-input textarea and Check button appear in the expanded panel. The check calls `evaluateDrillOutput()` in `src/lib/testEvaluation.ts`, which compares the user's pasted terminal output (trimmed string equality) against the expected output stored in the block.\n\n- `evaluator?: \"exact\" | \"llm\"` field added to the `LabBlock` type. Absent = local-only Go/Docker flow (no check button).\n- `evaluateDrillOutput()` in `testEvaluation.ts` handles exact match and whitespace-normalized (future LLM) modes.\n- Got-input textarea, check button with loading state, and pass/fail result display added to the `LabBlock` component. Pass/fail badge also shows on the collapsed bar.\n- `ContentBlocks` now renders lab blocks inline instead of returning `null`.\n- All 23 existing TypeScript drill labs across 5 fullstack stories tagged with `evaluator: \"exact\"`.",
+            "The lab block component gets an expected-output display, a got-input field, and a check button. The check goes through `src/lib/testEvaluation.ts`, which already grades written answers for `/tests/:slug`. We extend it to validate lab drill output for JavaScript, TypeScript, and SQL drills.\n\nGo and Docker drills stay local clone flow. You run them in `soma-labs` on your machine. We do not run Go in a browser sandbox.",
           ],
         },
         {
           question: "What stays out of scope?",
           answer: [
-            "No browser Go/Docker sandbox. No hosted lab infrastructure. Evaluation is synchronous string comparison only; the LLM evaluation path is reserved for a future iteration. Everything else runs locally. That keeps this phase small.",
+            "No browser Go/Docker sandbox. No hosted lab infrastructure. Greenfield TypeScript and SQL drills evaluate right in the browser via existing test evaluation. Everything else runs locally. That keeps this phase small.",
           ],
         },
       ],
