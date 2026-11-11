@@ -689,6 +689,7 @@ export async function onRequest(context) {
         attempts INTEGER NOT NULL DEFAULT 1,
         last_attempt_at TEXT DEFAULT (datetime('now'))
       )`, []);
+      await tursoQuery(env, `CREATE UNIQUE INDEX IF NOT EXISTS idx_lab_attempts_unique ON lab_attempts(content_slug, lab_id)`, []);
 
       const slug = query.slug;
       if (slug) {
@@ -700,8 +701,8 @@ export async function onRequest(context) {
             (SELECT MAX(score) FROM test_submissions WHERE test_slug = ?) AS best_score,
             (SELECT COUNT(*) FROM lab_attempts WHERE content_slug = ?) AS lab_attempts,
             (SELECT COUNT(*) FROM lab_attempts WHERE content_slug = ? AND passed = 1) AS lab_passed,
-            (SELECT COUNT(*) FROM note_articles WHERE published_content LIKE '%' || ? || '%') AS notes
-        `, [slug, slug, slug, slug, slug, slug, slug, `%${slug}%`]);
+            (SELECT COUNT(*) FROM note_articles WHERE published_content LIKE '%"slug":"' || ? || '"%') AS notes
+        `, [slug, slug, slug, slug, slug, slug, slug, slug]);
         return new Response(JSON.stringify(rows[0] || { slug, highlights: 0, comments: 0, test_submissions: 0, best_score: null, lab_attempts: 0, lab_passed: 0, notes: 0 }), { status: 200, headers: { "Content-Type": "application/json" } });
       }
 
@@ -729,7 +730,11 @@ export async function onRequest(context) {
         LEFT JOIN (SELECT story_slug, COUNT(*) AS c FROM comments GROUP BY story_slug) c ON c.story_slug = sub.slug
         LEFT JOIN (SELECT test_slug, COUNT(*) AS c, MAX(score) AS best_score FROM test_submissions GROUP BY test_slug) t ON t.test_slug = sub.slug
         LEFT JOIN (SELECT content_slug, COUNT(*) AS c, SUM(passed) AS p FROM lab_attempts GROUP BY content_slug) l ON l.content_slug = sub.slug
-        LEFT JOIN (SELECT slug, COUNT(*) AS c FROM note_articles GROUP BY slug) n ON n.slug = sub.slug
+        LEFT JOIN (
+          SELECT json_extract(value, '$.slug') AS ref_slug, COUNT(*) AS c
+          FROM note_articles, json_each(published_content)
+          GROUP BY ref_slug
+        ) n ON n.ref_slug = sub.slug
         ORDER BY sub.slug
       `, []);
       return new Response(JSON.stringify(rows || []), { status: 200, headers: { "Content-Type": "application/json" } });

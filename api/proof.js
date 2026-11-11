@@ -21,8 +21,8 @@ async function ensureTables() {
     attempts INTEGER NOT NULL DEFAULT 1,
     last_attempt_at TEXT DEFAULT (datetime('now'))
   )`);
-  // Ensure lab_attempts has content_slug index for fast group-by
   await query(`CREATE INDEX IF NOT EXISTS idx_lab_attempts_slug ON lab_attempts(content_slug)`);
+  await query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_lab_attempts_unique ON lab_attempts(content_slug, lab_id)`);
   _tablesReady = true;
 }
 
@@ -42,7 +42,7 @@ async function aggregate(slug) {
       (SELECT MAX(score) FROM test_submissions WHERE test_slug = ?) AS best_score,
       (SELECT COUNT(*) FROM lab_attempts WHERE content_slug = ?) AS lab_attempts,
       (SELECT COUNT(*) FROM lab_attempts WHERE content_slug = ? AND passed = 1) AS lab_passed,
-      (SELECT COUNT(*) FROM note_articles WHERE published_content LIKE '%' || ? || '%') AS notes
+      (SELECT COUNT(*) FROM note_articles WHERE published_content LIKE '%"slug":"' || ? || '"%') AS notes
     `
     : `
     SELECT
@@ -69,7 +69,11 @@ async function aggregate(slug) {
     LEFT JOIN (SELECT story_slug, COUNT(*) AS c FROM comments GROUP BY story_slug) c ON c.story_slug = sub.slug
     LEFT JOIN (SELECT test_slug, COUNT(*) AS c, MAX(score) AS best_score FROM test_submissions GROUP BY test_slug) t ON t.test_slug = sub.slug
     LEFT JOIN (SELECT content_slug, COUNT(*) AS c, SUM(passed) AS p FROM lab_attempts GROUP BY content_slug) l ON l.content_slug = sub.slug
-    LEFT JOIN (SELECT slug, COUNT(*) AS c FROM note_articles GROUP BY slug) n ON n.slug = sub.slug
+    LEFT JOIN (
+      SELECT json_extract(value, '$.slug') AS ref_slug, COUNT(*) AS c
+      FROM note_articles, json_each(published_content)
+      GROUP BY ref_slug
+    ) n ON n.ref_slug = sub.slug
     ORDER BY sub.slug
     `;
 

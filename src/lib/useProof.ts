@@ -36,7 +36,9 @@ export function useProof(slug: string): UseProofResult {
 
   useEffect(() => {
     if (!slug) {
+      setProof(null);
       setLoading(false);
+      setError(null);
       return;
     }
 
