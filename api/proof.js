@@ -42,7 +42,9 @@ async function aggregate(slug) {
       (SELECT MAX(score) FROM test_submissions WHERE test_slug = ?) AS best_score,
       (SELECT COUNT(*) FROM lab_attempts WHERE content_slug = ?) AS lab_attempts,
       (SELECT COUNT(*) FROM lab_attempts WHERE content_slug = ? AND passed = 1) AS lab_passed,
-      (SELECT COUNT(*) FROM note_articles WHERE published_content LIKE '%"slug":"' || ? || '"%') AS notes
+      (SELECT COUNT(*) FROM note_articles WHERE EXISTS (
+        SELECT 1 FROM json_each(published_content) WHERE json_extract(value, '$.slug') = ?
+      )) AS notes
     `
     : `
     SELECT
@@ -78,7 +80,7 @@ async function aggregate(slug) {
     `;
 
   const args = slug
-    ? [slug, slug, slug, slug, slug, slug, slug, `%${slug}%`]
+    ? [slug, slug, slug, slug, slug, slug, slug, slug]
     : [];
 
   const rows = await query(sql, args);

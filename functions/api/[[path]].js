@@ -701,7 +701,9 @@ export async function onRequest(context) {
             (SELECT MAX(score) FROM test_submissions WHERE test_slug = ?) AS best_score,
             (SELECT COUNT(*) FROM lab_attempts WHERE content_slug = ?) AS lab_attempts,
             (SELECT COUNT(*) FROM lab_attempts WHERE content_slug = ? AND passed = 1) AS lab_passed,
-            (SELECT COUNT(*) FROM note_articles WHERE published_content LIKE '%"slug":"' || ? || '"%') AS notes
+            (SELECT COUNT(*) FROM note_articles WHERE EXISTS (
+              SELECT 1 FROM json_each(published_content) WHERE json_extract(value, '$.slug') = ?
+            )) AS notes
         `, [slug, slug, slug, slug, slug, slug, slug, slug]);
         return new Response(JSON.stringify(rows[0] || { slug, highlights: 0, comments: 0, test_submissions: 0, best_score: null, lab_attempts: 0, lab_passed: 0, notes: 0 }), { status: 200, headers: { "Content-Type": "application/json" } });
       }
