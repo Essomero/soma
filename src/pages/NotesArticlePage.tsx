@@ -16,6 +16,8 @@ import { mdBlock } from "@/lib/markdown";
 import { type HighlightData, type HighlightComment } from "@/lib/highlights";
 import { fetchNote, deleteNote, splitMarkdownBlocks, validateHighlights } from "@/lib/notes";
 import { type NoteArticle, type PublishedContentEntry } from "@/types";
+import { useAllProofs, type ProofSummary as ProofSummaryData } from "@/lib/useProof";
+import ProofSummary from "@/components/ui/ProofSummary";
 
 function formatDate(iso: string): string {
   if (!iso) return "";
@@ -122,6 +124,16 @@ export default function NotesArticlePage() {
   const highlightClickRef = useRef<(id: number) => void>(() => {});
 
   const { isPublic, toggle } = usePublicState(slug ?? "");
+
+  // ── Proof summary (owner only) ────────────────────────
+  const { proofs: allProofs, loading: proofsLoading } = useAllProofs();
+  const proofBySlug = useMemo(() => {
+    const map = new Map<string, ProofSummaryData>();
+    for (const p of allProofs) {
+      map.set(p.slug, p);
+    }
+    return map;
+  }, [allProofs]);
 
   const load = useCallback(async () => {
     if (!slug) return;
@@ -406,6 +418,11 @@ export default function NotesArticlePage() {
                     {pc.type}
                   </span>
                   <p className="font-dm-sans text-sm text-on-surface mt-xs">{pc.title}</p>
+                  {isOwner && !proofsLoading && proofBySlug.has(pc.slug) && (
+                    <div className="mt-xs">
+                      <ProofSummary proof={proofBySlug.get(pc.slug)!} compact />
+                    </div>
+                  )}
                 </Link>
               );
             })}

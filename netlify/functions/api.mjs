@@ -550,6 +550,66 @@ export default async (req, context) => {
       return chatResponse(await runChat({ body, keys: chatKeys(), options: chatOptions() }));
     }
 
+    // ── proof ──
+    if (route === "proof") {
+      if (!requireAuth()) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+      if (method !== "GET") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "Content-Type": "application/json" } });
+
+      // Ensure lab_attempts table
+      await tursoQuery(`CREATE TABLE IF NOT EXISTS lab_attempts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        content_slug TEXT NOT NULL,
+        lab_id TEXT NOT NULL,
+        passed INTEGER NOT NULL DEFAULT 0,
+        attempts INTEGER NOT NULL DEFAULT 1,
+        last_attempt_at TEXT DEFAULT (datetime('now'))
+      )`, []);
+
+      const slug = query.slug;
+      if (slug) {
+        const rows = await tursoQuery(`
+          SELECT ? AS slug,
+            (SELECT COUNT(*) FROM highlights WHERE story_slug = ?) AS highlights,
+            (SELECT COUNT(*) FROM comments WHERE story_slug = ?) AS comments,
+            (SELECT COUNT(*) FROM test_submissions WHERE test_slug = ?) AS test_submissions,
+            (SELECT MAX(score) FROM test_submissions WHERE test_slug = ?) AS best_score,
+            (SELECT COUNT(*) FROM lab_attempts WHERE content_slug = ?) AS lab_attempts,
+            (SELECT COUNT(*) FROM lab_attempts WHERE content_slug = ? AND passed = 1) AS lab_passed,
+            (SELECT COUNT(*) FROM note_articles WHERE published_content LIKE '%' || ? || '%') AS notes
+        `, [slug, slug, slug, slug, slug, slug, slug, `%${slug}%`]);
+        return new Response(JSON.stringify(rows[0] || { slug, highlights: 0, comments: 0, test_submissions: 0, best_score: null, lab_attempts: 0, lab_passed: 0, notes: 0 }), { status: 200, headers: { "Content-Type": "application/json" } });
+      }
+
+      const rows = await tursoQuery(`
+        SELECT sub.slug,
+          COALESCE(h.c, 0) AS highlights,
+          COALESCE(c.c, 0) AS comments,
+          COALESCE(t.c, 0) AS test_submissions,
+          t.best_score,
+          COALESCE(l.c, 0) AS lab_attempts,
+          COALESCE(l.p, 0) AS lab_passed,
+          COALESCE(n.c, 0) AS notes
+        FROM (
+          SELECT story_slug AS slug FROM highlights
+          UNION
+          SELECT story_slug AS slug FROM comments
+          UNION
+          SELECT test_slug AS slug FROM test_submissions
+          UNION
+          SELECT content_slug AS slug FROM lab_attempts
+          UNION
+          SELECT slug FROM note_articles
+        ) sub
+        LEFT JOIN (SELECT story_slug, COUNT(*) AS c FROM highlights GROUP BY story_slug) h ON h.story_slug = sub.slug
+        LEFT JOIN (SELECT story_slug, COUNT(*) AS c FROM comments GROUP BY story_slug) c ON c.story_slug = sub.slug
+        LEFT JOIN (SELECT test_slug, COUNT(*) AS c, MAX(score) AS best_score FROM test_submissions GROUP BY test_slug) t ON t.test_slug = sub.slug
+        LEFT JOIN (SELECT content_slug, COUNT(*) AS c, SUM(passed) AS p FROM lab_attempts GROUP BY content_slug) l ON l.content_slug = sub.slug
+        LEFT JOIN (SELECT slug, COUNT(*) AS c FROM note_articles GROUP BY slug) n ON n.slug = sub.slug
+        ORDER BY sub.slug
+      `, []);
+      return new Response(JSON.stringify(rows || []), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+
     // ── export ──
     if (route === "export") {
       if (method !== "GET") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "Content-Type": "application/json" } });

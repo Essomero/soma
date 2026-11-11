@@ -23,6 +23,8 @@ import MarkdownHtml from "@/components/ui/MarkdownHtml";
 import { useProgress } from "@/lib/useProgress";
 import { getReadingTime } from "@/lib/readingTime";
 import StarRating from "@/components/ui/StarRating";
+import { useProof } from "@/lib/useProof";
+import ProofSummary from "@/components/ui/ProofSummary";
 import Comments from "@/components/ui/Comments";
 import { useAuth } from "@/lib/AuthContext";
 import { useTextSelection } from "@/lib/useTextSelection";
@@ -184,6 +186,9 @@ export default function StoryPage() {
   const [contentError, setContentError] = useState("");
   const [archivedOverride, setArchivedOverride] = useState<boolean | null>(null);
   const isArchived = archivedOverride ?? story?.archived ?? false;
+
+  // ── Proof summary (owner only) ────────────────────────
+  const { proof: proofData, loading: proofLoading } = useProof(isOwner && slug ? slug : "");
 
   const toggleArchived = async () => {
     if (!story || contentBusy) return;
@@ -1019,6 +1024,14 @@ export default function StoryPage() {
                   </button>
                   </>
                 )}
+
+                {/* Proof summary : quiet engagement tracker (owner only) */}
+                {isOwner && proofData && !proofLoading && (
+                  <div className="w-full mt-xs">
+                    <ProofSummary proof={proofData} />
+                  </div>
+                )}
+
                 {contentError && (
                   <span className="w-full font-dm-sans text-xs text-error">{contentError}</span>
                 )}
