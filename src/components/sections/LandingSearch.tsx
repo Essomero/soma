@@ -158,6 +158,12 @@ export default function LandingSearch() {
           return;
         }
       }
+      // No explicit selection: default to creating a note when the
+      // option is visible (it's the most prominent action in the dropdown).
+      if (showCreateOption) {
+        handleCreateNote(trimmed);
+        return;
+      }
       submitSearch(trimmed);
     }
     if (e.key === "ArrowDown") {
