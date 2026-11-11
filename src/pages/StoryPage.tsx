@@ -36,6 +36,14 @@ import { useScrollLock } from "@/lib/useScrollLock";
 import { buildLessonIndex, resolveSectionAnchors, storyCodePrefix } from "@/lib/storyLinks";
 import SafeImage from "@/components/ui/SafeImage";
 
+const MODE_COLOR: Record<string, string> = {
+  explain: "text-brand/70 bg-brand/10",
+  simplify: "text-secondary/70 bg-secondary/10",
+  challenge: "text-accent-orange/70 bg-accent-orange/10",
+  counter: "text-tertiary/70 bg-tertiary/10",
+  socratic: "text-accent-blue-neon/70 bg-accent-blue-neon/10",
+};
+
 interface ModelInfo {
   id: string;
   label: string;
@@ -1615,7 +1623,7 @@ export default function StoryPage() {
                                     {inlineModels.find(m => m.id === comment.aiModel)?.label || "AI"}
                                   </span>
                                   {(comment.aiAction || comment.mode) && (
-                                    <span className="font-sora text-[9px] text-brand/70 uppercase tracking-wider bg-brand/10 px-xs py-px rounded">
+                                    <span className={`font-sora text-[9px] uppercase tracking-wider px-xs py-px rounded ${MODE_COLOR[(comment.aiAction || comment.mode) ?? ""] || "text-brand/70 bg-brand/10"}`}>
                                       {TUTOR_MODES.find((m) => m.id === (comment.aiAction || comment.mode))?.label || "AI"}
                                     </span>
                                   )}
@@ -1925,7 +1933,7 @@ export default function StoryPage() {
                                     {inlineModels.find(m => m.id === comment.aiModel)?.label || "AI"}
                                   </span>
                                   {(comment.aiAction || comment.mode) && (
-                                    <span className="font-sora text-[9px] text-brand/70 uppercase tracking-wider bg-brand/10 px-xs py-px rounded">
+                                    <span className={`font-sora text-[9px] uppercase tracking-wider px-xs py-px rounded ${MODE_COLOR[(comment.aiAction || comment.mode) ?? ""] || "text-brand/70 bg-brand/10"}`}>
                                       {TUTOR_MODES.find((m) => m.id === (comment.aiAction || comment.mode))?.label || "AI"}
                                     </span>
                                   )}

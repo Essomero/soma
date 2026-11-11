@@ -10,6 +10,14 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import { streamChat } from "@/lib/tutor/client";
 import { TUTOR_MODES } from "../../../shared/tutor/modes.js";
 
+const MODE_COLOR: Record<string, string> = {
+  explain: "text-brand/70 bg-brand/10",
+  simplify: "text-secondary/70 bg-secondary/10",
+  challenge: "text-accent-orange/70 bg-accent-orange/10",
+  counter: "text-tertiary/70 bg-tertiary/10",
+  socratic: "text-accent-blue-neon/70 bg-accent-blue-neon/10",
+};
+
 interface Comment {
   id: number;
   story_slug: string;
@@ -568,7 +576,7 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
                       {models.find(m => m.id === comment.ai_model)?.label || "AI"}
                     </span>
                     {comment.mode && (
-                      <span className="font-sora text-[9px] text-brand/70 uppercase tracking-wider bg-brand/10 px-xs py-px rounded">
+                      <span className={`font-sora text-[9px] uppercase tracking-wider px-xs py-px rounded ${MODE_COLOR[comment.mode] || "text-brand/70 bg-brand/10"}`}>
                         {TUTOR_MODES.find((m) => m.id === comment.mode)?.label || comment.mode}
                       </span>
                     )}
