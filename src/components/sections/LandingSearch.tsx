@@ -64,10 +64,11 @@ export default function LandingSearch() {
   const trimmed = query.trim();
   const hasQuery = trimmed.length > 0;
 
-  // Combined display items: content results first, then notes, then "create note" option
+  // Combined display items: content results first, then notes.
   const combinedResults = [...contentResults, ...noteResults];
-  // Show "create" button when there's a query but no results from either source
-  const showCreateOption = hasQuery && combinedResults.length === 0 && !loading;
+  // "Create a note" always appears when there's text, regardless of results.
+  const showCreateOption = hasQuery;
+  // Total selectable items: results + 1 create option when query present.
   const totalItems = combinedResults.length + (showCreateOption ? 1 : 0);
 
   // ── Debounced multi-source search ─────────────────────────
@@ -116,9 +117,9 @@ export default function LandingSearch() {
       }
     }, 200);
     return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
+      clearTimeout(debounceRef.current);
     };
-  }, [trimmed]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [trimmed]);
 
   const submitSearch = useCallback(
     (term: string) => {
@@ -135,7 +136,6 @@ export default function LandingSearch() {
         const note = await createNote({ title, content: "" });
         navigate(`/notes/${note.slug}/edit`, { replace: true });
       } catch {
-        // fallback: navigate to new note page manually
         navigate("/notes/new", { state: { title } });
       } finally {
         setCreating(false);
@@ -158,7 +158,6 @@ export default function LandingSearch() {
           return;
         }
       }
-      // No selection → submit full search results page
       submitSearch(trimmed);
     }
     if (e.key === "ArrowDown") {
@@ -179,16 +178,33 @@ export default function LandingSearch() {
 
   return (
     <header className="relative w-full min-h-[90vh] overflow-hidden flex items-center justify-center">
-      {/* Decorative background */}
-      <div className="absolute inset-0 z-0">
-        <img
-          alt=""
-          className="w-full h-full object-cover object-center opacity-40 md:opacity-50"
-          src="https://images.unsplash.com/photo-1541185933-1f07fe7463d0?w=1600&q=80"
+      {/* Cosmic decorative background — pure CSS, no broken external images */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-b from-background via-background to-background">
+        {/* Nebula glow spots */}
+        <div className="absolute top-1/4 -left-1/4 w-1/2 h-1/2 rounded-full bg-purple-600/8 blur-[120px]" />
+        <div className="absolute bottom-1/3 -right-1/4 w-1/2 h-1/3 rounded-full bg-blue-500/6 blur-[100px]" />
+        <div className="absolute top-1/2 left-1/3 w-1/4 h-1/4 rounded-full bg-cyan-400/5 blur-[80px]" />
+        {/* Star field via repeating dot pattern */}
+        <div
+          className="absolute inset-0 opacity-40"
+          style={{
+            backgroundImage:
+              "radial-gradient(1px 1px at 10% 20%, var(--on-surface-muted, #888) 50%, transparent 50%)," +
+              "radial-gradient(1px 1px at 30% 70%, var(--on-surface-muted, #888) 50%, transparent 50%)," +
+              "radial-gradient(1.5px 1.5px at 50% 10%, var(--on-surface-muted, #888) 50%, transparent 50%)," +
+              "radial-gradient(1px 1px at 70% 40%, var(--on-surface-muted, #888) 50%, transparent 50%)," +
+              "radial-gradient(1.5px 1.5px at 90% 80%, var(--on-surface-muted, #888) 50%, transparent 50%)," +
+              "radial-gradient(1px 1px at 15% 50%, var(--on-surface-muted, #888) 50%, transparent 50%)," +
+              "radial-gradient(1px 1px at 60% 60%, var(--on-surface-muted, #888) 50%, transparent 50%)," +
+              "radial-gradient(1px 1px at 80% 15%, var(--on-surface-muted, #888) 50%, transparent 50%)," +
+              "radial-gradient(1.5px 1.5px at 40% 90%, var(--on-surface-muted, #888) 50%, transparent 50%)," +
+              "radial-gradient(1px 1px at 25% 35%, var(--on-surface-muted, #888) 50%, transparent 50%)",
+            backgroundSize: "100% 100%",
+            backgroundRepeat: "no-repeat",
+          }}
         />
-        {/* Scrims for text readability across themes */}
-        <div className="absolute inset-0 bg-background/50" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-background/60 to-background" />
+        {/* Bottom fade to solid background */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
       </div>
 
       {/* Content */}
@@ -205,7 +221,7 @@ export default function LandingSearch() {
         <div className="relative">
           <div
             className={cn(
-              "flex items-center w-full bg-surface-container-low border border-border-default rounded-xl overflow-hidden transition-all duration-200",
+              "flex items-center w-full bg-surface-container-low/95 backdrop-blur-sm border border-border-default rounded-xl overflow-hidden transition-all duration-200",
               focused ? "border-brand/50 shadow-lg shadow-brand/5 ring-1 ring-brand/20" : "shadow-md"
             )}
           >
@@ -229,7 +245,6 @@ export default function LandingSearch() {
               }}
               onFocus={() => setFocused(true)}
               onBlur={() => {
-                // Delay so click on dropdown item fires before we hide
                 setTimeout(() => setFocused(false), 200);
               }}
               onKeyDown={handleKeyDown}
@@ -252,7 +267,8 @@ export default function LandingSearch() {
 
           {/* Dropdown */}
           {showDropdown && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-surface-container-low border border-border-default rounded-xl shadow-xl overflow-hidden max-h-[420px] overflow-y-auto z-20">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-surface-container-low/95 backdrop-blur-sm border border-border-default rounded-xl shadow-xl overflow-hidden max-h-[440px] overflow-y-auto z-20">
+              {/* Loading skeleton (only before first result arrives) */}
               {loading && combinedResults.length === 0 && (
                 <div className="p-5 space-y-4 animate-pulse">
                   {[1, 2, 3].map((i) => (
@@ -267,17 +283,7 @@ export default function LandingSearch() {
                 </div>
               )}
 
-              {!loading && combinedResults.length === 0 && (
-                // Empty state: suggest creating a note
-                <div className="p-5 text-center">
-                  <StickyNote className="w-10 h-10 text-on-surface-muted mx-auto mb-3" />
-                  <p className="text-on-surface-muted text-sm mb-4">
-                    No content found for "<span className="text-on-surface font-semibold">{trimmed}</span>"
-                  </p>
-                </div>
-              )}
-
-              {/* Results list */}
+              {/* Results section (only when there are results) */}
               {combinedResults.length > 0 && (
                 <div>
                   <div className="px-5 pt-4 pb-2">
@@ -324,21 +330,26 @@ export default function LandingSearch() {
                       );
                     })}
                   </div>
-
-                  {/* Divider before create option */}
-                  {showCreateOption && (
-                    <div className="border-t border-border-default mx-5" />
-                  )}
+                  <div className="border-t border-border-default mx-5" />
                 </div>
               )}
 
-              {/* "No match: create a note" option — shown when query typed but no results */}
+              {/* Empty state — still searching or no results */}
+              {!loading && combinedResults.length === 0 && (
+                <div className="px-5 pt-4 pb-2">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-muted">
+                    No existing content
+                  </span>
+                </div>
+              )}
+
+              {/* "Create a note" — always shown when there's text, whether results exist or not */}
               {showCreateOption && (
-                <div className="px-5 pt-3 pb-4">
+                <div className={cn("px-5 pt-3 pb-4", combinedResults.length === 0 && "pt-4")}>
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-6 h-[2px] bg-accent-blue-neon" />
                     <span className="text-[10px] font-bold uppercase tracking-widest text-accent-blue-neon">
-                      No matches — create instead
+                      {combinedResults.length > 0 ? "Or create" : "Create a note"}
                     </span>
                   </div>
                   <button
@@ -362,7 +373,7 @@ export default function LandingSearch() {
                         {creating ? "Creating note..." : `Start a note about "${trimmed}"`}
                       </span>
                       <span className="text-xs text-on-surface-muted mt-0.5 block">
-                        Creates a new note and opens the editor
+                        Opens the editor to refine your idea
                       </span>
                     </div>
                     <CornerDownLeft className="w-4 h-4 text-on-surface-muted shrink-0" />
