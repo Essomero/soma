@@ -144,12 +144,9 @@ export default function LandingSearch() {
 
     const canvas = document.getElementById("shooting-star-canvas") as HTMLCanvasElement | null;
     if (!canvas) return;
-
     const parent = canvas.parentElement!;
-    const resize = () => {
-      canvas.width = parent.offsetWidth;
-      canvas.height = parent.offsetHeight;
-    };
+
+    const resize = () => { canvas.width = parent.offsetWidth; canvas.height = parent.offsetHeight; };
     resize();
     const ro = new ResizeObserver(resize);
     ro.observe(parent);
@@ -157,71 +154,93 @@ export default function LandingSearch() {
     const ctx = canvas.getContext("2d")!;
     let animId = 0;
 
-    interface Star {
-      x: number; y: number; vx: number; vy: number; age: number;
-    }
-    let star: Star | null = null;
+    let active = false;
+    let sx = 0, sy = 0, svx = 0, svy = 0, sage = 0;
 
     const spawn = () => {
-      const angle = (25 + Math.random() * 20) * (Math.PI / 180);
+      // Pick a random edge: 0=top, 1=right, 2=bottom, 3=left
+      const edge = Math.floor(Math.random() * 4);
+      const t = Math.random(); // position along the edge (0–1)
+      const angleRad = (20 + Math.random() * 30) * (Math.PI / 180); // 20–50° from horizontal
       const speed = 500 + Math.random() * 300;
-      star = {
-        x: canvas.width * (0.6 + Math.random() * 0.3),
-        y: canvas.height * (0.05 + Math.random() * 0.12),
-        vx: -Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        age: 0,
-      };
+
+      switch (edge) {
+        case 0: // top edge → shoots down-left or down-right
+          sx = canvas.width * (0.1 + t * 0.8);
+          sy = canvas.height * (0.02 + Math.random() * 0.06);
+          svx = (Math.random() > 0.5 ? -1 : 1) * Math.cos(angleRad) * speed;
+          svy = Math.sin(angleRad) * speed;
+          break;
+        case 1: // right edge → shoots leftward
+          sx = canvas.width * (0.92 + Math.random() * 0.08);
+          sy = canvas.height * (0.05 + t * 0.4);
+          svx = -Math.cos(angleRad) * speed;
+          svy = (Math.random() - 0.5) * Math.sin(angleRad) * speed * 0.8;
+          break;
+        case 2: // bottom edge → shoots upward (rare)
+          sx = canvas.width * (0.1 + t * 0.8);
+          sy = canvas.height * (0.92 + Math.random() * 0.08);
+          svx = (Math.random() - 0.5) * Math.cos(angleRad) * speed * 0.6;
+          svy = -Math.sin(angleRad) * speed;
+          break;
+        default: // left edge → shoots rightward
+          sx = canvas.width * (0 + Math.random() * 0.08);
+          sy = canvas.height * (0.05 + t * 0.4);
+          svx = Math.cos(angleRad) * speed;
+          svy = (Math.random() - 0.5) * Math.sin(angleRad) * speed * 0.8;
+          break;
+      }
+      sage = 0;
+      active = true;
     };
 
     const tick = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (star) {
-        star.x += star.vx / 60;
-        star.y += star.vy / 60;
-        star.age += 1 / 60;
+      if (active) {
+        sx += svx / 60;
+        sy += svy / 60;
+        sage += 1 / 60;
 
-        const len = 70; // trail length in px
-        const nx = star.vx / Math.hypot(star.vx, star.vy);
-        const ny = star.vy / Math.hypot(star.vx, star.vy);
+        const len = 70;
+        const nx = svx / Math.hypot(svx, svy);
+        const ny = svy / Math.hypot(svx, svy);
 
-        // Trail — fades from white at head to transparent at tail
-        const grad = ctx.createLinearGradient(star.x, star.y, star.x - nx * len, star.y - ny * len);
+        // Trail gradient — white at head, transparent at tail
+        const grad = ctx.createLinearGradient(sx, sy, sx - nx * len, sy - ny * len);
         grad.addColorStop(0, "rgba(255,255,255,0.9)");
         grad.addColorStop(0.5, "rgba(255,255,255,0.25)");
         grad.addColorStop(1, "rgba(255,255,255,0)");
         ctx.beginPath();
-        ctx.moveTo(star.x, star.y);
-        ctx.lineTo(star.x - nx * len, star.y - ny * len);
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(sx - nx * len, sy - ny * len);
         ctx.strokeStyle = grad;
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
         // Star head
         ctx.beginPath();
-        ctx.arc(star.x, star.y, 2, 0, Math.PI * 2);
+        ctx.arc(sx, sy, 2, 0, Math.PI * 2);
         ctx.fillStyle = "#fff";
         ctx.fill();
         // Glow
         ctx.beginPath();
-        ctx.arc(star.x, star.y, 5, 0, Math.PI * 2);
+        ctx.arc(sx, sy, 5, 0, Math.PI * 2);
         ctx.fillStyle = "rgba(255,255,255,0.15)";
         ctx.fill();
 
-        // Despawn when off-screen or after 1.5s
-        if (star.x < -100 || star.y > canvas.height + 100 || star.age > 1.5) {
-          star = null;
-          later(() => { spawn(); animId = requestAnimationFrame(tick); }, 8000 + Math.random() * 7000);
-          return;
+        // Despawn when off-screen or after 2s
+        if (sx < -150 || sx > canvas.width + 150 || sy < -150 || sy > canvas.height + 150 || sage > 2) {
+          active = false;
+          later(spawn, 8000 + Math.random() * 7000);
         }
       }
 
       animId = requestAnimationFrame(tick);
     };
 
-    // Start after a short delay
-    later(() => { spawn(); animId = requestAnimationFrame(tick); }, 3000);
+    later(spawn, 3000);
+    animId = requestAnimationFrame(tick);
 
     return () => {
       cancelled = true;
