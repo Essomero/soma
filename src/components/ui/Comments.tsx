@@ -8,6 +8,7 @@ import Tooltip from "@/components/ui/Tooltip";
 import { COMMENT_MAX_DEPTH } from "@/lib/highlights";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { streamChat } from "@/lib/tutor/client";
+import { TUTOR_MODES } from "../../../shared/tutor/modes.js";
 
 interface Comment {
   id: number;
@@ -16,6 +17,7 @@ interface Comment {
   parent_id: number | null;
   is_ai: number;
   ai_model: string | null;
+  mode: string | null;
   created_at: string;
   updated_at: string | null;
   replies: Comment[];
@@ -565,6 +567,11 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
                     <span className="font-sora text-[10px] text-brand uppercase tracking-widest">
                       {models.find(m => m.id === comment.ai_model)?.label || "AI"}
                     </span>
+                    {comment.mode && (
+                      <span className="font-sora text-[9px] text-brand/70 uppercase tracking-wider bg-brand/10 px-xs py-px rounded">
+                        {TUTOR_MODES.find((m) => m.id === comment.mode)?.label || comment.mode}
+                      </span>
+                    )}
                   </>
                 ) : (
                   <>
