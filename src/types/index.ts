@@ -242,6 +242,8 @@ export interface LabBlock {
   command: string;
   output?: string;
   files?: LabFile[];
+  /** How to check user-submitted output. Absent = local-only (Go/Docker), no check button. */
+  evaluator?: "exact" | "llm";
 };
 
 // ── Author ────────────────────────────────────────────

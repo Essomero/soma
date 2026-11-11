@@ -81,6 +81,7 @@ export const fs5TypingTheBoundary = {
           command: "npm run lab:boundary",
           output:
             "================================================================================\n  [Probe 1/4] Trust Boundary: Valid Untrusted Payload\n================================================================================\n\nCode Under Test (src/schema.ts & src/boundary.ts):\n  const userSchema = object({ id: string(), name: string(), email: string(), role: enumeration([\"admin\", \"member\"]) });\n  function safeParse(schema: Schema<T>, value: unknown): SafeParseResult<T>;\n\nRaw Input:\n  '{\"id\":\"u-101\",\"name\":\"Ada Lovelace\",\"email\":\"ada@analytical.engine\",\"role\":\"admin\"}'\n\nDoor A: Naive Cast (as User)\n  TypeScript Checker: SILENT (bypassed by cast)\n  Runtime Result:     { id: 'u-101', name: 'Ada Lovelace', email: 'ada@analytical.engine', role: 'admin' }\n  Safety Status:      PASSED (only because incoming data happened to match)\n\nDoor B: Schema Parse (safeParse)\n  Validation Engine:  CHECKING\n    - id: ok\n    - name: ok\n    - email: ok\n    - role: ok\n  Parse Verdict:      SUCCESS\n  Output:             Typed User object guaranteed by runtime contract",
+          evaluator: "exact",
           files: [
             {
               path: "src/schema.ts",
@@ -138,6 +139,7 @@ export const fs5TypingTheBoundary = {
             "ℹ tests 3\n" +
             "ℹ pass 1\n" +
             "ℹ fail 2",
+          evaluator: "exact",
           files: [
             {
               path: "src/p1_boundary_audit.ts",
@@ -170,6 +172,7 @@ export const fs5TypingTheBoundary = {
             "ℹ tests 3\n" +
             "ℹ pass 1\n" +
             "ℹ fail 2",
+          evaluator: "exact",
           files: [
             {
               path: "src/p2_assignability.ts",
@@ -201,6 +204,7 @@ export const fs5TypingTheBoundary = {
             "ℹ tests 3\n" +
             "ℹ pass 2\n" +
             "ℹ fail 1",
+          evaluator: "exact",
           files: [
             {
               path: "src/p3_drift_gate.ts",

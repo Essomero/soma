@@ -81,6 +81,7 @@ export const fs1WhyThisTypeError = {
           command: "npm run lab:assignability",
           output:
             "================================================================================\n  [Probe 1/4] Structural Assignability: Exact Shape Match\n================================================================================\n\nCode Under Test (src/assignability.ts):\n  interface User { id: string; name: string; }\n  function isAssignable(value, shape): boolean\n\nExecution at Call Site:\n  const shape = { id: \"string\", name: \"string\" };\n  const value = { id: \"u1\", name: \"Ada Lovelace\" };\n  const result = isAssignable(value, shape);\n\nBehind the Scenes in the TypeScript Compiler:\n  1. SHAPE EVALUATION: Required properties are [id, name].\n  2. MEMBER CHECK:     id (string === string) -> OK.\n                       name (string === string) -> OK.\n  3. VERDICT:          Value satisfies the target shape.\n  4. ASSIGNABLE:       true",
+          evaluator: "exact",
           files: [
             {
               path: "src/assignability.ts",
@@ -112,6 +113,7 @@ export const fs1WhyThisTypeError = {
           command: "npm run lab:family",
           output:
             "================================================================================\n  TypeScript Checker Lab: Diagnostic Error Families\n================================================================================\n\n[Diagnostic 1] Base Assignability Mismatch\nMessage: \"Type 'number' is not assignable to type 'string'.\"\n  Error Family: missing-or-incompatible (TS2322 / TS2345)\n  Checker Claim: Target expects a property or type that the source value does not provide.\n  Naive Trap:    Casting with 'as' or silencing with 'any': discards the type error and ships broken data.\n  Senior Fix:    Inspect which member diverged, then fix the data or widen the target interface if genuinely intended.\n\n[Diagnostic 2] Fresh Literal Excess Property\nMessage: \"Type '{ id: string; admin: true; }' may only specify known properties, and 'admin' does not exist in type 'User'.\"\n  Error Family: excess-property (TS2353)\n  Checker Claim: Fresh literal specifies a property not declared in the target shape.\n  Naive Trap:    Disabling excess checks by adding '[key: string]: any' index signature to the interface.\n  Senior Fix:    Either declare the property on the interface or remove the excess field from the literal.\n\n[Diagnostic 3] Possibly Undefined Dereference\nMessage: \"Object is possibly 'undefined'.\"\n  Error Family: possibly-undefined (TS2532)\n  Checker Claim: Attempting to dereference a property on a value that may be undefined or null.\n  Naive Trap:    Non-null assertion 'value!.prop': turns off the check and causes runtime TypeError if absent.\n  Senior Fix:    Provide explicit evidence: optional chaining 'value?.prop' or an if-guard 'if (value)'.\n\n[Diagnostic 4] Union Member Access without Narrowing\nMessage: \"Property 'radius' does not exist on type 'Circle | Square'.\"\n  Error Family: union-no-common-member (TS2339)\n  Checker Claim: Property exists on some union variants, but not on all of them.\n  Naive Trap:    Casting to one specific variant '(item as VariantA).prop' without runtime check.\n  Senior Fix:    Narrow by discriminant first: 'if (item.kind === \"a\") item.prop'.",
+          evaluator: "exact",
           files: [
             {
               path: "src/error_family.ts",
@@ -160,6 +162,7 @@ export const fs1WhyThisTypeError = {
           command: "npm run test:p1",
           output:
             "✖ Problem 1: a fresh literal with a stray member is refused, naming the member\n  AssertionError: Expected the fresh literal to be refused with \"excess:owner\", but got {\"ok\":true,\"reason\":null}.\n\nℹ tests 3\nℹ pass 2\nℹ fail 1",
+          evaluator: "exact",
           files: [
             {
               path: "src/p1_excess_property.ts",
@@ -184,6 +187,7 @@ export const fs1WhyThisTypeError = {
           command: "npm run test:p2",
           output:
             "✖ Problem 2: a missing key falls back to the light theme instead of throwing\n  TypeError: Cannot read properties of undefined (reading 'theme')\n\nℹ tests 2\nℹ pass 1\nℹ fail 1",
+          evaluator: "exact",
           files: [
             {
               path: "src/p2_optional_chain.ts",
@@ -208,6 +212,7 @@ export const fs1WhyThisTypeError = {
           command: "npm run test:p3",
           output:
             "✖ Problem 3: a view event labels with its page\n  AssertionError: Expected \"view:/home\" for a view event, but got \"/home:undefined,undefined\".\n✖ Problem 3: a click event labels with its coordinates\n  AssertionError: Expected \"click:120,40\" for a click event, but got \"undefined:120,40\".\n\nℹ tests 2\nℹ pass 0\nℹ fail 2",
+          evaluator: "exact",
           files: [
             {
               path: "src/p3_union_trap.ts",
