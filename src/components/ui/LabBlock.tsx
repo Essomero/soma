@@ -89,22 +89,25 @@ export default function LabBlock({ block, className = "" }: LabBlockProps) {
   const currentFile: LabFile | undefined = files[activeFileIndex];
   const hasEvaluator = block.evaluator != null;
 
-  const handleCheck = useCallback(() => {
+  const handleCheck = useCallback(async () => {
     if (!block.output || !block.evaluator || checking) return;
     setChecking(true);
     setResult(null);
 
-    // Small delay so the loading spinner is visible for UX feedback.
-    setTimeout(() => {
-      try {
-        const evaluation = evaluateDrillOutput(gotInput, block.output!, block.evaluator!);
-        setResult(evaluation);
-      } catch {
-        setResult({ pass: false, feedback: "Evaluation failed. Try again." });
-      } finally {
-        setChecking(false);
-      }
-    }, 300);
+    // Show the spinner for at least 200ms so the check feels responsive.
+    const start = Date.now();
+    try {
+      const evaluation = evaluateDrillOutput(gotInput, block.output!, block.evaluator!);
+      const elapsed = Date.now() - start;
+      if (elapsed < 200) await new Promise<void>((r) => setTimeout(r, 200 - elapsed));
+      setResult(evaluation);
+    } catch {
+      const elapsed = Date.now() - start;
+      if (elapsed < 200) await new Promise<void>((r) => setTimeout(r, 200 - elapsed));
+      setResult({ pass: false, feedback: "Evaluation failed. Try again." });
+    } finally {
+      setChecking(false);
+    }
   }, [gotInput, block.output, block.evaluator, checking]);
 
   return (
