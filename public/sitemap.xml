@@ -67,9 +67,6 @@
     <loc>https://soma.mayanja.dev/stories</loc>
   </url>
   <url>
-    <loc>https://soma.mayanja.dev/stories/benjamin-mayanja</loc>
-  </url>
-  <url>
     <loc>https://soma.mayanja.dev/stories/fs-1-why-this-type-error</loc>
   </url>
   <url>
@@ -83,6 +80,9 @@
   </url>
   <url>
     <loc>https://soma.mayanja.dev/stories/fs-5-typing-the-boundary</loc>
+  </url>
+  <url>
+    <loc>https://soma.mayanja.dev/stories/origin-story</loc>
   </url>
   <url>
     <loc>https://soma.mayanja.dev/stories/prophet-1-on-love</loc>

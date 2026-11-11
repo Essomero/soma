@@ -15,7 +15,7 @@ export const somaPullQuotes: PullQuoteData[] = [
 ];
 
 export const somaMoreStories: ArticleCardData[] = [
-  { id: "benjamin-mayanja", category: "COMMUNITY", title: "AI-accelerated learning you own", excerpt: "I love to learn. I love markdown, graphs, illustrations, and maths. Obsidian was perfect for local notes, but it never cut it for shareability. I built Soma to close that gap.", image: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=600&h=400&fit=crop", imageAlt: "Benjamin Mayanja", href: "/stories/benjamin-mayanja" },
+  { id: "origin-story", category: "COMMUNITY", title: "AI-accelerated learning you own", excerpt: "I love to learn. I love markdown, graphs, illustrations, and maths. Obsidian was perfect for local notes, but it never cut it for shareability. I built Soma to close that gap.", image: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=600&h=400&fit=crop", imageAlt: "Benjamin Mayanja", href: "/stories/origin-story" },
   { id: "fs-1-why-this-type-error", category: "ENGINEERING", title: "Why Does This Type Error?", excerpt: "The backpack rule: why TypeScript checks shapes instead of names.", image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&h=400&fit=crop", imageAlt: "TypeScript code editor", href: "/stories/fs-1-why-this-type-error" },
   { id: "fs-2-generics", category: "ENGINEERING", title: "Generics as Relationships", excerpt: "Connecting input types to output types without cluttering signatures.", image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&h=400&fit=crop", imageAlt: "Laptop with code", href: "/stories/fs-2-generics" },
 ];

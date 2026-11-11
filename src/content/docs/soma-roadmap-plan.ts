@@ -57,9 +57,9 @@ export const somaRoadmapPlan: DocContent = {
         "Right now the margin AI just answers. We want a tutor sitting next to you: Explain, Simplify, Challenge, Counter-example, Socratic. Each mode is a different system prompt. Session memory per paragraph so the tutor remembers what it just said.",
       items: [
         {
-          question: "What changes?",
+          question: "What changed?",
           answer: [
-            "Surprisingly little. The chat gateway (`api/chat.js`) and SSE streaming already work. The Comments component already handles threads. What we add:\n\n- `src/lib/admin-prompts.ts` — five mode prompt templates (Explain, Simplify, Challenge, Counter-example, Socratic), each adapting an existing prompt format\n- `src/hooks/useTextSelection.ts` — a mode selector dropdown in the selection popover\n- `api/chat.js` — accept a `mode` param and pass the right prompt template\n- Schema: add a `mode` column to the `comments` table (nullable, default `explain`)",
+            "Implemented. The chat gateway (`api/chat.js`) and SSE streaming already work. The Comments component already handles threads. What we added:\n\n- `src/lib/admin-prompts.ts` — five mode prompt templates (Explain, Simplify, Challenge, Counter-example, Socratic), each adapting an existing prompt format\n- `src/hooks/useTextSelection.ts` — a mode selector dropdown in the selection popover\n- `api/chat.js` — accept a `mode` param and pass the right prompt template\n- Schema: add a `mode` column to the `comments` table (nullable, default `explain`)",
             "No new tables. No new API endpoints. The mode is just a different system instruction on the same streaming route.",
           ],
         },

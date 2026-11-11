@@ -18,7 +18,7 @@ export const somaVisionRoadmap = {
   topics: ["technology", "philosophy", "open-source"],
 
   intro:
-    "Generative AI made producing content trivial and retaining it rare. We read summaries, paste snippets into voids, and mistake convenience for comprehension. Illusion of competence is up, retention is down. Soma exists to reverse that: sovereign learning you own, a margin tutor that challenges you, drills you run with your own hands, and oral proof that feels like evening coffee, not school. This piece is the honest audit of where Soma is today, where the vision asks it to go, and the architecture that gets us there without throwing anything away.",
+    "Generative AI made producing content trivial and retaining it rare. We read summaries, paste snippets into voids, and mistake convenience for comprehension. Illusion of competence is up, retention is down. Soma exists to reverse that: sovereign learning you own, a margin tutor that challenges you, drills you run with your own hands, and oral proof that proves you own it. All on evening coffee terms, not school's. This piece is the honest audit of where Soma is today, where the vision asks it to go, and the architecture that gets us there without throwing anything away.",
 
   body: [
     "Open your laptop and ask any model to summarize a paper. It does, in three bullets. You nod, copy the summary into a doc, and move on. An hour later, could you explain the second bullet without looking?",
@@ -66,7 +66,7 @@ export const somaVisionRoadmap = {
         "Open your laptop and ask any model to summarize a paper. It does, in three bullets. You nod, copy the summary into a doc, and move on. An hour later, could you explain the second bullet without looking?",
         "That is the new normal. Generative AI made the world remarkably efficient at producing content and dangerously passive at retaining it. We read summaries, scroll feeds, and paste code snippets into voids, mistaking convenience for comprehension. The illusion of competence is at an all-time high while deep retention is at an all-time low.",
         "**Soma exists to reverse this trend.**",
-        "We don't replace human cognition. We use AI as an aggressive, high-friction cognitive multiplier. Learning on Soma feels like an evening coffee ritual: warm, inviting, low-pressure, entirely for you, yet backed by rigorous multi-modal proof of understanding.",
+        "We don't replace human cognition. We use AI to make the gap between what you think you know and what you actually understand impossible to ignore. The margin tutor challenges your assumptions, Labs tests them with your own hands, Son forces you to prove them out loud. None of this is easy. Understanding never was, and AI can't change that.",
         {
           type: "callout" as const,
           variant: "info" as const,
@@ -206,6 +206,7 @@ export const somaVisionRoadmap = {
     {
       heading: "Evening Coffee, Not School",
       paragraphs: [
+        "Understanding is hard work. That doesn't change. What changes is the container around it: no deadlines, no streaks, no grades, no school. The friction stays. The pressure goes.",
         "Soma is deliberately not an LMS. No assignments, no due dates, no cohort mechanics. No grade-grind grift: no screaming streak counters, no corporate guilt trips.",
         "You drop in a complex research paper, a piece of classic lit, an architectural blueprint, or a casual weekend curiosity. Soma builds the interactive learning fabric around it through the agent skill pipeline — paste a URL or PDF, the MCP server's `manuscript_template` scaffolds a typed manuscript into gitignored `drafts/<type>/`, `validate_manuscript` checks slug shape and topic validity, `publish_manuscript` lands it private, you preview at `localhost:5173`, then flip when ready.",
         "Oral testing with Son feels like chatting with a sharp, supportive friend over coffee. That means less scoring speech, more 'say it better' nudges. `testEvaluation.ts` gets a friendly mode.",

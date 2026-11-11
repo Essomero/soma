@@ -2,7 +2,7 @@ import type { StoryContent, ArticleCardData } from "@/types";
 
 // Legacy data for the custom DeveloperStoryPage layout
 export const benjaminStory = {
-  id: "benjamin-mayanja",
+  id: "origin-story",
   title: "AI-accelerated learning you own",
   description:
     "I love to learn. I love markdown, graphs, illustrations, and maths. Obsidian was my go-to for local notes, but it never cut it for shareability, online access, or the web. I built Soma to close that gap.",
@@ -40,8 +40,8 @@ export const benjaminMoreStories: ArticleCardData[] = [
   },
 ];
 
-export const benjaminMayanja = {
-  slug: "benjamin-mayanja",
+export const whyIBuiltSoma = {
+  slug: "origin-story",
   category: "Community // Developer Story",
   title: "AI-accelerated learning you own",
   excerpt:

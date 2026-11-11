@@ -1,5 +1,5 @@
 import type { StoryContent, ArticleCardData } from "@/types";
-import { benjaminMayanja } from "./benjamin-mayanja";
+import { whyIBuiltSoma } from "./why-i-built-soma";
 import { fs1WhyThisTypeError } from "./fs-1-why-this-type-error";
 import { fs2Generics } from "./fs-2-generics";
 import { fs3DiscriminatedUnions } from "./fs-3-discriminated-unions";
@@ -14,7 +14,7 @@ import { prophet6OnSorrow } from "./prophet-6-on-sorrow";
 import { somaVisionRoadmap } from "./soma-vision-roadmap";
 const rawStories = [
   somaVisionRoadmap,
-  benjaminMayanja,
+  whyIBuiltSoma,
   fs1WhyThisTypeError,
   fs2Generics,
   fs3DiscriminatedUnions,
