@@ -206,7 +206,7 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
       const bodyFields: Record<string, string[]> = {
         story: ["body"],
         guide: ["body"],
-        doc: ["sections"],
+        doc: ["docSections"],
         course: ["lessons"],
         book: ["chapters"],
         series: ["episodes"],

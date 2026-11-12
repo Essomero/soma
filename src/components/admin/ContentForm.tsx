@@ -118,7 +118,9 @@ function initFromDraft(draft: AIDraft | null): FormValues {
     lessons: draft.lessons || [],
     chapters: draft.chapters || [],
     episodes: draft.episodes || [],
-    docSections: draft.docSections || [],
+    docSections: draft.type === "doc" && Array.isArray(draft.sections) && draft.sections.length > 0
+      ? draft.sections as unknown as { number?: string; heading?: string; anchor?: string; items?: { question: string; answer: (string | object)[] }[] }[]
+      : (draft.docSections || []),
     format: draft.format || "written",
     estimatedMinutes: draft.estimatedMinutes || 30,
     passingScore: draft.passingScore || 70,
