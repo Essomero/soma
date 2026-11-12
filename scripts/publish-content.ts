@@ -6,7 +6,8 @@
  * Publishing never touches visibility: new rows land private, existing rows
  * keep their status. Going public is a human toggle flip, never a CLI flag.
  * --check runs the full validation (batch shape, required fields, slug
- * uniqueness, DB + batch reference integrity) and stops before any write.
+ * uniqueness, DB + batch reference integrity, content gates) and stops
+ * before any write.
  */
 import { pathToFileURL } from "url";
 import { basename, dirname, resolve } from "path";
@@ -65,6 +66,399 @@ function refsOf(type: string, body: Fields): string[] {
   return out;
 }
 
+// ── Content validation gates ───────────────────────────────────────────────
+// Called after required-field checks, before batch.push(). Fail-fast on first
+// error. Warnings printed to stderr. Checks ordered cheapest-first.
+
+const VALID_TOPIC_SLUGS = new Set([
+  "technology", "economics", "philosophy", "open-source",
+  "career", "accessibility", "fact-check", "devops", "startups", "marketing",
+]);
+
+const UNSPLASH_RE = /^https:\/\/images\.unsplash\.com\/photo-[a-zA-Z0-9-]+\?w=\d+&h=\d+&fit=crop$/;
+const YT_VID_RE = /^[a-zA-Z0-9_-]{11}$/;
+
+function validateContent(f: string, type: string, body: Fields): void {
+  // ── 1. Image URL format ─────────────────────────────────────────────────
+  if (typeof body.image === "string" && body.image) {
+    if (!UNSPLASH_RE.test(body.image)) {
+      throw new Error(
+        `${f}: image does not match Unsplash photo URL pattern ` +
+        `(expected https://images.unsplash.com/photo-{ID}?w=...&h=...&fit=crop)`
+      );
+    }
+  }
+  // Inline images inside sections.paragraphs
+  const sections = body.sections;
+  if (Array.isArray(sections)) {
+    for (let si = 0; si < sections.length; si++) {
+      const sec = sections[si] as Record<string, unknown> | undefined;
+      if (!sec || typeof sec !== "object") continue;
+      const paragraphs = sec.paragraphs;
+      if (!Array.isArray(paragraphs)) continue;
+      for (let pi = 0; pi < paragraphs.length; pi++) {
+        const p = paragraphs[pi];
+        if (!p || typeof p !== "object") continue;
+        const block = p as Record<string, unknown>;
+        if (block.type === "image" && typeof block.src === "string" && block.src) {
+          if (!UNSPLASH_RE.test(block.src)) {
+            throw new Error(
+              `${f}: sections[${si}].paragraphs[${pi}].src does not match ` +
+              `Unsplash photo URL pattern`
+            );
+          }
+        }
+      }
+    }
+  }
+
+  // ── 2. YouTube videoId format ───────────────────────────────────────────
+  if (Array.isArray(sections)) {
+    for (let si = 0; si < sections.length; si++) {
+      const sec = sections[si] as Record<string, unknown> | undefined;
+      if (!sec || typeof sec !== "object") continue;
+      const paragraphs = sec.paragraphs;
+      if (!Array.isArray(paragraphs)) continue;
+      for (let pi = 0; pi < paragraphs.length; pi++) {
+        const p = paragraphs[pi];
+        if (!p || typeof p !== "object") continue;
+        const block = p as Record<string, unknown>;
+        if (block.type === "youtube") {
+          const vid = block.videoId;
+          if (typeof vid !== "string" || !YT_VID_RE.test(vid)) {
+            throw new Error(
+              `${f}: invalid YouTube videoId '${String(vid)}' in ` +
+              `sections[${si}].paragraphs[${pi}] — must be 11 alphanumeric chars`
+            );
+          }
+        }
+      }
+    }
+  }
+
+  // ── 3. No em dashes / en dashes in prose fields ─────────────────────────
+  function checkDash(val: unknown, label: string): void {
+    if (typeof val !== "string") return;
+    if (val.includes("\u2014")) {
+      throw new Error(
+        `${f}: ${label} contains em dash (—) — use a plain dash or rephrase`
+      );
+    }
+    if (val.includes("\u2013")) {
+      throw new Error(
+        `${f}: ${label} contains en dash (–) — use a plain dash or rephrase`
+      );
+    }
+  }
+  // Top-level prose
+  checkDash(body.title, "title");
+  checkDash(body.description, "description");
+  checkDash(body.excerpt, "excerpt");
+  checkDash(body.intro, "intro");
+  checkDash(body.category, "category");
+  // body[] entries (guide/story body string array)
+  const bodyArr = body.body;
+  if (Array.isArray(bodyArr)) {
+    for (let bi = 0; bi < bodyArr.length; bi++) {
+      checkDash(bodyArr[bi], `body[${bi}]`);
+    }
+  }
+  // sections[].heading, sections[].intro
+  if (Array.isArray(sections)) {
+    for (let si = 0; si < sections.length; si++) {
+      const sec = sections[si] as Record<string, unknown> | undefined;
+      if (!sec || typeof sec !== "object") continue;
+      checkDash(sec.heading, `sections[${si}].heading`);
+      checkDash(sec.intro, `sections[${si}].intro`);
+      // sections[].paragraphs[] (string entries; skip ContentBlock.code types)
+      const paragraphs = sec.paragraphs;
+      if (Array.isArray(paragraphs)) {
+        for (let pi = 0; pi < paragraphs.length; pi++) {
+          const p = paragraphs[pi];
+          if (typeof p === "string") {
+            // Skip fenced code blocks — they may contain dashes legitimately
+            if (p.startsWith("```") || p.startsWith("---")) continue;
+            checkDash(p, `sections[${si}].paragraphs[${pi}]`);
+          } else if (p && typeof p === "object") {
+            const obj = p as Record<string, unknown>;
+            // For paragraph-type ContentBlock, check the text
+            if (obj.type === "paragraph" && typeof obj.text === "string") {
+              checkDash(obj.text, `sections[${si}].paragraphs[${pi}].text`);
+            }
+            // For callout blocks, check text
+            if (obj.type === "callout" && typeof obj.text === "string") {
+              checkDash(obj.text, `sections[${si}].paragraphs[${pi}].text`);
+            }
+          }
+        }
+      }
+      // sections[].items[].question / answer[] (doc type)
+      const items = sec.items;
+      if (Array.isArray(items)) {
+        for (let ii = 0; ii < items.length; ii++) {
+          const item = items[ii] as Record<string, unknown> | undefined;
+          if (!item || typeof item !== "object") continue;
+          checkDash(item.question, `sections[${si}].items[${ii}].question`);
+          const answers = item.answer;
+          if (Array.isArray(answers)) {
+            for (let ai = 0; ai < answers.length; ai++) {
+              const a = answers[ai];
+              if (typeof a === "string") {
+                if (a.startsWith("```") || a.startsWith("---")) continue;
+                checkDash(a, `sections[${si}].items[${ii}].answer[${ai}]`);
+              } else if (a && typeof a === "object") {
+                const obj = a as Record<string, unknown>;
+                if (obj.type === "paragraph" && typeof obj.text === "string") {
+                  checkDash(obj.text, `sections[${si}].items[${ii}].answer[${ai}].text`);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  // pullQuote / pullQuotes[].quote
+  if (body.pullQuote && typeof body.pullQuote === "object") {
+    checkDash((body.pullQuote as Record<string, unknown>).quote, "pullQuote.quote");
+  }
+  const pullQuotes = body.pullQuotes;
+  if (Array.isArray(pullQuotes)) {
+    for (let pi = 0; pi < pullQuotes.length; pi++) {
+      const pq = pullQuotes[pi] as Record<string, unknown> | undefined;
+      if (pq && typeof pq === "object") {
+        checkDash(pq.quote, `pullQuotes[${pi}].quote`);
+      }
+    }
+  }
+  // bentoHighlights[].title / description
+  const bentos = body.bentoHighlights;
+  if (Array.isArray(bentos)) {
+    for (let bi = 0; bi < bentos.length; bi++) {
+      const b = bentos[bi] as Record<string, unknown> | undefined;
+      if (b && typeof b === "object") {
+        checkDash(b.title, `bentoHighlights[${bi}].title`);
+        checkDash(b.description, `bentoHighlights[${bi}].description`);
+      }
+    }
+  }
+  // callout.text in (featured etc.) — not nested in sections
+  if (typeof body.callout === "object" && body.callout) {
+    checkDash((body.callout as Record<string, unknown>).text, "callout.text");
+  }
+
+  // ── 4. Topic slug validity ──────────────────────────────────────────────
+  const topics = body.topics;
+  if (Array.isArray(topics)) {
+    for (let ti = 0; ti < topics.length; ti++) {
+      const slug = topics[ti];
+      if (typeof slug === "string" && !VALID_TOPIC_SLUGS.has(slug)) {
+        throw new Error(
+          `${f}: topics[${ti}] = '${slug}' is not a valid topic slug`
+        );
+      }
+    }
+  }
+
+  // ── 5. Code fence integrity (all types with body/sections/answers) ───────
+  // Stories, featured, guides: body[] and sections[].paragraphs[]
+  if (Array.isArray(bodyArr)) {
+    let inFence = false;
+    for (let bi = 0; bi < bodyArr.length; bi++) {
+      const entry = bodyArr[bi];
+      if (typeof entry !== "string") continue;
+      const openCount = (entry.match(/```/g) || []).length;
+      if (openCount % 2 !== 0) {
+        if (entry.startsWith("```")) {
+          if (inFence) throw new Error(
+            `${f}: nested or broken code fence in body[${bi}] — a closing \`\`\` is inside another fence`
+          );
+          inFence = true;
+        } else if (entry.endsWith("```")) {
+          if (!inFence) throw new Error(
+            `${f}: stray closing \`\`\` in body[${bi}] — no matching opening fence in a prior entry`
+          );
+          inFence = false;
+        } else {
+          throw new Error(
+            `${f}: split code fence in body[${bi}] — opening \`\`\` and closing \`\`\` must be in the same array entry`
+          );
+        }
+      }
+    }
+    if (inFence) throw new Error(
+      `${f}: unclosed code fence in body — a \`\`\` opens but never closes`
+    );
+  }
+  // sections[].paragraphs[] split fences (same logic as body[])
+  if (Array.isArray(sections)) {
+    for (let si = 0; si < sections.length; si++) {
+      const sec = sections[si] as Record<string, unknown> | undefined;
+      if (!sec || typeof sec !== "object") continue;
+      const paragraphs = sec.paragraphs;
+      if (!Array.isArray(paragraphs)) continue;
+      let inFence = false;
+      for (let pi = 0; pi < paragraphs.length; pi++) {
+        const entry = paragraphs[pi];
+        if (typeof entry !== "string") continue;
+        const openCount = (entry.match(/```/g) || []).length;
+        if (openCount % 2 !== 0) {
+          if (entry.startsWith("```")) {
+            if (inFence) throw new Error(
+              `${f}: nested or broken code fence in sections[${si}].paragraphs[${pi}] — a closing \`\`\` is inside another fence`
+            );
+            inFence = true;
+          } else if (entry.endsWith("```")) {
+            if (!inFence) throw new Error(
+              `${f}: stray closing \`\`\` in sections[${si}].paragraphs[${pi}] — no matching opening fence in a prior entry`
+            );
+            inFence = false;
+          } else {
+            throw new Error(
+              `${f}: split code fence in sections[${si}].paragraphs[${pi}] — opening \`\`\` and closing \`\`\` must be in the same paragraph entry`
+            );
+          }
+        }
+      }
+      if (inFence) throw new Error(
+        `${f}: unclosed code fence in sections[${si}].paragraphs — a \`\`\` opens but never closes`
+      );
+    }
+  }
+  // Doc/guide sections[].items[].answer[] (existing logic, now inside validateContent)
+  if (Array.isArray(sections)) {
+    for (let si = 0; si < sections.length; si++) {
+      const sec = sections[si] as Record<string, unknown> | undefined;
+      if (!sec || typeof sec !== "object") continue;
+      const items = sec.items;
+      if (!Array.isArray(items)) continue;
+      for (let ii = 0; ii < items.length; ii++) {
+        const item = items[ii] as Record<string, unknown> | undefined;
+        if (!item || typeof item !== "object") continue;
+        const answers = item.answer;
+        if (!Array.isArray(answers)) continue;
+        let inFence = false;
+        for (let ai = 0; ai < answers.length; ai++) {
+          const a = answers[ai];
+          if (typeof a !== "string") continue;
+          const openCount = (a.match(/```/g) || []).length;
+          if (openCount % 2 !== 0) {
+            if (a.startsWith("```")) {
+              if (inFence) throw new Error(
+                `${f}: nested or broken code fence in sections[${si}].items[${ii}].answer[${ai}]`
+              );
+              inFence = true;
+            } else if (a.endsWith("```")) {
+              if (!inFence) throw new Error(
+                `${f}: stray closing \`\`\` in sections[${si}].items[${ii}].answer[${ai}]`
+              );
+              inFence = false;
+            } else {
+              throw new Error(
+                `${f}: split code fence in sections[${si}].items[${ii}].answer[${ai}] - opening \`\`\` and closing \`\`\` must be in the same answer entry`
+              );
+            }
+          }
+        }
+        if (inFence) throw new Error(
+          `${f}: unclosed code fence in sections[${si}].items[${ii}].answer — a \`\`\` opens but never closes`
+        );
+      }
+    }
+  }
+
+  // ── 6. Plain-text lab warning ────────────────────────────────────────────
+  if (Array.isArray(sections)) {
+    for (let si = 0; si < sections.length; si++) {
+      const sec = sections[si] as Record<string, unknown> | undefined;
+      if (!sec || typeof sec !== "object") continue;
+      const paragraphs = sec.paragraphs;
+      if (!Array.isArray(paragraphs)) continue;
+      for (let pi = 0; pi < paragraphs.length; pi++) {
+        const entry = paragraphs[pi];
+        if (typeof entry === "string" && entry.includes("```") && /npm run/.test(entry)) {
+          console.warn(
+            `${f}: WARNING: sections[${si}].paragraphs[${pi}] contains what looks like an inline lab command — ` +
+            `use a { type: "lab" } block instead`
+          );
+        }
+      }
+    }
+  }
+
+  // ── 7. Source/reference URL format ───────────────────────────────────────
+  const src = body.source;
+  if (src && typeof src === "object") {
+    const srcUrl = (src as Record<string, unknown>).url;
+    if (typeof srcUrl === "string" && srcUrl) {
+      try {
+        const u = new URL(srcUrl);
+        if (u.protocol !== "http:" && u.protocol !== "https:") {
+          throw new Error(
+            `${f}: source.url '${srcUrl}' must be http or https`
+          );
+        }
+      } catch {
+        throw new Error(
+          `${f}: source.url '${srcUrl}' is not a valid absolute URL`
+        );
+      }
+    }
+  }
+  const refs = body.references;
+  if (Array.isArray(refs)) {
+    for (let ri = 0; ri < refs.length; ri++) {
+      const ref = refs[ri] as Record<string, unknown> | undefined;
+      if (!ref || typeof ref !== "object") continue;
+      const refUrl = ref.url;
+      if (typeof refUrl === "string" && refUrl) {
+        try {
+          const u = new URL(refUrl);
+          if (u.protocol !== "http:" && u.protocol !== "https:") {
+            throw new Error(
+              `${f}: references[${ri}].url '${refUrl}' must be http or https`
+            );
+          }
+        } catch {
+          throw new Error(
+            `${f}: references[${ri}].url '${refUrl}' is not a valid absolute URL`
+          );
+        }
+      }
+    }
+  }
+
+  // ── 8. Image alt text present ────────────────────────────────────────────
+  if (typeof body.image === "string" && body.image) {
+    if (!body.imageAlt || typeof body.imageAlt !== "string" || !body.imageAlt.trim()) {
+      throw new Error(`${f}: image has no alt text (imageAlt is empty)`);
+    }
+  }
+  if (Array.isArray(sections)) {
+    for (let si = 0; si < sections.length; si++) {
+      const sec = sections[si] as Record<string, unknown> | undefined;
+      if (!sec || typeof sec !== "object") continue;
+      const paragraphs = sec.paragraphs;
+      if (!Array.isArray(paragraphs)) continue;
+      for (let pi = 0; pi < paragraphs.length; pi++) {
+        const p = paragraphs[pi];
+        if (!p || typeof p !== "object") continue;
+        const block = p as Record<string, unknown>;
+        if (block.type === "image" && typeof block.src === "string" && block.src) {
+          if (!block.alt || typeof block.alt !== "string" || !(block.alt as string).trim()) {
+            throw new Error(
+              `${f}: sections[${si}].paragraphs[${pi}].src has no alt text`
+            );
+          }
+        }
+      }
+    }
+  }
+
+  // Check 9 (course lesson slug existence) is handled by refsOf + DB check
+  // after the batch is assembled. Not duplicated here.
+}
+
 async function main() {
   const rawArgs = process.argv.slice(2);
   let typeOverride = "";
@@ -108,40 +502,9 @@ async function main() {
       }
     }
 
-    // Check that code fences inside doc/guide/etc. answer arrays are
-    // not split across entries (each opening ``` must close in the same
-    // string, not in a separate array item).
-    if (type === "doc" || type === "guide") {
-      const sections = body.sections;
-      if (Array.isArray(sections)) {
-        for (const section of sections) {
-          const items = (section as Record<string, unknown>).items;
-          if (!Array.isArray(items)) continue;
-          for (const item of items) {
-            const answers = (item as Record<string, unknown>).answer;
-            if (!Array.isArray(answers)) continue;
-            let inFence = false;
-            for (const entry of answers) {
-              if (typeof entry !== "string") continue;
-              const openCount = (entry.match(/```/g) || []).length;
-              if (openCount % 2 !== 0) {
-                // Odd count — either starts or ends inside this string
-                if (entry.startsWith("```")) {
-                  if (inFence) throw new Error(`${f}: nested or broken code fence in section ${section.number || "?"} — a closing \`\`\` is inside another fence`);
-                  inFence = true;
-                } else if (entry.endsWith("```")) {
-                  if (!inFence) throw new Error(`${f}: stray closing \`\`\` in section ${section.number || "?"} — no matching opening fence in a prior entry`);
-                  inFence = false;
-                } else {
-                  throw new Error(`${f}: split code fence in section ${section.number || "?"} — opening \`\`\` and closing \`\`\` must be in the same answer entry`);
-                }
-              }
-            }
-            if (inFence) throw new Error(`${f}: unclosed code fence in section ${section.number || "?"} — a \`\`\` opens but never closes`);
-          }
-        }
-      }
-    }
+    // Run content validation gates (image URLs, videoIds, em dashes, topics,
+    // code fence integrity, source URLs, alt text, lab detection).
+    validateContent(f, type, body);
 
     batch.push({ type, slug, body, file: f });
   }
