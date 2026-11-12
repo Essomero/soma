@@ -16,6 +16,8 @@ import { CONTENT_TYPE_LABELS, ROUTE_BASE } from "@/lib/admin-prompts";
 export default function AdminNewPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const defaultType = params.get("type") || undefined;
   const sourceNote = (location.state as { sourceNote?: { slug: string; title: string; content: string } } | null)
     ?.sourceNote;
 
@@ -233,7 +235,7 @@ export default function AdminNewPage() {
         {/* AI Drafting Panel — shown when no draft yet */}
         {!draft && (
           <section className="p-xl bg-surface border border-border-default">
-            <AIDraftPanel onDraft={handleDraft} disabled={saving} initialInput={initialPrompt} />
+            <AIDraftPanel onDraft={handleDraft} disabled={saving} initialInput={initialPrompt} defaultType={defaultType} />
           </section>
         )}
 

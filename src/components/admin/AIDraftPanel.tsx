@@ -16,6 +16,7 @@ interface AIDraftPanelProps {
   onDraft: (draft: AIDraft) => void;
   disabled?: boolean;
   initialInput?: string;
+  defaultType?: string;
 }
 
 export interface AIDraft {
@@ -57,7 +58,7 @@ export interface AIDraft {
   [key: string]: unknown;
 }
 
-export default function AIDraftPanel({ onDraft, disabled, initialInput }: AIDraftPanelProps) {
+export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultType }: AIDraftPanelProps) {
   const [input, setInput] = useState(initialInput ?? "");
   const [status, setStatus] = useState<"idle" | "generating" | "done" | "error">("idle");
   const [error, setError] = useState("");
@@ -111,12 +112,13 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput }: AIDraf
     abortRef.current = controller;
 
     try {
+      const typeHint = defaultType ? ` (content type: ${defaultType})` : "";
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           systemPrompt: buildSystemPrompt(),
-          userMessage: `Create content based on this idea:\n\n${input.trim()}\n\nRespond with the JSON object only.`,
+          userMessage: `Create${typeHint} content based on this idea:\n\n${input.trim()}\n\nRespond with the JSON object only.`,
           model: selectedModel,
           provider: selectedProvider,
           stream: true,
