@@ -119,15 +119,15 @@ export const somaRoadmapPlan: DocContent = {
 
     {
       number: "E",
-      heading: "Phase 4 — Import Anything",
+      heading: "Phase 4 — Import Anything (done)",
       anchor: "phase-4-import",
       intro:
-        "Paste a paper URL, PDF, or YouTube link. The MCP server drafts a manuscript, validates it, publishes it private. Conversion heuristics: YouTube → story, arXiv → doc, blog post → guide.",
+        "Paste a paper URL, PDF, or YouTube link. The MCP server fetches and extracts full text (HTML → Markdown via turndown), classifies the type, and hands structured content to the AI for drafting. arXiv abstract URLs automatically resolve to the HTML version for full paper sections.",
       items: [
         {
-          question: "What changes?",
+          question: "What was built?",
           answer: [
-            "Extend `server/mcp-server.mjs` with an import tool or extend `manuscript_template` to accept a URL and classify it. The `verify_url` MCP tool already checks HTTP 200 — reuse it for URL validation.\n\nThe pipeline: URL → fetch content → extract text/transcript → classify type → scaffold manuscript with template → validate → publish private. The conversion logic lives in the skill instruction, not in server code.",
+            "Shared `server/lib/extract-html.mjs` module with turndown-based HTML-to-Markdown, URL classification heuristics, and arXiv abstract-to-HTML redirection.\n\n`api/import.js` and `server/mcp-server.mjs` both call into the same extraction module. The `import_content` MCP tool returns structured JSON with title, description, word count, suggested type, and extracted text — agents can parse and use it directly.\n\nImport-to-draft flow: paste URL → ImportFromUrlPanel fetches and classifies → \"Create [Type]\" navigates to AdminNewPage with the extracted text pre-filled in the AI prompt, along with the content type hint to narrow the system prompt to a single schema.\n\nE2E fixes included: 21 issues across route registration, CSS, session storage (Strict Mode double-render), focus indicators, type query param passthrough, and doc sections mapping from `draft.sections` to `docSections`.",
           ],
         },
       ],
@@ -201,7 +201,7 @@ export const somaRoadmapPlan: DocContent = {
         {
           question: "What runs in what order?",
           answer: [
-            "1. Phase 0 (Sovereign export) or Phase 1 (Margin tutor modes) first — both are small, high-value, and independent\n2. Add `tenant_id` to the public repo before creating `soma-cloud`\n3. Phase 2 (Proof graph) when the progress API feels stable\n4. Phase 3 (Labs runner) + Phase 4 (Import anything) whenever — they depend on nothing\n5. Create `soma-cloud` private repo and build auth, billing on top\n\nPhases 0, 1, 3, and 4 have zero dependencies. Phase 2 depends on the progress API being solid. The entire SaaS track (Phase 5) depends on the `tenant_id` migration landing in the public repo first.",
+            "1. Phase 0 (Sovereign export) or Phase 1 (Margin tutor modes) first — both are small, high-value, and independent\n2. Add `tenant_id` to the public repo before creating `soma-cloud`\n3. Phase 2 (Proof graph) when the progress API feels stable\n4. Phase 3 (Labs runner) + Phase 4 (Import anything) — done (both had zero dependencies)\n5. Create `soma-cloud` private repo and build auth, billing on top\n\nPhases 0, 1, 3, and 4 have zero dependencies. Phase 2 depends on the progress API being solid. The entire SaaS track (Phase 5) depends on the `tenant_id` migration landing in the public repo first.",
           ],
         },
       ],
