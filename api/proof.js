@@ -25,9 +25,9 @@ async function ensureTables() {
     paragraph_index INTEGER NOT NULL DEFAULT 0,
     start_offset INTEGER NOT NULL DEFAULT 0,
     end_offset INTEGER NOT NULL DEFAULT 0,
-    selected_text TEXT,
-    text_hash TEXT,
-    color TEXT DEFAULT 'yellow',
+    selected_text TEXT NOT NULL,
+    text_hash TEXT NOT NULL,
+    color TEXT DEFAULT 'primary',
     created_at TEXT DEFAULT (datetime('now'))
   )`);
   await query(`CREATE TABLE IF NOT EXISTS comments (
@@ -44,7 +44,7 @@ async function ensureTables() {
     paragraph_index INTEGER,
     start_offset INTEGER,
     end_offset INTEGER,
-    selected_text TEXT,
+    selected_text TEXT NOT NULL,
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT
   )`);
