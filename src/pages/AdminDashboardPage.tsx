@@ -250,7 +250,7 @@ export default function AdminDashboardPage() {
               Import
             </button>
             {showExport && <ExportModal onClose={() => setShowExport(false)} />}
-            {showImport && <ImportFromUrlPanel onClose={() => setShowImport(false)} />}
+            {showImport && <ImportFromUrlPanel open={showImport} onClose={() => setShowImport(false)} />}
           </div>
         </div>
       </header>

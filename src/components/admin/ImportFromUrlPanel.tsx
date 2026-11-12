@@ -40,17 +40,18 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 interface Props {
+  open: boolean;
   onClose: () => void;
 }
 
-export default function ImportFromUrlModal({ onClose }: Props) {
+export default function ImportFromUrlModal({ open, onClose }: Props) {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
-  useScrollLock(true);
+  useScrollLock(open);
 
   const handleFetch = async () => {
     const trimmed = url.trim();
@@ -293,14 +294,22 @@ export default function ImportFromUrlModal({ onClose }: Props) {
             <>
               <Link
                 to={`/admin/new?type=${result.suggestedType}`}
-                onClick={onClose}
+                onClick={() => {
+                  sessionStorage.setItem("import-draft", JSON.stringify({
+                    title: result.title,
+                    description: result.description,
+                    text: result.text,
+                    url: result.url,
+                  }));
+                  onClose();
+                }}
                 className="inline-flex items-center gap-sm px-xl py-md bg-primary text-on-primary font-sora text-xs uppercase tracking-widest hover:bg-primary-hover transition-colors"
               >
                 <FileText className="w-4 h-4" />
                 Create {TYPE_LABELS[result.suggestedType] || result.suggestedType}
               </Link>
               <p className="font-dm-sans text-xs text-on-surface-muted">
-                Opens the content editor with the suggested type pre-selected.
+                Opens the content editor with the extracted title, description, and text pre-filled.
               </p>
             </>
           ) : (

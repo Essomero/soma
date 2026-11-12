@@ -22,6 +22,7 @@ import { existsSync, readdirSync, statSync, readFileSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
+import { extractMeta, extractPlainText, classifyUrl } from "./lib/extract-html.mjs";
 
 import { CONTENT_TYPES, TOPICS, TEMPLATES, ROUTE_BASE, WORKFLOW_NOTE } from "./mcp-content-data.mjs";
 
@@ -210,52 +211,6 @@ async function verifyUrl(url) {
   return `HEAD ${head.status} ${head.ok ? "OK" : "FAILED"} (final: ${head.url})`;
 }
 
-// ── HTML text extraction (no deps: regex-only for common patterns) ──────────
-
-function extractMeta(html) {
-  const title = (html.match(/<title[^>]*>([^<]+)<\/title>/i) || [])[1] || "";
-  const desc =
-    (html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i) || [])[1] ||
-    (html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i) || [])[1] ||
-    "";
-  return { title: title.trim(), description: desc.trim() };
-}
-
-function extractPlainText(html) {
-  // Strip script, style, svg, nav, footer, header, aside
-  let text = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, " ");
-  text = text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, " ");
-  text = text.replace(/<svg[^>]*>[\s\S]*?<\/svg>/gi, " ");
-  text = text.replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, " ");
-  text = text.replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, " ");
-  text = text.replace(/<header[^>]*>[\s\S]*?<\/header>/gi, " ");
-  text = text.replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, " ");
-  // Replace block tags with newlines
-  text = text.replace(/<\/(p|h[1-6]|li|div|blockquote|pre|tr|section|article)>/gi, "\n");
-  // Strip remaining tags
-  text = text.replace(/<[^>]+>/g, " ");
-  // Decode common entities
-  text = text.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#x27;/g, "'").replace(/&nbsp;/g, " ");
-  // Collapse whitespace
-  text = text.replace(/\n\s*\n/g, "\n\n").replace(/[ \t]+/g, " ").trim();
-  // Limit to first 150KB (~37K tokens) to keep responses manageable
-  return text.slice(0, 150_000);
-}
-
-function classifyUrl(url, contentType) {
-  if (contentType) return contentType;
-  const u = url.toLowerCase();
-  if (u.includes("youtube.com/watch") || u.includes("youtu.be/") || u.includes("youtube.com/embed")) return "story";
-  if (u.includes("arxiv.org")) return "doc";
-  if (u.endsWith(".pdf")) return "doc";
-  if (u.includes("/blog/") || u.includes("/posts/") || u.includes("medium.com") || u.includes("dev.to") || u.includes("substack.com")) return "guide";
-  if (u.includes("wikipedia.org")) return "doc";
-  if (u.includes("/docs/") || u.includes("documentation")) return "doc";
-  if (u.includes("/tutorial") || u.includes("/how-to") || u.includes("learn.")) return "guide";
-  if (u.includes("/news") || u.includes("/article")) return "story";
-  return "guide"; // safest default
-}
-
 async function importContent(url, suggestedType) {
   // 1. Verify reachability (same strategy as verifyUrl)
   let resp;
@@ -277,23 +232,31 @@ async function importContent(url, suggestedType) {
   const isVideo = ctype.includes("video/");
 
   if (isPdf) {
-    return `URL: ${finalUrl}
-Status: HTTP ${resp.status} OK
-Content-Type: ${ctype}
-Note: PDF content requires a PDF parser. The URL and metadata have been captured.
-Extracted text: [PDF binary — text extraction not supported. Open the URL in a browser or use a PDF-to-text tool, then paste the content as your source.]
-
-Suggested type: doc`;
+    return JSON.stringify({
+      url: finalUrl,
+      status: `HTTP ${resp.status} OK`,
+      contentType: ctype,
+      title: "",
+      description: "",
+      wordCount: 0,
+      suggestedType: "doc",
+      note: "PDF content requires a PDF parser. The URL and metadata have been captured.",
+      text: "[PDF binary — text extraction not supported. Open the URL in a browser or use a PDF-to-text tool, then paste the content as your source.]",
+    });
   }
 
   if (isVideo) {
-    return `URL: ${finalUrl}
-Status: HTTP ${resp.status} OK
-Content-Type: ${ctype}
-Note: Video content cannot be transcribed via this tool. For YouTube, the URL pattern alone is enough to scaffold a story with a youtube embed block.
-Extracted text: [video content]
-
-Suggested type: story`;
+    return JSON.stringify({
+      url: finalUrl,
+      status: `HTTP ${resp.status} OK`,
+      contentType: ctype,
+      title: "",
+      description: "",
+      wordCount: 0,
+      suggestedType: "story",
+      note: "Video content cannot be transcribed via this tool. For YouTube, the URL pattern alone is enough to scaffold a story with a youtube embed block.",
+      text: "[video content]",
+    });
   }
 
   // 3. Fetch full body for HTML/text
@@ -308,26 +271,17 @@ Suggested type: story`;
   // 5. Classify
   const suggested = classifyUrl(finalUrl, suggestedType);
 
-  return [
-    `URL: ${finalUrl}`,
-    `Status: HTTP ${resp.status} OK`,
-    resp.status >= 300 ? `(redirected from: ${url})` : "",
-    `Content-Type: ${ctype}`,
-    `Title: ${title}`,
-    `Description: ${description}`,
-    `~${wordCount} words extracted`,
-    `Suggested type: ${suggested} (${CONTENT_TYPES.find((t) => t.type === suggested)?.when || ""})`,
-    ``,
-    `Extracted text:`,
-    text.slice(0, 80_000) || "[no extractable text]",
-    ``,
-    `---`,
-    `Tip: Ask the agent to draft a '${suggested}' manuscript using the extracted text above as source material.`,
-    `Conversion heuristics: YouTube → story, arXiv → doc, blog post → guide, documentation → doc.`,
-    `Format the page as a manuscript in drafts/${suggested}/<slug>.ts, then validate and publish.`,
-  ]
-    .filter(Boolean)
-    .join("\n");
+  return JSON.stringify({
+    url: finalUrl,
+    status: `HTTP ${resp.status} OK`,
+    redirected: resp.status >= 300,
+    contentType: ctype,
+    title,
+    description,
+    wordCount,
+    suggestedType: suggested,
+    text: text.slice(0, 80_000) || "[no extractable text]",
+  });
 }
 
 // ── Tool registry ───────────────────────────────────────────────────────────
