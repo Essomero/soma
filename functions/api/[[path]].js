@@ -324,13 +324,11 @@ export async function onRequest(context) {
         if (!story) return new Response(JSON.stringify({ error: "story required" }), { status: 400, headers: { "Content-Type": "application/json" } });
         if (!authed) {
           const vis = await tursoQuery(env, "SELECT status FROM content_items WHERE tenant_id=? AND slug=?", [tenant_id, story]);
-          if (!(vis[0]?.status === "published")) {
+          const isPublishedContent = vis[0]?.status === "published";
+          if (!isPublishedContent) {
             const noteVis = await tursoQuery(env, "SELECT slug FROM note_articles WHERE tenant_id=? AND slug=?", [tenant_id, story]);
             if (!noteVis.length) {
-              const cnt = await tursoQuery(env, "SELECT status FROM content_items WHERE tenant_id=? AND slug=?", [tenant_id, story]);
-              if (!cnt.length || cnt[0].status !== "published") {
-                // private content — 404 for unauthed
-              }
+              return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
             }
           }
         }
@@ -438,7 +436,7 @@ export async function onRequest(context) {
 
     // ── tests (submissions) ──
     if (route === "tests") {
-      await tursoQuery(env, `CREATE TABLE IF NOT EXISTS test_submissions (id INTEGER PRIMARY KEY AUTOINCREMENT, tenant_id TEXT NOT NULL DEFAULT 'default', test_slug TEXT NOT NULL, answers TEXT NOT NULL, score INTEGER, created_at TEXT DEFAULT (datetime('now')))`, []);
+      await tursoQuery(env, `CREATE TABLE IF NOT EXISTS test_submissions (id INTEGER PRIMARY KEY AUTOINCREMENT, tenant_id TEXT NOT NULL DEFAULT 'default', test_slug TEXT NOT NULL, answers TEXT NOT NULL, evaluation TEXT, score INTEGER, model TEXT, created_at TEXT NOT NULL)`, []);
       if (method === "GET") {
         const slug = query.slug;
         const rows = await tursoQuery(env, slug ? "SELECT * FROM test_submissions WHERE tenant_id=? AND test_slug=? ORDER BY created_at DESC" : "SELECT * FROM test_submissions WHERE tenant_id=? ORDER BY created_at DESC", slug ? [tenant_id, slug] : [tenant_id]);
@@ -446,9 +444,10 @@ export async function onRequest(context) {
       }
       if (method === "POST") {
         if (!rateLimit(env, ip, "tests-post", 10, 60000)) return new Response(JSON.stringify({ error: "Too many requests" }), { status: 429, headers: { "Content-Type": "application/json" } });
-        const { testSlug, answers, score } = await request.json().catch(() => ({}));
+        const { testSlug, answers, evaluation, score, model } = await request.json().catch(() => ({}));
         if (!testSlug || !answers) return new Response(JSON.stringify({ error: "testSlug and answers required" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        const rows = await tursoQuery(env, "INSERT INTO test_submissions (tenant_id, test_slug, answers, score) VALUES (?,?,?,?) RETURNING *", [tenant_id, testSlug, JSON.stringify(answers), score || null]);
+        const evalStr = typeof evaluation === "string" ? evaluation : evaluation == null ? null : JSON.stringify(evaluation);
+        const rows = await tursoQuery(env, "INSERT INTO test_submissions (tenant_id, test_slug, answers, evaluation, score, model, created_at) VALUES (?,?,?,?,?,?,?) RETURNING *", [tenant_id, testSlug, JSON.stringify(answers), evalStr, score ?? null, model || null, new Date().toISOString()]);
         return new Response(JSON.stringify(rows[0] || { success: true }), { status: 201, headers: { "Content-Type": "application/json" } });
       }
     }

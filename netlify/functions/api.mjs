@@ -401,6 +401,7 @@ export default async (req, context) => {
       }
       if (req.method === "DELETE") {
         const { id } = await req.json().catch(() => ({}));
+        await tursoQuery("DELETE FROM comments WHERE tenant_id=? AND highlight_id=?", [tenant_id, id]);
         await tursoQuery("DELETE FROM highlights WHERE tenant_id=? AND id=?", [tenant_id, id]);
         return new Response(JSON.stringify({ success: true }), { status: 200, headers: { "Content-Type": "application/json" } });
       }
@@ -426,15 +427,16 @@ export default async (req, context) => {
     }
 
     if (route === "tests") {
-      await tursoQuery(`CREATE TABLE IF NOT EXISTS test_submissions (id INTEGER PRIMARY KEY AUTOINCREMENT, tenant_id TEXT NOT NULL DEFAULT 'default', test_slug TEXT NOT NULL, answers TEXT NOT NULL, score INTEGER, created_at TEXT DEFAULT (datetime('now')))`, []);
+      await tursoQuery(`CREATE TABLE IF NOT EXISTS test_submissions (id INTEGER PRIMARY KEY AUTOINCREMENT, tenant_id TEXT NOT NULL DEFAULT 'default', test_slug TEXT NOT NULL, answers TEXT NOT NULL, evaluation TEXT, score INTEGER, model TEXT, created_at TEXT NOT NULL)`, []);
       if (req.method === "GET") {
         const rows = await tursoQuery(query.slug ? "SELECT * FROM test_submissions WHERE tenant_id=? AND test_slug=? ORDER BY created_at DESC" : "SELECT * FROM test_submissions WHERE tenant_id=? ORDER BY created_at DESC", query.slug ? [tenant_id, query.slug] : [tenant_id]);
         return new Response(JSON.stringify(rows), { status: 200, headers: { "Content-Type": "application/json" } });
       }
       if (req.method === "POST") {
-        const { testSlug, answers, score } = await req.json().catch(() => ({}));
+        const { testSlug, answers, evaluation, score, model } = await req.json().catch(() => ({}));
         if (!testSlug || !answers) return new Response(JSON.stringify({ error: "testSlug and answers required" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        const rows = await tursoQuery("INSERT INTO test_submissions (tenant_id, test_slug, answers, score) VALUES (?,?,?,?) RETURNING *", [tenant_id, testSlug, JSON.stringify(answers), score || null]);
+        const evalStr = typeof evaluation === "string" ? evaluation : evaluation == null ? null : JSON.stringify(evaluation);
+        const rows = await tursoQuery("INSERT INTO test_submissions (tenant_id, test_slug, answers, evaluation, score, model, created_at) VALUES (?,?,?,?,?,?,?) RETURNING *", [tenant_id, testSlug, JSON.stringify(answers), evalStr, score ?? null, model || null, new Date().toISOString()]);
         return new Response(JSON.stringify(rows[0] || { success: true }), { status: 201, headers: { "Content-Type": "application/json" } });
       }
     }
