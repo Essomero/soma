@@ -35,7 +35,18 @@ async function ensureTables() {
     tenant_id TEXT NOT NULL DEFAULT 'default',
     story_slug TEXT NOT NULL,
     body TEXT NOT NULL,
-    created_at TEXT DEFAULT (datetime('now'))
+    parent_id INTEGER,
+    is_ai INTEGER DEFAULT 0,
+    ai_model TEXT,
+    mode TEXT,
+    highlight_id INTEGER,
+    section_index INTEGER,
+    paragraph_index INTEGER,
+    start_offset INTEGER,
+    end_offset INTEGER,
+    selected_text TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT
   )`);
   await query(`CREATE TABLE IF NOT EXISTS test_submissions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
