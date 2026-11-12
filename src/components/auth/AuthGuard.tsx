@@ -3,6 +3,12 @@ import { useLocation } from "react-router-dom";
 import LoginPage from "@/pages/LoginPage";
 import { AuthContext } from "@/lib/AuthContext";
 
+declare global {
+  interface Window {
+    __CLOUD_AUTH__?: boolean;
+  }
+}
+
 function getCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
   return match ? match[1] : null;
@@ -121,7 +127,17 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (authed === null) return null;
-  if (!authed) return <LoginPage onLogin={handleLogin} />;
+  if (!authed) {
+    // In cloud mode, redirect to cloud-auth login instead of showing the SPA password form.
+    if (typeof window !== "undefined" && window.__CLOUD_AUTH__) {
+      const loginUrl = window.location.port === "3000"
+        ? "http://localhost:3001/login"
+        : "/login";
+      window.location.href = loginUrl;
+      return null;
+    }
+    return <LoginPage onLogin={handleLogin} />;
+  }
 
   return (
     <AuthContext.Provider value={{ isOwner }}>
