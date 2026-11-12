@@ -33,8 +33,8 @@ export default function AdminNewPage() {
             (data.title ? `Title: ${data.title}\n\n` : "") +
             (data.description ? `Description: ${data.description}\n\n` : "") +
             `Source URL: ${data.url || "unknown"}\n\n` +
-            `Extracted text:\n${data.text.slice(0, 30000)}` +
-            (data.text.length > 30000 ? "\n\n[Text truncated to first 30000 characters]" : "")
+            `Extracted text:\n${data.text.slice(0, 15000)}` +
+            (data.text.length > 15000 ? "\n\n[Text truncated to first 15000 characters]" : "")
           );
         }
       } catch {}
