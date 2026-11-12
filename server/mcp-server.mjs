@@ -210,6 +210,126 @@ async function verifyUrl(url) {
   return `HEAD ${head.status} ${head.ok ? "OK" : "FAILED"} (final: ${head.url})`;
 }
 
+// ── HTML text extraction (no deps: regex-only for common patterns) ──────────
+
+function extractMeta(html) {
+  const title = (html.match(/<title[^>]*>([^<]+)<\/title>/i) || [])[1] || "";
+  const desc =
+    (html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i) || [])[1] ||
+    (html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i) || [])[1] ||
+    "";
+  return { title: title.trim(), description: desc.trim() };
+}
+
+function extractPlainText(html) {
+  // Strip script, style, svg, nav, footer, header, aside
+  let text = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, " ");
+  text = text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, " ");
+  text = text.replace(/<svg[^>]*>[\s\S]*?<\/svg>/gi, " ");
+  text = text.replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, " ");
+  text = text.replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, " ");
+  text = text.replace(/<header[^>]*>[\s\S]*?<\/header>/gi, " ");
+  text = text.replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, " ");
+  // Replace block tags with newlines
+  text = text.replace(/<\/(p|h[1-6]|li|div|blockquote|pre|tr|section|article)>/gi, "\n");
+  // Strip remaining tags
+  text = text.replace(/<[^>]+>/g, " ");
+  // Decode common entities
+  text = text.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#x27;/g, "'").replace(/&nbsp;/g, " ");
+  // Collapse whitespace
+  text = text.replace(/\n\s*\n/g, "\n\n").replace(/[ \t]+/g, " ").trim();
+  // Limit to first 150KB (~37K tokens) to keep responses manageable
+  return text.slice(0, 150_000);
+}
+
+function classifyUrl(url, contentType) {
+  if (contentType) return contentType;
+  const u = url.toLowerCase();
+  if (u.includes("youtube.com/watch") || u.includes("youtu.be/") || u.includes("youtube.com/embed")) return "story";
+  if (u.includes("arxiv.org")) return "doc";
+  if (u.endsWith(".pdf")) return "doc";
+  if (u.includes("/blog/") || u.includes("/posts/") || u.includes("medium.com") || u.includes("dev.to") || u.includes("substack.com")) return "guide";
+  if (u.includes("wikipedia.org")) return "doc";
+  if (u.includes("/docs/") || u.includes("documentation")) return "doc";
+  if (u.includes("/tutorial") || u.includes("/how-to") || u.includes("learn.")) return "guide";
+  if (u.includes("/news") || u.includes("/article")) return "story";
+  return "guide"; // safest default
+}
+
+async function importContent(url, suggestedType) {
+  // 1. Verify reachability (same strategy as verifyUrl)
+  let resp;
+  try {
+    resp = await fetch(url, { method: "HEAD", redirect: "follow", signal: AbortSignal.timeout(15_000) });
+    if ([405, 403, 501].includes(resp.status) || !resp.ok) {
+      resp = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(30_000) });
+    }
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+  } catch (e) {
+    if (e.message && e.message.startsWith("HTTP")) throw e;
+    throw new Error(`Cannot reach URL: ${e.message}`);
+  }
+
+  // 2. Check content type — bail on binary that isn't feasible to extract
+  const ctype = (resp.headers.get("content-type") || "").toLowerCase();
+  const finalUrl = resp.url;
+  const isPdf = ctype.includes("pdf") || finalUrl.toLowerCase().endsWith(".pdf");
+  const isVideo = ctype.includes("video/");
+
+  if (isPdf) {
+    return `URL: ${finalUrl}
+Status: HTTP ${resp.status} OK
+Content-Type: ${ctype}
+Note: PDF content requires a PDF parser. The URL and metadata have been captured.
+Extracted text: [PDF binary — text extraction not supported. Open the URL in a browser or use a PDF-to-text tool, then paste the content as your source.]
+
+Suggested type: doc`;
+  }
+
+  if (isVideo) {
+    return `URL: ${finalUrl}
+Status: HTTP ${resp.status} OK
+Content-Type: ${ctype}
+Note: Video content cannot be transcribed via this tool. For YouTube, the URL pattern alone is enough to scaffold a story with a youtube embed block.
+Extracted text: [video content]
+
+Suggested type: story`;
+  }
+
+  // 3. Fetch full body for HTML/text
+  const body = await fetch(finalUrl || url, { redirect: "follow", signal: AbortSignal.timeout(30_000) });
+  const html = await body.text();
+
+  // 4. Extract metadata + text
+  const { title, description } = extractMeta(html);
+  const text = extractPlainText(html);
+  const wordCount = text.split(/\s+/).length;
+
+  // 5. Classify
+  const suggested = classifyUrl(finalUrl, suggestedType);
+
+  return [
+    `URL: ${finalUrl}`,
+    `Status: HTTP ${resp.status} OK`,
+    resp.status >= 300 ? `(redirected from: ${url})` : "",
+    `Content-Type: ${ctype}`,
+    `Title: ${title}`,
+    `Description: ${description}`,
+    `~${wordCount} words extracted`,
+    `Suggested type: ${suggested} (${CONTENT_TYPES.find((t) => t.type === suggested)?.when || ""})`,
+    ``,
+    `Extracted text:`,
+    text.slice(0, 80_000) || "[no extractable text]",
+    ``,
+    `---`,
+    `Tip: Ask the agent to draft a '${suggested}' manuscript using the extracted text above as source material.`,
+    `Conversion heuristics: YouTube → story, arXiv → doc, blog post → guide, documentation → doc.`,
+    `Format the page as a manuscript in drafts/${suggested}/<slug>.ts, then validate and publish.`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 // ── Tool registry ───────────────────────────────────────────────────────────
 
 const TOOLS = [
@@ -298,6 +418,19 @@ const TOOLS = [
       required: ["files"],
     },
     run: async (input) => publishManuscript({ files: requireArr(input.files, "files"), type: input.type ?? undefined, featured: Boolean(input.featured) }),
+  },
+  {
+    name: "import_content",
+    description: "Fetch a URL (web page, YouTube, arXiv, PDF link) and extract readable text, title, and description. Suggests a content type based on the URL pattern (YouTube → story, arXiv → doc, blog post → guide). Use this as the first step in the Import Anything workflow: paste a URL, get extracted text, then ask the agent to draft a manuscript from it. For PDFs and video, extraction is limited — the tool reports what it can.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        url: { type: "string", description: "URL to fetch and import (web page, YouTube, arXiv, PDF link, blog post)" },
+        suggestedType: { type: "string", description: "Optional type override: story, guide, doc, course, book, series, test, featured, podcast" },
+      },
+      required: ["url"],
+    },
+    run: async ({ url, suggestedType }) => importContent(requireStr(url, "url"), suggestedType ?? undefined),
   },
   {
     name: "verify_url",
