@@ -6,6 +6,7 @@
 // - Turso cloud when USE_TURSO=true + TURSO_* vars present (Vercel or explicit opt-in)
 
 import { createServer } from "http";
+import { randomBytes, createHmac, timingSafeEqual } from "crypto";
 import { readFileSync, existsSync, statSync } from "fs";
 import { join, dirname, extname } from "path";
 import { fileURLToPath } from "url";
@@ -108,7 +109,15 @@ function serveStatic(req, res) {
     if (!fp) {
       const idx = join(DIST, "index.html");
       if (!existsSync(idx)) return false;
-      const body = readFileSync(idx);
+      let body = readFileSync(idx, "utf8");
+      // Inject cloud-auth detection flag so the frontend AuthGuard can
+      // redirect to cloud-auth login instead of showing the password form.
+      if (process.env.CLOUD_AUTH_JWT_SECRET) {
+        body = body.replace(
+          "</head>",
+          '<script>window.__CLOUD_AUTH__=true</script></head>',
+        );
+      }
       res.writeHead(200, { "Content-Type": MIME[".html"], "Cache-Control": "no-cache" });
       res.end(body);
       return true;
@@ -207,6 +216,94 @@ const server = createServer(async (req, res) => {
       }
     }
     return;
+  }
+
+  // ── Cloud-auth features (token bridge, logout, auth redirect) ──
+  // Only enabled when CLOUD_AUTH_JWT_SECRET is set — standalone mode skips these.
+  if (process.env.CLOUD_AUTH_JWT_SECRET) {
+
+    // ── Token bridge — accept JWT from cloud-auth, set cookies on this origin ──
+    if (pathname === "/auth/token-bridge" && url.searchParams.has("token")) {
+      const token = url.searchParams.get("token");
+      const jwtSecret = process.env.CLOUD_AUTH_JWT_SECRET;
+      const sitePassword = process.env.SITE_PASSWORD;
+
+      if (jwtSecret && sitePassword && token) {
+        try {
+          // Verify JWT (HS256) using Node crypto
+          const parts = token.split(".");
+          if (parts.length === 3) {
+            const headerRaw = Buffer.from(parts[0], "base64url").toString();
+            const payloadRaw = Buffer.from(parts[1], "base64url").toString();
+            const sigRaw = Buffer.from(parts[2], "base64url");
+
+            const header = JSON.parse(headerRaw);
+            if (header.alg === "HS256") {
+              const data = parts[0] + "." + parts[1];
+              const expected = createHmac("sha256", jwtSecret).update(data).digest();
+              if (expected.length === sigRaw.length) {
+                const valid = timingSafeEqual(expected, sigRaw);
+                if (valid) {
+                  const payload = JSON.parse(payloadRaw);
+                  // Check expiry
+                  const now = Math.floor(Date.now() / 1000);
+                  if (!payload.exp || now <= payload.exp) {
+                    // Valid — mint soma_session cookie for this origin
+                    const maxAge = 30 * 24 * 60 * 60;
+                    const exp = Math.floor(Date.now() / 1000) + maxAge;
+                    const sessPayload = String(exp);
+                    const sessSig = createHmac("sha256", sitePassword).update(sessPayload).digest("hex");
+                    const sessToken = `${sessPayload}.${sessSig}`;
+
+                    res.writeHead(302, {
+                      Location: "/",
+                      "Set-Cookie": [
+                        `soma_session=${sessToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`,
+                        `soma_auth=1; Path=/; SameSite=Lax; Max-Age=${maxAge}`,
+                      ],
+                    });
+                    res.end();
+                    return;
+                  }
+                }
+              }
+            }
+          }
+        } catch {
+          // Invalid JWT — fall through to redirect
+        }
+      }
+      // Token invalid or missing — redirect to login
+      res.writeHead(302, { Location: "http://localhost:3001/login" });
+      res.end();
+      return;
+    }
+
+    // ── Logout — redirect to cloud-auth logout ──
+    if (pathname === "/auth/logout") {
+      const authUrl = req.headers["x-forwarded-host"]
+        ? "/auth/logout"
+        : "http://localhost:3001/auth/logout";
+      res.writeHead(302, { Location: authUrl });
+      res.end();
+      return;
+    }
+
+    // ── SPA root — redirect unauthenticated to cloud-auth login ──
+    // Only intercept `/`, not content paths like `/some-story`.
+    // The SPA handles auth client-side for deep links.
+    if (pathname === "/") {
+      const cookies = req.headers.cookie || "";
+      const hasSession = cookies.split(";").some(c => c.trim().startsWith("soma_session="));
+      if (!hasSession) {
+        const authUrl = req.headers["x-forwarded-host"]
+          ? "/login"
+          : "http://localhost:3001/login";
+        res.writeHead(302, { Location: authUrl });
+        res.end();
+        return;
+      }
+    }
   }
 
   if (serveStatic(req, res)) return;
