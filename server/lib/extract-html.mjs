@@ -61,3 +61,16 @@ export function classifyUrl(url, suggestedType) {
   if (u.includes("/podcast") || u.includes("/episode")) return "podcast";
   return "guide";
 }
+
+/**
+ * Redirect arXiv abstract URLs to the HTML version for full paper content.
+ * Abstract pages only have metadata; the HTML version has all sections.
+ */
+export function resolveArxivUrl(url) {
+  const match = url.match(/^https?:\/\/arxiv\.org\/abs\/(\d+\.\d+(?:v\d+)?)/i);
+  if (match) {
+    const id = match[1];
+    return `https://arxiv.org/html/${id}`;
+  }
+  return url;
+}

@@ -4,7 +4,7 @@
 // Requires auth (same as all admin endpoints).
 
 import { requireAuth } from "./_auth.js";
-import { extractMeta, extractPlainText, classifyUrl } from "../server/lib/extract-html.mjs";
+import { extractMeta, extractPlainText, classifyUrl, resolveArxivUrl } from "../server/lib/extract-html.mjs";
 
 const CONTENT_TYPES = [
   { type: "story", when: "One idea, felt deeply. Opens with something concrete that breaks, earns the principle." },
@@ -44,13 +44,16 @@ export default async function handler(req, res) {
 
   const suggestedType = (body.suggestedType || "").trim() || undefined;
 
+  // Redirect arXiv abstract URLs to the HTML version for full paper content
+  const fetchUrl = resolveArxivUrl(url);
+
   try {
     // 1. Verify reachability
     let resp;
     try {
-      resp = await fetch(url, { method: "HEAD", redirect: "follow", signal: AbortSignal.timeout(15_000) });
+      resp = await fetch(fetchUrl, { method: "HEAD", redirect: "follow", signal: AbortSignal.timeout(15_000) });
       if ([405, 403, 501].includes(resp.status) || !resp.ok) {
-        resp = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(30_000) });
+        resp = await fetch(fetchUrl, { redirect: "follow", signal: AbortSignal.timeout(30_000) });
       }
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     } catch (e) {

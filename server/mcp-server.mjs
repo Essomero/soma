@@ -22,7 +22,7 @@ import { existsSync, readdirSync, statSync, readFileSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
-import { extractMeta, extractPlainText, classifyUrl } from "./lib/extract-html.mjs";
+import { extractMeta, extractPlainText, classifyUrl, resolveArxivUrl } from "./lib/extract-html.mjs";
 
 import { CONTENT_TYPES, TOPICS, TEMPLATES, ROUTE_BASE, WORKFLOW_NOTE } from "./mcp-content-data.mjs";
 
@@ -212,12 +212,15 @@ async function verifyUrl(url) {
 }
 
 async function importContent(url, suggestedType) {
+  // Redirect arXiv abstract URLs to the HTML version for full paper content
+  const fetchUrl = resolveArxivUrl(url);
+
   // 1. Verify reachability (same strategy as verifyUrl)
   let resp;
   try {
-    resp = await fetch(url, { method: "HEAD", redirect: "follow", signal: AbortSignal.timeout(15_000) });
+    resp = await fetch(fetchUrl, { method: "HEAD", redirect: "follow", signal: AbortSignal.timeout(15_000) });
     if ([405, 403, 501].includes(resp.status) || !resp.ok) {
-      resp = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(30_000) });
+      resp = await fetch(fetchUrl, { redirect: "follow", signal: AbortSignal.timeout(30_000) });
     }
     if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
   } catch (e) {
