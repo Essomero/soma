@@ -117,7 +117,7 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          systemPrompt: buildSystemPrompt(),
+          systemPrompt: buildSystemPrompt(defaultType ? [defaultType as ContentType] : undefined),
           userMessage: `Create${typeHint} content based on this idea:\n\n${input.trim()}\n\nRespond with the JSON object only.`,
           model: selectedModel,
           provider: selectedProvider,
