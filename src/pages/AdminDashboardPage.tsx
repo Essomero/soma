@@ -226,14 +226,14 @@ export default function AdminDashboardPage() {
           <div className="flex items-center gap-3">
             <Link
               to="/admin/new"
-              className="admin-btn inline-flex items-center gap-sm px-xl py-md bg-primary text-on-primary font-sora text-sm font-medium hover:bg-primary/90"
+              className="inline-flex items-center gap-sm px-xl py-md bg-primary text-on-primary font-sora text-sm font-medium hover:bg-primary/90"
             >
               <Plus className="w-4 h-4" />
               New Content
             </Link>
             <button
               onClick={() => setShowExport(true)}
-              className="admin-btn admin-btn--secondary inline-flex items-center gap-sm px-xl py-md border border-border-default text-on-surface font-dm-sans text-sm hover:border-primary hover:text-primary bg-transparent cursor-pointer"
+              className="inline-flex items-center gap-sm px-xl py-md border border-border-default text-on-surface font-dm-sans text-sm hover:border-primary hover:text-primary bg-transparent cursor-pointer"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -244,7 +244,7 @@ export default function AdminDashboardPage() {
             </button>
             <button
               onClick={() => setShowImport(true)}
-              className="admin-btn admin-btn--secondary inline-flex items-center gap-sm px-xl py-md border border-border-default text-on-surface font-dm-sans text-sm hover:border-primary hover:text-primary bg-transparent cursor-pointer"
+              className="inline-flex items-center gap-sm px-xl py-md border border-border-default text-on-surface font-dm-sans text-sm hover:border-primary hover:text-primary bg-transparent cursor-pointer"
             >
               <Globe className="w-4 h-4" />
               Import
@@ -306,7 +306,7 @@ export default function AdminDashboardPage() {
 
         <button
           onClick={() => fetchAll(filterType || undefined, search || undefined)}
-          className="admin-btn px-xl py-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm hover:bg-surface-container"
+          className="px-xl py-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm hover:bg-surface-container"
         >
           Refresh
         </button>
@@ -322,7 +322,7 @@ export default function AdminDashboardPage() {
           <p className="font-dm-sans text-sm text-error">{error}</p>
           <button
             onClick={() => fetchAll()}
-            className="admin-link mt-sm text-sm text-primary font-dm-sans"
+            className="mt-sm text-sm text-primary font-dm-sans"
           >
             Retry
           </button>
@@ -336,7 +336,7 @@ export default function AdminDashboardPage() {
           </p>
           <Link
             to="/admin/new"
-            className="admin-link inline-flex items-center gap-sm text-sm text-primary font-dm-sans"
+            className="inline-flex items-center gap-sm text-sm text-primary font-dm-sans"
           >
             <Plus className="w-4 h-4" />
             Create your first piece of content
@@ -363,7 +363,7 @@ export default function AdminDashboardPage() {
                         <div>
                           <Link
                             to={`/${baseRoute}/${item.slug}`}
-                            className="admin-link font-dm-sans text-sm text-on-surface hover:text-primary transition-colors"
+                            className="font-dm-sans text-sm text-on-surface hover:text-primary transition-colors"
                           >
                             {item.title || item.slug}
                           </Link>
@@ -388,7 +388,7 @@ export default function AdminDashboardPage() {
                         <div className="grid grid-cols-[1fr_1.5fr_1.5fr_1fr] gap-sm w-full justify-items-center">
                           <Link
                             to={`/admin/${item.type}/${item.slug}/edit`}
-                            className="admin-btn flex items-center justify-center gap-xs px-md py-sm text-xs text-on-surface-muted hover:text-primary font-dm-sans border border-border-default w-full"
+                            className="flex items-center justify-center gap-xs px-md py-sm text-xs text-on-surface-muted hover:text-primary font-dm-sans border border-border-default w-full"
                             title={`Edit ${item.slug}`}
                           >
                             <Pencil className="w-3.5 h-3.5 shrink-0" />
@@ -397,7 +397,7 @@ export default function AdminDashboardPage() {
                           <button
                             onClick={() => toggleStatus(item)}
                             disabled={busySlug === item.slug}
-                            className={`admin-btn flex items-center justify-center gap-xs px-md py-sm text-xs font-dm-sans border disabled:opacity-50 disabled:cursor-not-allowed w-full text-on-surface-muted ${
+                            className={`flex items-center justify-center gap-xs px-md py-sm text-xs font-dm-sans border disabled:opacity-50 disabled:cursor-not-allowed w-full text-on-surface-muted ${
                               item.status === "published"
                                 ? "hover:text-warning border-border-default"
                                 : "hover:text-success border-border-default"
@@ -410,7 +410,7 @@ export default function AdminDashboardPage() {
                           <button
                             onClick={() => setArchiveTarget(item)}
                             disabled={busySlug === item.slug}
-                            className="admin-btn flex items-center justify-center gap-xs px-md py-sm text-xs font-dm-sans border disabled:opacity-50 disabled:cursor-not-allowed w-full text-on-surface-muted hover:text-on-surface border-border-default"
+                            className="flex items-center justify-center gap-xs px-md py-sm text-xs font-dm-sans border disabled:opacity-50 disabled:cursor-not-allowed w-full text-on-surface-muted hover:text-on-surface border-border-default"
                             title={item.archived ? `Unarchive ${item.slug}` : `Archive ${item.slug}`}
                           >
                             <Archive className="w-3.5 h-3.5 shrink-0" />
@@ -419,7 +419,7 @@ export default function AdminDashboardPage() {
                           <button
                             onClick={() => setDeleteTarget(item)}
                             disabled={busySlug === item.slug}
-                            className="admin-btn flex items-center justify-center gap-xs px-md py-sm text-xs text-on-surface-muted hover:text-error font-dm-sans border border-border-default disabled:opacity-50 disabled:cursor-not-allowed w-full"
+                            className="flex items-center justify-center gap-xs px-md py-sm text-xs text-on-surface-muted hover:text-error font-dm-sans border border-border-default disabled:opacity-50 disabled:cursor-not-allowed w-full"
                             title={`Delete ${item.slug}`}
                           >
                             <Trash2 className="w-3.5 h-3.5 shrink-0" />
@@ -459,7 +459,7 @@ export default function AdminDashboardPage() {
                   <button
                     onClick={() => setPage(safePage - 1)}
                     disabled={safePage === 0}
-                    className="admin-btn inline-flex items-center gap-xs px-md py-sm text-sm text-on-surface-muted hover:text-primary font-dm-sans border border-border-default disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-xs px-md py-sm text-sm text-on-surface-muted hover:text-primary font-dm-sans border border-border-default disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                     Prev
@@ -471,7 +471,7 @@ export default function AdminDashboardPage() {
                         <button
                           key={i}
                           onClick={() => setPage(i)}
-                          className={`admin-btn px-sm py-sm text-sm font-dm-sans font-medium min-w-[2rem] ${
+                          className={`px-sm py-sm text-sm font-dm-sans font-medium min-w-[2rem] ${
                             i === safePage
                               ? "text-primary border-b-2 border-primary"
                               : "text-on-surface-muted"
@@ -492,7 +492,7 @@ export default function AdminDashboardPage() {
                   <button
                     onClick={() => setPage(safePage + 1)}
                     disabled={safePage >= totalPages - 1}
-                    className="admin-btn inline-flex items-center gap-xs px-md py-sm text-sm text-on-surface-muted hover:text-primary font-dm-sans border border-border-default disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-xs px-md py-sm text-sm text-on-surface-muted hover:text-primary font-dm-sans border border-border-default disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     Next
                     <ChevronRight className="w-3.5 h-3.5" />

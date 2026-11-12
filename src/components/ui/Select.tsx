@@ -96,7 +96,7 @@ export default function Select({
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
         onKeyDown={handleKeyDown}
-        className={`inline-flex items-center gap-sm px-md py-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm hover:border-primary transition-colors ${className}`}
+        className={`inline-flex items-center gap-sm px-md py-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm hover:border-primary focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary/30 transition-colors ${className}`}
       >
         <span className="truncate">{selected ? selected.label : placeholder}</span>
         <ChevronDown
@@ -110,7 +110,7 @@ export default function Select({
         <div
           role="listbox"
           tabIndex={-1}
-          className="absolute z-50 top-full mt-1 left-0 min-w-[200px] sm:min-w-[260px] max-h-[400px] overflow-y-auto bg-surface border border-border-default rounded-lg shadow-xl py-xs"
+          className="absolute z-50 top-full mt-1 left-0 min-w-[200px] sm:min-w-[260px] max-h-[400px] overflow-y-auto bg-surface border border-border-default shadow-xl py-xs"
         >
           {options.map((opt, idx) => {
             const isSelected = opt.value === value;
