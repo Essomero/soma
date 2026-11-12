@@ -16,6 +16,7 @@ const abs = fp.startsWith("/") ? fp : join(rootDir, fp);
 try { mkdirSync(dirname(abs), { recursive: true }); } catch {}
 
 const CREATE = `CREATE TABLE IF NOT EXISTS content_items (
+  tenant_id TEXT NOT NULL DEFAULT 'default',
   slug TEXT NOT NULL,
   type TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'private',
@@ -26,7 +27,7 @@ const CREATE = `CREATE TABLE IF NOT EXISTS content_items (
   position INTEGER NOT NULL DEFAULT 0,
   updated_at TEXT DEFAULT (datetime('now')),
   archived_at TEXT,
-  PRIMARY KEY (type, slug)
+  PRIMARY KEY (tenant_id, type, slug)
 )`;
 
 interface ContentLike {
@@ -59,7 +60,8 @@ async function migrateIfNeeded(client: ReturnType<typeof createClient>) {
     const createSql = raw?.sql as string | undefined;
     if (!createSql) return;
     const upper = createSql.toUpperCase();
-    const isLegacy = upper.includes("SLUG TEXT PRIMARY KEY") || !upper.includes("PRIMARY KEY (TYPE, SLUG)");
+    const hasTenantPk = upper.includes("PRIMARY KEY (TENANT_ID, TYPE, SLUG)");
+    const isLegacy = !hasTenantPk && (upper.includes("SLUG TEXT PRIMARY KEY") || !upper.includes("PRIMARY KEY (TYPE, SLUG)"));
     if (!isLegacy) return;
     console.log("[init-docker] migrating from slug PK to composite (type, slug)");
     await client.execute(`CREATE TABLE IF NOT EXISTS content_items_new (
@@ -168,11 +170,11 @@ for (const [type, list] of srcs) {
     const metaJson = JSON.stringify(meta);
     try {
       await client.execute({
-        sql: "INSERT INTO content_items (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(type, slug) DO NOTHING",
+        sql: "INSERT INTO content_items (tenant_id, slug, type, status, title, excerpt, body_json, meta_json, position, updated_at) VALUES ('default', ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(tenant_id, type, slug) DO NOTHING",
         args: [item.slug, type, "published", title, excerpt, bodyJson, metaJson, i, now],
       });
       await client.execute({
-        sql: "UPDATE content_items SET type=?, title=?, excerpt=?, body_json=?, meta_json=?, position=?, updated_at=?, status=? WHERE type=? AND slug=?",
+        sql: "UPDATE content_items SET type=?, title=?, excerpt=?, body_json=?, meta_json=?, position=?, updated_at=?, status=? WHERE tenant_id='default' AND type=? AND slug=?",
         args: [type, title, excerpt, bodyJson, metaJson, i, now, "published", type, item.slug],
       });
       total++;

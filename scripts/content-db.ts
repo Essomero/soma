@@ -78,6 +78,7 @@ export async function getDb(): Promise<ContentDatabase> {
 
 
 export const CREATE_CONTENT_ITEMS = `CREATE TABLE IF NOT EXISTS content_items (
+  tenant_id TEXT NOT NULL DEFAULT 'default',
   slug TEXT NOT NULL,
   type TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'private',
@@ -88,7 +89,7 @@ export const CREATE_CONTENT_ITEMS = `CREATE TABLE IF NOT EXISTS content_items (
   position INTEGER NOT NULL DEFAULT 0,
   updated_at TEXT DEFAULT (datetime('now')),
   archived_at TEXT,
-  PRIMARY KEY (type, slug)
+  PRIMARY KEY (tenant_id, type, slug)
 )`;
 
 export async function migrateContentItemsIfNeeded(db: ContentDatabase) {
@@ -98,7 +99,8 @@ export async function migrateContentItemsIfNeeded(db: ContentDatabase) {
     const createSql = row?.sql as string | undefined;
     if (!createSql) return;
     const upper = createSql.toUpperCase();
-    const isLegacy = upper.includes("SLUG TEXT PRIMARY KEY") || !upper.includes("PRIMARY KEY (TYPE, SLUG)");
+    const hasTenantPk = upper.includes("PRIMARY KEY (TENANT_ID, TYPE, SLUG)");
+    const isLegacy = !hasTenantPk && (upper.includes("SLUG TEXT PRIMARY KEY") || !upper.includes("PRIMARY KEY (TYPE, SLUG)"));
     if (!isLegacy) return;
     console.log("[content_items] migrating from slug PK to composite (type, slug)");
     await db.execute(`CREATE TABLE IF NOT EXISTS content_items_new (

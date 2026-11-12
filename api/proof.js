@@ -8,6 +8,7 @@
 
 import { query } from "./_db.js";
 import { requireAuth } from "./_auth.js";
+import { getTenantId } from "./_tenant.js";
 
 let _tablesReady = false;
 
@@ -15,14 +16,15 @@ async function ensureTables() {
   if (_tablesReady) return;
   await query(`CREATE TABLE IF NOT EXISTS lab_attempts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id TEXT NOT NULL DEFAULT 'default',
     content_slug TEXT NOT NULL,
     lab_id TEXT NOT NULL,
     passed INTEGER NOT NULL DEFAULT 0,
     attempts INTEGER NOT NULL DEFAULT 1,
     last_attempt_at TEXT DEFAULT (datetime('now'))
   )`);
-  await query(`CREATE INDEX IF NOT EXISTS idx_lab_attempts_slug ON lab_attempts(content_slug)`);
-  await query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_lab_attempts_unique ON lab_attempts(content_slug, lab_id)`);
+  await query(`CREATE INDEX IF NOT EXISTS idx_lab_attempts_tenant_slug ON lab_attempts(tenant_id, content_slug)`);
+  await query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_lab_attempts_tenant_unique ON lab_attempts(tenant_id, content_slug, lab_id)`);
   _tablesReady = true;
 }
 
@@ -30,19 +32,19 @@ async function ensureTables() {
  * Aggregate proof stats for one slug (or across all slugs when slug is null).
  * Counts from existing tables so nothing goes stale.
  */
-async function aggregate(slug) {
+async function aggregate(slug, tenant_id) {
   // The JOIN shadow union is simpler than N queries or pipelines.
   const sql = slug
     ? `
     SELECT
       ? AS slug,
-      (SELECT COUNT(*) FROM highlights WHERE story_slug = ?) AS highlights,
-      (SELECT COUNT(*) FROM comments WHERE story_slug = ?) AS comments,
-      (SELECT COUNT(*) FROM test_submissions WHERE test_slug = ?) AS test_submissions,
-      (SELECT MAX(score) FROM test_submissions WHERE test_slug = ?) AS best_score,
-      (SELECT COUNT(*) FROM lab_attempts WHERE content_slug = ?) AS lab_attempts,
-      (SELECT COUNT(*) FROM lab_attempts WHERE content_slug = ? AND passed = 1) AS lab_passed,
-      (SELECT COUNT(*) FROM note_articles WHERE EXISTS (
+      (SELECT COUNT(*) FROM highlights WHERE tenant_id = ? AND story_slug = ?) AS highlights,
+      (SELECT COUNT(*) FROM comments WHERE tenant_id = ? AND story_slug = ?) AS comments,
+      (SELECT COUNT(*) FROM test_submissions WHERE tenant_id = ? AND test_slug = ?) AS test_submissions,
+      (SELECT MAX(score) FROM test_submissions WHERE tenant_id = ? AND test_slug = ?) AS best_score,
+      (SELECT COUNT(*) FROM lab_attempts WHERE tenant_id = ? AND content_slug = ?) AS lab_attempts,
+      (SELECT COUNT(*) FROM lab_attempts WHERE tenant_id = ? AND content_slug = ? AND passed = 1) AS lab_passed,
+      (SELECT COUNT(*) FROM note_articles WHERE tenant_id = ? AND EXISTS (
         SELECT 1 FROM json_each(published_content) WHERE json_extract(value, '$.slug') = ?
       )) AS notes
     `
@@ -57,37 +59,51 @@ async function aggregate(slug) {
       COALESCE(l.p, 0) AS lab_passed,
       COALESCE(n.c, 0) AS notes
     FROM (
-      SELECT story_slug AS slug FROM highlights
+      SELECT story_slug AS slug FROM highlights WHERE tenant_id = ?
       UNION
-      SELECT story_slug AS slug FROM comments
+      SELECT story_slug AS slug FROM comments WHERE tenant_id = ?
       UNION
-      SELECT test_slug AS slug FROM test_submissions
+      SELECT test_slug AS slug FROM test_submissions WHERE tenant_id = ?
       UNION
-      SELECT content_slug AS slug FROM lab_attempts
+      SELECT content_slug AS slug FROM lab_attempts WHERE tenant_id = ?
       UNION
-      SELECT slug FROM note_articles
+      SELECT slug FROM note_articles WHERE tenant_id = ?
     ) sub
-    LEFT JOIN (SELECT story_slug, COUNT(*) AS c FROM highlights GROUP BY story_slug) h ON h.story_slug = sub.slug
-    LEFT JOIN (SELECT story_slug, COUNT(*) AS c FROM comments GROUP BY story_slug) c ON c.story_slug = sub.slug
-    LEFT JOIN (SELECT test_slug, COUNT(*) AS c, MAX(score) AS best_score FROM test_submissions GROUP BY test_slug) t ON t.test_slug = sub.slug
-    LEFT JOIN (SELECT content_slug, COUNT(*) AS c, SUM(passed) AS p FROM lab_attempts GROUP BY content_slug) l ON l.content_slug = sub.slug
+    LEFT JOIN (SELECT story_slug, COUNT(*) AS c FROM highlights WHERE tenant_id = ? GROUP BY story_slug) h ON h.story_slug = sub.slug
+    LEFT JOIN (SELECT story_slug, COUNT(*) AS c FROM comments WHERE tenant_id = ? GROUP BY story_slug) c ON c.story_slug = sub.slug
+    LEFT JOIN (SELECT test_slug, COUNT(*) AS c, MAX(score) AS best_score FROM test_submissions WHERE tenant_id = ? GROUP BY test_slug) t ON t.test_slug = sub.slug
+    LEFT JOIN (SELECT content_slug, COUNT(*) AS c, SUM(passed) AS p FROM lab_attempts WHERE tenant_id = ? GROUP BY content_slug) l ON l.content_slug = sub.slug
     LEFT JOIN (
       SELECT json_extract(value, '$.slug') AS ref_slug, COUNT(*) AS c
       FROM note_articles, json_each(published_content)
+      WHERE note_articles.tenant_id = ?
       GROUP BY ref_slug
     ) n ON n.ref_slug = sub.slug
     ORDER BY sub.slug
     `;
 
   const args = slug
-    ? [slug, slug, slug, slug, slug, slug, slug, slug]
-    : [];
+    ? [
+        slug,
+        tenant_id, slug,
+        tenant_id, slug,
+        tenant_id, slug,
+        tenant_id, slug,
+        tenant_id, slug,
+        tenant_id, slug,
+        tenant_id, slug,
+      ]
+    : [
+        tenant_id, tenant_id, tenant_id, tenant_id, tenant_id,
+        tenant_id, tenant_id, tenant_id, tenant_id, tenant_id,
+      ];
 
   const rows = await query(sql, args);
   return rows;
 }
 
 export default async function handler(req, res) {
+  const tenant_id = getTenantId(req);
   await ensureTables();
 
   if (!requireAuth(req, res)) return;
@@ -98,7 +114,7 @@ export default async function handler(req, res) {
 
   try {
     const slug = req.query?.slug;
-    const rows = await aggregate(slug || null);
+    const rows = await aggregate(slug || null, tenant_id);
 
     if (slug) {
       const row = rows?.[0] || {

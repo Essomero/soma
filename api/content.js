@@ -1,5 +1,6 @@
 import { isAuthed, requireAuth } from "./_auth.js";
 import { query as dbQuery, runPipeline, arg, isTursoConfigured } from "./_db.js";
+import { getTenantId } from "./_tenant.js";
 
 // Modern migrations: always runs on boot, tracks _migrations table, skips applied.
 const MIGRATIONS = [
@@ -29,7 +30,8 @@ const MIGRATIONS = [
         return;
       }
       const upper = sql.toUpperCase();
-      const isLegacy = upper.includes("SLUG TEXT PRIMARY KEY") || !upper.includes("PRIMARY KEY (TYPE, SLUG)");
+      const hasTenantPk = upper.includes("PRIMARY KEY (TENANT_ID, TYPE, SLUG)");
+      const isLegacy = !hasTenantPk && (upper.includes("SLUG TEXT PRIMARY KEY") || !upper.includes("PRIMARY KEY (TYPE, SLUG)"));
       if (!isLegacy) return;
       console.log("[migrate] 001 composite PK: migrating legacy slug PK -> (type,slug)");
       await q(`CREATE TABLE IF NOT EXISTS content_items_new (
@@ -60,6 +62,99 @@ const MIGRATIONS = [
       await q("DROP TABLE content_items", []);
       await q("ALTER TABLE content_items_new RENAME TO content_items", []);
       try { await q("DROP TABLE IF EXISTS content_fts", []); } catch {}
+    },
+  },
+  {
+    id: "002_tenant_id",
+    description: "Add tenant_id column to every data table for multi-tenant support",
+    up: async (q) => {
+      // Check if already applied — look for tenant_id on content_items
+      try {
+        const rows = await q("PRAGMA table_info(content_items)", []);
+        const cols = (rows || []).map((r) => r.name || r.Name || "");
+        if (cols.includes("tenant_id")) {
+          console.log("[migrate] 002 tenant_id: already present, skipping");
+          return;
+        }
+      } catch {}
+      console.log("[migrate] 002 tenant_id: adding tenant_id to all tables");
+
+      // 1. content_items — PK rebuild
+      await q(`CREATE TABLE IF NOT EXISTS content_items_new (
+        tenant_id TEXT NOT NULL DEFAULT 'default',
+        slug TEXT NOT NULL,
+        type TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'private',
+        title TEXT NOT NULL DEFAULT '',
+        excerpt TEXT NOT NULL DEFAULT '',
+        body_json TEXT NOT NULL,
+        meta_json TEXT NOT NULL DEFAULT '{}',
+        position INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT DEFAULT (datetime('now')),
+        archived_at TEXT,
+        PRIMARY KEY (tenant_id, type, slug)
+      )`, []);
+      try {
+        await q(`INSERT OR REPLACE INTO content_items_new (tenant_id, slug, type, status, title, excerpt, body_json, meta_json, position, updated_at, archived_at)
+          SELECT 'default', slug, type, status, title, excerpt, body_json, meta_json, position, updated_at, archived_at FROM content_items`, []);
+      } catch {
+        await q(`INSERT OR REPLACE INTO content_items_new (tenant_id, slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
+          SELECT 'default', slug, type, status, title, excerpt, body_json, meta_json, position, updated_at FROM content_items`, []);
+      }
+      await q("DROP TABLE content_items", []);
+      await q("ALTER TABLE content_items_new RENAME TO content_items", []);
+      try { await q("DROP TABLE IF EXISTS content_fts", []); } catch {}
+
+      // 2. note_articles — simple ALTER
+      try { await q("ALTER TABLE note_articles ADD COLUMN tenant_id TEXT NOT NULL DEFAULT 'default'", []); } catch (e) { console.log("[migrate] note_articles tenant_id:", e?.message); }
+
+      // 3. ratings — PK rebuild
+      try {
+        await q("DROP TABLE IF EXISTS ratings_old", []);
+        await q("ALTER TABLE ratings RENAME TO ratings_old", []);
+        await q(`CREATE TABLE IF NOT EXISTS ratings (
+          tenant_id TEXT NOT NULL DEFAULT 'default',
+          story_slug TEXT NOT NULL,
+          rating INTEGER NOT NULL,
+          rated_at TEXT,
+          PRIMARY KEY (tenant_id, story_slug)
+        )`, []);
+        await q(`INSERT OR IGNORE INTO ratings (tenant_id, story_slug, rating, rated_at)
+          SELECT 'default', story_slug, rating, rated_at FROM ratings_old`, []);
+        await q("DROP TABLE ratings_old", []);
+      } catch (e) { console.log("[migrate] ratings:", e?.message); }
+
+      // 4. highlights — simple ALTER
+      try { await q("ALTER TABLE highlights ADD COLUMN tenant_id TEXT NOT NULL DEFAULT 'default'", []); } catch (e) { console.log("[migrate] highlights tenant_id:", e?.message); }
+
+      // 5. comments — simple ALTER
+      try { await q("ALTER TABLE comments ADD COLUMN tenant_id TEXT NOT NULL DEFAULT 'default'", []); } catch (e) { console.log("[migrate] comments tenant_id:", e?.message); }
+
+      // 6. progress — PK rebuild
+      try {
+        await q("DROP TABLE IF EXISTS progress_old", []);
+        await q("ALTER TABLE progress RENAME TO progress_old", []);
+        await q(`CREATE TABLE IF NOT EXISTS progress (
+          tenant_id TEXT NOT NULL DEFAULT 'default',
+          story_slug TEXT NOT NULL,
+          completed INTEGER NOT NULL DEFAULT 0,
+          completed_at TEXT,
+          PRIMARY KEY (tenant_id, story_slug)
+        )`, []);
+        await q(`INSERT OR IGNORE INTO progress (tenant_id, story_slug, completed, completed_at)
+          SELECT 'default', story_slug, completed, completed_at FROM progress_old`, []);
+        await q("DROP TABLE progress_old", []);
+      } catch (e) { console.log("[migrate] progress:", e?.message); }
+
+      // 7. test_submissions — simple ALTER
+      try { await q("ALTER TABLE test_submissions ADD COLUMN tenant_id TEXT NOT NULL DEFAULT 'default'", []); } catch (e) { console.log("[migrate] test_submissions tenant_id:", e?.message); }
+
+      // 8. lab_attempts — simple ALTER + index rebuild
+      try { await q("ALTER TABLE lab_attempts ADD COLUMN tenant_id TEXT NOT NULL DEFAULT 'default'", []); } catch (e) { console.log("[migrate] lab_attempts tenant_id:", e?.message); }
+      try { await q("DROP INDEX IF EXISTS idx_lab_attempts_slug", []); } catch {}
+      try { await q("DROP INDEX IF EXISTS idx_lab_attempts_unique", []); } catch {}
+      try { await q("CREATE INDEX IF NOT EXISTS idx_lab_attempts_tenant_slug ON lab_attempts(tenant_id, content_slug)", []); } catch {}
+      try { await q("CREATE UNIQUE INDEX IF NOT EXISTS idx_lab_attempts_tenant_unique ON lab_attempts(tenant_id, content_slug, lab_id)", []); } catch {}
     },
   },
 ];
@@ -99,6 +194,7 @@ async function runMigrations() {
 }
 
 const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS content_items (
+  tenant_id TEXT NOT NULL DEFAULT 'default',
   slug TEXT NOT NULL,
   type TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'private',
@@ -109,7 +205,7 @@ const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS content_items (
   position INTEGER NOT NULL DEFAULT 0,
   updated_at TEXT DEFAULT (datetime('now')),
   archived_at TEXT,
-  PRIMARY KEY (type, slug)
+  PRIMARY KEY (tenant_id, type, slug)
 )`;
 
 const CREATE_FTS = `CREATE VIRTUAL TABLE IF NOT EXISTS content_fts USING fts5(
@@ -325,14 +421,16 @@ function mapRow(r) {
 
 export default async function handler(req, res) {
   try {
+    const tenant_id = getTenantId(req);
+
     if (req.method === "GET" && req.query.slug) {
       const slug = req.query.slug;
       const wantedType = req.query.type;
       let rows;
       if (wantedType) {
-        rows = await query("SELECT * FROM content_items WHERE type = ? AND slug = ?", [wantedType, slug]);
+        rows = await query("SELECT * FROM content_items WHERE tenant_id = ? AND type = ? AND slug = ?", [tenant_id, wantedType, slug]);
       } else {
-        rows = await query("SELECT * FROM content_items WHERE slug = ? ORDER BY CASE type WHEN 'featured' THEN 0 ELSE 1 END LIMIT 1", [slug]);
+        rows = await query("SELECT * FROM content_items WHERE tenant_id = ? AND slug = ? ORDER BY CASE type WHEN 'featured' THEN 0 ELSE 1 END LIMIT 1", [tenant_id, slug]);
       }
       const row = rows[0];
       if (!row) return res.status(404).json({ error: "Not found" });
@@ -368,25 +466,25 @@ export default async function handler(req, res) {
         const ftsQuery = toFtsQuery(q);
         const sql = `SELECT ci.*, rank
           FROM content_fts fts
-          JOIN content_items ci ON ci.type = fts.type AND ci.slug = fts.slug
+          JOIN content_items ci ON ci.tenant_id = ? AND ci.type = fts.type AND ci.slug = fts.slug
           WHERE content_fts MATCH ?
             AND ${typeClause}${statusClause}
           ORDER BY rank
           LIMIT ? OFFSET ?`;
-        const rows = await searchQuery(sql, [ftsQuery, ...typeArgs, ...statusArgs, limit, offset]);
+        const rows = await searchQuery(sql, [tenant_id, ftsQuery, ...typeArgs, ...statusArgs, limit, offset]);
         return res.json(rows.map(mapRow));
       }
 
       const orderBy = "updated_at DESC, position ASC";
       const rows = await query(
-        `SELECT * FROM content_items WHERE type = ?${statusValue ? " AND status = ?" : ""} ORDER BY ${orderBy}`,
-        statusValue ? [req.query.type, statusValue] : [req.query.type]);
+        `SELECT * FROM content_items WHERE tenant_id = ? AND type = ?${statusValue ? " AND status = ?" : ""} ORDER BY ${orderBy}`,
+        statusValue ? [tenant_id, req.query.type, statusValue] : [tenant_id, req.query.type]);
       return res.json(rows.map(mapRow));
     }
 
     if (req.method === "GET") {
       if (!requireAuth(req, res)) return;
-      const rows = await query("SELECT * FROM content_items ORDER BY type ASC, position ASC", []);
+      const rows = await query("SELECT * FROM content_items WHERE tenant_id = ? ORDER BY type ASC, position ASC", [tenant_id]);
       return res.json(rows.map(mapRow));
     }
 
@@ -398,17 +496,17 @@ export default async function handler(req, res) {
       }
       if (!ROUTE_BASE[type]) return res.status(400).json({ error: "unknown type: " + type });
       if (status && !STATUSES.has(status)) return res.status(400).json({ error: "status must be private|published" });
-      const existing = await query("SELECT status FROM content_items WHERE type = ? AND slug = ?", [type, slug]);
+      const existing = await query("SELECT status FROM content_items WHERE tenant_id = ? AND type = ? AND slug = ?", [tenant_id, type, slug]);
       const effectiveStatus = status || (existing.length && existing[0].status) || "private";
       const now = updatedAt && typeof updatedAt === "string" ? updatedAt : new Date().toISOString();
       const rows = await query(
-        `INSERT INTO content_items (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-         ON CONFLICT(type, slug) DO UPDATE SET status = excluded.status,
+        `INSERT INTO content_items (tenant_id, slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(tenant_id, type, slug) DO UPDATE SET status = excluded.status,
            title = excluded.title, excerpt = excluded.excerpt, body_json = excluded.body_json,
            meta_json = excluded.meta_json, position = excluded.position, updated_at = excluded.updated_at
          RETURNING *`,
-        [slug, type, effectiveStatus,
+        [tenant_id, slug, type, effectiveStatus,
           title || body.title || "", excerpt || body.excerpt || body.description || "",
           JSON.stringify(body), JSON.stringify(meta || {}),
           Number.isFinite(Number(position)) ? Number(position) : 0, now]
@@ -426,10 +524,10 @@ export default async function handler(req, res) {
       const type = (req.body && req.body.type) || req.query.type;
       if (!slug) return res.status(400).json({ error: "slug required" });
       if (type) {
-        await query("DELETE FROM content_items WHERE type = ? AND slug = ?", [type, slug]);
+        await query("DELETE FROM content_items WHERE tenant_id = ? AND type = ? AND slug = ?", [tenant_id, type, slug]);
         await deleteFts(slug, type);
       } else {
-        await query("DELETE FROM content_items WHERE slug = ?", [slug]);
+        await query("DELETE FROM content_items WHERE tenant_id = ? AND slug = ?", [tenant_id, slug]);
         await deleteFts(slug);
       }
       return res.json({ success: true });

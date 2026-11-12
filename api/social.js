@@ -4,6 +4,7 @@ import { isTutorMode } from "../shared/tutor/modes.js";
 import { apiRouteFromPath } from "../shared/api-routes.js";
 import { query as dbQueryRaw, runPipeline as dbRunPipeline, arg as dbArg } from "./_db.js";
 import { query as simpleQuery } from "./_db.js";
+import { getTenantId } from "./_tenant.js";
 
 // Use simple wrapper for generic queries (comments/highlights)
 // For notes we use FTS pipeline helpers.
@@ -12,12 +13,14 @@ const query = simpleQuery;
 // ── notes: shared pipeline helpers ──
 const CREATE_NOTE_TABLE = `CREATE TABLE IF NOT EXISTS note_articles (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  slug TEXT NOT NULL UNIQUE,
+  tenant_id TEXT NOT NULL DEFAULT 'default',
+  slug TEXT NOT NULL,
   title TEXT NOT NULL,
   content TEXT NOT NULL,
   published_content TEXT DEFAULT '[]',
   created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT
+  updated_at TEXT,
+  UNIQUE(tenant_id, slug)
 )`;
 const MIGRATE_PUBLISHED = `ALTER TABLE note_articles ADD COLUMN published_content TEXT DEFAULT '[]'`;
 const CREATE_FTS = `CREATE VIRTUAL TABLE IF NOT EXISTS note_fts USING fts5(
@@ -154,11 +157,13 @@ function mapRow(r) {
 
 // ---- notes handler ----
 async function handleNotes(req, res) {
+  const tenant_id = getTenantId(req);
+
   if (req.method === "GET") {
     const authed = isAuthed(req);
 
     if (req.query.slug) {
-      const rows = await notesQuery("SELECT * FROM note_articles WHERE slug = ?", [req.query.slug]);
+      const rows = await notesQuery("SELECT * FROM note_articles WHERE tenant_id = ? AND slug = ?", [tenant_id, req.query.slug]);
       const row = rows[0];
       if (!row) return res.status(404).json({ error: "Not found" });
       if (!authed) {
@@ -173,20 +178,21 @@ async function handleNotes(req, res) {
       const visibilityClause = authed ? "" : ' JOIN public_pages pp ON pp.slug = fts.slug AND pp."public" = 1';
       const sql = `SELECT na.*, rank
           FROM note_fts fts
-          JOIN note_articles na ON na.slug = fts.slug${visibilityClause}
+          JOIN note_articles na ON na.tenant_id = ? AND na.slug = fts.slug${visibilityClause}
           WHERE note_fts MATCH ?
           ORDER BY rank
           LIMIT 20`;
-      const rows = await notesSearchQuery(sql, [toFtsQuery(q)]);
+      const rows = await notesSearchQuery(sql, [tenant_id, toFtsQuery(q)]);
       return res.json(rows.map(mapRow));
     }
 
     if (authed) {
-      const rows = await notesQuery("SELECT * FROM note_articles ORDER BY updated_at DESC, created_at DESC");
+      const rows = await notesQuery("SELECT * FROM note_articles WHERE tenant_id = ? ORDER BY updated_at DESC, created_at DESC", [tenant_id]);
       return res.json(rows.map(mapRow));
     }
     const rows = await notesQuery(
-      'SELECT la.* FROM note_articles la JOIN public_pages pp ON pp.slug = la.slug WHERE pp."public" = 1 ORDER BY la.updated_at DESC, la.created_at DESC',
+      'SELECT la.* FROM note_articles la JOIN public_pages pp ON pp.slug = la.slug WHERE la.tenant_id = ? AND pp."public" = 1 ORDER BY la.updated_at DESC, la.created_at DESC',
+      [tenant_id],
     );
     return res.json(rows.map(mapRow));
   }
@@ -205,13 +211,13 @@ async function handleNotes(req, res) {
           .replace(/(^-|-$)/g, "");
     if (!finalSlug) return res.status(400).json({ error: "title must produce a slug" });
 
-    const existing = await notesQuery("SELECT slug FROM note_articles WHERE slug = ?", [finalSlug]);
+    const existing = await notesQuery("SELECT slug FROM note_articles WHERE tenant_id = ? AND slug = ?", [tenant_id, finalSlug]);
     if (existing.length) return res.status(409).json({ error: "slug already exists" });
 
     const pcJson = Array.isArray(publishedContent) ? JSON.stringify(publishedContent) : "[]";
     const result = await notesQuery(
-      "INSERT INTO note_articles (slug, title, content, published_content) VALUES (?, ?, ?, ?) RETURNING *",
-      [finalSlug, title, content, pcJson],
+      "INSERT INTO note_articles (tenant_id, slug, title, content, published_content) VALUES (?, ?, ?, ?, ?) RETURNING *",
+      [tenant_id, finalSlug, title, content, pcJson],
     );
     const noteRow = result[0];
     if (noteRow) await syncNoteFts(noteRow.slug, noteRow.title, noteRow.content);
@@ -226,12 +232,12 @@ async function handleNotes(req, res) {
 
     const result = pcJson
       ? await notesQuery(
-          "UPDATE note_articles SET title = ?, content = ?, published_content = ?, updated_at = datetime('now') WHERE slug = ? RETURNING *",
-          [title, content, pcJson, slug],
+          "UPDATE note_articles SET title = ?, content = ?, published_content = ?, updated_at = datetime('now') WHERE tenant_id = ? AND slug = ? RETURNING *",
+          [title, content, pcJson, tenant_id, slug],
         )
       : await notesQuery(
-          "UPDATE note_articles SET title = ?, content = ?, updated_at = datetime('now') WHERE slug = ? RETURNING *",
-          [title, content, slug],
+          "UPDATE note_articles SET title = ?, content = ?, updated_at = datetime('now') WHERE tenant_id = ? AND slug = ? RETURNING *",
+          [title, content, tenant_id, slug],
         );
     const row = result[0];
     if (!row) return res.status(404).json({ error: "Not found" });
@@ -243,10 +249,10 @@ async function handleNotes(req, res) {
     const { slug } = req.body || {};
     if (!slug) return res.status(400).json({ error: "slug required" });
 
-    await notesQuery("DELETE FROM comments WHERE story_slug = ?", [slug]);
-    await notesQuery("DELETE FROM highlights WHERE story_slug = ?", [slug]);
+    await notesQuery("DELETE FROM comments WHERE tenant_id = ? AND story_slug = ?", [tenant_id, slug]);
+    await notesQuery("DELETE FROM highlights WHERE tenant_id = ? AND story_slug = ?", [tenant_id, slug]);
     await deleteNoteFts(slug);
-    await notesQuery("DELETE FROM note_articles WHERE slug = ?", [slug]);
+    await notesQuery("DELETE FROM note_articles WHERE tenant_id = ? AND slug = ?", [tenant_id, slug]);
     return res.json({ success: true });
   }
 
@@ -259,6 +265,7 @@ async function ensureHighlightsTables() {
   if (highlightsTablesReady) return;
   await query(`CREATE TABLE IF NOT EXISTS highlights (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id TEXT NOT NULL DEFAULT 'default',
     story_slug TEXT NOT NULL,
     section_index INTEGER NOT NULL DEFAULT 0,
     paragraph_index INTEGER NOT NULL DEFAULT 0,
@@ -271,6 +278,7 @@ async function ensureHighlightsTables() {
   )`);
   await query(`CREATE TABLE IF NOT EXISTS comments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id TEXT NOT NULL DEFAULT 'default',
     story_slug TEXT NOT NULL,
     body TEXT NOT NULL,
     parent_id INTEGER,
@@ -290,6 +298,7 @@ async function ensureHighlightsTables() {
 }
 
 async function handleHighlights(req, res) {
+  const tenant_id = getTenantId(req);
   await ensureHighlightsTables();
   if (req.method === "GET") {
     const story = req.query.story;
@@ -301,13 +310,13 @@ async function handleHighlights(req, res) {
     }
 
     const rows = await query(
-      "SELECT * FROM highlights WHERE story_slug = ? ORDER BY section_index, paragraph_index, start_offset",
-      [story],
+      "SELECT * FROM highlights WHERE tenant_id = ? AND story_slug = ? ORDER BY section_index, paragraph_index, start_offset",
+      [tenant_id, story],
     );
 
     const highlightsWithComments = [];
     for (const h of rows) {
-      const comments = await query("SELECT * FROM comments WHERE highlight_id = ? ORDER BY created_at ASC", [h.id]);
+      const comments = await query("SELECT * FROM comments WHERE tenant_id = ? AND highlight_id = ? ORDER BY created_at ASC", [tenant_id, h.id]);
       highlightsWithComments.push({
         id: h.id,
         storySlug: h.story_slug,
@@ -346,8 +355,8 @@ async function handleHighlights(req, res) {
     if (!storySlug || selectedText == null) return res.status(400).json({ error: "storySlug and selectedText required" });
 
     const result = await query(
-      "INSERT INTO highlights (story_slug, section_index, paragraph_index, start_offset, end_offset, selected_text, text_hash, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
-      [storySlug, sectionIndex, paragraphIndex, startOffset, endOffset, selectedText, textHash, color || "primary"],
+      "INSERT INTO highlights (tenant_id, story_slug, section_index, paragraph_index, start_offset, end_offset, selected_text, text_hash, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
+      [tenant_id, storySlug, sectionIndex, paragraphIndex, startOffset, endOffset, selectedText, textHash, color || "primary"],
     );
     const row = result[0];
     return res.status(201).json({
@@ -368,8 +377,8 @@ async function handleHighlights(req, res) {
     const { id } = req.body || {};
     if (!id) return res.status(400).json({ error: "id required" });
 
-    await query("DELETE FROM comments WHERE highlight_id = ?", [id]);
-    await query("DELETE FROM highlights WHERE id = ?", [id]);
+    await query("DELETE FROM comments WHERE tenant_id = ? AND highlight_id = ?", [tenant_id, id]);
+    await query("DELETE FROM highlights WHERE tenant_id = ? AND id = ?", [tenant_id, id]);
     return res.json({ success: true });
   }
 
@@ -404,6 +413,7 @@ async function ensureCommentsSchema() {
   if (commentsMigrated) return;
   await query(`CREATE TABLE IF NOT EXISTS comments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id TEXT NOT NULL DEFAULT 'default',
     story_slug TEXT NOT NULL,
     body TEXT NOT NULL,
     parent_id INTEGER,
@@ -439,6 +449,7 @@ async function ensureCommentsSchema() {
 }
 
 async function handleComments(req, res) {
+  const tenant_id = getTenantId(req);
   await ensureCommentsSchema();
 
   if (req.method === "GET") {
@@ -450,7 +461,7 @@ async function handleComments(req, res) {
       if (!(vis.length > 0 && vis[0].public == 1)) return res.status(404).json({ error: "Not found" });
     }
 
-    const rows = await query("SELECT * FROM comments WHERE story_slug = ? ORDER BY created_at DESC", [story]);
+    const rows = await query("SELECT * FROM comments WHERE tenant_id = ? AND story_slug = ? ORDER BY created_at DESC", [tenant_id, story]);
 
     const tree = buildTree(rows);
     for (const root of tree) {
@@ -488,8 +499,9 @@ async function handleComments(req, res) {
 
     const now = new Date().toISOString();
     const result = await query(
-      "INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, mode, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
+      "INSERT INTO comments (tenant_id, story_slug, body, parent_id, is_ai, ai_model, mode, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
       [
+        tenant_id,
         storySlug,
         body,
         parentId || null,
@@ -514,13 +526,13 @@ async function handleComments(req, res) {
 
   if (req.method === "PUT") {
     const { id, body } = req.body || {};
-    await query("UPDATE comments SET body = ?, updated_at = ? WHERE id = ?", [body, new Date().toISOString(), id]);
+    await query("UPDATE comments SET body = ?, updated_at = ? WHERE tenant_id = ? AND id = ?", [body, new Date().toISOString(), tenant_id, id]);
     return res.json({ success: true });
   }
   if (req.method === "DELETE") {
     const { id } = req.body || {};
-    await query("DELETE FROM comments WHERE parent_id = ?", [id]);
-    await query("DELETE FROM comments WHERE id = ?", [id]);
+    await query("DELETE FROM comments WHERE tenant_id = ? AND parent_id = ?", [tenant_id, id]);
+    await query("DELETE FROM comments WHERE tenant_id = ? AND id = ?", [tenant_id, id]);
     return res.json({ success: true });
   }
 
