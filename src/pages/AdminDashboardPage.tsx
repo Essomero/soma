@@ -369,6 +369,9 @@ export default function AdminDashboardPage() {
                           </Link>
                           <p className="font-dm-sans text-xs text-on-surface-muted mt-3 line-clamp-1">
                             /{baseRoute}/{item.slug}
+                            {item.archived && (
+                              <span className="ml-sm text-accent-orange font-medium">archived</span>
+                            )}
                           </p>
                         </div>
                       </td>
