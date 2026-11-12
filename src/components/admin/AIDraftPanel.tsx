@@ -113,11 +113,13 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
 
     try {
       const typeHint = defaultType ? ` (content type: ${defaultType})` : "";
+      const VALID_TYPES: Record<string, true> = { story: true, guide: true, doc: true, course: true, book: true, series: true, test: true, featured: true, podcast: true, topic: true };
+      const typeFilter = defaultType && VALID_TYPES[defaultType] ? [defaultType as ContentType] : undefined;
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          systemPrompt: buildSystemPrompt(defaultType ? [defaultType as ContentType] : undefined),
+          systemPrompt: buildSystemPrompt(typeFilter),
           userMessage: `Create${typeHint} content based on this idea:\n\n${input.trim()}\n\nRespond with the JSON object only.`,
           model: selectedModel,
           provider: selectedProvider,

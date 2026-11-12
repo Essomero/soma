@@ -36,10 +36,8 @@ export function extractPlainText(html) {
   // Convert HTML to Markdown
   text = turndown.turndown(text);
 
-  // Decode remaining HTML entities
-  text = text.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#x27;/g, "'")
-    .replace(/&nbsp;/g, " ").replace(/&mdash;/g, "---").replace(/&ndash;/g, "--");
+  // Turndown decodes most HTML entities; clean up what it leaves behind
+  text = text.replace(/\u00A0/g, " ");
 
   // Clean up excessive whitespace
   text = text.replace(/\n{4,}/g, "\n\n\n").replace(/[ \t]+/g, " ").trim();
@@ -67,7 +65,8 @@ export function classifyUrl(url, suggestedType) {
  * Abstract pages only have metadata; the HTML version has all sections.
  */
 export function resolveArxivUrl(url) {
-  const match = url.match(/^https?:\/\/arxiv\.org\/abs\/(\d+\.\d+(?:v\d+)?)/i);
+  // Match both 2007+ IDs (2309.07544) and pre-2007 IDs (astro-ph/9901001, hep-th/9901001v1)
+  const match = url.match(/^https?:\/\/arxiv\.org\/abs\/((?:\d+\.\d+|[a-z-]+\/\d+)(?:v\d+)?)/i);
   if (match) {
     const id = match[1];
     return `https://arxiv.org/html/${id}`;
