@@ -644,6 +644,18 @@ export default async (req, context) => {
       }
     }
 
+    if (route === "import") {
+      if (method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "Content-Type": "application/json" } });
+      if (!requireAuth()) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+      try {
+        const { default: handler } = await import("../../api/import.js");
+        const mockJson = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
+        handler(req, { status: () => ({ json: mockJson }) });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: "Import failed: " + (e.message || e) }), { status: 500, headers: { "Content-Type": "application/json" } });
+      }
+    }
+
     return new Response(JSON.stringify({ error: `Route ${route} not implemented` }), { status: 501, headers: { "Content-Type": "application/json" } });
   } catch (e) {
     console.error("[netlify]", e);
