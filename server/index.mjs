@@ -287,8 +287,9 @@ const server = createServer(async (req, res) => {
     // only reached on direct access. Use absolute URL for local dev;
     // behind proxy, construct the proxy URL for safety.
     if (pathname === "/auth/logout") {
+      const proto = req.headers["x-forwarded-proto"] || "http";
       const authUrl = req.headers["x-forwarded-host"]
-        ? `http://${req.headers["x-forwarded-host"]}/auth/logout`
+        ? `${proto}://${req.headers["x-forwarded-host"]}/auth/logout`
         : "http://localhost:3001/auth/logout";
       res.writeHead(302, { Location: authUrl });
       res.end();
