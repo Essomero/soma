@@ -200,31 +200,6 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
         throw new Error("AI response missing required fields (type, title)");
       }
 
-      // Check that content fields are populated for the generated type.
-      // The AI tends to generate only metadata; flag empty content so the
-      // user knows to iterate rather than saving a shell.
-      const bodyFields: Record<string, string[]> = {
-        story: ["body"],
-        guide: ["body"],
-        doc: ["docSections"],
-        course: ["lessons"],
-        book: ["chapters"],
-        series: ["episodes"],
-        test: ["questions"],
-      };
-      const contentFields = bodyFields[draft.type] || [];
-      const emptyContent = contentFields.filter((f) => {
-        const val = (draft as Record<string, unknown>)[f];
-        return !val || (Array.isArray(val) && val.length === 0);
-      });
-      if (emptyContent.length > 0) {
-        setError(
-          `AI generated a ${draft.type} outline but the ${emptyContent.join(", ")} fields are empty. ` +
-          "Describe the content more specifically — the AI needs concrete source material to write the full body.",
-        );
-        setStatus("idle");
-        return;
-      }
       // Models sometimes put an image *description* instead of a URL (or
       // omit image entirely). Never let that reach the page: swap in the
       // fallback cover so cards render, and keep a real alt description.
