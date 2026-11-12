@@ -42,6 +42,8 @@ export default {
         "error-container": "rgb(var(--color-error-container) / <alpha-value>)",
         "on-error": "rgb(var(--color-on-error) / <alpha-value>)",
         "on-error-container": "rgb(var(--color-on-error-container) / <alpha-value>)",
+        success: "rgb(var(--color-secondary) / <alpha-value>)",
+        warning: "rgb(var(--color-accent-orange) / <alpha-value>)",
         "primary-fixed": "rgb(var(--color-primary-fixed) / <alpha-value>)",
         "primary-fixed-dim": "rgb(var(--color-primary-fixed-dim) / <alpha-value>)",
         "on-primary-fixed": "rgb(var(--color-on-primary-fixed) / <alpha-value>)",
@@ -100,6 +102,7 @@ export default {
       spacing: {
         xs: "4px",
         sm: "8px",
+        3: "12px",
         md: "16px",
         lg: "24px",
         xl: "32px",
