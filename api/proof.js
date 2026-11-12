@@ -14,6 +14,63 @@ let _tablesReady = false;
 
 async function ensureTables() {
   if (_tablesReady) return;
+
+  // Tables created lazily by other handlers — ensure them here too since
+  // aggregate() queries them before those handlers may have fired.
+  await query(`CREATE TABLE IF NOT EXISTS highlights (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id TEXT NOT NULL DEFAULT 'default',
+    story_slug TEXT NOT NULL,
+    section_index INTEGER NOT NULL DEFAULT 0,
+    paragraph_index INTEGER NOT NULL DEFAULT 0,
+    start_offset INTEGER NOT NULL DEFAULT 0,
+    end_offset INTEGER NOT NULL DEFAULT 0,
+    selected_text TEXT NOT NULL,
+    text_hash TEXT NOT NULL,
+    color TEXT DEFAULT 'primary',
+    created_at TEXT DEFAULT (datetime('now'))
+  )`);
+  await query(`CREATE TABLE IF NOT EXISTS comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id TEXT NOT NULL DEFAULT 'default',
+    story_slug TEXT NOT NULL,
+    body TEXT NOT NULL,
+    parent_id INTEGER,
+    is_ai INTEGER DEFAULT 0,
+    ai_model TEXT,
+    mode TEXT,
+    highlight_id INTEGER,
+    section_index INTEGER,
+    paragraph_index INTEGER,
+    start_offset INTEGER,
+    end_offset INTEGER,
+    selected_text TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT
+  )`);
+  await query(`CREATE TABLE IF NOT EXISTS test_submissions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id TEXT NOT NULL DEFAULT 'default',
+    test_slug TEXT NOT NULL,
+    answers TEXT NOT NULL,
+    evaluation TEXT,
+    score INTEGER,
+    model TEXT,
+    created_at TEXT NOT NULL
+  )`);
+  await query(`CREATE TABLE IF NOT EXISTS note_articles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id TEXT NOT NULL DEFAULT 'default',
+    slug TEXT NOT NULL,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    published_content TEXT DEFAULT '[]',
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT,
+    UNIQUE(tenant_id, slug)
+  )`);
+
+  // proof's own table
   await query(`CREATE TABLE IF NOT EXISTS lab_attempts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     tenant_id TEXT NOT NULL DEFAULT 'default',
@@ -25,6 +82,7 @@ async function ensureTables() {
   )`);
   await query(`CREATE INDEX IF NOT EXISTS idx_lab_attempts_tenant_slug ON lab_attempts(tenant_id, content_slug)`);
   await query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_lab_attempts_tenant_unique ON lab_attempts(tenant_id, content_slug, lab_id)`);
+
   _tablesReady = true;
 }
 

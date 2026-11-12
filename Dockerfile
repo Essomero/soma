@@ -25,6 +25,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/api ./api
 COPY --from=build /app/server ./server
+COPY --from=build /app/shared ./shared
 # Keep src/content for init-docker auto-seed on first boot (files alone = stories on :3000)
 COPY --from=build /app/src/content ./src/content
 COPY --from=build /app/src/types ./src/types
