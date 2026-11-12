@@ -6,7 +6,7 @@
 // - Turso cloud when USE_TURSO=true + TURSO_* vars present (Vercel or explicit opt-in)
 
 import { createServer } from "http";
-import { randomBytes, createHmac, timingSafeEqual } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 import { readFileSync, existsSync, statSync } from "fs";
 import { join, dirname, extname } from "path";
 import { fileURLToPath } from "url";
@@ -274,15 +274,21 @@ const server = createServer(async (req, res) => {
         }
       }
       // Token invalid or missing — redirect to login
-      res.writeHead(302, { Location: "http://localhost:3001/login" });
+      const fallbackUrl = req.headers["x-forwarded-host"]
+        ? "/login"
+        : "http://localhost:3001/login";
+      res.writeHead(302, { Location: fallbackUrl });
       res.end();
       return;
     }
 
     // ── Logout — redirect to cloud-auth logout ──
+    // Behind proxy, /auth/* is routed to cloud-auth, so this handler is
+    // only reached on direct access. Use absolute URL for local dev;
+    // behind proxy, construct the proxy URL for safety.
     if (pathname === "/auth/logout") {
       const authUrl = req.headers["x-forwarded-host"]
-        ? "/auth/logout"
+        ? `http://${req.headers["x-forwarded-host"]}/auth/logout`
         : "http://localhost:3001/auth/logout";
       res.writeHead(302, { Location: authUrl });
       res.end();
