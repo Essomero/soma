@@ -445,6 +445,7 @@ function chatDevPlugin(env: Record<string, string>) {
           else if (name === "system") localHandlerCache[name] = (await import("./api/system.js")).default;
           else if (name === "export") localHandlerCache[name] = (await import("./api/export.js")).default;
           else if (name === "proof") localHandlerCache[name] = (await import("./api/proof.js")).default;
+          else if (name === "import") localHandlerCache[name] = (await import("./api/import.js")).default;
           else localHandlerCache[name] = (await import("./api/content.js")).default;
         }
         return localHandlerCache[name];
