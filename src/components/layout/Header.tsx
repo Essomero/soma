@@ -125,7 +125,11 @@ export default function Header() {
           {authed && (
             <Tooltip label="Sign out" position="bottom" align="end">
               <button
-                onClick={() => { document.cookie = "soma_auth=; Path=/; Max-Age=0"; window.location.reload(); }}
+                onClick={() => {
+                  document.cookie = "soma_auth=; Path=/; Max-Age=0";
+                  document.cookie = "soma_session=; Path=/; Max-Age=0";
+                  window.location.href = "/auth/logout";
+                }}
                 className="p-2 text-on-surface-variant hover:text-error rounded-lg hover:bg-surface-container-low transition-colors"
                 aria-label="Sign out"
               >
