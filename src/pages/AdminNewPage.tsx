@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, FileText, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -25,8 +25,6 @@ export default function AdminNewPage() {
     if (importDraft) {
       try {
         const data = JSON.parse(importDraft);
-        // Clear it so it doesn't persist across navigations
-        sessionStorage.removeItem("import-draft");
         if (data.text) {
           return (
             `Create content based on this imported material:\n\n` +
@@ -48,6 +46,12 @@ export default function AdminNewPage() {
       (sourceNote.content.length > 4000 ? "\n\n[Note truncated to first 4000 characters]" : "")
     );
   }, [sourceNote]);
+
+  // Clear import-draft after render so Strict Mode double-render doesn't
+  // consume it on the first pass. The useMemo above already read it.
+  useEffect(() => {
+    sessionStorage.removeItem("import-draft");
+  }, []);
   const [draft, setDraft] = useState<AIDraft | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
