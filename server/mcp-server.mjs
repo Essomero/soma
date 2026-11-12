@@ -22,6 +22,7 @@ import { existsSync, readdirSync, statSync, readFileSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
+import { extractMeta, extractPlainText, classifyUrl } from "./lib/extract-html.mjs";
 
 import { CONTENT_TYPES, TOPICS, TEMPLATES, ROUTE_BASE, WORKFLOW_NOTE } from "./mcp-content-data.mjs";
 
@@ -210,6 +211,79 @@ async function verifyUrl(url) {
   return `HEAD ${head.status} ${head.ok ? "OK" : "FAILED"} (final: ${head.url})`;
 }
 
+async function importContent(url, suggestedType) {
+  // 1. Verify reachability (same strategy as verifyUrl)
+  let resp;
+  try {
+    resp = await fetch(url, { method: "HEAD", redirect: "follow", signal: AbortSignal.timeout(15_000) });
+    if ([405, 403, 501].includes(resp.status) || !resp.ok) {
+      resp = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(30_000) });
+    }
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+  } catch (e) {
+    if (e.message && e.message.startsWith("HTTP")) throw e;
+    throw new Error(`Cannot reach URL: ${e.message}`);
+  }
+
+  // 2. Check content type — bail on binary that isn't feasible to extract
+  const ctype = (resp.headers.get("content-type") || "").toLowerCase();
+  const finalUrl = resp.url;
+  const isPdf = ctype.includes("pdf") || finalUrl.toLowerCase().endsWith(".pdf");
+  const isVideo = ctype.includes("video/");
+
+  if (isPdf) {
+    return JSON.stringify({
+      url: finalUrl,
+      status: `HTTP ${resp.status} OK`,
+      contentType: ctype,
+      title: "",
+      description: "",
+      wordCount: 0,
+      suggestedType: "doc",
+      note: "PDF content requires a PDF parser. The URL and metadata have been captured.",
+      text: "[PDF binary — text extraction not supported. Open the URL in a browser or use a PDF-to-text tool, then paste the content as your source.]",
+    });
+  }
+
+  if (isVideo) {
+    return JSON.stringify({
+      url: finalUrl,
+      status: `HTTP ${resp.status} OK`,
+      contentType: ctype,
+      title: "",
+      description: "",
+      wordCount: 0,
+      suggestedType: "story",
+      note: "Video content cannot be transcribed via this tool. For YouTube, the URL pattern alone is enough to scaffold a story with a youtube embed block.",
+      text: "[video content]",
+    });
+  }
+
+  // 3. Fetch full body for HTML/text
+  const body = await fetch(finalUrl || url, { redirect: "follow", signal: AbortSignal.timeout(30_000) });
+  const html = await body.text();
+
+  // 4. Extract metadata + text
+  const { title, description } = extractMeta(html);
+  const text = extractPlainText(html);
+  const wordCount = text.split(/\s+/).length;
+
+  // 5. Classify
+  const suggested = classifyUrl(finalUrl, suggestedType);
+
+  return JSON.stringify({
+    url: finalUrl,
+    status: `HTTP ${resp.status} OK`,
+    redirected: resp.status >= 300,
+    contentType: ctype,
+    title,
+    description,
+    wordCount,
+    suggestedType: suggested,
+    text: text.slice(0, 80_000) || "[no extractable text]",
+  });
+}
+
 // ── Tool registry ───────────────────────────────────────────────────────────
 
 const TOOLS = [
@@ -298,6 +372,19 @@ const TOOLS = [
       required: ["files"],
     },
     run: async (input) => publishManuscript({ files: requireArr(input.files, "files"), type: input.type ?? undefined, featured: Boolean(input.featured) }),
+  },
+  {
+    name: "import_content",
+    description: "Fetch a URL (web page, YouTube, arXiv, PDF link) and extract readable text, title, and description. Suggests a content type based on the URL pattern (YouTube → story, arXiv → doc, blog post → guide). Use this as the first step in the Import Anything workflow: paste a URL, get extracted text, then ask the agent to draft a manuscript from it. For PDFs and video, extraction is limited — the tool reports what it can.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        url: { type: "string", description: "URL to fetch and import (web page, YouTube, arXiv, PDF link, blog post)" },
+        suggestedType: { type: "string", description: "Optional type override: story, guide, doc, course, book, series, test, featured, podcast" },
+      },
+      required: ["url"],
+    },
+    run: async ({ url, suggestedType }) => importContent(requireStr(url, "url"), suggestedType ?? undefined),
   },
   {
     name: "verify_url",

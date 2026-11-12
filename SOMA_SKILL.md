@@ -850,6 +850,45 @@ The dark editorial theme uses these Tailwind classes:
 5. Owner flips both toggles to public (PublicToggle sends type, store_row verification shows both rows)
 6. Archive both manuscripts, commit those files only. Homepage hero derives from the featured row automatically, sitemap from src/content/**
 
+### Example 4: Import Anything (paste a URL)
+
+**User asks:** "Import this blog post into Soma: https://example.com/posts/something-interesting"
+
+**Agent actions:**
+1. Call the `import_content` MCP tool with the URL to fetch and extract the text content, title, and description. The tool returns a suggested type (guide for blog posts, doc for arXiv/PDF, story for YouTube).
+2. Review the extracted text. Apply the conversion heuristics:
+   - **YouTube** → story with a `youtube` embed block
+   - **arXiv / research paper** → doc with sections matching the paper structure (abstract, methodology, results, discussion)
+   - **Blog post / Medium / dev.to / Substack** → guide or story, preserving all original content (never compress or summarize — see Rule 10)
+   - **Documentation page** → doc, converting reference content into standalone sections
+   - **Wikipedia** → doc, condensing into the key facts (Wikipedia is already a summary)
+   - **PDF link** → tool reports it can't extract PDF text. Open the PDF manually or use a PDF-to-text tool, then paste the content as source material
+3. Draft the manuscript in `drafts/<suggested-type>/<slug>.ts` using the extracted text as source. Follow the type's schema (call `manuscript_template` for the starter shape). Use a verified Unsplash photo for the hero image.
+4. Run `npm run publish -- drafts/<type>/<slug>.ts` to validate and publish as private.
+5. Confirm the row (`store_row` MCP tool) shows `"status": "private"`.
+6. Report the private URL to the owner for preview. Owner flips the toggle when ready.
+
+**Conversion heuristics (type decisions):**
+
+| Source | Suggested type | Why |
+|---|---|---|
+| `youtube.com/watch`, `youtu.be` | story | Embedded video with context around it. Uses `youtube` block. |
+| `arxiv.org/abs/*` | doc | Structured paper with abstract, methodology, results. Convert sections to doc sections. |
+| `*.pdf` | doc | Research papers, reports. Extract text externally, structure as doc. |
+| Blog post, `medium.com`, `dev.to`, `substack.com` | guide | Step-through narrative that builds an argument. Preserve every paragraph. |
+| Documentation, `wikipedia.org` | doc | Reference content. Sections stand alone; reordering changes nothing. |
+| Tutorial, how-to guide | guide | Ordered steps that end somewhere new. Reordering breaks it. |
+| News article, essay | story | One idea, felt deeply. Opens with something concrete that breaks, earns the principle. |
+| Podcast/video (non-YouTube) | podcast or story | Podcast episode with transcript -> podcast. Talk without transcript -> story with context. |
+
+**Key rules for imports:**
+- **Never compress or summarize source content** (Rule 10). Preserve every section, paragraph, code block, and image. Format beautifully, but keep everything.
+- **Images from the source** MUST be included as `image` blocks, with the original alt text. Verify each image URL with `verify_url`.
+- **Code blocks** MUST be preserved with correct language annotation.
+- **Internal links** in the source should be preserved as external links (the reader is on Soma, not the original site).
+- **Apply the Kill Criteria** before drafting. If the content fails the moat test, replication test, or any other kill criterion, report to the owner rather than importing.
+- **Slug** should be derived from the original article's URL slug, prefixed if needed for clarity.
+
 ## Important Rules
 
 1. **Featured articles must be explicitly asked for.** Never create featured rows unless the user directly requests them. The homepage hero derives from the featured store automatically. Adding a story means publishing the manuscript as a private row, nothing more.

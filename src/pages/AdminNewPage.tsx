@@ -20,6 +20,26 @@ export default function AdminNewPage() {
     ?.sourceNote;
 
   const initialPrompt = useMemo(() => {
+    // Check for import-draft from Import Anything workflow
+    const importDraft = sessionStorage.getItem("import-draft");
+    if (importDraft) {
+      try {
+        const data = JSON.parse(importDraft);
+        // Clear it so it doesn't persist across navigations
+        sessionStorage.removeItem("import-draft");
+        if (data.text) {
+          return (
+            `Create content based on this imported material:\n\n` +
+            (data.title ? `Title: ${data.title}\n\n` : "") +
+            (data.description ? `Description: ${data.description}\n\n` : "") +
+            `Source URL: ${data.url || "unknown"}\n\n` +
+            `Extracted text:\n${data.text.slice(0, 4000)}` +
+            (data.text.length > 4000 ? "\n\n[Text truncated to first 4000 characters]" : "")
+          );
+        }
+      } catch {}
+    }
+
     if (!sourceNote) return undefined;
     return (
       `Create content based on this source note:\n\n` +

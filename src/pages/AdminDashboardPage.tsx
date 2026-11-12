@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Eye, EyeOff, Search, Pencil, Trash2, Globe, Archive } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Globe, Archive, ChevronLeft, ChevronRight } from "lucide-react";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { SkeletonAdminRows } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import LocalAgentPanel from "@/components/admin/LocalAgentPanel";
+import ImportFromUrlPanel from "@/components/admin/ImportFromUrlPanel";
 import ExportModal from "@/components/admin/ExportModal";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { invalidateContentCache } from "@/lib/content";
+import Select from "@/components/ui/Select";
 import { CONTENT_TYPES, CONTENT_TYPE_LABELS, ROUTE_BASE, type ContentType } from "@/lib/admin-prompts";
 
 interface ContentItem {
@@ -50,6 +52,7 @@ function useContentList() {
 
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
+  const tableRef = useRef<HTMLDivElement>(null);
   const { data, loading, error, fetchAll, setData, setError } = useContentList();
   const [filterType, setFilterType] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<string>("");
@@ -61,6 +64,11 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     fetchAll();
   }, []);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setPage(0);
+  }, [filterType, filterStatus, search]);
 
   const filtered = (data || []).filter((item) => {
     if (filterType && item.type !== filterType) return false;
@@ -88,6 +96,19 @@ export default function AdminDashboardPage() {
   const [archiveTarget, setArchiveTarget] = useState<ContentItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ContentItem | null>(null);
   const [showExport, setShowExport] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+
+  // Pagination
+  const [pageSize, setPageSize] = useState(25);
+  const [page, setPage] = useState(0);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages - 1);
+  const pageItems = filtered.slice(safePage * pageSize, (safePage + 1) * pageSize);
+
+  // Scroll to top of table on page change
+  useEffect(() => {
+    tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [page]);
 
   const toggleStatus = async (item: ContentItem) => {
     setBusySlug(item.slug);
@@ -197,46 +218,56 @@ export default function AdminDashboardPage() {
         <AccentBar variant="small" className="mb-md" />
         <div className="flex items-center justify-between flex-wrap gap-lg">
           <div>
-            <p className="font-sora text-metadata-tag text-primary uppercase tracking-widest mb-sm">
-              // ADMIN
+            <p className="font-sora text-xs text-primary font-medium mb-sm">
+              // Admin
             </p>
-            <h1 className="font-sora text-display-md text-on-surface">Content Dashboard</h1>
+            <h1 className="font-sora text-3xl text-on-surface font-bold">Content Dashboard</h1>
           </div>
-          <Link
-            to="/admin/new"
-            className="inline-flex items-center gap-sm px-xl py-md bg-primary text-on-primary font-sora text-label-caps uppercase tracking-widest hover:bg-primary-hover transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            New Content
-          </Link>
-          <button
-            onClick={() => setShowExport(true)}
-            className="inline-flex items-center gap-sm px-xl py-md border border-border-default text-on-surface font-sora text-label-caps uppercase tracking-widest hover:border-primary hover:text-primary transition-colors bg-transparent cursor-pointer"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Export
-          </button>
-          {showExport && <ExportModal onClose={() => setShowExport(false)} />}
+          <div className="flex items-center gap-3">
+            <Link
+              to="/admin/new"
+              className="inline-flex items-center gap-sm px-xl py-md bg-primary text-on-primary font-sora text-sm font-medium hover:bg-primary/90"
+            >
+              <Plus className="w-4 h-4" />
+              New Content
+            </Link>
+            <button
+              onClick={() => setShowExport(true)}
+              className="inline-flex items-center gap-sm px-xl py-md border border-border-default text-on-surface font-dm-sans text-sm hover:border-primary hover:text-primary bg-transparent cursor-pointer"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Export
+            </button>
+            <button
+              onClick={() => setShowImport(true)}
+              className="inline-flex items-center gap-sm px-xl py-md border border-border-default text-on-surface font-dm-sans text-sm hover:border-primary hover:text-primary bg-transparent cursor-pointer"
+            >
+              <Globe className="w-4 h-4" />
+              Import
+            </button>
+            {showExport && <ExportModal onClose={() => setShowExport(false)} />}
+            {showImport && <ImportFromUrlPanel open={showImport} onClose={() => setShowImport(false)} />}
+          </div>
         </div>
       </header>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-lg mb-xl">
+      <div className="grid grid-cols-3 gap-md mb-xl">
         <div className="p-lg bg-surface border border-border-default">
-          <p className="font-sora text-3xl text-primary font-bold">{stats.total}</p>
-          <p className="font-dm-sans text-xs text-on-surface-muted mt-xs">Total Items</p>
+          <p className="font-sora text-2xl text-on-surface font-bold">{stats.total}</p>
+          <p className="font-dm-sans text-sm text-on-surface-muted font-medium mt-3">Total items</p>
         </div>
         <div className="p-lg bg-surface border border-border-default">
-          <p className="font-sora text-3xl text-success font-bold">{stats.published}</p>
-          <p className="font-dm-sans text-xs text-on-surface-muted mt-xs">Published</p>
+          <p className="font-sora text-2xl text-success font-bold">{stats.published}</p>
+          <p className="font-dm-sans text-sm text-on-surface-muted font-medium mt-3">Published</p>
         </div>
         <div className="p-lg bg-surface border border-border-default">
-          <p className="font-sora text-3xl text-on-surface-muted font-bold">{stats.private}</p>
-          <p className="font-dm-sans text-xs text-on-surface-muted mt-xs">Private</p>
+          <p className="font-sora text-2xl text-on-surface-muted font-bold">{stats.private}</p>
+          <p className="font-dm-sans text-sm text-on-surface-muted font-medium mt-3">Private</p>
         </div>
       </div>
 
@@ -252,30 +283,30 @@ export default function AdminDashboardPage() {
           />
         </div>
 
-        <select
+        <Select
           value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          className="p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary"
-        >
-          <option value="">All Types</option>
-          {CONTENT_TYPES.map((ct) => (
-            <option key={ct} value={ct}>{CONTENT_TYPE_LABELS[ct]}</option>
-          ))}
-        </select>
+          onChange={(v) => setFilterType(v)}
+          options={[
+            { value: "", label: "All Types" },
+            ...CONTENT_TYPES.map((ct) => ({ value: ct, label: CONTENT_TYPE_LABELS[ct] })),
+          ]}
+          placeholder="All Types"
+        />
 
-        <select
+        <Select
           value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm focus:outline-none focus:border-primary"
-        >
-          <option value="">All Status</option>
-          <option value="published">Published</option>
-          <option value="private">Private</option>
-        </select>
+          onChange={(v) => setFilterStatus(v)}
+          options={[
+            { value: "", label: "All Status" },
+            { value: "published", label: "Published" },
+            { value: "private", label: "Private" },
+          ]}
+          placeholder="All Status"
+        />
 
         <button
           onClick={() => fetchAll(filterType || undefined, search || undefined)}
-          className="px-xl py-md bg-surface border border-border-default text-on-surface font-sora text-xs uppercase tracking-widest hover:bg-surface-container transition-colors"
+          className="px-xl py-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm hover:bg-surface-container"
         >
           Refresh
         </button>
@@ -288,10 +319,10 @@ export default function AdminDashboardPage() {
         </div>
       ) : error ? (
         <div className="p-lg bg-surface-container border border-border-default border-l-4 border-l-error">
-          <p className="font-sora text-sm text-error">{error}</p>
+          <p className="font-dm-sans text-sm text-error">{error}</p>
           <button
             onClick={() => fetchAll()}
-            className="mt-sm text-sm text-primary hover:underline font-dm-sans"
+            className="mt-sm text-sm text-primary font-dm-sans"
           >
             Retry
           </button>
@@ -305,129 +336,177 @@ export default function AdminDashboardPage() {
           </p>
           <Link
             to="/admin/new"
-            className="inline-flex items-center gap-sm text-sm text-primary hover:underline font-dm-sans"
+            className="inline-flex items-center gap-sm text-sm text-primary font-dm-sans"
           >
             <Plus className="w-4 h-4" />
             Create your first piece of content
           </Link>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b border-border-default">
-                <th className="text-left p-md font-sora text-xs text-on-surface-muted uppercase tracking-widest">Title</th>
-                <th className="text-left p-md font-sora text-xs text-on-surface-muted uppercase tracking-widest">Type</th>
-                <th className="text-left p-md font-sora text-xs text-on-surface-muted uppercase tracking-widest">Status</th>
-                <th className="text-left p-md font-sora text-xs text-on-surface-muted uppercase tracking-widest">Updated</th>
-                <th className="text-right p-md font-sora text-xs text-on-surface-muted uppercase tracking-widest">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((item) => {
-                const baseRoute = ROUTE_BASE[item.type as ContentType] || item.type;
-                return (
-                  <tr key={item.slug} className="border-b border-border-default hover:bg-surface-container transition-colors">
-                    <td className="p-md">
-                      <div>
-                        <Link
-                          to={`/${baseRoute}/${item.slug}`}
-                          className="font-dm-sans text-sm text-on-surface hover:text-primary transition-colors"
-                        >
-                          {item.title || item.slug}
-                        </Link>
-                        <p className="font-dm-sans text-xs text-on-surface-muted mt-xs line-clamp-1">
-                          /{baseRoute}/{item.slug}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="p-md">
-                      <span className="font-sora text-xs text-on-surface-muted uppercase tracking-widest">
-                        {CONTENT_TYPE_LABELS[item.type as ContentType] || item.type}
-                      </span>
-                    </td>
-                    <td className="p-md">
-                      <span
-                        className={`inline-flex items-center gap-sm font-sora text-xs uppercase tracking-widest ${
-                          item.status === "published"
-                            ? "text-success"
-                            : "text-on-surface-muted"
-                        }`}
-                      >
-                        {item.status === "published" ? (
-                          <Eye className="w-3 h-3" />
-                        ) : (
-                          <EyeOff className="w-3 h-3" />
-                        )}
-                        {item.status}
-                        {item.archived && (
-                          <span className="text-accent-orange">
-                            <Archive className="w-3 h-3 inline-block" /> archived
-                          </span>
-                        )}
-                      </span>
-                    </td>
-                    <td className="p-md">
-                      <span className="font-dm-sans text-xs text-on-surface-muted">
-                        {item.updated_at
-                          ? new Date(item.updated_at).toLocaleDateString()
-                          : "—"}
-                      </span>
-                    </td>
-                    <td className="p-md text-right">
-                      <div className="flex items-center justify-end gap-sm">
-                        <Link
-                          to={`/admin/${item.type}/${item.slug}/edit`}
-                          className="inline-flex items-center gap-xs px-md py-sm text-xs text-on-surface-muted hover:text-primary font-dm-sans transition-colors border border-border-default hover:border-primary"
-                          title={`Edit ${item.slug}`}
-                        >
-                          <Pencil className="w-3 h-3" />
-                          Edit
-                        </Link>
+        <>
+          <div ref={tableRef} className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-border-default">
+                  <th className="text-left p-md font-dm-sans text-sm text-on-surface-muted font-medium">Title</th>
+                  <th className="text-left p-md font-dm-sans text-sm text-on-surface-muted font-medium">Type</th>
+                  <th className="text-left p-md font-dm-sans text-sm text-on-surface-muted font-medium">Updated</th>
+                  <th className="text-right p-md font-dm-sans text-sm text-on-surface-muted font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageItems.map((item) => {
+                  const baseRoute = ROUTE_BASE[item.type as ContentType] || item.type;
+                  return (
+                    <tr key={item.slug} className="admin-row border-b border-border-default">
+                      <td className="p-md">
+                        <div>
+                          <Link
+                            to={`/${baseRoute}/${item.slug}`}
+                            className="font-dm-sans text-sm text-on-surface hover:text-primary transition-colors"
+                          >
+                            {item.title || item.slug}
+                          </Link>
+                          <p className="font-dm-sans text-xs text-on-surface-muted mt-3 line-clamp-1">
+                            /{baseRoute}/{item.slug}
+                            {item.archived && (
+                              <span className="ml-sm text-accent-orange font-medium">archived</span>
+                            )}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="p-md">
+                        <span className="font-dm-sans text-sm text-on-surface-muted">
+                          {CONTENT_TYPE_LABELS[item.type as ContentType] || item.type}
+                        </span>
+                      </td>
+                      <td className="p-md">
+                        <span className="font-dm-sans text-xs text-on-surface-muted">
+                          {item.updated_at
+                            ? new Date(item.updated_at).toLocaleDateString()
+                            : "—"}
+                        </span>
+                      </td>
+                      <td className="p-md">
+                        <div className="grid grid-cols-[1fr_1.5fr_1.5fr_1fr] gap-sm w-full justify-items-center">
+                          <Link
+                            to={`/admin/${item.type}/${item.slug}/edit`}
+                            className="flex items-center justify-center gap-xs px-md py-sm text-xs text-on-surface-muted hover:text-primary font-dm-sans border border-border-default w-full"
+                            title={`Edit ${item.slug}`}
+                          >
+                            <Pencil className="w-3.5 h-3.5 shrink-0" />
+                            Edit
+                          </Link>
+                          <button
+                            onClick={() => toggleStatus(item)}
+                            disabled={busySlug === item.slug}
+                            className={`flex items-center justify-center gap-xs px-md py-sm text-xs font-dm-sans border disabled:opacity-50 disabled:cursor-not-allowed w-full text-on-surface-muted ${
+                              item.status === "published"
+                                ? "hover:text-warning border-border-default"
+                                : "hover:text-success border-border-default"
+                            }`}
+                            title={item.status === "published" ? "Make private" : "Publish"}
+                          >
+                            <Globe className="w-3.5 h-3.5 shrink-0" />
+                            {busySlug === item.slug ? "..." : item.status === "published" ? "Unpublish" : "Publish"}
+                          </button>
+                          <button
+                            onClick={() => setArchiveTarget(item)}
+                            disabled={busySlug === item.slug}
+                            className="flex items-center justify-center gap-xs px-md py-sm text-xs font-dm-sans border disabled:opacity-50 disabled:cursor-not-allowed w-full text-on-surface-muted hover:text-on-surface border-border-default"
+                            title={item.archived ? `Unarchive ${item.slug}` : `Archive ${item.slug}`}
+                          >
+                            <Archive className="w-3.5 h-3.5 shrink-0" />
+                            {item.archived ? "Unarchive" : "Archive"}
+                          </button>
+                          <button
+                            onClick={() => setDeleteTarget(item)}
+                            disabled={busySlug === item.slug}
+                            className="flex items-center justify-center gap-xs px-md py-sm text-xs text-on-surface-muted hover:text-error font-dm-sans border border-border-default disabled:opacity-50 disabled:cursor-not-allowed w-full"
+                            title={`Delete ${item.slug}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between mt-lg pt-lg border-t border-border-default">
+            <p className="font-dm-sans text-sm text-on-surface-muted">
+              {safePage * pageSize + 1} &ndash; {Math.min((safePage + 1) * pageSize, filtered.length)} of {filtered.length}
+            </p>
+            <div className="flex items-center gap-md">
+              <Select
+                value={String(pageSize)}
+                onChange={(v) => {
+                  setPageSize(Number(v));
+                  setPage(0);
+                }}
+                options={[
+                  { value: "10", label: "10 / page" },
+                  { value: "25", label: "25 / page" },
+                  { value: "50", label: "50 / page" },
+                  { value: "100", label: "100 / page" },
+                ]}
+                placeholder="25 / page"
+              />
+              {totalPages > 1 && (
+                <>
+                  <button
+                    onClick={() => setPage(safePage - 1)}
+                    disabled={safePage === 0}
+                    className="inline-flex items-center gap-xs px-md py-sm text-sm text-on-surface-muted hover:text-primary font-dm-sans border border-border-default disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    Prev
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => {
+                    // Show max 7 pages with ellipsis
+                    if (totalPages <= 7 || i === 0 || i === totalPages - 1 || Math.abs(i - safePage) <= 1) {
+                      return (
                         <button
-                          onClick={() => toggleStatus(item)}
-                          disabled={busySlug === item.slug}
-                          className={`inline-flex items-center gap-xs px-md py-sm text-xs font-dm-sans transition-colors border disabled:opacity-50 ${
-                            item.status === "published"
-                              ? "text-warning border-border-default hover:border-warning"
-                              : "text-success border-border-default hover:border-success"
+                          key={i}
+                          onClick={() => setPage(i)}
+                          className={`px-sm py-sm text-sm font-dm-sans font-medium min-w-[2rem] ${
+                            i === safePage
+                              ? "text-primary border-b-2 border-primary"
+                              : "text-on-surface-muted"
                           }`}
-                          title={item.status === "published" ? "Make private" : "Publish"}
                         >
-                          <Globe className="w-3 h-3" />
-                          {busySlug === item.slug ? "..." : item.status === "published" ? "Unpublish" : "Publish"}
+                          {i + 1}
                         </button>
-                        <button
-                          onClick={() => setArchiveTarget(item)}
-                          disabled={busySlug === item.slug}
-                          className={`inline-flex items-center gap-xs px-md py-sm text-xs font-dm-sans transition-colors border disabled:opacity-50 ${
-                            item.archived
-                              ? "text-accent-orange border-border-default hover:border-accent-orange"
-                              : "text-on-surface-muted border-border-default hover:border-accent-orange hover:text-accent-orange"
-                          }`}
-                          title={item.archived ? `Unarchive ${item.slug}` : `Archive ${item.slug}`}
-                        >
-                          <Archive className="w-3 h-3" />
-                          {item.archived ? "Unarchive" : "Archive"}
-                        </button>
-                        <button
-                          onClick={() => setDeleteTarget(item)}
-                          disabled={busySlug === item.slug}
-                          className="inline-flex items-center gap-xs px-md py-sm text-xs text-on-surface-muted hover:text-error font-dm-sans transition-colors border border-border-default hover:border-error disabled:opacity-50"
-                          title={`Delete ${item.slug}`}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      );
+                    }
+                    // Show ellipsis once on each side
+                    const showLeftEllipsis = i === 1 && safePage > 3;
+                    const showRightEllipsis = i === totalPages - 2 && safePage < totalPages - 4;
+                    if (showLeftEllipsis || showRightEllipsis) {
+                      return <span key={i} className="px-sm text-sm text-on-surface-muted">&hellip;</span>;
+                    }
+                    return null;
+                  })}
+                  <button
+                    onClick={() => setPage(safePage + 1)}
+                    disabled={safePage >= totalPages - 1}
+                    className="inline-flex items-center gap-xs px-md py-sm text-sm text-on-surface-muted hover:text-primary font-dm-sans border border-border-default disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    Next
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </>
       )}
+
     {/* Local agent (shell/git/build sidecar — local dev only) */}
       <div className="mt-xxl space-y-lg">
         <LocalAgentPanel />
