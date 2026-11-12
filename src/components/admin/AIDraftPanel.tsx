@@ -113,7 +113,7 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
 
     try {
       const typeHint = defaultType ? ` (content type: ${defaultType})` : "";
-      const VALID_TYPES: Record<string, true> = { story: true, guide: true, doc: true, course: true, book: true, series: true, test: true, featured: true, podcast: true, topic: true };
+      const VALID_TYPES: Record<string, true> = { story: true, guide: true, doc: true, course: true, book: true, series: true, test: true, featured: true, podcast: true };
       const typeFilter = defaultType && VALID_TYPES[defaultType] ? [defaultType as ContentType] : undefined;
       const res = await fetch("/api/chat", {
         method: "POST",
