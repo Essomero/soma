@@ -107,6 +107,42 @@ async function main() {
         throw new Error(`${f}: ${type} missing required field '${field}'`);
       }
     }
+
+    // Check that code fences inside doc/guide/etc. answer arrays are
+    // not split across entries (each opening ``` must close in the same
+    // string, not in a separate array item).
+    if (type === "doc" || type === "guide") {
+      const sections = body.sections;
+      if (Array.isArray(sections)) {
+        for (const section of sections) {
+          const items = (section as Record<string, unknown>).items;
+          if (!Array.isArray(items)) continue;
+          for (const item of items) {
+            const answers = (item as Record<string, unknown>).answer;
+            if (!Array.isArray(answers)) continue;
+            let inFence = false;
+            for (const entry of answers) {
+              if (typeof entry !== "string") continue;
+              const openCount = (entry.match(/```/g) || []).length;
+              if (openCount % 2 !== 0) {
+                // Odd count — either starts or ends inside this string
+                if (entry.startsWith("```")) {
+                  if (inFence) throw new Error(`${f}: nested or broken code fence in section ${section.number || "?"} — a closing \`\`\` is inside another fence`);
+                  inFence = true;
+                } else if (entry.endsWith("```")) {
+                  if (!inFence) throw new Error(`${f}: stray closing \`\`\` in section ${section.number || "?"} — no matching opening fence in a prior entry`);
+                  inFence = false;
+                } else {
+                  throw new Error(`${f}: split code fence in section ${section.number || "?"} — opening \`\`\` and closing \`\`\` must be in the same answer entry`);
+                }
+              }
+            }
+            if (inFence) throw new Error(`${f}: unclosed code fence in section ${section.number || "?"} — a \`\`\` opens but never closes`);
+          }
+        }
+      }
+    }
+
     batch.push({ type, slug, body, file: f });
   }
 
