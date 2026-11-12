@@ -167,13 +167,15 @@ export default async (req, context) => {
   const ip = req.headers.get("x-forwarded-for") || "unknown";
 
   try {
+    const tenant_id = req.headers.get("x-tenant-id") || "default";
+
     if (route === "content") {
       if (req.method === "GET" && query.slug) {
         let rows;
         if (query.type) {
-          rows = await tursoQuery("SELECT * FROM content_items WHERE type=? AND slug=?", [query.type, query.slug]);
+          rows = await tursoQuery("SELECT * FROM content_items WHERE tenant_id=? AND type=? AND slug=?", [tenant_id, query.type, query.slug]);
         } else {
-          rows = await tursoQuery("SELECT * FROM content_items WHERE slug=? ORDER BY CASE WHEN type='featured' THEN 0 ELSE 1 END LIMIT 1", [query.slug]);
+          rows = await tursoQuery("SELECT * FROM content_items WHERE tenant_id=? AND slug=? ORDER BY CASE WHEN type='featured' THEN 0 ELSE 1 END LIMIT 1", [tenant_id, query.slug]);
         }
         const row = rows[0];
         if (!row) return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
@@ -188,15 +190,15 @@ export default async (req, context) => {
         const typeList = query.type === "all" ? Object.keys(ROUTE_BASE) : [query.type];
         if (q) {
           const like = `%${q.replace(/%/g, "").replace(/"/g, "")}%`;
-          let sql = `SELECT * FROM content_items WHERE type IN (${typeList.map(() => "?").join(",") || "?"}) AND (title LIKE ? OR excerpt LIKE ?)`;
-          const args = [...typeList, like, like];
+          let sql = `SELECT * FROM content_items WHERE tenant_id=? AND type IN (${typeList.map(() => "?").join(",") || "?"}) AND (title LIKE ? OR excerpt LIKE ?)`;
+          const args = [tenant_id, ...typeList, like, like];
           if (statusValue) { sql += " AND status=?"; args.push(statusValue); }
           sql += " ORDER BY updated_at DESC LIMIT 20";
           const rows = await tursoQuery(sql, args);
           return new Response(JSON.stringify(rows.map(mapContentRow)), { status: 200, headers: { "Content-Type": "application/json" } });
         }
-        let sql = `SELECT * FROM content_items WHERE type=?`;
-        let args = [query.type];
+        let sql = `SELECT * FROM content_items WHERE tenant_id=? AND type=?`;
+        let args = [tenant_id, query.type];
         if (statusValue) { sql += " AND status=?"; args.push(statusValue); }
         sql += " ORDER BY updated_at DESC, position ASC";
         const rows = await tursoQuery(sql, args);
@@ -204,7 +206,7 @@ export default async (req, context) => {
       }
       if (req.method === "GET") {
         if (!authed) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
-        const rows = await tursoQuery("SELECT * FROM content_items ORDER BY type ASC, position ASC", []);
+        const rows = await tursoQuery("SELECT * FROM content_items WHERE tenant_id=? ORDER BY type ASC, position ASC", [tenant_id]);
         return new Response(JSON.stringify(rows.map(mapContentRow)), { status: 200, headers: { "Content-Type": "application/json" } });
       }
       if (!authed) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
@@ -212,10 +214,10 @@ export default async (req, context) => {
         const body = await req.json().catch(() => ({}));
         const { slug, type, status, title, excerpt, body: b, meta, position, updatedAt } = body;
         if (!slug || !type || !b) return new Response(JSON.stringify({ error: "slug, type and body required" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        const existing = await tursoQuery("SELECT status FROM content_items WHERE type=? AND slug=?", [type, slug]);
+        const existing = await tursoQuery("SELECT status FROM content_items WHERE tenant_id=? AND type=? AND slug=?", [tenant_id, type, slug]);
         const effectiveStatus = status || (existing[0]?.status) || "private";
         const now = updatedAt && typeof updatedAt === "string" ? updatedAt : new Date().toISOString();
-        const rows = await tursoQuery(`INSERT INTO content_items (slug,type,status,title,excerpt,body_json,meta_json,position,updated_at) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT(type, slug) DO UPDATE SET status=excluded.status, title=excluded.title, excerpt=excluded.excerpt, body_json=excluded.body_json, meta_json=excluded.meta_json, position=excluded.position, updated_at=excluded.updated_at RETURNING *`, [slug, type, effectiveStatus, title || b.title || "", excerpt || b.excerpt || b.description || "", JSON.stringify(b), JSON.stringify(meta || {}), Number.isFinite(Number(position)) ? Number(position) : 0, now]);
+        const rows = await tursoQuery(`INSERT INTO content_items (tenant_id,slug,type,status,title,excerpt,body_json,meta_json,position,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(tenant_id, type, slug) DO UPDATE SET status=excluded.status, title=excluded.title, excerpt=excluded.excerpt, body_json=excluded.body_json, meta_json=excluded.meta_json, position=excluded.position, updated_at=excluded.updated_at RETURNING *`, [tenant_id, slug, type, effectiveStatus, title || b.title || "", excerpt || b.excerpt || b.description || "", JSON.stringify(b), JSON.stringify(meta || {}), Number.isFinite(Number(position)) ? Number(position) : 0, now]);
         return new Response(JSON.stringify(mapContentRow(rows[0])), { status: 201, headers: { "Content-Type": "application/json" } });
       }
       if (req.method === "DELETE") {
@@ -224,9 +226,9 @@ export default async (req, context) => {
         const type = body.type || query.type;
         if (!slug) return new Response(JSON.stringify({ error: "slug required" }), { status: 400, headers: { "Content-Type": "application/json" } });
         if (type) {
-          await tursoQuery("DELETE FROM content_items WHERE type=? AND slug=?", [type, slug]);
+          await tursoQuery("DELETE FROM content_items WHERE tenant_id=? AND type=? AND slug=?", [tenant_id, type, slug]);
         } else {
-          await tursoQuery("DELETE FROM content_items WHERE slug=?", [slug]);
+          await tursoQuery("DELETE FROM content_items WHERE tenant_id=? AND slug=?", [tenant_id, slug]);
         }
         return new Response(JSON.stringify({ success: true }), { status: 200, headers: { "Content-Type": "application/json" } });
       }
@@ -238,12 +240,14 @@ export default async (req, context) => {
       // scripts/check-api-routes.mjs fails the build if a route is missing.
       await tursoQuery(`CREATE TABLE IF NOT EXISTS note_articles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        slug TEXT NOT NULL UNIQUE,
+        tenant_id TEXT NOT NULL DEFAULT 'default',
+        slug TEXT NOT NULL,
         title TEXT NOT NULL,
         content TEXT NOT NULL,
         published_content TEXT DEFAULT '[]',
         created_at TEXT DEFAULT (datetime('now')),
-        updated_at TEXT
+        updated_at TEXT,
+        UNIQUE(tenant_id, slug)
       )`, []);
       const send = (data, status = 200) =>
         new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
@@ -263,7 +267,7 @@ export default async (req, context) => {
       if (req.method === "GET") {
         const slug = query.slug;
         if (slug) {
-          const rows = await tursoQuery("SELECT * FROM note_articles WHERE slug=?", [slug]);
+          const rows = await tursoQuery("SELECT * FROM note_articles WHERE tenant_id=? AND slug=?", [tenant_id, slug]);
           if (!rows[0]) return send({ error: "Not found" }, 404);
           if (!authed) {
             const vis = await tursoQuery('SELECT "public" FROM public_pages WHERE slug=?', [slug]);
@@ -275,11 +279,11 @@ export default async (req, context) => {
         const like = q ? `%${q.replace(/%/g, "").replace(/"/g, "")}%` : "";
         const rows = q
           ? authed
-            ? await tursoQuery("SELECT * FROM note_articles WHERE title LIKE ? OR content LIKE ? ORDER BY updated_at DESC, created_at DESC LIMIT 20", [like, like])
-            : await tursoQuery('SELECT la.* FROM note_articles la JOIN public_pages pp ON pp.slug = la.slug WHERE pp."public" = 1 AND (la.title LIKE ? OR la.content LIKE ?) ORDER BY la.updated_at DESC, la.created_at DESC LIMIT 20', [like, like])
+            ? await tursoQuery("SELECT * FROM note_articles WHERE tenant_id=? AND (title LIKE ? OR content LIKE ?) ORDER BY updated_at DESC, created_at DESC LIMIT 20", [tenant_id, like, like])
+            : await tursoQuery('SELECT la.* FROM note_articles la JOIN public_pages pp ON pp.slug = la.slug WHERE la.tenant_id=? AND pp."public" = 1 AND (la.title LIKE ? OR la.content LIKE ?) ORDER BY la.updated_at DESC, la.created_at DESC LIMIT 20', [tenant_id, like, like])
           : authed
-            ? await tursoQuery("SELECT * FROM note_articles ORDER BY updated_at DESC, created_at DESC", [])
-            : await tursoQuery('SELECT la.* FROM note_articles la JOIN public_pages pp ON pp.slug = la.slug WHERE pp."public" = 1 ORDER BY la.updated_at DESC, la.created_at DESC', []);
+            ? await tursoQuery("SELECT * FROM note_articles WHERE tenant_id=? ORDER BY updated_at DESC, created_at DESC", [tenant_id])
+            : await tursoQuery('SELECT la.* FROM note_articles la JOIN public_pages pp ON pp.slug = la.slug WHERE la.tenant_id=? AND pp."public" = 1 ORDER BY la.updated_at DESC, la.created_at DESC', [tenant_id]);
         return send(rows.map(mapNote));
       }
       if (!authed) return send({ error: "Unauthorized" }, 401);
@@ -291,10 +295,10 @@ export default async (req, context) => {
           ? rawSlug.trim()
           : title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
         if (!finalSlug) return send({ error: "title must produce a slug" }, 400);
-        const existing = await tursoQuery("SELECT slug FROM note_articles WHERE slug=?", [finalSlug]);
+        const existing = await tursoQuery("SELECT slug FROM note_articles WHERE tenant_id=? AND slug=?", [tenant_id, finalSlug]);
         if (existing.length) return send({ error: "slug already exists" }, 409);
         const pcJson = Array.isArray(publishedContent) ? JSON.stringify(publishedContent) : "[]";
-        const rows = await tursoQuery("INSERT INTO note_articles (slug, title, content, published_content) VALUES (?,?,?,?) RETURNING *", [finalSlug, title, content, pcJson]);
+        const rows = await tursoQuery("INSERT INTO note_articles (tenant_id, slug, title, content, published_content) VALUES (?,?,?,?,?) RETURNING *", [tenant_id, finalSlug, title, content, pcJson]);
         return send(mapNote(rows[0]), 201);
       }
       if (req.method === "PUT") {
@@ -302,24 +306,24 @@ export default async (req, context) => {
         if (!slug || !title || content == null) return send({ error: "slug, title and content required" }, 400);
         const pcJson = Array.isArray(publishedContent) ? JSON.stringify(publishedContent) : null;
         const rows = pcJson
-          ? await tursoQuery("UPDATE note_articles SET title=?, content=?, published_content=?, updated_at=datetime('now') WHERE slug=? RETURNING *", [title, content, pcJson, slug])
-          : await tursoQuery("UPDATE note_articles SET title=?, content=?, updated_at=datetime('now') WHERE slug=? RETURNING *", [title, content, slug]);
+          ? await tursoQuery("UPDATE note_articles SET title=?, content=?, published_content=?, updated_at=datetime('now') WHERE tenant_id=? AND slug=? RETURNING *", [title, content, pcJson, tenant_id, slug])
+          : await tursoQuery("UPDATE note_articles SET title=?, content=?, updated_at=datetime('now') WHERE tenant_id=? AND slug=? RETURNING *", [title, content, tenant_id, slug]);
         if (!rows[0]) return send({ error: "Not found" }, 404);
         return send(mapNote(rows[0]));
       }
       if (req.method === "DELETE") {
         const { slug } = body;
         if (!slug) return send({ error: "slug required" }, 400);
-        await tursoQuery("DELETE FROM comments WHERE story_slug=?", [slug]);
-        await tursoQuery("DELETE FROM highlights WHERE story_slug=?", [slug]);
-        await tursoQuery("DELETE FROM note_articles WHERE slug=?", [slug]);
+        await tursoQuery("DELETE FROM comments WHERE tenant_id=? AND story_slug=?", [tenant_id, slug]);
+        await tursoQuery("DELETE FROM highlights WHERE tenant_id=? AND story_slug=?", [tenant_id, slug]);
+        await tursoQuery("DELETE FROM note_articles WHERE tenant_id=? AND slug=?", [tenant_id, slug]);
         return send({ success: true });
       }
       return send({ error: "Method not allowed" }, 405);
     }
 
     if (route === "comments") {
-      await tursoQuery(`CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY AUTOINCREMENT, story_slug TEXT NOT NULL, body TEXT NOT NULL, parent_id INTEGER, is_ai INTEGER DEFAULT 0, ai_model TEXT, mode TEXT, highlight_id INTEGER, section_index INTEGER, paragraph_index INTEGER, start_offset INTEGER, end_offset INTEGER, selected_text TEXT, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT)`, []);
+      await tursoQuery(`CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY AUTOINCREMENT, tenant_id TEXT NOT NULL DEFAULT 'default', story_slug TEXT NOT NULL, body TEXT NOT NULL, parent_id INTEGER, is_ai INTEGER DEFAULT 0, ai_model TEXT, mode TEXT, highlight_id INTEGER, section_index INTEGER, paragraph_index INTEGER, start_offset INTEGER, end_offset INTEGER, selected_text TEXT, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT)`, []);
       if (!commentsModeReady) {
         try {
           await tursoQuery("ALTER TABLE comments ADD COLUMN mode TEXT", []);
@@ -331,7 +335,7 @@ export default async (req, context) => {
       if (req.method === "GET") {
         const story = query.story;
         if (!story) return new Response(JSON.stringify({ error: "story required" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        const rows = await tursoQuery("SELECT * FROM comments WHERE story_slug=? ORDER BY created_at DESC", [story]);
+        const rows = await tursoQuery("SELECT * FROM comments WHERE tenant_id=? AND story_slug=? ORDER BY created_at DESC", [tenant_id, story]);
         const tree = buildTree(rows);
         for (const root of tree) root.replies.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
         return new Response(JSON.stringify(tree), { status: 200, headers: { "Content-Type": "application/json" } });
@@ -343,7 +347,7 @@ export default async (req, context) => {
         if (!storySlug || !b) return new Response(JSON.stringify({ error: "storySlug and body required" }), { status: 400, headers: { "Content-Type": "application/json" } });
         if (typeof b !== "string" || b.length > MAX_BODY) return new Response(JSON.stringify({ error: "body too long" }), { status: 400, headers: { "Content-Type": "application/json" } });
         if (mode != null && !isTutorMode(mode)) return new Response(JSON.stringify({ error: "invalid mode" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        const rows = await tursoQuery("INSERT INTO comments (story_slug, body, parent_id, is_ai, ai_model, mode, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING *", [storySlug, b, parentId || null, isAi ? 1 : 0, aiModel || null, mode ?? null, highlightId || null, sectionIndex ?? null, paragraphIndex ?? null, startOffset ?? null, endOffset ?? null, selectedText || null, new Date().toISOString()]);
+        const rows = await tursoQuery("INSERT INTO comments (tenant_id, story_slug, body, parent_id, is_ai, ai_model, mode, highlight_id, section_index, paragraph_index, start_offset, end_offset, selected_text, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING *", [tenant_id, storySlug, b, parentId || null, isAi ? 1 : 0, aiModel || null, mode ?? null, highlightId || null, sectionIndex ?? null, paragraphIndex ?? null, startOffset ?? null, endOffset ?? null, selectedText || null, new Date().toISOString()]);
         const created = rows[0];
         return new Response(JSON.stringify(created ? mapCommentRow(created) : { success: true }), { status: 201, headers: { "Content-Type": "application/json" } });
       }
@@ -352,22 +356,22 @@ export default async (req, context) => {
       }
       if (req.method === "PUT") {
         const { id, body } = await req.json().catch(() => ({}));
-        await tursoQuery("UPDATE comments SET body=?, updated_at=? WHERE id=?", [body, new Date().toISOString(), id]);
+        await tursoQuery("UPDATE comments SET body=?, updated_at=? WHERE tenant_id=? AND id=?", [body, new Date().toISOString(), tenant_id, id]);
         return new Response(JSON.stringify({ success: true }), { status: 200, headers: { "Content-Type": "application/json" } });
       }
       if (req.method === "DELETE") {
         const { id } = await req.json().catch(() => ({}));
-        await tursoQuery("DELETE FROM comments WHERE parent_id=?", [id]);
-        await tursoQuery("DELETE FROM comments WHERE id=?", [id]);
+        await tursoQuery("DELETE FROM comments WHERE tenant_id=? AND parent_id=?", [tenant_id, id]);
+        await tursoQuery("DELETE FROM comments WHERE tenant_id=? AND id=?", [tenant_id, id]);
         return new Response(JSON.stringify({ success: true }), { status: 200, headers: { "Content-Type": "application/json" } });
       }
     }
 
     if (route === "ratings") {
-      await tursoQuery(`CREATE TABLE IF NOT EXISTS ratings (story_slug TEXT PRIMARY KEY, rating INTEGER NOT NULL, rated_at TEXT)`, []);
+      await tursoQuery(`CREATE TABLE IF NOT EXISTS ratings (tenant_id TEXT NOT NULL DEFAULT 'default', story_slug TEXT NOT NULL, rating INTEGER NOT NULL, rated_at TEXT, PRIMARY KEY (tenant_id, story_slug))`, []);
       if (req.method === "GET") {
         const slug = query.slug;
-        const rows = await tursoQuery(slug ? "SELECT * FROM ratings WHERE story_slug=?" : "SELECT * FROM ratings", slug ? [slug] : []);
+        const rows = await tursoQuery(slug ? "SELECT * FROM ratings WHERE tenant_id=? AND story_slug=?" : "SELECT * FROM ratings WHERE tenant_id=?", slug ? [tenant_id, slug] : [tenant_id]);
         return new Response(JSON.stringify(rows[0] || null), { status: 200, headers: { "Content-Type": "application/json" } });
       }
       if (req.method === "POST") {
@@ -375,62 +379,64 @@ export default async (req, context) => {
         const { slug, rating } = await req.json().catch(() => ({}));
         if (typeof slug !== "string" || !slug || slug.length > 200) return new Response(JSON.stringify({ error: "invalid slug" }), { status: 400, headers: { "Content-Type": "application/json" } });
         if (typeof rating !== "number" || !Number.isFinite(rating) || rating < 1 || rating > 5) return new Response(JSON.stringify({ error: "rating must be 1-5" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        await tursoQuery("INSERT INTO ratings (story_slug, rating, rated_at) VALUES (?,?,?) ON CONFLICT(story_slug) DO UPDATE SET rating=excluded.rating, rated_at=excluded.rated_at", [slug, rating, new Date().toISOString()]);
+        await tursoQuery("INSERT INTO ratings (tenant_id, story_slug, rating, rated_at) VALUES (?,?,?,?) ON CONFLICT(tenant_id, story_slug) DO UPDATE SET rating=excluded.rating, rated_at=excluded.rated_at", [tenant_id, slug, rating, new Date().toISOString()]);
         return new Response(JSON.stringify({ success: true }), { status: 200, headers: { "Content-Type": "application/json" } });
       }
     }
 
     if (route === "highlights") {
-      await tursoQuery(`CREATE TABLE IF NOT EXISTS highlights (id INTEGER PRIMARY KEY AUTOINCREMENT, story_slug TEXT NOT NULL, section_index INTEGER NOT NULL, paragraph_index INTEGER NOT NULL, start_offset INTEGER NOT NULL, end_offset INTEGER NOT NULL, selected_text TEXT NOT NULL, text_hash TEXT NOT NULL, color TEXT DEFAULT 'primary', created_at TEXT DEFAULT (datetime('now')))`, []);
+      await tursoQuery(`CREATE TABLE IF NOT EXISTS highlights (id INTEGER PRIMARY KEY AUTOINCREMENT, tenant_id TEXT NOT NULL DEFAULT 'default', story_slug TEXT NOT NULL, section_index INTEGER NOT NULL, paragraph_index INTEGER NOT NULL, start_offset INTEGER NOT NULL, end_offset INTEGER NOT NULL, selected_text TEXT NOT NULL, text_hash TEXT NOT NULL, color TEXT DEFAULT 'primary', created_at TEXT DEFAULT (datetime('now')))`, []);
       if (req.method === "GET") {
         const slug = query.story || query.slug;
         if (!slug) return new Response(JSON.stringify({ error: "story required" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        const rows = await tursoQuery("SELECT * FROM highlights WHERE story_slug=? ORDER BY created_at DESC", [slug]);
+        const rows = await tursoQuery("SELECT * FROM highlights WHERE tenant_id=? AND story_slug=? ORDER BY created_at DESC", [tenant_id, slug]);
         return new Response(JSON.stringify(rows), { status: 200, headers: { "Content-Type": "application/json" } });
       }
       if (!authed) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
       if (req.method === "POST") {
         const b = await req.json().catch(() => ({}));
         if (!b.storySlug || b.selectedText == null) return new Response(JSON.stringify({ error: "storySlug and selectedText required" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        const rows = await tursoQuery("INSERT INTO highlights (story_slug, section_index, paragraph_index, start_offset, end_offset, selected_text, text_hash, color) VALUES (?,?,?,?,?,?,?,?) RETURNING *", [b.storySlug, b.sectionIndex, b.paragraphIndex, b.startOffset, b.endOffset, b.selectedText, b.textHash, b.color || "primary"]);
+        const rows = await tursoQuery("INSERT INTO highlights (tenant_id, story_slug, section_index, paragraph_index, start_offset, end_offset, selected_text, text_hash, color) VALUES (?,?,?,?,?,?,?,?,?) RETURNING *", [tenant_id, b.storySlug, b.sectionIndex, b.paragraphIndex, b.startOffset, b.endOffset, b.selectedText, b.textHash, b.color || "primary"]);
         return new Response(JSON.stringify(rows[0] || { success: true }), { status: 201, headers: { "Content-Type": "application/json" } });
       }
       if (req.method === "DELETE") {
         const { id } = await req.json().catch(() => ({}));
-        await tursoQuery("DELETE FROM highlights WHERE id=?", [id]);
+        await tursoQuery("DELETE FROM comments WHERE tenant_id=? AND highlight_id=?", [tenant_id, id]);
+        await tursoQuery("DELETE FROM highlights WHERE tenant_id=? AND id=?", [tenant_id, id]);
         return new Response(JSON.stringify({ success: true }), { status: 200, headers: { "Content-Type": "application/json" } });
       }
     }
 
     if (route === "progress") {
-      await tursoQuery(`CREATE TABLE IF NOT EXISTS progress (story_slug TEXT PRIMARY KEY, completed INTEGER DEFAULT 0, completed_at TEXT)`, []);
+      await tursoQuery(`CREATE TABLE IF NOT EXISTS progress (tenant_id TEXT NOT NULL DEFAULT 'default', story_slug TEXT NOT NULL, completed INTEGER DEFAULT 0, completed_at TEXT, PRIMARY KEY (tenant_id, story_slug))`, []);
       if (req.method === "GET") {
         if (query.slug) {
-          const rows = await tursoQuery("SELECT * FROM progress WHERE story_slug=?", [query.slug]);
+          const rows = await tursoQuery("SELECT * FROM progress WHERE tenant_id=? AND story_slug=?", [tenant_id, query.slug]);
           const r = rows[0];
           return new Response(JSON.stringify(r ? { slug: r.story_slug, completed: !!r.completed, completedAt: r.completed_at } : null), { status: 200, headers: { "Content-Type": "application/json" } });
         }
-        const rows = await tursoQuery("SELECT * FROM progress", []);
+        const rows = await tursoQuery("SELECT * FROM progress WHERE tenant_id=?", [tenant_id]);
         return new Response(JSON.stringify(rows), { status: 200, headers: { "Content-Type": "application/json" } });
       }
       if (req.method === "POST") {
         const { slug, completed } = await req.json().catch(() => ({}));
         if (!slug) return new Response(JSON.stringify({ error: "slug required" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        await tursoQuery("INSERT INTO progress (story_slug, completed, completed_at) VALUES (?,?,?) ON CONFLICT(story_slug) DO UPDATE SET completed=excluded.completed, completed_at=excluded.completed_at", [slug, completed ? 1 : 0, completed ? new Date().toISOString() : null]);
+        await tursoQuery("INSERT INTO progress (tenant_id, story_slug, completed, completed_at) VALUES (?,?,?,?) ON CONFLICT(tenant_id, story_slug) DO UPDATE SET completed=excluded.completed, completed_at=excluded.completed_at", [tenant_id, slug, completed ? 1 : 0, completed ? new Date().toISOString() : null]);
         return new Response(JSON.stringify({ success: true }), { status: 200, headers: { "Content-Type": "application/json" } });
       }
     }
 
     if (route === "tests") {
-      await tursoQuery(`CREATE TABLE IF NOT EXISTS test_submissions (id INTEGER PRIMARY KEY AUTOINCREMENT, test_slug TEXT NOT NULL, answers TEXT NOT NULL, score INTEGER, created_at TEXT DEFAULT (datetime('now')))`, []);
+      await tursoQuery(`CREATE TABLE IF NOT EXISTS test_submissions (id INTEGER PRIMARY KEY AUTOINCREMENT, tenant_id TEXT NOT NULL DEFAULT 'default', test_slug TEXT NOT NULL, answers TEXT NOT NULL, evaluation TEXT, score INTEGER, model TEXT, created_at TEXT NOT NULL)`, []);
       if (req.method === "GET") {
-        const rows = await tursoQuery(query.slug ? "SELECT * FROM test_submissions WHERE test_slug=? ORDER BY created_at DESC" : "SELECT * FROM test_submissions ORDER BY created_at DESC", query.slug ? [query.slug] : []);
+        const rows = await tursoQuery(query.slug ? "SELECT * FROM test_submissions WHERE tenant_id=? AND test_slug=? ORDER BY created_at DESC" : "SELECT * FROM test_submissions WHERE tenant_id=? ORDER BY created_at DESC", query.slug ? [tenant_id, query.slug] : [tenant_id]);
         return new Response(JSON.stringify(rows), { status: 200, headers: { "Content-Type": "application/json" } });
       }
       if (req.method === "POST") {
-        const { testSlug, answers, score } = await req.json().catch(() => ({}));
+        const { testSlug, answers, evaluation, score, model } = await req.json().catch(() => ({}));
         if (!testSlug || !answers) return new Response(JSON.stringify({ error: "testSlug and answers required" }), { status: 400, headers: { "Content-Type": "application/json" } });
-        const rows = await tursoQuery("INSERT INTO test_submissions (test_slug, answers, score) VALUES (?,?,?) RETURNING *", [testSlug, JSON.stringify(answers), score || null]);
+        const evalStr = typeof evaluation === "string" ? evaluation : evaluation == null ? null : JSON.stringify(evaluation);
+        const rows = await tursoQuery("INSERT INTO test_submissions (tenant_id, test_slug, answers, evaluation, score, model, created_at) VALUES (?,?,?,?,?,?,?) RETURNING *", [tenant_id, testSlug, JSON.stringify(answers), evalStr, score ?? null, model || null, new Date().toISOString()]);
         return new Response(JSON.stringify(rows[0] || { success: true }), { status: 201, headers: { "Content-Type": "application/json" } });
       }
     }
@@ -440,9 +446,9 @@ export default async (req, context) => {
         if (!query.slug) return new Response(JSON.stringify({ error: "Missing slug param" }), { status: 400, headers: { "Content-Type": "application/json" } });
         let rows;
         if (query.type) {
-          rows = await tursoQuery("SELECT status FROM content_items WHERE type=? AND slug=?", [query.type, query.slug]);
+          rows = await tursoQuery("SELECT status FROM content_items WHERE tenant_id=? AND type=? AND slug=?", [tenant_id, query.type, query.slug]);
         } else {
-          rows = await tursoQuery("SELECT status FROM content_items WHERE slug=? ORDER BY CASE WHEN type='featured' THEN 0 ELSE 1 END LIMIT 1", [query.slug]);
+          rows = await tursoQuery("SELECT status FROM content_items WHERE tenant_id=? AND slug=? ORDER BY CASE WHEN type='featured' THEN 0 ELSE 1 END LIMIT 1", [tenant_id, query.slug]);
         }
         return new Response(JSON.stringify({ public: rows.length > 0 && rows[0].status === "published" }), { status: 200, headers: { "Content-Type": "application/json" } });
       }
@@ -460,9 +466,9 @@ export default async (req, context) => {
         }).filter((e) => !!e.slug);
         for (const { slug, type } of normalized) {
           if (type) {
-            await tursoQuery("UPDATE content_items SET status=? WHERE type=? AND slug=?", [newStatus, type, slug]);
+            await tursoQuery("UPDATE content_items SET status=? WHERE tenant_id=? AND type=? AND slug=?", [newStatus, tenant_id, type, slug]);
           } else {
-            await tursoQuery("UPDATE content_items SET status=? WHERE slug=?", [newStatus, slug]);
+            await tursoQuery("UPDATE content_items SET status=? WHERE tenant_id=? AND slug=?", [newStatus, tenant_id, slug]);
           }
         }
         return new Response(JSON.stringify({ success: true }), { status: 200, headers: { "Content-Type": "application/json" } });
@@ -475,7 +481,7 @@ export default async (req, context) => {
       const pingRows = await tursoQuery("SELECT 1 AS one", []);
       const report = { env: { hasDbUrl: !!(process.env.TURSO_DATABASE_URL), hasToken: !!(process.env.TURSO_AUTH_TOKEN), vercelEnv: "netlify", node: "lambda", dbMode: "remote" }, db: { reachable: true, latencyMs: Date.now() - start, mode: "remote" }, store: {} };
       try {
-        const counts = await tursoQuery("SELECT status, COUNT(*) AS n FROM content_items GROUP BY status", []);
+        const counts = await tursoQuery("SELECT status, COUNT(*) AS n FROM content_items WHERE tenant_id=? GROUP BY status", [tenant_id]);
         for (const r of counts) report.store["content:" + r.status] = Number(r.n);
       } catch { report.store.content_items = "missing-or-unreadable"; }
       return new Response(JSON.stringify(report), { status: 200, headers: { "Content-Type": "application/json" } });
@@ -558,28 +564,29 @@ export default async (req, context) => {
       // Ensure lab_attempts table
       await tursoQuery(`CREATE TABLE IF NOT EXISTS lab_attempts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_id TEXT NOT NULL DEFAULT 'default',
         content_slug TEXT NOT NULL,
         lab_id TEXT NOT NULL,
         passed INTEGER NOT NULL DEFAULT 0,
         attempts INTEGER NOT NULL DEFAULT 1,
         last_attempt_at TEXT DEFAULT (datetime('now'))
       )`, []);
-      await tursoQuery(`CREATE UNIQUE INDEX IF NOT EXISTS idx_lab_attempts_unique ON lab_attempts(content_slug, lab_id)`, []);
+      await tursoQuery(`CREATE UNIQUE INDEX IF NOT EXISTS idx_lab_attempts_tenant_unique ON lab_attempts(tenant_id, content_slug, lab_id)`, []);
 
       const slug = query.slug;
       if (slug) {
         const rows = await tursoQuery(`
           SELECT ? AS slug,
-            (SELECT COUNT(*) FROM highlights WHERE story_slug = ?) AS highlights,
-            (SELECT COUNT(*) FROM comments WHERE story_slug = ?) AS comments,
-            (SELECT COUNT(*) FROM test_submissions WHERE test_slug = ?) AS test_submissions,
-            (SELECT MAX(score) FROM test_submissions WHERE test_slug = ?) AS best_score,
-            (SELECT COUNT(*) FROM lab_attempts WHERE content_slug = ?) AS lab_attempts,
-            (SELECT COUNT(*) FROM lab_attempts WHERE content_slug = ? AND passed = 1) AS lab_passed,
-            (SELECT COUNT(*) FROM note_articles WHERE EXISTS (
+            (SELECT COUNT(*) FROM highlights WHERE tenant_id=? AND story_slug = ?) AS highlights,
+            (SELECT COUNT(*) FROM comments WHERE tenant_id=? AND story_slug = ?) AS comments,
+            (SELECT COUNT(*) FROM test_submissions WHERE tenant_id=? AND test_slug = ?) AS test_submissions,
+            (SELECT MAX(score) FROM test_submissions WHERE tenant_id=? AND test_slug = ?) AS best_score,
+            (SELECT COUNT(*) FROM lab_attempts WHERE tenant_id=? AND content_slug = ?) AS lab_attempts,
+            (SELECT COUNT(*) FROM lab_attempts WHERE tenant_id=? AND content_slug = ? AND passed = 1) AS lab_passed,
+            (SELECT COUNT(*) FROM note_articles WHERE tenant_id=? AND EXISTS (
               SELECT 1 FROM json_each(published_content) WHERE json_extract(value, '$.slug') = ?
             )) AS notes
-        `, [slug, slug, slug, slug, slug, slug, slug, slug]);
+        `, [slug, tenant_id, slug, tenant_id, slug, tenant_id, slug, tenant_id, slug, tenant_id, slug, tenant_id, slug, tenant_id, slug]);
         return new Response(JSON.stringify(rows[0] || { slug, highlights: 0, comments: 0, test_submissions: 0, best_score: null, lab_attempts: 0, lab_passed: 0, notes: 0 }), { status: 200, headers: { "Content-Type": "application/json" } });
       }
 
@@ -593,27 +600,28 @@ export default async (req, context) => {
           COALESCE(l.p, 0) AS lab_passed,
           COALESCE(n.c, 0) AS notes
         FROM (
-          SELECT story_slug AS slug FROM highlights
+          SELECT story_slug AS slug FROM highlights WHERE tenant_id=?
           UNION
-          SELECT story_slug AS slug FROM comments
+          SELECT story_slug AS slug FROM comments WHERE tenant_id=?
           UNION
-          SELECT test_slug AS slug FROM test_submissions
+          SELECT test_slug AS slug FROM test_submissions WHERE tenant_id=?
           UNION
-          SELECT content_slug AS slug FROM lab_attempts
+          SELECT content_slug AS slug FROM lab_attempts WHERE tenant_id=?
           UNION
-          SELECT slug FROM note_articles
+          SELECT slug FROM note_articles WHERE tenant_id=?
         ) sub
-        LEFT JOIN (SELECT story_slug, COUNT(*) AS c FROM highlights GROUP BY story_slug) h ON h.story_slug = sub.slug
-        LEFT JOIN (SELECT story_slug, COUNT(*) AS c FROM comments GROUP BY story_slug) c ON c.story_slug = sub.slug
-        LEFT JOIN (SELECT test_slug, COUNT(*) AS c, MAX(score) AS best_score FROM test_submissions GROUP BY test_slug) t ON t.test_slug = sub.slug
-        LEFT JOIN (SELECT content_slug, COUNT(*) AS c, SUM(passed) AS p FROM lab_attempts GROUP BY content_slug) l ON l.content_slug = sub.slug
+        LEFT JOIN (SELECT story_slug, COUNT(*) AS c FROM highlights WHERE tenant_id=? GROUP BY story_slug) h ON h.story_slug = sub.slug
+        LEFT JOIN (SELECT story_slug, COUNT(*) AS c FROM comments WHERE tenant_id=? GROUP BY story_slug) c ON c.story_slug = sub.slug
+        LEFT JOIN (SELECT test_slug, COUNT(*) AS c, MAX(score) AS best_score FROM test_submissions WHERE tenant_id=? GROUP BY test_slug) t ON t.test_slug = sub.slug
+        LEFT JOIN (SELECT content_slug, COUNT(*) AS c, SUM(passed) AS p FROM lab_attempts WHERE tenant_id=? GROUP BY content_slug) l ON l.content_slug = sub.slug
         LEFT JOIN (
           SELECT json_extract(value, '$.slug') AS ref_slug, COUNT(*) AS c
           FROM note_articles, json_each(published_content)
+          WHERE note_articles.tenant_id=?
           GROUP BY ref_slug
         ) n ON n.ref_slug = sub.slug
         ORDER BY sub.slug
-      `, []);
+      `, [tenant_id, tenant_id, tenant_id, tenant_id, tenant_id, tenant_id, tenant_id, tenant_id, tenant_id, tenant_id]);
       return new Response(JSON.stringify(rows || []), { status: 200, headers: { "Content-Type": "application/json" } });
     }
 
@@ -622,7 +630,7 @@ export default async (req, context) => {
       if (method !== "GET") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "Content-Type": "application/json" } });
       if (!requireAuth()) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
       try {
-        const rows = await tursoQuery("SELECT * FROM content_items ORDER BY type ASC, position ASC", []);
+        const rows = await tursoQuery("SELECT * FROM content_items WHERE tenant_id=? ORDER BY type ASC, position ASC", [tenant_id]);
         const parts = [];
         parts.push("# Soma Export\n> Exported: " + new Date().toISOString() + "\n> Total items: " + rows.length + "\n\n---\n\n");
         for (const row of rows) {

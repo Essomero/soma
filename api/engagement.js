@@ -1,6 +1,7 @@
 import { isAuthed, requireAuth } from "./_auth.js";
 import { rateLimit } from "./_limits.js";
 import { query } from "./_db.js";
+import { getTenantId } from "./_tenant.js";
 import { apiRouteFromPath } from "../shared/api-routes.js";
 
 // ---- ratings ----
@@ -8,14 +9,17 @@ let ratingsTablesReady = false;
 async function ensureRatingsTables() {
   if (ratingsTablesReady) return;
   await query(`CREATE TABLE IF NOT EXISTS ratings (
-    story_slug TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL DEFAULT 'default',
+    story_slug TEXT NOT NULL,
     rating INTEGER NOT NULL,
-    rated_at TEXT
+    rated_at TEXT,
+    PRIMARY KEY (tenant_id, story_slug)
   )`);
   ratingsTablesReady = true;
 }
 
 async function handleRatings(req, res) {
+  const tenant_id = getTenantId(req);
   await ensureRatingsTables();
   if (req.method === "GET") {
     const slug = req.query.slug;
@@ -25,13 +29,13 @@ async function handleRatings(req, res) {
         if (!(vis.length > 0 && vis[0].public == 1)) return res.status(404).json({ error: "Not found" });
       } else {
         return res.json(
-          (await query("SELECT r.* FROM ratings r JOIN public_pages pp ON pp.slug = r.story_slug WHERE pp.\"public\" = 1", []))[0] || null,
+          (await query("SELECT r.* FROM ratings r JOIN public_pages pp ON pp.slug = r.story_slug WHERE r.tenant_id = ? AND pp.\"public\" = 1", [tenant_id]))[0] || null,
         );
       }
     }
     const result = await query(
-      slug ? "SELECT * FROM ratings WHERE story_slug = ?" : "SELECT * FROM ratings",
-      slug ? [slug] : [],
+      slug ? "SELECT * FROM ratings WHERE tenant_id = ? AND story_slug = ?" : "SELECT * FROM ratings WHERE tenant_id = ?",
+      slug ? [tenant_id, slug] : [tenant_id],
     );
     return res.json(result[0] || null);
   }
@@ -44,8 +48,8 @@ async function handleRatings(req, res) {
       return res.status(400).json({ error: "rating must be 1-5" });
     const now = new Date().toISOString();
     await query(
-      "INSERT INTO ratings (story_slug, rating, rated_at) VALUES (?, ?, ?) ON CONFLICT(story_slug) DO UPDATE SET rating = excluded.rating, rated_at = excluded.rated_at",
-      [slug, rating, now],
+      "INSERT INTO ratings (tenant_id, story_slug, rating, rated_at) VALUES (?, ?, ?, ?) ON CONFLICT(tenant_id, story_slug) DO UPDATE SET rating = excluded.rating, rated_at = excluded.rated_at",
+      [tenant_id, slug, rating, now],
     );
     return res.json({ success: true });
   }
@@ -58,20 +62,23 @@ let progressTablesReady = false;
 async function ensureProgressTables() {
   if (progressTablesReady) return;
   await query(`CREATE TABLE IF NOT EXISTS progress (
-    story_slug TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL DEFAULT 'default',
+    story_slug TEXT NOT NULL,
     completed INTEGER NOT NULL DEFAULT 0,
-    completed_at TEXT
+    completed_at TEXT,
+    PRIMARY KEY (tenant_id, story_slug)
   )`);
   progressTablesReady = true;
 }
 
 async function handleProgress(req, res) {
+  const tenant_id = getTenantId(req);
   await ensureProgressTables();
   if (!requireAuth(req, res)) return;
   if (req.method === "GET") {
     const slug = req.query.slug;
-    const sql = slug ? "SELECT * FROM progress WHERE story_slug = ?" : "SELECT * FROM progress WHERE completed = 1";
-    const result = await query(sql, slug ? [slug] : []);
+    const sql = slug ? "SELECT * FROM progress WHERE tenant_id = ? AND story_slug = ?" : "SELECT * FROM progress WHERE tenant_id = ? AND completed = 1";
+    const result = await query(sql, slug ? [tenant_id, slug] : [tenant_id]);
     return res.json(result);
   }
 
@@ -79,8 +86,8 @@ async function handleProgress(req, res) {
     const { slug, completed } = req.body || {};
     const now = new Date().toISOString();
     await query(
-      "INSERT INTO progress (story_slug, completed, completed_at) VALUES (?, ?, ?) ON CONFLICT(story_slug) DO UPDATE SET completed = excluded.completed, completed_at = excluded.completed_at",
-      [slug, completed ? 1 : 0, completed ? now : null],
+      "INSERT INTO progress (tenant_id, story_slug, completed, completed_at) VALUES (?, ?, ?, ?) ON CONFLICT(tenant_id, story_slug) DO UPDATE SET completed = excluded.completed, completed_at = excluded.completed_at",
+      [tenant_id, slug, completed ? 1 : 0, completed ? now : null],
     );
     return res.json({ success: true });
   }
@@ -95,6 +102,7 @@ async function ensureTestsTables() {
   await query(`
     CREATE TABLE IF NOT EXISTS test_submissions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tenant_id TEXT NOT NULL DEFAULT 'default',
       test_slug TEXT NOT NULL,
       answers TEXT NOT NULL,
       evaluation TEXT,
@@ -107,15 +115,16 @@ async function ensureTestsTables() {
 }
 
 async function handleTests(req, res) {
+  const tenant_id = getTenantId(req);
   await ensureTestsTables();
 
   if (req.method === "GET") {
     if (!requireAuth(req, res)) return;
     const slug = req.query.slug;
     const sql = slug
-      ? "SELECT * FROM test_submissions WHERE test_slug = ? ORDER BY created_at DESC LIMIT 20"
-      : "SELECT * FROM test_submissions ORDER BY created_at DESC LIMIT 50";
-    const rows = await query(sql, slug ? [slug] : []);
+      ? "SELECT * FROM test_submissions WHERE tenant_id = ? AND test_slug = ? ORDER BY created_at DESC LIMIT 20"
+      : "SELECT * FROM test_submissions WHERE tenant_id = ? ORDER BY created_at DESC LIMIT 50";
+    const rows = await query(sql, slug ? [tenant_id, slug] : [tenant_id]);
     return res.json(rows);
   }
 
@@ -147,9 +156,9 @@ async function handleTests(req, res) {
     const now = new Date().toISOString();
 
     await query(
-      `INSERT INTO test_submissions (test_slug, answers, evaluation, score, model, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-      [slug, answersStr, evalStr, score ?? null, model || null, now],
+      `INSERT INTO test_submissions (tenant_id, test_slug, answers, evaluation, score, model, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [tenant_id, slug, answersStr, evalStr, score ?? null, model || null, now],
     );
 
     return res.json({ success: true, timestamp: now });

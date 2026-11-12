@@ -9,17 +9,22 @@ const client = createClient({
 export async function initDB() {
   await client.executeMultiple(`
     CREATE TABLE IF NOT EXISTS progress (
-      story_slug TEXT PRIMARY KEY,
+      tenant_id TEXT NOT NULL DEFAULT 'default',
+      story_slug TEXT NOT NULL,
       completed INTEGER DEFAULT 0,
-      completed_at TEXT
+      completed_at TEXT,
+      PRIMARY KEY (tenant_id, story_slug)
     );
     CREATE TABLE IF NOT EXISTS ratings (
-      story_slug TEXT PRIMARY KEY,
+      tenant_id TEXT NOT NULL DEFAULT 'default',
+      story_slug TEXT NOT NULL,
       rating INTEGER CHECK(rating >= 1 AND rating <= 5),
-      rated_at TEXT
+      rated_at TEXT,
+      PRIMARY KEY (tenant_id, story_slug)
     );
     CREATE TABLE IF NOT EXISTS comments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tenant_id TEXT NOT NULL DEFAULT 'default',
       story_slug TEXT NOT NULL,
       body TEXT NOT NULL,
       parent_id INTEGER,
@@ -31,6 +36,7 @@ export async function initDB() {
     );
     CREATE TABLE IF NOT EXISTS highlights (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tenant_id TEXT NOT NULL DEFAULT 'default',
       story_slug TEXT NOT NULL,
       section_index INTEGER NOT NULL,
       paragraph_index INTEGER NOT NULL,
@@ -76,36 +82,36 @@ export async function initDB() {
 }
 
 // ── Progress ───────────────────────────────────────────
-export async function getProgress(slug?: string) {
+export async function getProgress(slug?: string, tenant_id = "default") {
   if (slug) {
-    const r = await client.execute({ sql: "SELECT * FROM progress WHERE story_slug = ?", args: [slug] });
+    const r = await client.execute({ sql: "SELECT * FROM progress WHERE tenant_id = ? AND story_slug = ?", args: [tenant_id, slug] });
     return r.rows[0] ? { slug: r.rows[0].story_slug as string, completed: !!r.rows[0].completed, completedAt: r.rows[0].completed_at as string | null } : null;
   }
-  const r = await client.execute("SELECT * FROM progress WHERE completed = 1");
+  const r = await client.execute({ sql: "SELECT * FROM progress WHERE tenant_id = ? AND completed = 1", args: [tenant_id] });
   return r.rows.map(row => ({ slug: row.story_slug as string, completed: true, completedAt: row.completed_at as string | null }));
 }
 
-export async function toggleProgress(slug: string, completed: boolean) {
+export async function toggleProgress(slug: string, completed: boolean, tenant_id = "default") {
   await client.execute({
-    sql: "INSERT INTO progress (story_slug, completed, completed_at) VALUES (?, ?, ?) ON CONFLICT(story_slug) DO UPDATE SET completed = ?, completed_at = ?",
-    args: [slug, completed ? 1 : 0, completed ? new Date().toISOString() : null, completed ? 1 : 0, completed ? new Date().toISOString() : null],
+    sql: "INSERT INTO progress (tenant_id, story_slug, completed, completed_at) VALUES (?, ?, ?, ?) ON CONFLICT(tenant_id, story_slug) DO UPDATE SET completed = ?, completed_at = ?",
+    args: [tenant_id, slug, completed ? 1 : 0, completed ? new Date().toISOString() : null, completed ? 1 : 0, completed ? new Date().toISOString() : null],
   });
 }
 
 // ── Ratings ────────────────────────────────────────────
-export async function getRatings(slug?: string) {
+export async function getRatings(slug?: string, tenant_id = "default") {
   if (slug) {
-    const r = await client.execute({ sql: "SELECT * FROM ratings WHERE story_slug = ?", args: [slug] });
+    const r = await client.execute({ sql: "SELECT * FROM ratings WHERE tenant_id = ? AND story_slug = ?", args: [tenant_id, slug] });
     return r.rows[0] ? { slug: r.rows[0].story_slug as string, rating: r.rows[0].rating as number } : null;
   }
-  const r = await client.execute("SELECT * FROM ratings");
+  const r = await client.execute({ sql: "SELECT * FROM ratings WHERE tenant_id = ?", args: [tenant_id] });
   return r.rows.map(row => ({ slug: row.story_slug as string, rating: row.rating as number }));
 }
 
-export async function setRating(slug: string, rating: number) {
+export async function setRating(slug: string, rating: number, tenant_id = "default") {
   await client.execute({
-    sql: "INSERT INTO ratings (story_slug, rating, rated_at) VALUES (?, ?, ?) ON CONFLICT(story_slug) DO UPDATE SET rating = ?, rated_at = ?",
-    args: [slug, rating, new Date().toISOString(), rating, new Date().toISOString()],
+    sql: "INSERT INTO ratings (tenant_id, story_slug, rating, rated_at) VALUES (?, ?, ?, ?) ON CONFLICT(tenant_id, story_slug) DO UPDATE SET rating = ?, rated_at = ?",
+    args: [tenant_id, slug, rating, new Date().toISOString(), rating, new Date().toISOString()],
   });
 }
 
@@ -125,8 +131,8 @@ export interface HighlightRow {
 
 
 // ── Highlights ─────────────────────────────────────────
-export async function getHighlights(storySlug: string): Promise<HighlightRow[]> {
-  const r = await client.execute({ sql: "SELECT * FROM highlights WHERE story_slug = ? ORDER BY section_index, paragraph_index, start_offset", args: [storySlug] });
+export async function getHighlights(storySlug: string, tenant_id = "default"): Promise<HighlightRow[]> {
+  const r = await client.execute({ sql: "SELECT * FROM highlights WHERE tenant_id = ? AND story_slug = ? ORDER BY section_index, paragraph_index, start_offset", args: [tenant_id, storySlug] });
   return r.rows.map(row => ({
     id: row.id as number,
     story_slug: row.story_slug as string,
@@ -144,10 +150,11 @@ export async function getHighlights(storySlug: string): Promise<HighlightRow[]> 
 export async function addHighlight(
   storySlug: string, sectionIndex: number, paragraphIndex: number,
   startOffset: number, endOffset: number, selectedText: string, textHash: string, color: string,
+  tenant_id = "default",
 ) {
   const r = await client.execute({
-    sql: "INSERT INTO highlights (story_slug, section_index, paragraph_index, start_offset, end_offset, selected_text, text_hash, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
-    args: [storySlug, sectionIndex, paragraphIndex, startOffset, endOffset, selectedText, textHash, color],
+    sql: "INSERT INTO highlights (tenant_id, story_slug, section_index, paragraph_index, start_offset, end_offset, selected_text, text_hash, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
+    args: [tenant_id, storySlug, sectionIndex, paragraphIndex, startOffset, endOffset, selectedText, textHash, color],
   });
   const row = r.rows[0];
   return {
@@ -164,7 +171,7 @@ export async function addHighlight(
   };
 }
 
-export async function deleteHighlight(id: number) {
-  await client.execute({ sql: "DELETE FROM comments WHERE highlight_id = ?", args: [id] });
-  await client.execute({ sql: "DELETE FROM highlights WHERE id = ?", args: [id] });
+export async function deleteHighlight(id: number, tenant_id = "default") {
+  await client.execute({ sql: "DELETE FROM comments WHERE tenant_id = ? AND highlight_id = ?", args: [tenant_id, id] });
+  await client.execute({ sql: "DELETE FROM highlights WHERE tenant_id = ? AND id = ?", args: [tenant_id, id] });
 }
