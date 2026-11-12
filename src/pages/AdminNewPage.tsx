@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, FileText, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -16,6 +16,8 @@ import { CONTENT_TYPE_LABELS, ROUTE_BASE } from "@/lib/admin-prompts";
 export default function AdminNewPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const defaultType = params.get("type") || undefined;
   const sourceNote = (location.state as { sourceNote?: { slug: string; title: string; content: string } } | null)
     ?.sourceNote;
 
@@ -25,16 +27,14 @@ export default function AdminNewPage() {
     if (importDraft) {
       try {
         const data = JSON.parse(importDraft);
-        // Clear it so it doesn't persist across navigations
-        sessionStorage.removeItem("import-draft");
         if (data.text) {
           return (
             `Create content based on this imported material:\n\n` +
             (data.title ? `Title: ${data.title}\n\n` : "") +
             (data.description ? `Description: ${data.description}\n\n` : "") +
             `Source URL: ${data.url || "unknown"}\n\n` +
-            `Extracted text:\n${data.text.slice(0, 4000)}` +
-            (data.text.length > 4000 ? "\n\n[Text truncated to first 4000 characters]" : "")
+            `Extracted text:\n${data.text.slice(0, 15000)}` +
+            (data.text.length > 15000 ? "\n\n[Text truncated to first 15000 characters]" : "")
           );
         }
       } catch {}
@@ -48,6 +48,12 @@ export default function AdminNewPage() {
       (sourceNote.content.length > 4000 ? "\n\n[Note truncated to first 4000 characters]" : "")
     );
   }, [sourceNote]);
+
+  // Clear import-draft after render so Strict Mode double-render doesn't
+  // consume it on the first pass. The useMemo above already read it.
+  useEffect(() => {
+    sessionStorage.removeItem("import-draft");
+  }, []);
   const [draft, setDraft] = useState<AIDraft | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -229,7 +235,7 @@ export default function AdminNewPage() {
         {/* AI Drafting Panel — shown when no draft yet */}
         {!draft && (
           <section className="p-xl bg-surface border border-border-default">
-            <AIDraftPanel onDraft={handleDraft} disabled={saving} initialInput={initialPrompt} />
+            <AIDraftPanel onDraft={handleDraft} disabled={saving} initialInput={initialPrompt} defaultType={defaultType} />
           </section>
         )}
 

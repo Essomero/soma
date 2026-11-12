@@ -60,7 +60,8 @@
     "react-router-dom": "^7.0.0",
     "recharts": "^2.13.3",
     "tailwind-merge": "^2.5.0",
-    "three": "^0.170.0"
+    "three": "^0.170.0",
+    "turndown": "^7.2.5"
   },
   "devDependencies": {
     "@fontsource/dm-sans": "^5.1.0",

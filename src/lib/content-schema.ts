@@ -572,16 +572,19 @@ export function buildFieldDescriptions(type: ContentType): string {
   const schema = CONTENT_SCHEMA[type];
   const lines: string[] = [];
 
-  for (const field of schema.fields) {
+  function describe(field: FieldSchema, indent: string) {
     const required = field.required ? "required" : "optional";
-    lines.push(`- \`${field.name}\` (${field.type}, ${required}): ${field.description}`);
-    if (field.constraints) lines.push(`  Constraints: ${field.constraints}`);
+    lines.push(`${indent}- \`${field.name}\` (${field.type}, ${required}): ${field.description}`);
+    if (field.constraints) lines.push(`${indent}  Constraints: ${field.constraints}`);
     if (field.children && field.children.length > 0) {
       for (const child of field.children) {
-        const cr = child.required ? "required" : "optional";
-        lines.push(`  - \`${child.name}\` (${child.type}, ${cr}): ${child.description}`);
+        describe(child, indent + "  ");
       }
     }
+  }
+
+  for (const field of schema.fields) {
+    describe(field, "");
   }
 
   return lines.join("\n");
@@ -630,7 +633,10 @@ Return ONLY valid JSON (no markdown fences). The JSON must have:
 Each type has its own field schema. Generate ONLY the fields relevant to the type you chose.
 
 ${targets.map((s) => `--- ${s.label} (\`${s.type}\`) fields ---
-${buildFieldDescriptions(s.type)}`
+${buildFieldDescriptions(s.type)}
+
+Example:
+${buildExamplePrompt(s.type)}`
 ).join("\n\n")}
 
 ### Rules:
