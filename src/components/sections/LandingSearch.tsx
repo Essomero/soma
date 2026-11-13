@@ -384,7 +384,7 @@ export default function LandingSearch() {
       <div className="relative z-10 w-full max-w-2xl mx-auto px-6 -mt-16">
         {/* Prompt */}
         <h1 className="text-4xl md:text-5xl font-extrabold text-center mb-3 text-on-surface tracking-tight">
-          What are we learning today?
+          Curious? Start here.
         </h1>
         <p className="text-center text-on-surface-muted mb-10 max-w-md mx-auto">
           Search stories, guides, and notes — or start something new.
