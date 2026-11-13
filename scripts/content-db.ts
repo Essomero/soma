@@ -99,11 +99,65 @@ export async function migrateContentItemsIfNeeded(db: ContentDatabase) {
     const createSql = row?.sql as string | undefined;
     if (!createSql) return;
     const upper = createSql.toUpperCase();
-    const hasTenantPk = upper.includes("PRIMARY KEY (TENANT_ID, TYPE, SLUG)");
-    const isLegacy = !hasTenantPk && (upper.includes("SLUG TEXT PRIMARY KEY") || !upper.includes("PRIMARY KEY (TYPE, SLUG)"));
-    if (!isLegacy) return;
-    console.log("[content_items] migrating from slug PK to composite (type, slug)");
+
+    // Already at final schema (tenant_id, type, slug) — nothing to do.
+    if (upper.includes("PRIMARY KEY (TENANT_ID, TYPE, SLUG)")) return;
+
+    // Step 1: migrate from legacy slug PK to composite (type, slug) if needed.
+    const isLegacy = upper.includes("SLUG TEXT PRIMARY KEY") || !upper.includes("PRIMARY KEY (TYPE, SLUG)");
+    if (isLegacy) {
+      console.log("[content_items] migrating from slug PK to composite (type, slug)");
+      await db.execute(`CREATE TABLE IF NOT EXISTS content_items_new (
+        slug TEXT NOT NULL,
+        type TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'private',
+        title TEXT NOT NULL DEFAULT '',
+        excerpt TEXT NOT NULL DEFAULT '',
+        body_json TEXT NOT NULL,
+        meta_json TEXT NOT NULL DEFAULT '{}',
+        position INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT DEFAULT (datetime('now')),
+        archived_at TEXT,
+        PRIMARY KEY (type, slug)
+      )`);
+      let copied = false;
+      try {
+        const info = await db.execute("PRAGMA table_info(content_items)");
+        const cols = new Set((info.rows as unknown as Array<Record<string, unknown>>).map((r) => String(r.name || "")));
+        const hasArchived = cols.has("archived_at");
+        if (hasArchived) {
+          await db.execute(`INSERT OR REPLACE INTO content_items_new (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at, archived_at)
+            SELECT slug, type, status, title, excerpt, body_json, meta_json, position, updated_at, archived_at FROM content_items`);
+        } else {
+          await db.execute(`INSERT OR REPLACE INTO content_items_new (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
+            SELECT slug, type, status, title, excerpt, body_json, meta_json, position, updated_at FROM content_items`);
+        }
+        copied = true;
+      } catch {
+        // fallback below
+      }
+      if (!copied) {
+        try {
+          await db.execute(`INSERT OR REPLACE INTO content_items_new (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at, archived_at)
+            SELECT slug, type, status, title, excerpt, body_json, meta_json, position, updated_at, archived_at FROM content_items`);
+        } catch {
+          await db.execute(`INSERT OR REPLACE INTO content_items_new (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
+            SELECT slug, type, status, title, excerpt, body_json, meta_json, position, updated_at FROM content_items`);
+        }
+      }
+      await db.execute("DROP TABLE content_items");
+      await db.execute("ALTER TABLE content_items_new RENAME TO content_items");
+    }
+
+    // Step 2: add tenant_id if the table has (type,slug) PK but no tenant_id column.
+    const colInfo = await db.execute("PRAGMA table_info(content_items)");
+    const cols = new Set((colInfo.rows as unknown as Array<Record<string, unknown>>).map((r) => String(r.name || "")));
+    if (cols.has("tenant_id")) return;
+
+    console.log("[content_items] adding tenant_id column for multi-tenant support");
+    const hasArchived = cols.has("archived_at");
     await db.execute(`CREATE TABLE IF NOT EXISTS content_items_new (
+      tenant_id TEXT NOT NULL DEFAULT 'default',
       slug TEXT NOT NULL,
       type TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'private',
@@ -114,33 +168,14 @@ export async function migrateContentItemsIfNeeded(db: ContentDatabase) {
       position INTEGER NOT NULL DEFAULT 0,
       updated_at TEXT DEFAULT (datetime('now')),
       archived_at TEXT,
-      PRIMARY KEY (type, slug)
+      PRIMARY KEY (tenant_id, type, slug)
     )`);
-    // Handle both 9-col (no archived_at) and 10-col legacy variants.
-    let copied = false;
-    try {
-      const info = await db.execute("PRAGMA table_info(content_items)");
-      const cols = new Set((info.rows as unknown as Array<Record<string, unknown>>).map((r) => String(r.name || "")));
-      const hasArchived = cols.has("archived_at");
-      if (hasArchived) {
-        await db.execute(`INSERT OR REPLACE INTO content_items_new (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at, archived_at)
-          SELECT slug, type, status, title, excerpt, body_json, meta_json, position, updated_at, archived_at FROM content_items`);
-      } else {
-        await db.execute(`INSERT OR REPLACE INTO content_items_new (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
-          SELECT slug, type, status, title, excerpt, body_json, meta_json, position, updated_at FROM content_items`);
-      }
-      copied = true;
-    } catch {
-      // fallback below
-    }
-    if (!copied) {
-      try {
-        await db.execute(`INSERT OR REPLACE INTO content_items_new (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at, archived_at)
-          SELECT slug, type, status, title, excerpt, body_json, meta_json, position, updated_at, archived_at FROM content_items`);
-      } catch {
-        await db.execute(`INSERT OR REPLACE INTO content_items_new (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
-          SELECT slug, type, status, title, excerpt, body_json, meta_json, position, updated_at FROM content_items`);
-      }
+    if (hasArchived) {
+      await db.execute(`INSERT INTO content_items_new (tenant_id, slug, type, status, title, excerpt, body_json, meta_json, position, updated_at, archived_at)
+        SELECT 'default', slug, type, status, title, excerpt, body_json, meta_json, position, updated_at, archived_at FROM content_items`);
+    } else {
+      await db.execute(`INSERT INTO content_items_new (tenant_id, slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
+        SELECT 'default', slug, type, status, title, excerpt, body_json, meta_json, position, updated_at FROM content_items`);
     }
     await db.execute("DROP TABLE content_items");
     await db.execute("ALTER TABLE content_items_new RENAME TO content_items");
