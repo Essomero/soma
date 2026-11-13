@@ -21,7 +21,7 @@ type ReadTab = "preview";
 export function useShiftTabToggle<T extends WriteTab | ReadTab>(
   tab: T,
   setTab: (t: T) => void,
-  opts?: { writeValue?: WriteTab; autoFocus?: boolean },
+  opts?: { writeValue?: WriteTab },
 ) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const writeValue = (opts?.writeValue ?? "write") as T;

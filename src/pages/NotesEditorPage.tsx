@@ -28,6 +28,8 @@ export default function NotesEditorPage() {
 
   const titleRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLTextAreaElement>(null);
+  // Cursor position to restore after React commits a Tab insertion
+  const cursorRef = useRef<number | null>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [tab, setTab] = useState<"write" | "preview">("write");
@@ -150,6 +152,15 @@ export default function NotesEditorPage() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [handleSave]);
 
+  // Restore cursor after React commits a Tab insertion
+  useEffect(() => {
+    if (cursorRef.current !== null && contentRef.current) {
+      contentRef.current.selectionStart = cursorRef.current;
+      contentRef.current.selectionEnd = cursorRef.current;
+      cursorRef.current = null;
+    }
+  });
+
   function handleTextareaKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Tab" && e.shiftKey) {
       e.preventDefault();
@@ -161,13 +172,9 @@ export default function NotesEditorPage() {
       const ta = e.currentTarget;
       const start = ta.selectionStart;
       const end = ta.selectionEnd;
-      const before = ta.value.slice(0, start);
-      const after = ta.value.slice(end);
-      ta.value = before + "  " + after;
-      // React needs the synthetic event; set the cursor after the inserted
-      // spaces via the native element and then fire the change.
-      ta.selectionStart = ta.selectionEnd = start + 2;
-      setContent(ta.value);
+      const newValue = content.slice(0, start) + "  " + content.slice(end);
+      cursorRef.current = start + 2;
+      setContent(newValue);
     }
   }
 
