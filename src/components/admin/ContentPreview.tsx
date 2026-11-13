@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Pencil, X } from "lucide-react";
 import { md, mdBlock } from "@/lib/markdown";
 import { formatDate } from "@/lib/format-date";
+import SafeImage from "@/components/ui/SafeImage";
 import type { ContentBlock } from "@/types";
 import type { AIDraft } from "./AIDraftPanel";
 
@@ -101,6 +102,16 @@ export default function ContentPreview({ draft, onBack }: ContentPreviewProps) {
       {/* Page body — no inner scroll container: page scrolls naturally */}
       <div className="p-xl md:p-xxl">
         <div className="w-full h-1 bg-gradient-to-r from-primary to-secondary mb-lg" />
+
+        {/* Cover image — SafeImage handles missing/invalid URLs with fallback */}
+        <figure className="mb-lg">
+          <SafeImage
+            alt={draft.imageAlt || ""}
+            className="w-full h-auto aspect-[16/9] object-cover rounded-lg border border-border-default"
+            src={draft.image}
+          />
+        </figure>
+
         <p className="font-sora text-metadata-tag text-secondary uppercase tracking-widest mb-sm">
           {draft.category || "CATEGORY"}
         </p>

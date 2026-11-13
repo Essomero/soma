@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useLenis } from "lenis/react";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { useShiftTabToggle } from "@/hooks/useShiftTabToggle";
 import {
   Clock,
   RotateCcw,
@@ -178,6 +179,7 @@ export default function TestPage() {
   const [copiedPrompt, setCopiedPrompt] = useState<boolean>(false);
   const [savedEvaluation, setSavedEvaluation] = useState<StoredTestEvaluation | null>(null);
   const [answerTab, setAnswerTab] = useState<"write" | "preview">("write");
+  const { onKeyDown: onAnswerKeyDown, textareaRef: answerTextareaRef } = useShiftTabToggle(answerTab, setAnswerTab);
   // Oral Evaluation Debrief state
   const [evalAudioUrl, setEvalAudioUrl] = useState<string | null>(null);
   const [isEvalAudioPlaying, setIsEvalAudioPlaying] = useState<boolean>(false);
@@ -1511,13 +1513,15 @@ export default function TestPage() {
                     <textarea
                       value={(answers[currentQuestion.id] as string) || ""}
                       onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
+                      onKeyDown={onAnswerKeyDown}
+                      ref={answerTextareaRef}
                       placeholder="Type your structured answer here... (Markdown headings, lists, and code blocks supported)"
                       rows={8}
                       style={{ backgroundColor: "#0e1319", color: "#dfe2eb" }}
                       className="w-full rounded-xl border border-border-default p-lg font-dm-sans text-body-base leading-relaxed placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono text-sm"
                     />
                   ) : (
-                    <div className="w-full min-h-[200px] rounded-xl border border-border-default p-lg bg-[#0e1319] text-on-surface overflow-y-auto">
+                    <div onKeyDown={onAnswerKeyDown} className="w-full min-h-[200px] rounded-xl border border-border-default p-lg bg-[#0e1319] text-on-surface overflow-y-auto">
                       {(answers[currentQuestion.id] as string)?.trim() ? (
                         <MarkdownHtml
                           html={mdBlock((answers[currentQuestion.id] as string) || "")}

@@ -6,6 +6,7 @@ import MarkdownHtml from "@/components/ui/MarkdownHtml";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import Tooltip from "@/components/ui/Tooltip";
 import { COMMENT_MAX_DEPTH } from "@/lib/highlights";
+import { useShiftTabToggle } from "@/hooks/useShiftTabToggle";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { streamChat } from "@/lib/tutor/client";
 import { TUTOR_MODES } from "../../../shared/tutor/modes.js";
@@ -78,6 +79,7 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editBody, setEditBody] = useState("");
   const [tab, setTab] = useState<"write" | "preview">("write");
+  const { onKeyDown: onCommentKeyDown, textareaRef: commentTextareaRef } = useShiftTabToggle(tab, setTab);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -127,11 +129,13 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
   const [summarizing, setSummarizing] = useState(false);
   const [summaryDraft, setSummaryDraft] = useState("");
   const [summaryTab, setSummaryTab] = useState<"write" | "preview">("write");
+  const { onKeyDown: onSummaryKeyDown, textareaRef: summaryTextareaRef } = useShiftTabToggle(summaryTab, setSummaryTab);
 
   // Explain state
   const [explaining, setExplaining] = useState(false);
   const [explainDraft, setExplainDraft] = useState("");
   const [explainTab, setExplainTab] = useState<"write" | "preview">("write");
+  const { onKeyDown: onExplainKeyDown, textareaRef: explainTextareaRef } = useShiftTabToggle(explainTab, setExplainTab);
 
   useEffect(() => {
     if (!modelMenuOpen) return;
@@ -692,7 +696,10 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
                           return next;
                         });
                       }}
-                      onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); postAiReply(comment.id); } }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Tab" && e.shiftKey) { e.preventDefault(); setAiDraftTab(comment.id, "preview"); return; }
+                        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); postAiReply(comment.id); }
+                      }}
                       rows={5}
                       className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-sm text-on-surface focus:ring-0 outline-none resize-y"
                       placeholder={aiLoading === comment.id ? "Waiting for response..." : "⌘+Enter to post"}
@@ -920,7 +927,10 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
             <textarea
               value={summaryDraft}
               onChange={(e) => setSummaryDraft(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); postSummary(); } }}
+              onKeyDown={(e) => {
+                if (e.key === "Tab" && e.shiftKey) { e.preventDefault(); setSummaryTab("preview"); return; }
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); postSummary(); }
+              }}
               rows={8}
               className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-sm text-on-surface focus:ring-0 outline-none resize-y"
               placeholder={summarizing ? "Generating summary..." : "⌘+Enter to post"}
@@ -981,7 +991,10 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
             <textarea
               value={explainDraft}
               onChange={(e) => setExplainDraft(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); postExplain(); } }}
+              onKeyDown={(e) => {
+                if (e.key === "Tab" && e.shiftKey) { e.preventDefault(); setExplainTab("preview"); return; }
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); postExplain(); }
+              }}
               rows={8}
               className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-sm text-on-surface focus:ring-0 outline-none resize-y"
               placeholder={explaining ? "Generating explanation..." : "⌘+Enter to post"}
@@ -1018,7 +1031,10 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
             <button type="button" onClick={() => setTab("preview")} className={`inline-flex items-center gap-sm px-lg py-sm font-sora text-xs uppercase tracking-widest border-b-2 transition-colors ${tab === "preview" ? "border-primary text-primary" : "border-transparent text-on-surface-muted hover:text-on-surface"}`}><Eye className="w-3 h-3" /> Preview</button>
           </div>
           {tab === "write" ? (
-            <textarea value={body} onChange={(e) => setBody(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); (e.currentTarget as HTMLTextAreaElement).form?.requestSubmit(); } }} placeholder="Write a comment... (markdown supported) — ⌘+Enter to post" rows={5} className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-on-surface placeholder:text-on-surface-muted focus:ring-0 outline-none resize-y" />
+            <textarea value={body} onChange={(e) => setBody(e.target.value)} onKeyDown={(e) => {
+              if (e.key === "Tab" && e.shiftKey) { e.preventDefault(); setTab("preview"); return; }
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); (e.currentTarget as HTMLTextAreaElement).form?.requestSubmit(); }
+            }} placeholder="Write a comment... (markdown supported) — ⌘+Enter to post" rows={5} className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-on-surface placeholder:text-on-surface-muted focus:ring-0 outline-none resize-y" />
           ) : (
             <div className="px-xl py-md min-h-[120px]">
               {body.trim()

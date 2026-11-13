@@ -724,7 +724,9 @@ export default function InlineHighlights({
               <span className="font-sora text-[10px] text-brand uppercase tracking-widest pr-sm">{inlineAiLoading === comment.id ? "Generating..." : "AI Draft"}</span>
             </div>
             {(inlineAiDraftTabs.get(comment.id) || "write") === "write" ? (
-              <textarea value={inlineAiDrafts.get(comment.id) || ""} onChange={e => { setInlineAiDrafts(prev => { const n = new Map(prev); n.set(comment.id, e.target.value); return n; }); }}
+              <textarea value={inlineAiDrafts.get(comment.id) || ""}
+                onChange={e => { setInlineAiDrafts(prev => { const n = new Map(prev); n.set(comment.id, e.target.value); return n; }); }}
+                onKeyDown={(e) => { if (e.key === "Tab" && e.shiftKey) { e.preventDefault(); setInlineAiDraftTabs(prev => { const n = new Map(prev); n.set(comment.id, "preview"); return n; }); } }}
                 rows={4} className="w-full bg-transparent border-0 px-md py-sm font-dm-sans text-xs text-on-surface focus:ring-0 outline-none resize-y thin-scrollbar" placeholder={inlineAiLoading === comment.id ? "Waiting for response..." : ""} />
             ) : (
               <div className="px-md py-sm min-h-[80px]">{inlineAiDrafts.get(comment.id)?.trim()

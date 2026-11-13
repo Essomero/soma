@@ -258,6 +258,24 @@
   .prose li > ul, .prose li > ol {
     @apply mt-xs mb-0;
   }
+
+  /* ── Lists in story-prose (notes + stories) ────────
+     Tailwind preflight removes list-style from all ol/ul. The .prose
+     class restores it; .story-prose must do the same so saved note
+     content (rendered through ContentBlocks without .prose) shows
+     numbers and bullets correctly. */
+  .story-prose ul, .story-prose ol {
+    @apply mb-md pl-lg;
+  }
+  .story-prose ul { @apply list-disc; }
+  .story-prose ol { @apply list-decimal; }
+  .story-prose li {
+    @apply mb-xs leading-relaxed;
+  }
+  .story-prose li > ul, .story-prose li > ol {
+    @apply mt-xs mb-0;
+  }
+
   .prose blockquote {
     @apply border-l-2 border-brand/40 pl-md my-md text-on-surface-muted italic;
   }

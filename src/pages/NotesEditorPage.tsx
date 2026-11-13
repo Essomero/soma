@@ -6,6 +6,7 @@ import AccentBar from "@/components/ui/AccentBar";
 import MarkdownHtml from "@/components/ui/MarkdownHtml";
 import { mdBlock } from "@/lib/markdown";
 import { createNote, fetchNote, updateNote } from "@/lib/notes";
+import { DEFAULT_MODEL_ID, readModelPref } from "@/lib/modelPref";
 
 const PREVIEW_PLACEHOLDER = `Start with a **bold idea** and let the notes flow:
 
@@ -26,17 +27,77 @@ export default function NotesEditorPage() {
   const navigate = useNavigate();
 
   const titleRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+  // Cursor position to restore after React commits a Tab insertion
+  const cursorRef = useRef<number | null>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [tab, setTab] = useState<"write" | "preview">("write");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(isEdit);
   const [error, setError] = useState("");
+  const [titleManuallyEdited, setTitleManuallyEdited] = useState(false);
+  const [generatingTitle, setGeneratingTitle] = useState(false);
 
-  // Focus the title field on mount
+  // Focus the content textarea on mount (create mode) so the user can start
+  // typing a note right away — the title gets drafted automatically.
   useEffect(() => {
-    titleRef.current?.focus();
-  }, []);
+    if (!isEdit) contentRef.current?.focus();
+  }, [isEdit]);
+
+  // ── Auto-title: draft a title from content as the user types ───────────
+  // Only in create mode and only while the user hasn't touched the title.
+  useEffect(() => {
+    if (isEdit || titleManuallyEdited) return;
+    const trimmed = content.trim();
+    if (!trimmed) { setTitle(""); return; }
+
+    // Debounce 1.5s after the user stops typing
+    const timer = setTimeout(async () => {
+      // 1. Try AI
+      const aiTitle = await tryAiTitle(trimmed);
+      if (aiTitle) { setTitle(aiTitle); return; }
+
+      // 2. Fallback: first heading or first line, truncated to ~60 chars
+      const firstHeading = trimmed.match(/^#{1,6}\s+(.+)$/m);
+      const raw = (firstHeading?.[1] || trimmed.split('\n')[0]).replace(/^[#*\s>]+/, '').trim();
+      if (!raw) return;
+      setTitle(raw.length <= 80 ? raw : raw.slice(0, 77) + '...');
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [content, isEdit, titleManuallyEdited]);
+
+  async function tryAiTitle(contentSlice: string): Promise<string | null> {
+    setGeneratingTitle(true);
+    const model = readModelPref() || DEFAULT_MODEL_ID;
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model,
+          stream: false,
+          max_tokens: 50,
+          systemPrompt: "Generate a concise note title (max 8 words, plain text, no quotes). Return ONLY the title.",
+          userMessage: contentSlice.slice(0, 2000),
+        }),
+      });
+      if (!res.ok) {
+        console.warn("[auto-title] API returned", res.status);
+        return null;
+      }
+      const data = await res.json();
+      // /api/chat returns { reply: "..." } for non-streaming non-Gemini
+      const text = data?.reply?.trim() || "";
+      return (text && text.length <= 120) ? text.replace(/^["']+|["']+$/g, "") : null;
+    } catch (e) {
+      console.warn("[auto-title] fetch failed", e);
+      return null;
+    } finally {
+      setGeneratingTitle(false);
+    }
+  }
 
   // Edit mode: prefill from the stored article
   useEffect(() => {
@@ -68,11 +129,54 @@ export default function NotesEditorPage() {
         const created = await createNote({ title: t, content });
         navigate(`/notes/${created.slug}`, { replace: true });
       }
-    } catch (e: any) {
-      setError(e?.message || "Couldn't save the note.");
+    } catch (e: unknown) {
+      const msg = e && typeof e === "object" && "message" in e ? String(e.message) : "Couldn't save the note.";
+      setError(msg);
       setSaving(false);
     }
   }, [title, content, saving, isEdit, slug, navigate]);
+
+  // ── Keyboard shortcuts ─────────────────────────────────
+  // Cmd/Ctrl+Enter or Cmd/Ctrl+S → save.
+  // Tab in the textarea → insert 2 spaces instead of moving focus.
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+      if (e.key === "Enter" || e.key === "s") {
+        e.preventDefault();
+        handleSave();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handleSave]);
+
+  // Restore cursor after React commits a Tab insertion
+  useEffect(() => {
+    if (cursorRef.current !== null && contentRef.current) {
+      contentRef.current.selectionStart = cursorRef.current;
+      contentRef.current.selectionEnd = cursorRef.current;
+      cursorRef.current = null;
+    }
+  });
+
+  function handleTextareaKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Tab" && e.shiftKey) {
+      e.preventDefault();
+      setTab("preview");
+      return;
+    }
+    if (e.key === "Tab") {
+      e.preventDefault();
+      const ta = e.currentTarget;
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      const newValue = content.slice(0, start) + "  " + content.slice(end);
+      cursorRef.current = start + 2;
+      setContent(newValue);
+    }
+  }
 
   if (loading) {
     return (
@@ -92,7 +196,7 @@ export default function NotesEditorPage() {
               // NOTES : {isEdit ? "EDIT NOTE" : "NEW NOTE"}
             </p>
             <h1 className="font-sora text-headline-md text-on-surface">
-              {isEdit ? "Edit your note" : "Write a study note"}
+              {isEdit ? "Edit your note" : "Write a note"}
             </h1>
           </div>
           <Link
@@ -106,18 +210,23 @@ export default function NotesEditorPage() {
 
       <div className="space-y-lg">
         {/* Title */}
-        <div>
+        <div className="relative">
           <label className="font-sora text-metadata-tag text-on-surface-muted uppercase tracking-widest mb-xs block">
             Title <span className="text-error">*</span>
           </label>
-          <input
-            ref={titleRef}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Note title"
-            maxLength={120}
-            className="w-full bg-transparent font-sora text-2xl md:text-headline-md text-on-surface placeholder:text-on-surface-muted focus:outline-none border-0 border-b border-border-default pb-md focus:border-primary/50 transition-colors"
-          />
+          <div className="relative">
+            <input
+              ref={titleRef}
+              value={title}
+              onChange={(e) => { setTitle(e.target.value); setTitleManuallyEdited(true); }}
+              placeholder={generatingTitle ? "Generating..." : "Note title"}
+              maxLength={120}
+              className="w-full bg-transparent font-sora text-2xl md:text-headline-md text-on-surface placeholder:text-on-surface-muted/40 focus:outline-none border-0 border-b border-border-default pb-md focus:border-primary/50 transition-colors"
+            />
+            {generatingTitle && (
+              <Loader2 className="w-4 h-4 text-on-surface-muted animate-spin absolute right-0 bottom-3" />
+            )}
+          </div>
         </div>
 
         {/* Editor card */}
@@ -148,8 +257,10 @@ export default function NotesEditorPage() {
           {/* Body */}
           {tab === "write" ? (
             <textarea
+              ref={contentRef}
               value={content}
               onChange={(e) => setContent(e.target.value)}
+              onKeyDown={handleTextareaKeyDown}
               placeholder={PREVIEW_PLACEHOLDER}
               rows={24}
               className="w-full bg-transparent border-0 px-lg py-md font-dm-sans text-sm text-on-surface placeholder:text-on-surface-muted/50 focus:ring-0 outline-none resize-y thin-scrollbar"
