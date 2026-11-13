@@ -26,17 +26,69 @@ export default function NotesEditorPage() {
   const navigate = useNavigate();
 
   const titleRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [tab, setTab] = useState<"write" | "preview">("write");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(isEdit);
   const [error, setError] = useState("");
+  const [titleManuallyEdited, setTitleManuallyEdited] = useState(false);
+  const [generatingTitle, setGeneratingTitle] = useState(false);
 
-  // Focus the title field on mount
+  // Focus the content textarea on mount (create mode) so the user can start
+  // typing a note right away — the title gets drafted automatically.
   useEffect(() => {
-    titleRef.current?.focus();
-  }, []);
+    if (!isEdit) contentRef.current?.focus();
+  }, [isEdit]);
+
+  // ── Auto-title: draft a title from content as the user types ───────────
+  // Only in create mode and only while the user hasn't touched the title.
+  useEffect(() => {
+    if (isEdit || titleManuallyEdited) return;
+    const trimmed = content.trim();
+    if (!trimmed) { setTitle(""); return; }
+
+    // Debounce 1.5s after the user stops typing
+    const timer = setTimeout(async () => {
+      // 1. Try AI
+      const aiTitle = await tryAiTitle(trimmed);
+      if (aiTitle) { setTitle(aiTitle); return; }
+
+      // 2. Fallback: first heading or first line, truncated to ~60 chars
+      const firstHeading = trimmed.match(/^#{1,6}\s+(.+)$/m);
+      const raw = (firstHeading?.[1] || trimmed.split('\n')[0]).replace(/^[#*\s>]+/, '').trim();
+      if (!raw) return;
+      setTitle(raw.length <= 80 ? raw : raw.slice(0, 77) + '...');
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [content, isEdit, titleManuallyEdited]);
+
+  async function tryAiTitle(contentSlice: string): Promise<string | null> {
+    setGeneratingTitle(true);
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "deepseek-flash",
+          stream: false,
+          max_tokens: 50,
+          systemPrompt: "Generate a concise note title (max 8 words, plain text, no quotes). Return ONLY the title.",
+          userMessage: contentSlice.slice(0, 2000),
+        }),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const text = data?.choices?.[0]?.message?.content?.trim() || data?.reply?.trim() || "";
+      return (text && text.length <= 120) ? text.replace(/^["']|["']$/g, "") : null;
+    } catch {
+      return null;
+    } finally {
+      setGeneratingTitle(false);
+    }
+  }
 
   // Edit mode: prefill from the stored article
   useEffect(() => {
@@ -106,18 +158,23 @@ export default function NotesEditorPage() {
 
       <div className="space-y-lg">
         {/* Title */}
-        <div>
+        <div className="relative">
           <label className="font-sora text-metadata-tag text-on-surface-muted uppercase tracking-widest mb-xs block">
             Title <span className="text-error">*</span>
           </label>
-          <input
-            ref={titleRef}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Note title"
-            maxLength={120}
-            className="w-full bg-transparent font-sora text-2xl md:text-headline-md text-on-surface placeholder:text-on-surface-muted focus:outline-none border-0 border-b border-border-default pb-md focus:border-primary/50 transition-colors"
-          />
+          <div className="relative">
+            <input
+              ref={titleRef}
+              value={title}
+              onChange={(e) => { setTitle(e.target.value); setTitleManuallyEdited(true); }}
+              placeholder={generatingTitle ? "Generating..." : "Note title"}
+              maxLength={120}
+              className="w-full bg-transparent font-sora text-2xl md:text-headline-md text-on-surface placeholder:text-on-surface-muted/40 focus:outline-none border-0 border-b border-border-default pb-md focus:border-primary/50 transition-colors"
+            />
+            {generatingTitle && (
+              <Loader2 className="w-4 h-4 text-on-surface-muted animate-spin absolute right-0 bottom-3" />
+            )}
+          </div>
         </div>
 
         {/* Editor card */}
@@ -148,6 +205,7 @@ export default function NotesEditorPage() {
           {/* Body */}
           {tab === "write" ? (
             <textarea
+              ref={contentRef}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder={PREVIEW_PLACEHOLDER}
