@@ -6,6 +6,7 @@ import AccentBar from "@/components/ui/AccentBar";
 import MarkdownHtml from "@/components/ui/MarkdownHtml";
 import { mdBlock } from "@/lib/markdown";
 import { createNote, fetchNote, updateNote } from "@/lib/notes";
+import { DEFAULT_MODEL_ID, readModelPref } from "@/lib/modelPref";
 
 const PREVIEW_PLACEHOLDER = `Start with a **bold idea** and let the notes flow:
 
@@ -67,23 +68,29 @@ export default function NotesEditorPage() {
 
   async function tryAiTitle(contentSlice: string): Promise<string | null> {
     setGeneratingTitle(true);
+    const model = readModelPref() || DEFAULT_MODEL_ID;
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "deepseek-flash",
+          model,
           stream: false,
           max_tokens: 50,
           systemPrompt: "Generate a concise note title (max 8 words, plain text, no quotes). Return ONLY the title.",
           userMessage: contentSlice.slice(0, 2000),
         }),
       });
-      if (!res.ok) return null;
+      if (!res.ok) {
+        console.warn("[auto-title] API returned", res.status);
+        return null;
+      }
       const data = await res.json();
-      const text = data?.choices?.[0]?.message?.content?.trim() || data?.reply?.trim() || "";
-      return (text && text.length <= 120) ? text.replace(/^["']|["']$/g, "") : null;
-    } catch {
+      // /api/chat returns { reply: "..." } for non-streaming non-Gemini
+      const text = data?.reply?.trim() || "";
+      return (text && text.length <= 120) ? text.replace(/^["']+|["']+$/g, "") : null;
+    } catch (e) {
+      console.warn("[auto-title] fetch failed", e);
       return null;
     } finally {
       setGeneratingTitle(false);
