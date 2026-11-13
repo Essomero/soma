@@ -151,6 +151,11 @@ export default function NotesEditorPage() {
   }, [handleSave]);
 
   function handleTextareaKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Tab" && e.shiftKey) {
+      e.preventDefault();
+      setTab("preview");
+      return;
+    }
     if (e.key === "Tab") {
       e.preventDefault();
       const ta = e.currentTarget;

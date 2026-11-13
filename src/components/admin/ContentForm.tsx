@@ -4,6 +4,7 @@ import BlockEditor from "./BlockEditor";
 import ContentPreview from "./ContentPreview";
 import CoverImagePicker from "./CoverImagePicker";
 import type { ContentBlock } from "@/types";
+import { useShiftTabToggle } from "@/hooks/useShiftTabToggle";
 import {
   CONTENT_TYPE_LABELS,
   CONTENT_TYPES,
@@ -184,6 +185,7 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
   const [status, setStatus] = useState<"private" | "published">("private");
   const [reasoning, setReasoning] = useState("");
   const [mode, setMode] = useState<"edit" | "preview">("edit");
+  const { onKeyDown } = useShiftTabToggle(mode, setMode, { writeValue: "edit" });
   const [aiEdited, setAiEdited] = useState(false);
   // Shared drag state for array editors (sections, items, etc.)
   const [dragFrom, setDragFrom] = useState<number | null>(null);
@@ -692,7 +694,7 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
   // ── Render ──
 
   return (
-    <div className="space-y-xl">
+    <div onKeyDown={onKeyDown} className="space-y-xl">
       {/* Sticky save bar : identical in edit and preview. The toggle below
           only swaps the content pane, save works from either mode. */}
       <div className="sticky top-0 z-20 bg-surface/95 backdrop-blur border border-border-default px-md py-sm flex flex-wrap items-center justify-between gap-md">
