@@ -92,7 +92,7 @@ export default function NotesEditorPage() {
               // NOTES : {isEdit ? "EDIT NOTE" : "NEW NOTE"}
             </p>
             <h1 className="font-sora text-headline-md text-on-surface">
-              {isEdit ? "Edit your note" : "Write a study note"}
+              {isEdit ? "Edit your note" : "Write a note"}
             </h1>
           </div>
           <Link

@@ -90,7 +90,7 @@ export default function Header() {
         <div className="flex items-center gap-sm md:gap-md">
           {authed && (
             <Link
-              to="/admin/new"
+              to="/notes/new"
               className="inline-flex items-center gap-sm px-xl py-md bg-primary text-on-primary font-sora text-sm uppercase tracking-widest hover:bg-primary-hover transition-colors"
             >
               <Plus className="w-4 h-4" />
