@@ -147,6 +147,8 @@ export async function migrateContentItemsIfNeeded(db: ContentDatabase) {
       }
       await db.execute("DROP TABLE content_items");
       await db.execute("ALTER TABLE content_items_new RENAME TO content_items");
+      // Force FTS re-index on next API cold start (matches api/content.js migration 001).
+      try { await db.execute("DROP TABLE IF EXISTS content_fts"); } catch {}
     }
 
     // Step 2: add tenant_id if the table has (type,slug) PK but no tenant_id column.
