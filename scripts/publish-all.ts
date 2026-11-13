@@ -119,16 +119,16 @@ async function main() {
       const now = new Date().toISOString();
       // Insert if missing (never overwrite status), then always update fields.
       await db.execute({
-        sql: `INSERT INTO content_items (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
-              VALUES (?, ?, 'private', ?, ?, ?, ?, ?, ?) ON CONFLICT(type, slug) DO NOTHING`,
+        sql: `INSERT INTO content_items (tenant_id, slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
+              VALUES ('default', ?, ?, 'private', ?, ?, ?, ?, ?, ?) ON CONFLICT(tenant_id, type, slug) DO NOTHING`,
         args: [e.slug, type, e.title, e.excerpt, JSON.stringify(e.body), JSON.stringify(e.meta), e.position, now],
       });
       await db.execute({
         sql: `UPDATE content_items SET type = ?, title = ?, excerpt = ?, body_json = ?, meta_json = ?, position = ?, updated_at = ?
-              WHERE type = ? AND slug = ?`,
+              WHERE tenant_id = 'default' AND type = ? AND slug = ?`,
         args: [type, e.title, e.excerpt, JSON.stringify(e.body), JSON.stringify(e.meta), e.position, now, type, e.slug],
       });
-      const cur = await db.execute({ sql: "SELECT status FROM content_items WHERE type = ? AND slug = ?", args: [type, e.slug] });
+      const cur = await db.execute({ sql: "SELECT status FROM content_items WHERE tenant_id = 'default' AND type = ? AND slug = ?", args: [type, e.slug] });
       if (cur.rows[0]?.status === "published") published++;
       else privateSlugs.push(`${type}:${e.slug}`);
     }

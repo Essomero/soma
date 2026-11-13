@@ -556,9 +556,9 @@ async function main() {
       await db.execute({ sql: "UPDATE content_items SET meta_json = '{}' WHERE type = ?", args: [b.type] });
     }
     await db.execute({
-      sql: `INSERT INTO content_items (slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(type, slug) DO UPDATE SET status=excluded.status,
+      sql: `INSERT INTO content_items (tenant_id, slug, type, status, title, excerpt, body_json, meta_json, position, updated_at)
+            VALUES ('default', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(tenant_id, type, slug) DO UPDATE SET status=excluded.status,
               title = excluded.title, excerpt = excluded.excerpt, body_json = excluded.body_json,
               meta_json = excluded.meta_json, position = excluded.position, updated_at = excluded.updated_at`,
       args: [b.slug, b.type, effectiveStatus, title, excerpt, JSON.stringify(b.body), JSON.stringify(meta), position, now],

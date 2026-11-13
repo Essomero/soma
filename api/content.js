@@ -160,8 +160,16 @@ const MIGRATIONS = [
 ];
 
 let _migrationsEnsured = false;
+let _migrationsLock = Promise.resolve();
 async function runMigrations() {
   if (_migrationsEnsured) return;
+  // Serialize concurrent calls — _migrationsEnsured race + concurrent
+  // DROP+CREATE on content_items can lose data (migration 002).
+  let done;
+  const prev = _migrationsLock;
+  _migrationsLock = new Promise((r) => { done = r; });
+  await prev;
+  if (_migrationsEnsured) { done(); return; }
   try {
     await dbQuery(`CREATE TABLE IF NOT EXISTS _migrations (
       id TEXT PRIMARY KEY,
@@ -170,26 +178,31 @@ async function runMigrations() {
     )`, []);
   } catch (e) {
     console.error("[migrate] _migrations create failed", e && e.message);
+    done();
     return;
   }
   _migrationsEnsured = true;
-  let applied = new Set();
   try {
-    const rows = await dbQuery("SELECT id FROM _migrations", []);
-    for (const r of rows || []) if (r.id) applied.add(r.id);
-  } catch {}
-  for (const m of MIGRATIONS) {
-    if (applied.has(m.id)) continue;
-    console.log(`[migrate] applying ${m.id}: ${m.description}`);
+    let applied = new Set();
     try {
-      await m.up(dbQuery);
+      const rows = await dbQuery("SELECT id FROM _migrations", []);
+      for (const r of rows || []) if (r.id) applied.add(r.id);
+    } catch {}
+    for (const m of MIGRATIONS) {
+      if (applied.has(m.id)) continue;
+      console.log(`[migrate] applying ${m.id}: ${m.description}`);
       try {
-        await dbQuery("INSERT OR IGNORE INTO _migrations (id, description) VALUES (?, ?)", [m.id, m.description]);
-      } catch {}
-      console.log(`[migrate] applied ${m.id}`);
-    } catch (e) {
-      console.error(`[migrate] failed ${m.id}`, e && e.message);
+        await m.up(dbQuery);
+        try {
+          await dbQuery("INSERT OR IGNORE INTO _migrations (id, description) VALUES (?, ?)", [m.id, m.description]);
+        } catch {}
+        console.log(`[migrate] applied ${m.id}`);
+      } catch (e) {
+        console.error(`[migrate] failed ${m.id}`, e && e.message);
+      }
     }
+  } finally {
+    done();
   }
 }
 
