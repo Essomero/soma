@@ -127,11 +127,44 @@ export default function NotesEditorPage() {
         const created = await createNote({ title: t, content });
         navigate(`/notes/${created.slug}`, { replace: true });
       }
-    } catch (e: any) {
-      setError(e?.message || "Couldn't save the note.");
+    } catch (e: unknown) {
+      const msg = e && typeof e === "object" && "message" in e ? String(e.message) : "Couldn't save the note.";
+      setError(msg);
       setSaving(false);
     }
   }, [title, content, saving, isEdit, slug, navigate]);
+
+  // ── Keyboard shortcuts ─────────────────────────────────
+  // Cmd/Ctrl+Enter or Cmd/Ctrl+S → save.
+  // Tab in the textarea → insert 2 spaces instead of moving focus.
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+      if (e.key === "Enter" || e.key === "s") {
+        e.preventDefault();
+        handleSave();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handleSave]);
+
+  function handleTextareaKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      const ta = e.currentTarget;
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      const before = ta.value.slice(0, start);
+      const after = ta.value.slice(end);
+      ta.value = before + "  " + after;
+      // React needs the synthetic event; set the cursor after the inserted
+      // spaces via the native element and then fire the change.
+      ta.selectionStart = ta.selectionEnd = start + 2;
+      setContent(ta.value);
+    }
+  }
 
   if (loading) {
     return (
@@ -215,6 +248,7 @@ export default function NotesEditorPage() {
               ref={contentRef}
               value={content}
               onChange={(e) => setContent(e.target.value)}
+              onKeyDown={handleTextareaKeyDown}
               placeholder={PREVIEW_PLACEHOLDER}
               rows={24}
               className="w-full bg-transparent border-0 px-lg py-md font-dm-sans text-sm text-on-surface placeholder:text-on-surface-muted/50 focus:ring-0 outline-none resize-y thin-scrollbar"
