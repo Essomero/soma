@@ -275,7 +275,7 @@ export default function AdminDashboardPage() {
 
       {/* Voice Profiles */}
       <div className="mb-xl p-lg bg-surface border border-border-default">
-        <VoiceProfileList refreshKey={voiceProfileRefreshKey} />
+        <VoiceProfileList />
       </div>
 
       {/* Filters */}

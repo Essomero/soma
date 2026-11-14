@@ -4,12 +4,7 @@ import { useScrollLock } from "@/lib/useScrollLock";
 import VoiceProfileCard, { type VoiceProfileData } from "./VoiceProfileCard";
 import VoiceProfileForm from "./VoiceProfileForm";
 
-interface VoiceProfileListProps {
-  /** External trigger to refresh (incremented by parent on content change). */
-  refreshKey?: number;
-}
-
-export default function VoiceProfileList({ refreshKey }: VoiceProfileListProps) {
+export default function VoiceProfileList() {
   const [profiles, setProfiles] = useState<VoiceProfileData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -34,7 +29,7 @@ export default function VoiceProfileList({ refreshKey }: VoiceProfileListProps) 
 
   useEffect(() => {
     fetchProfiles();
-  }, [fetchProfiles, refreshKey]);
+  }, [fetchProfiles]);
 
   const handleSave = async (data: { name: string; description: string; samples: string[] }, analyze: boolean) => {
     if (editingProfile) {
