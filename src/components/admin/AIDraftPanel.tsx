@@ -3,7 +3,7 @@ import {
   Loader2, Sparkles, ArrowRight, AlertCircle,
   ChevronDown, Lightbulb, FileText, Link,
 } from "lucide-react";
-import { buildSystemPrompt, buildFormatPrompt } from "@/lib/admin-prompts";
+import { buildSystemPrompt, buildFormatPrompt, buildMetaPrompt } from "@/lib/admin-prompts";
 import { FALLBACK_COVER } from "@/lib/utils";
 import { ModelPicker } from "@/components/ui/ModelPicker";
 import { resolveDefaultModel } from "@/lib/modelPref";
@@ -226,7 +226,7 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
     }
   };
 
-  // ── Format Paste (LLM with format-only prompt) ──────────────────────
+  // ── Format Paste (two-phase: deterministic body + LLM metadata) ────
 
   const formatPaste = async () => {
     const content = input.trim();
@@ -243,8 +243,7 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
     try {
       const contentType = (defaultType || "story") as ContentType;
 
-      // If we have a URL but no content, fetch the URL content first via
-      // the import endpoint, then format.
+      // If we have a URL but no content, fetch the URL content first
       let formatContent = content;
       let formatUrl = srcUrl;
       if (srcUrl && !content) {
@@ -264,168 +263,89 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
         throw new Error("No content to format.");
       }
 
-      const parts = [
-        `Format this content as a Soma ${defaultType || "story"} manuscript.`,
-        `Preserve every character exactly as written.`,
-      ];
-      if (formatUrl) {
-        parts.push(`Source URL: ${formatUrl}`);
-      }
-      parts.push(`Content to format:`, `---`, formatContent.trim(), `---`);
-      const userMessage = parts.join("\n");
-
-      const res = await fetch("/api/chat", {
+      // ── Phase 1: Deterministic body conversion ──────────────────────
+      setReasoning("Parsing content...");
+      const bodyRes = await fetch("/api/format-paste", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          systemPrompt: buildFormatPrompt(contentType),
-          userMessage,
+          content: formatContent,
+          url: formatUrl || undefined,
+          type: defaultType || "story",
+        }),
+        signal: AbortSignal.timeout(30_000),
+      });
+      const bodyData = await bodyRes.json();
+      if (!bodyRes.ok) throw new Error(bodyData.error || "Body conversion failed");
+
+      // ── Phase 2: LLM metadata extraction (preview only) ────────────
+      setReasoning("Extracting metadata...");
+      const preview = formatContent.trim().slice(0, 3000);
+      const metaRes = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemPrompt: buildMetaPrompt(),
+          userMessage: `Extract metadata from this content preview:\n\n---\n${preview}\n---\n\n${formatUrl ? `\nSource URL: ${formatUrl}` : ""}`,
           model: selectedModel,
           provider: selectedProvider,
-          stream: true,
-          max_tokens: 24000,
+          stream: false,
+          max_tokens: 2000,
         }),
         signal: controller.signal,
       });
 
-      if (!res.ok) {
-        const errText = await res.text().catch(() => "");
-        const hint = errText.includes("not configured")
-          ? `${selectedProvider} key not configured — pick another model from the dropdown.`
-          : `AI service error (${res.status}): ${errText}`;
-        throw new Error(hint);
+      let meta = { title: "", excerpt: "", tags: ["Imported"] as string[], sources: [] as { name: string; url: string }[], image: "", imageAlt: "" };
+      if (metaRes.ok) {
+        const metaBody = await metaRes.json();
+        const metaText = typeof metaBody === "string" ? metaBody : metaBody?.choices?.[0]?.message?.content || metaBody?.content || "";
+        const jsonStart = metaText.indexOf("{");
+        const jsonEnd = metaText.lastIndexOf("}");
+        if (jsonStart >= 0 && jsonEnd > jsonStart) {
+          try { meta = JSON.parse(metaText.slice(jsonStart, jsonEnd + 1)); } catch {}
+        }
       }
 
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error("No response body");
+      // ── Phase 3: Merge ──────────────────────────────────────────────
+      const draft: AIDraft = {
+        type: contentType,
+        reasoning: "Formatted from source content",
+        title: meta.title || bodyData.title || "Untitled",
+        excerpt: meta.excerpt || bodyData.excerpt || "",
+        category: "Imported",
+        author: { name: "Imported" },
+        image: /^https?:\/\//i.test(meta.image || "") ? meta.image! : (bodyData.image || FALLBACK_COVER),
+        imageAlt: meta.imageAlt || bodyData.imageAlt || "Content cover image",
+        tags: meta.tags?.length ? meta.tags : ["Imported"],
+        topics: [],
+        intro: "",
+        sources: meta.sources?.length
+          ? meta.sources.map((s: { name?: string; url?: string }) => ({ type: "web", title: s.name || "", url: s.url || "" }))
+          : formatUrl ? [{ type: "web", title: "Imported", url: formatUrl }] : [],
+      };
 
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let accumulated = "";
-      let accumulatedReasoning = "";
-      let previewed = false;
+      if (bodyData.body) {
+        draft.body = bodyData.body;
+      } else if (bodyData.sections) {
+        draft.sections = bodyData.sections;
+      }
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || !trimmed.startsWith("data: ")) continue;
-          const data = trimmed.slice(6);
-          if (data === "[DONE]") continue;
-          try {
-            const parsed = JSON.parse(data);
-            const delta = parsed.choices?.[0]?.delta;
-            const rc = delta?.reasoning_content;
-            if (rc) {
-              accumulatedReasoning += rc;
-              setReasoning(accumulatedReasoning);
-            }
-            const content = delta?.content || "";
-            accumulated += content;
-            if (!previewed) {
-              const js = accumulated.indexOf("{");
-              const je = accumulated.lastIndexOf("}");
-              if (js >= 0 && je > js) {
-                try {
-                  const partial = JSON.parse(accumulated.slice(js, je + 1));
-                  if (partial.type || partial.title) {
-                    setPreview({ type: partial.type, title: partial.title });
-                    previewed = true;
-                  }
-                } catch {
-                  // incomplete JSON
-                }
-              }
-            }
-          } catch {
-            // incomplete SSE frame
+      // Post-process: group numbered list items with their sub-paragraphs
+      if (draft.body?.length) {
+        const grouped: string[] = [];
+        let current: string[] = [];
+        for (const entry of draft.body) {
+          if (/^\d+\.\s/.test(entry)) {
+            if (current.length > 0) grouped.push(current.join("\n\n"));
+            current = [entry];
+          } else if (current.length > 0) {
+            current.push(entry);
+          } else {
+            grouped.push(entry);
           }
         }
-      }
-
-      // Parse final accumulated JSON with fallback to deterministic library
-      // for very long content where the LLM runs out of output budget.
-      let draft: AIDraft;
-      let llmFailed = false;
-
-      try {
-        const jsonStart = accumulated.indexOf("{");
-        const jsonEnd = accumulated.lastIndexOf("}");
-        if (jsonStart === -1 || jsonEnd === -1) throw new Error("No JSON found");
-        const jsonStr = accumulated.slice(jsonStart, jsonEnd + 1);
-        draft = JSON.parse(jsonStr) as AIDraft;
-        if (!draft.title) throw new Error("Missing title");
-      } catch {
-        // LLM output was truncated or malformed — fall back to deterministic
-        // library for the body content, keep any metadata the LLM produced.
-        llmFailed = true;
-        const fallbackRes = await fetch("/api/format-paste", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            content: formatContent,
-            url: formatUrl,
-            type: defaultType || "story",
-          }),
-          signal: AbortSignal.timeout(30_000),
-        });
-        const fallbackData = await fallbackRes.json();
-        if (!fallbackRes.ok) throw new Error(fallbackData.error || "Format failed");
-
-        draft = {
-          type: contentType,
-          reasoning: "Content too long for LLM formatting — body from deterministic library. Edit metadata as needed.",
-          title: fallbackData.title || "Untitled",
-          excerpt: fallbackData.excerpt || "",
-          category: "Imported",
-          author: { name: "Imported" },
-          image: fallbackData.image || FALLBACK_COVER,
-          imageAlt: fallbackData.imageAlt || "Content cover image",
-          tags: ["Imported"],
-          topics: [],
-          intro: "",
-          body: fallbackData.body || [],
-          sources: formatUrl ? [{ type: "web", title: "Imported", url: formatUrl }] : [],
-        };
-      }
-
-      draft.type = contentType;
-
-      if (!llmFailed) {
-        // Clean up cover image
-        if (!/^https?:\/\//i.test(draft.image || "")) {
-          draft.image = FALLBACK_COVER;
-        }
-        if (!draft.imageAlt || draft.imageAlt.length > 80 || /^https?:\/\//i.test(draft.imageAlt)) {
-          draft.imageAlt = "Content cover image";
-        }
-
-        // If we fetched a URL, attach it as a source
-        if (formatUrl && !draft.sources?.length) {
-          draft.sources = [{ type: "web", title: "Imported", url: formatUrl }];
-        }
-
-        // Post-process: group numbered list items with their sub-paragraphs.
-        if (draft.body?.length) {
-          const grouped: string[] = [];
-          let current: string[] = [];
-          for (const entry of draft.body) {
-            if (/^\d+\.\s/.test(entry)) {
-              if (current.length > 0) grouped.push(current.join("\n\n"));
-              current = [entry];
-            } else if (current.length > 0) {
-              current.push(entry);
-            } else {
-              grouped.push(entry);
-            }
-          }
-          if (current.length > 0) grouped.push(current.join("\n\n"));
-          draft.body = grouped;
-        }
+        if (current.length > 0) grouped.push(current.join("\n\n"));
+        draft.body = grouped;
       }
 
       setStatus("done");

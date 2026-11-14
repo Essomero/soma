@@ -745,3 +745,23 @@ body: [
 - Set publishedAt (the form always sets this)
 - Add references not present in the source`;
 }
+
+/**
+ * Lightweight metadata-only prompt for Format Paste. The LLM never sees the
+ * full content — only a preview (first ~3000 chars). Body content is handled
+ * by the deterministic library; this prompt only extracts metadata.
+ */
+export function buildMetaPrompt(): string {
+  return `You are a metadata extractor for Soma. Given a preview of external content, extract the following fields.
+
+Rules:
+- title: A SHORT title (under 80 chars). Extract from the first heading or a prominent phrase at the start of the content. NEVER use a full sentence. NEVER use "Untitled".
+- excerpt: Plain text summary of the content, 100-200 chars. Different from the title. Skip metadata lines like Author/Date/Source.
+- tags: 3-5 meaningful tags extracted from the content. Use ["Imported"] if unclear.
+- sources: If the content was republished from a specific source (e.g. X/Twitter, a blog), include { name: string, url: string }. Empty array otherwise.
+- image: URL of the first image found in the content preview, or "".
+- imageAlt: Alt text of that image, or "".
+
+Output ONLY valid JSON:
+{ "title": "...", "excerpt": "...", "tags": ["..."], "sources": [...], "image": "...", "imageAlt": "..." }`;
+}
