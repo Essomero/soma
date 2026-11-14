@@ -57,22 +57,29 @@ async function main() {
   }
 
   if (!content && url) {
-    // Fetch from URL
-    const fetchUrl = url.includes("arxiv.org/abs/")
-      ? url.replace(/\/abs\/(.+)/, "/html/$1")
-      : url;
+    // Fetch from URL — use shared arXiv resolution
+    const { extractPlainText, extractMeta, resolveArxivUrl } = await import("../server/lib/extract-html.mjs");
+    const fetchUrl = resolveArxivUrl(url);
 
-    const resp = await fetch(fetchUrl, { redirect: "follow", signal: AbortSignal.timeout(30_000) });
+    let resp;
+    try {
+      resp = await fetch(fetchUrl, { redirect: "follow", signal: AbortSignal.timeout(30_000) });
+    } catch (fetchErr) {
+      const msg = fetchErr?.name === "AbortError"
+        ? `Request timed out after 30s: ${fetchUrl}`
+        : `Failed to fetch: ${fetchErr?.message || fetchErr}`;
+      console.error(msg);
+      process.exit(1);
+    }
     if (!resp.ok) {
       console.error(`Failed to fetch URL: HTTP ${resp.status}`);
       process.exit(1);
     }
 
-    const { extractPlainText, extractMeta, resolveArxivUrl } = await import("../server/lib/extract-html.mjs");
     const html = await resp.text();
     const meta = extractMeta(html);
     content = extractPlainText(html);
-    sourceUrl = resolveArxivUrl(url) || url;
+    sourceUrl = fetchUrl;
 
     if (!title && meta.title) {
       flags.title = meta.title;
