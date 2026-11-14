@@ -510,7 +510,7 @@ export default defineConfig(({ mode }) => {
             if (!req.url) return;
             const name = req.url.replace(/^\/api\//, "").split(/[\/?#]/)[0];
             if (["chat", "models", "format-paste", "import", "content"].includes(name)) {
-              return false; // false → skip proxy entirely
+              return req.url; // return path → Vite serves locally, skips proxy
             }
           },
         },

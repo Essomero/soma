@@ -42,25 +42,31 @@ export default async function handler(req, res) {
 
     // If URL provided, fetch it
     if (url && !content) {
-      const fetchUrl = url.includes("arxiv.org/abs/")
-        ? url.replace(/\/abs\/(.+)/, "/html/$1")
-        : url;
+      // Dynamically import extract-html for URL resolution + HTML→markdown
+      const { extractMeta, extractPlainText, resolveArxivUrl } = await import("../server/lib/extract-html.mjs");
+      const fetchUrl = resolveArxivUrl(url);
 
-      const resp = await fetch(fetchUrl, { redirect: "follow", signal: AbortSignal.timeout(30_000) });
+      let resp;
+      try {
+        resp = await fetch(fetchUrl, { redirect: "follow", signal: AbortSignal.timeout(30_000) });
+      } catch (fetchErr) {
+        const msg = fetchErr?.name === "AbortError"
+          ? `Request timed out after 30s: ${fetchUrl}`
+          : `Failed to fetch: ${fetchErr?.message || fetchErr}`;
+        res.status(502).json({ error: msg });
+        return;
+      }
       if (!resp.ok) {
         res.status(502).json({ error: `Failed to fetch URL: HTTP ${resp.status}` });
         return;
       }
 
-      // Dynamically import extract-html's Turndown service
-      const { extractMeta, extractPlainText, resolveArxivUrl } = await import("../server/lib/extract-html.mjs");
       const html = await resp.text();
       const meta = extractMeta(html);
       markdown = extractPlainText(html);
-      sourceUrl = resolveArxivUrl(url) || url;
+      sourceUrl = fetchUrl;
 
       if (!title && meta.title) {
-        // Will pass through to markdownToManuscript
         body.title = meta.title;
       }
     }
@@ -83,7 +89,7 @@ export default async function handler(req, res) {
       type,
       blocks: (ms.body?.length || 0) + (ms.sections?.reduce((a, s) => a + s.paragraphs.length, 0) || 0),
       hasSections: !!ms.sections,
-      wordCount: ms.body?.reduce((a, p) => a + p.split(/\s+/).filter(Boolean).length, 0) +
+      wordCount: (ms.body || []).reduce((a, p) => a + p.split(/\s+/).filter(Boolean).length, 0) +
         (ms.sections || []).reduce((a, s) =>
           a + s.paragraphs.reduce((pa, p) =>
             pa + (typeof p === "string" ? p : JSON.stringify(p)).split(/\s+/).filter(Boolean).length, 0

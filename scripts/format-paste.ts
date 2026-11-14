@@ -105,7 +105,7 @@ async function main() {
   const source = manuscriptToSource(ms);
   writeFileSync(filePath, `${source}\n`, "utf8");
 
-  const wordCount = ms.body?.reduce((a: number, p: string) => a + p.split(/\s+/).filter(Boolean).length, 0) +
+  const wordCount = (ms.body || []).reduce((a: number, p: string) => a + p.split(/\s+/).filter(Boolean).length, 0) +
     (ms.sections || []).reduce((a: number, s: { paragraphs: (string | object)[] }) =>
       a + s.paragraphs.reduce((pa: number, p: string | object) =>
         pa + (typeof p === "string" ? p : JSON.stringify(p)).split(/\s+/).filter(Boolean).length, 0
