@@ -293,7 +293,7 @@ export default function GuideContentPage() {
 
       {/* Sources : republished content attribution */}
       {content?.sources && content.sources.length > 0 && (
-        <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant">
+        <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant border-t border-border-default">
           <h2 className="font-sora text-headline-md text-on-surface mb-xl">Sources</h2>
           <div className="flex flex-wrap gap-md">
             {content.sources.map((s, i) => (

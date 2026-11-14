@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import ImmersiveHero from "@/components/sections/ImmersiveHero";
 import SidebarAbout from "@/components/sections/SidebarAbout";
 import ShareButtons from "@/components/ui/ShareButtons";
-import { contentToMarkdown } from "@/lib/markdown";
+import { contentToMarkdown, md } from "@/lib/markdown";
 import BentoCard from "@/components/cards/BentoCard";
 import PullQuote from "@/components/ui/PullQuote";
 import PrintButton from "@/components/ui/PrintButton";
@@ -294,16 +294,17 @@ export default function FeaturedArticlePage() {
             {row.references.map((ref, i) => (
               <a
                 key={i}
+                id={`ref-${i + 1}`}
                 href={ref.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-start gap-sm p-md bg-surface-container-low border border-border-default rounded-lg hover:border-primary/50 transition-colors group"
+                className="flex items-start gap-sm p-md bg-surface-container-low border border-border-default rounded-lg hover:border-primary/50 transition-colors group scroll-mt-32"
               >
                 <span className="font-sora text-xs text-on-surface-muted flex-shrink-0 mt-0.5">{i + 1}.</span>
                 <div>
                   <p className="font-sora text-sm text-on-surface group-hover:text-primary transition-colors">{ref.title}</p>
                   {ref.description && (
-                    <p className="font-dm-sans text-xs text-on-surface-muted mt-xs">{ref.description}</p>
+                    <p className="font-dm-sans text-xs text-on-surface-muted mt-xs" dangerouslySetInnerHTML={{ __html: md(ref.description) }} />
                   )}
                 </div>
               </a>

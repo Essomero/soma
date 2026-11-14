@@ -144,7 +144,11 @@ const STORY_FIELDS: FieldSchema[] = [
     { name: "title", type: "string", required: true, description: "Card title.", placeholder: "Shapes Over Names" },
     { name: "description", type: "markdown", required: true, description: "Card content." },
   ]},
-  { name: "references", type: "object[]", required: false, description: "Sources and further reading. Attribution for claims and ideas.", children: [
+  { name: "sources", type: "object[]", required: false, description: "Republished content origins. Populate when this content was first published elsewhere.", children: [
+    { name: "name", type: "string", required: true, description: "Publisher or platform name." },
+    { name: "url", type: "string", required: true, description: "URL of the original publication." },
+  ]},
+  { name: "references", type: "object[]", required: false, description: "Sources and further reading. REQUIRED when the story references external data, quotes, or factual claims.", constraints: "Each reference needs a title and a reachable URL. Description is optional.", children: [
     { name: "title", type: "string", required: true, description: "Reference title." },
     { name: "url", type: "string", required: true, description: "Reference URL." },
     { name: "description", type: "string", required: false, description: "Optional note about the reference." },
@@ -174,6 +178,10 @@ const GUIDE_FIELDS: FieldSchema[] = [
     { name: "label", type: "string", required: true, description: "Card label." },
     { name: "title", type: "string", required: true, description: "Card title." },
     { name: "description", type: "markdown", required: true, description: "Card content." },
+  ]},
+  { name: "sources", type: "object[]", required: false, description: "Republished content origins. Populate when this content was first published elsewhere.", children: [
+    { name: "name", type: "string", required: true, description: "Publisher or platform name." },
+    { name: "url", type: "string", required: true, description: "URL of the original publication." },
   ]},
   { name: "references", type: "object[]", required: false, description: "Sources and further reading. REQUIRED when the guide references external data, quotes, or factual claims.", constraints: "Each reference needs a title and a reachable URL. Description is optional.", children: [
     { name: "title", type: "string", required: true, description: "Reference title." },
@@ -235,6 +243,10 @@ const FEATURED_FIELDS: FieldSchema[] = [
     { name: "label", type: "string", required: true, description: "Card label." },
     { name: "title", type: "string", required: true, description: "Card title." },
     { name: "description", type: "markdown", required: true, description: "Card content." },
+  ]},
+  { name: "sources", type: "object[]", required: false, description: "Republished content origins. Populate when this content was first published elsewhere.", children: [
+    { name: "name", type: "string", required: true, description: "Publisher or platform name." },
+    { name: "url", type: "string", required: true, description: "URL of the original publication." },
   ]},
   { name: "references", type: "object[]", required: false, description: "Sources and further reading. REQUIRED when the article references external data, quotes, or factual claims.", constraints: "Each reference needs a title and a reachable URL. Description is optional.", children: [
     { name: "title", type: "string", required: true, description: "Reference title." },

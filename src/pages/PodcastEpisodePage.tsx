@@ -258,7 +258,7 @@ export default function PodcastEpisodePage() {
 
           {/* Sources : republished content attribution */}
           {episode.sources && episode.sources.length > 0 && (
-            <section>
+            <section className="pt-xl border-t border-border-default">
               <h2 className="font-sora text-headline-md text-on-surface mb-xl">Sources</h2>
               <div className="flex flex-wrap gap-md">
                 {episode.sources.map((s, i) => (
@@ -285,16 +285,17 @@ export default function PodcastEpisodePage() {
                 {episode.references.map((ref, i) => (
                   <a
                     key={i}
+                    id={`ref-${i + 1}`}
                     href={ref.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-start gap-sm p-md bg-surface-container-low border border-border-default rounded-lg hover:border-primary/50 transition-colors group"
+                    className="flex items-start gap-sm p-md bg-surface-container-low border border-border-default rounded-lg hover:border-primary/50 transition-colors group scroll-mt-32"
                   >
                     <span className="font-sora text-xs text-on-surface-muted flex-shrink-0 mt-0.5">{i + 1}.</span>
                     <div>
                       <p className="font-sora text-sm text-on-surface group-hover:text-primary transition-colors">{ref.title}</p>
                       {ref.description && (
-                        <p className="font-dm-sans text-xs text-on-surface-muted mt-xs">{ref.description}</p>
+                        <p className="font-dm-sans text-xs text-on-surface-muted mt-xs" dangerouslySetInnerHTML={{ __html: md(ref.description) }} />
                       )}
                     </div>
                   </a>
