@@ -279,7 +279,7 @@ export default function PodcastEpisodePage() {
 
           {/* References : multi-source attribution */}
           {episode.references && episode.references.length > 0 && (
-            <section>
+            <section className="pt-xl border-t border-border-default">
               <h2 className="font-sora text-headline-md text-on-surface mb-xl">References</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-md max-w-4xl">
                 {episode.references.map((ref, i) => (
