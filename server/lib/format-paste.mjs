@@ -273,9 +273,11 @@ function cleanMarkdown(md) {
     .replace(/!\[([^\]]*)\]\((?!https?:\/\/)[^)]+\)/g, (_m, alt) => alt || "")
     // Strip linked images: [![alt](img_url)](page_url)  — keep the page URL as a text link
     .replace(/\[!\[([^\]]*)\]\([^)]+\)\]\(([^)]+)\)/g, (_m, alt, url) => `[${alt || "image"}](${url})`)
-    // Normalize single-word emphasis that may be broken across lines by Turndown
-    // by joining _word_ to surrounding text (common with <em> in blockquotes)
-    .replace(/(\S)\s+_(\S+)_\s+(\S)/g, "$1 _$2_ $3")
+    // Merge emphasis-only lines back into adjacent paragraphs.
+    // PageMarkdown and similar tools may output *word* or _word_ on their own
+    // line, which marked renders as <p><em>word</em></p> — isolated & italic.
+    .replace(/(\S[^\n]*)\n\n\s*(\*[^*]+\*)\s*\n\n(\S[^\n]*)/g, "$1 $2 $3")
+    .replace(/(\S[^\n]*)\n\n\s*(_[^_]+_)\s*\n\n(\S[^\n]*)/g, "$1 $2 $3")
     // Collapse runs of 3+ newlines to 2
     .replace(/\n{3,}/g, "\n\n");
 }
