@@ -25,7 +25,13 @@ export default function HomePage() {
   const guides = guidesQ.data ?? [];
   const podcastEpisodes = podcastQ.data ?? [];
 
-  const featuredStories = stories.map(toCard).slice(0, 3);
+  const featuredStories = (() => {
+    // Explicitly featured stories first, then newest as filler
+    const marked = stories.filter((s) => s.isFeatured);
+    if (marked.length >= 3) return marked.slice(0, 3).map(toCard);
+    const rest = stories.filter((s) => !s.isFeatured);
+    return [...marked, ...rest].slice(0, 3).map(toCard);
+  })();
   const firstGuide = guides[0];
   const secondaryGuide = firstGuide ? toCard(firstGuide) : toCard(stories[0] ?? {
     slug: "ship-soma",

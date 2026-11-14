@@ -133,6 +133,9 @@ function initFromDraft(draft: AIDraft | null): FormValues {
     segments: draft.segments || [],
     guests: draft.guests || [],
     relatedReading: draft.relatedReading || [],
+    // Visibility flags — stored in meta_json (featured) and body_json (listed)
+    isFeatured: draft.isFeatured === true ? "true" : "false",
+    listed: draft.listed === false ? "false" : "",
   };
 }
 
@@ -269,8 +272,14 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
     const relatedReading = recordArray(values.relatedReading);
     if (relatedReading.length > 0) body.relatedReading = relatedReading;
 
-    // Featured tag
+    // Featured tag (featured content type, not the featured flag)
     if (type === "featured") body.tag = "FEATURED ARTICLE // SOMA";
+
+    // Featured flag (meta.featured — controls editorial grid)
+    if (str(values.isFeatured) === "true") body.isFeatured = true;
+
+    // Listed flag (body.listed — controls /stories visibility)
+    if (str(values.listed) === "false") body.listed = false;
 
     return body;
   }, [values, type]);
@@ -1175,27 +1184,51 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
       )}
 
       {/* Visibility */}
-      <div className="flex items-center gap-lg pt-lg border-t border-border-default">
-        <label className="flex items-center gap-sm cursor-pointer">
-          <input
-            type="radio"
-            name="status"
-            checked={status === "private"}
-            onChange={() => setStatus("private")}
-            className="accent-primary"
-          />
-          <span className="font-sora text-sm text-on-surface">Save as Private</span>
-        </label>
-        <label className="flex items-center gap-sm cursor-pointer">
-          <input
-            type="radio"
-            name="status"
-            checked={status === "published"}
-            onChange={() => setStatus("published")}
-            className="accent-primary"
-          />
-          <span className="font-sora text-sm text-on-surface">Save &amp; Publish</span>
-        </label>
+      <div className="flex flex-wrap items-center gap-lg pt-lg border-t border-border-default">
+        <div className="flex items-center gap-lg">
+          <label className="flex items-center gap-sm cursor-pointer">
+            <input
+              type="radio"
+              name="status"
+              checked={status === "private"}
+              onChange={() => setStatus("private")}
+              className="accent-primary"
+            />
+            <span className="font-sora text-sm text-on-surface">Save as Private</span>
+          </label>
+          <label className="flex items-center gap-sm cursor-pointer">
+            <input
+              type="radio"
+              name="status"
+              checked={status === "published"}
+              onChange={() => setStatus("published")}
+              className="accent-primary"
+            />
+            <span className="font-sora text-sm text-on-surface">Save &amp; Publish</span>
+          </label>
+        </div>
+        <div className="flex items-center gap-lg ml-auto">
+          <label className="flex items-center gap-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={str(values.isFeatured) === "true"}
+              onChange={(e) => setVal("isFeatured", e.target.checked ? "true" : "false")}
+              className="accent-secondary"
+            />
+            <span className="font-sora text-sm text-on-surface">Featured</span>
+          </label>
+          {type === "story" && (
+            <label className="flex items-center gap-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={str(values.listed) !== "false"}
+                onChange={(e) => setVal("listed", e.target.checked ? "" : "false")}
+                className="accent-secondary"
+              />
+              <span className="font-sora text-sm text-on-surface">Listed in /stories</span>
+            </label>
+          )}
+        </div>
       </div>
         </>
       )}

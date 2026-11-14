@@ -91,11 +91,13 @@ export default function AdminNewPage() {
         }
       }
 
-      // Pages read category/author/date/tags/topics from the spread body
-      // (mapRow flattens body_json at the top level). meta carries only
-      // the featured flag, matching publish-all.ts.
+      // Pull isFeatured from body so it goes into meta_json (mapRow reads
+      // meta.featured). Strip it from bodyPayload — it's not a body field.
+      const isFeatured = data.body?.isFeatured === true;
+      const { isFeatured: _, ...restBody } = data.body || {};
+
       const bodyPayload = {
-        ...data.body,
+        ...restBody,
         category: data.category,
         author: data.author,
         publishedAt: data.publishedAt,
@@ -111,7 +113,7 @@ export default function AdminNewPage() {
           type: data.type,
           title: data.title,
           excerpt: data.excerpt,
-          meta: {},
+          meta: { featured: isFeatured },
           body: bodyPayload,
           status: data.status,
           updatedAt: data.updatedAt,
