@@ -740,6 +740,7 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
           persistence requires the explicit Save button below. */}
       <AIEditPanel
         currentJson={JSON.stringify(previewDraft)}
+        contentType={type}
         onUpdate={(partial) => {
           setValues(mergeDraft(values, partial));
           setAiEdited(true);
