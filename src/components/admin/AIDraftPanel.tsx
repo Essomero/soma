@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { buildSystemPrompt, buildFormatPrompt, buildMetaPrompt } from "@/lib/admin-prompts";
 import { FALLBACK_COVER } from "@/lib/utils";
+
 import { ModelPicker } from "@/components/ui/ModelPicker";
 import { resolveDefaultModel } from "@/lib/modelPref";
 import type { ContentType } from "@/lib/admin-prompts";
@@ -314,8 +315,10 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
         excerpt: meta.excerpt || bodyData.excerpt || "",
         category: "Imported",
         author: { name: "Imported" },
-        image: /^https?:\/\//i.test(meta.image || "") ? meta.image! : (bodyData.image || FALLBACK_COVER),
-        imageAlt: meta.imageAlt || bodyData.imageAlt || "Content cover image",
+        // Prefer deterministic library's cover image (always correctly extracted).
+        // LLM metadata may hallucinate URLs — only use when library found nothing.
+        image: /^https?:\/\//i.test(bodyData.image || "") ? bodyData.image! : (meta.image && /^https?:\/\//i.test(meta.image) ? meta.image! : FALLBACK_COVER),
+        imageAlt: bodyData.imageAlt || meta.imageAlt || "Content cover image",
         tags: meta.tags?.length ? meta.tags : ["Imported"],
         topics: [],
         intro: "",
