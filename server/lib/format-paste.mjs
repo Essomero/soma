@@ -269,6 +269,13 @@ function cleanMarkdown(md) {
     .replace(/\]\(#fn(?:ref)?:[\w-]+\)/g, "")
     // Strip orphaned [ near end of line
     .replace(/\[\s*$/gm, "")
+    // Strip images with relative or non-HTTP URLs (would 404 on Soma's domain)
+    .replace(/!\[([^\]]*)\]\((?!https?:\/\/)[^)]+\)/g, (_m, alt) => alt || "")
+    // Strip linked images: [![alt](img_url)](page_url)  — keep the page URL as a text link
+    .replace(/\[!\[([^\]]*)\]\([^)]+\)\]\(([^)]+)\)/g, (_m, alt, url) => `[${alt || "image"}](${url})`)
+    // Normalize single-word emphasis that may be broken across lines by Turndown
+    // by joining _word_ to surrounding text (common with <em> in blockquotes)
+    .replace(/(\S)\s+_(\S+)_\s+(\S)/g, "$1 _$2_ $3")
     // Collapse runs of 3+ newlines to 2
     .replace(/\n{3,}/g, "\n\n");
 }
