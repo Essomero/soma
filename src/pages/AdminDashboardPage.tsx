@@ -58,6 +58,7 @@ export default function AdminDashboardPage() {
   const [filterType, setFilterType] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<string>("");
   const [search, setSearch] = useState("");
+  const [voiceProfileRefreshKey, setVoiceProfileRefreshKey] = useState(0);
 
   usePageMeta({ title: "Admin Dashboard", description: "Manage all Soma content" });
 
