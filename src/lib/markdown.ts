@@ -43,7 +43,11 @@ function renderMathDelimiters(text: string): string {
   });
 
   // Display math via LaTeX bracket syntax: \[...\]
-  text = text.replace(/\\\[([\s\S]+?)\\\]/g, (_match, expr: string) => {
+  // IMPORTANT: only match when the content contains a LaTeX command
+  // (backslash followed by a letter). Bare escaped brackets like \[from AFL\]
+  // are markdown escapes for literal brackets, not math. The lookahead
+  // (?=[^)]*\\[a-zA-Z]) requires at least one \command inside the delimiters.
+  text = text.replace(/\\\[(?=[\s\S]*\\[a-zA-Z])([\s\S]+?)\\\]/g, (_match, expr: string) => {
     try {
       const html = katex.renderToString(expr.trim(), {
         displayMode: true,
