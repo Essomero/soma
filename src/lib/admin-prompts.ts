@@ -7,6 +7,7 @@
 
 export {
   buildSystemPrompt,
+  buildFormatPrompt,
   buildClassificationGuide,
   buildFieldDescriptions,
   buildExamplePrompt,

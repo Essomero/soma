@@ -143,7 +143,7 @@ export async function runChat({
     const reasoning = isReasoningModel(selectedModel);
     const maxTokens = reasoning
       ? clamp(Number(body.max_tokens) || 64000, 1, 64000)
-      : clamp(Number(body.max_tokens) || 3500, 1, 8000);
+      : clamp(Number(body.max_tokens) || 3500, 1, 24000);
 
     const r = await fetchImpl(config.url, {
       method: "POST",

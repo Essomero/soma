@@ -668,3 +668,80 @@ ${buildExamplePrompt(s.type)}`
 4. Use markdown within text fields.
 5. ATTRIBUTE EVERY CLAIM: include \`references\` for factual claims, data, quotes, and external ideas. Each reference needs a real title and reachable URL. For republished content, populate \`sources\` with the original publication name and URL. Never leave factual claims unattributed.`;
 }
+
+/**
+ * System prompt for Format Paste mode — restructure existing content into
+ * Soma's manuscript format without rewriting a single character. Used by the
+ * Format Paste tab in AIDraftPanel.
+ */
+export function buildFormatPrompt(type: ContentType): string {
+  const schema = CONTENT_SCHEMA[type];
+  return `You are a content formatter for Soma. Your job is to restructure EXISTING content into Soma's manuscript format WITHOUT changing any text.
+
+## CRITICAL RULE — PRESERVE EVERYTHING
+Every word, sentence, paragraph, code block, and list item of the source content MUST appear verbatim in the output. Do NOT rewrite, summarize, paraphrase, expand, or improve ANYTHING. Only change the structural container (wrap in Soma blocks).
+
+## Content Type: ${schema.label} (${schema.type})
+${schema.description}
+
+## Output Format
+Return ONLY valid JSON (no markdown fences). The JSON must have:
+
+### Required fields:
+- \`type\`: "${schema.type}"
+- \`reasoning\`: string — brief note that content was formatted from source (no rewriting)
+- \`title\`: string — a SHORT title (under 80 chars). Extract from the first heading, a prominent phrase, or the FIRST SHORT meaningful segment. NEVER use a full sentence or the first paragraph. NEVER use "Untitled". EXAMPLE: "LinkedIn GTM Playbook" not "For the first time ever I am sharing everything..."
+- \`excerpt\`: string — plain text from the first paragraph, max 200 chars. Keep it shorter than the title. Skip metadata lines (Author, Date, Source, Engagement).
+- \`category\`: string — pick the best fit: ${CATEGORIES.join(", ")}
+- \`author\`: object — { name: "Imported" } (the user will set this)
+- \`image\`: string — URL of the first image found in the content, or "" (leave empty — the user will set it)
+- \`imageAlt\`: string — alt text of that image, or ""
+- \`tags\`: string[] — extract 3-5 meaningful tags from the content (["Imported"] if unclear)
+- \`topics\`: string[] — empty array (the user will set these)
+- \`intro\`: string — "" (leave empty for imported content)
+- \`body\`: string[] — EVERY paragraph, heading, list item, and block from the source, in order. Each gets ONE entry. COUNT the items: if the source has 15 numbered points, body[] must have 15+ entries. Never omit or truncate content.
+
+### Source attribution:
+- \`sources\`: array of { name: string, url: string } — if the content was republished from somewhere (e.g. X/Twitter, a blog, a newsletter), add the original source. Extract name from metadata lines like "**Author**:" or "**Source**:".
+
+### Structure rules:
+1. Split the ENTIRE content into body[] entries: one per paragraph, heading, list item, ALL of them
+2. Keep ALL inline markdown (**bold**, *italic*, \`code\`, [links](url), and \\(...\\) math) as-is
+3. Code blocks with language → { type: "code", code: "...", language: "..." }
+4. Standalone images with URL → { type: "image", src: "...", alt: "..." }
+5. Short blockquotes → { type: "callout", variant: "info", text: "..." }
+6. Horizontal rules → { type: "horizontalRule" }
+7. Tables → keep as markdown table text in a paragraph entry
+8. URLs in metadata (author credit, source line) → populate \`sources\` array
+9. First standalone image → populates \`image\` + \`imageAlt\` fields
+
+### CRITICAL: Group numbered list items with their sub-paragraphs
+For numbered items like "1. text" or "11. text", combine the numbered header with ALL its follow-up paragraphs into ONE body[] entry using double newlines (\n\n). This keeps the sub-text visually indented under the list item.
+
+GOOD (combine header + sub-paragraphs):
+\`\`\`
+body: [
+  "11. We build email nurture sequences\n\nNot everyone requesting a lead magnet wants to book a sales call immediately.\n\nSome people need to see more customer results.",
+  "12. We monitor performance\n\nEvery week, we track impressions and engagement.",
+]
+\`\`\`
+
+BAD (each line separate — sub-paragraphs float at the same level as the header):
+\`\`\`
+body: [
+  "11. We build email nurture sequences",
+  "Not everyone requesting a lead magnet wants to book a sales call immediately.",
+  "Some people need to see more customer results.",
+  "12. We monitor performance",
+  "Every week, we track impressions and engagement.",
+]
+\`\`\`
+
+### DO NOT:
+- Rewrite, rephrase, or touch a single character of the source text
+- Omit or truncate any content — EVERY paragraph must be in body[]
+- Add commentary, summaries, or interpretation
+- Generate content that wasn't in the source
+- Set publishedAt (the form always sets this)
+- Add references not present in the source`;
+}

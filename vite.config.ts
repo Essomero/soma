@@ -453,6 +453,7 @@ function chatDevPlugin(env: Record<string, string>) {
           else if (name === "export") localHandlerCache[name] = (await import("./api/export.js")).default;
           else if (name === "proof") localHandlerCache[name] = (await import("./api/proof.js")).default;
           else if (name === "import") localHandlerCache[name] = (await import("./api/import.js")).default;
+          else if (name === "format-paste") localHandlerCache[name] = (await import("./api/format-paste.js")).default;
           else if (name === "voice-profiles") localHandlerCache[name] = (await import("./api/voice-profiles.js")).default;
           else localHandlerCache[name] = (await import("./api/content.js")).default;
         }
@@ -503,6 +504,15 @@ export default defineConfig(({ mode }) => {
         "/api": {
           target: env.LOCAL_API ? "http://localhost:3001" : "https://soma.mayanja.dev",
           changeOrigin: true,
+          // Skip proxy for routes handled by local middleware (chat, models,
+          // format-paste, import, etc.) so the dev server runs them directly.
+          bypass: (req: { url?: string }) => {
+            if (!req.url) return;
+            const name = req.url.replace(/^\/api\//, "").split(/[\/?#]/)[0];
+            if (["chat", "models", "format-paste", "import", "content"].includes(name)) {
+              return false; // false → skip proxy entirely
+            }
+          },
         },
         // Local agent sidecar (shell/git/build): only reachable in local dev.
         // Production never proxies /agent — there is no sidecar on Vercel.

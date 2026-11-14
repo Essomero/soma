@@ -50,7 +50,7 @@ function renderEntry(entry: string | object): string {
 
 export default function ContentPreview({ draft, onBack }: ContentPreviewProps) {
   const body = useMemo(() => {
-    const parts = (draft.body ?? []).slice(0, 4);
+    const parts = draft.body ?? [];
     return parts.length > 0 ? parts.map((p) => mdBlock(p)).join('<div class="h-4"></div>') : "";
   }, [draft.body]);
 

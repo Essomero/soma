@@ -276,6 +276,14 @@
     @apply mt-xs mb-0;
   }
 
+  /* Preview prose (admin ContentPreview) — same list treatment as .prose
+     Tailwind preflight removes list-style from all ol/ul, so lists inside
+     the preview would render without numbers/bullets without this. */
+  .preview-prose ol { @apply list-decimal pl-lg mb-md; }
+  .preview-prose ul { @apply list-disc pl-lg mb-md; }
+  .preview-prose li { @apply mb-xs leading-relaxed; }
+  .preview-prose li > ul, .preview-prose li > ol { @apply mt-xs mb-0; }
+
   .prose blockquote {
     @apply border-l-2 border-brand/40 pl-md my-md text-on-surface-muted italic;
   }

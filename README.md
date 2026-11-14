@@ -76,7 +76,7 @@ Soma ships a full content studio at **`/admin`** (owner login required). Every c
 - **Agent-Powered Publishing**: The repository ships two dedicated agent skills plus a content MCP server:
   - **Content Skill (`.claude/skills/soma`, `.agents/skills/soma`, `SOMA_SKILL.md`)**: Instructs any AI agent (Claude Code, Cursor, Windsurf, Cline, Aider, omp) to draft, type-check, and publish courses, stories, guides, books, and diagnostic tests in the *Grokking Algorithms* voice.
   - **Opinionation Skill (`.claude/skills/opinionation`, `.agents/skills/opinionation`, `OPINIONATION_SKILL.md`)**: Enforces minimal dependencies, explicit prerequisites, automated install setup, and self-contained README standards across code and companion labs.
-  - **Content MCP Server (`server/mcp-server.mjs`)**: The same workflow (draft, validate, publish private, verify URLs, archive) exposed as 11 stdio tools; registered in `.mcp.json` for clients that read it.
+  - **Content MCP Server (`server/mcp-server.mjs`)**: The same workflow (draft, validate, publish private, verify URLs, archive) exposed as 13 stdio tools; registered in `.mcp.json` for clients that read it.
 - **Zero-friction publishing pipeline**: Ask your agent: *"Write a 4-lesson guide on WebSockets with companion drills."* The agent drafts the typed TypeScript manuscript in gitignored `drafts/<type>/`, links companion lab folders where a course needs drills, and publishes it to the store as a private row: previewable at your dev server, nothing committed. You flip the visibility toggle when it is ready; the agent then archives the manuscript to `src/content/` and commits that single file. Got an existing book, essay, or leisure read? Ask the agent to convert it: any markdown-style source becomes a Soma page.
 ### 2. Think on Paper, but Digital
 - **Tactile typography**: Built with Sora (display), DM Sans (body), and KaTeX (mathematics) with wide reading margins.
@@ -281,6 +281,29 @@ Because Soma bundles agent skills, you can use any coding assistant to manage yo
 4. You flip the row to **public** with one click in the Studio or on the page: instant, no rebuild, no redeploy. Unpublishing is the same click back.
 5. It archives the published manuscript under `src/content/` and commits that single file, so git holds the version history of public work and nothing else.
 
+### Import Anything: Paste Content Without Rewriting
+
+You can bring any URL or markdown into Soma without AI rewriting. Every character stays exactly as written — only the structure changes to fit Soma's block format (paragraphs, code blocks, images, callouts). This is useful when you want to read something in Soma's reader, highlight passages, comment, or use the margin AI tutor.
+
+**Three entry points:**
+
+| Path | How it works |
+|---|---|
+| **`/admin/new` → Format Paste tab** | Paste markdown or a URL into the web UI. Click "Format" to generate a manuscript via LLM with strict preservation instructions. |
+| **MCP `format_paste` tool** | `{ content, url, title?, slug?, type? }` → writes to `drafts/<type>/<slug>.ts`. Deterministic library path — no LLM dependency. |
+| **CLI `scripts/format-paste.ts`** | `cat article.md \| npx tsx scripts/format-paste.ts` or `--url https://...` |
+
+**What gets converted:**
+- Headings → paragraph with markdown heading text (first `#` becomes `title`, removed from body)
+- Code blocks → `{ type: "code", code, language }`
+- Images → `{ type: "image", src, alt }` (first image becomes cover)
+- Blockquotes → `{ type: "callout", variant: "info", text }` (short quotes only)
+- Horizontal rules → `{ type: "horizontalRule" }`
+- Lists, tables, inline formatting (bold, italic, links, math) → preserved in paragraph text
+- Source URL → auto-attributed in `sources[]`
+
+The result is a fully editable Soma manuscript: add author, tags, topics, and publish it private for personal reading, or public when you want to share.
+
 ### MCP Server (Agent Tooling)
 
 Soma ships a Model Context Protocol server (`server/mcp-server.mjs`) that agents can drive instead of reading the skill or scraping the site. It is registered in `.mcp.json` already, so clients that honor a project `.mcp.json` pick it up automatically; any MCP client can register it manually with `node server/mcp-server.mjs` (stdio, no secrets to configure: it reads `.env` like everything else).
@@ -299,6 +322,11 @@ The tools mirror the SOMA_SKILL.md workflow, and each shells out to the repo's o
 | `validate_manuscript` | Runs the exact publish checks (`--check`) with no write |
 | `publish_manuscript` | Validates + upserts as private; never touches visibility |
 | `verify_url` | HEAD/GET check for every image, video, and external link URL |
+| `import_content` | Fetch a URL and extract readable text, title, description |
+| `humanize_manuscript` | Rewrite a staged manuscript to match a voice profile |
+| `format_paste` | Paste URL or markdown → formatted Soma manuscript (no rewriting) |
+
+The last three are the **Import Anything** workflow: fetch, humanize, or format external content so it can be read with Soma's AI features (highlights, margin tutor, oral proof).
 
 The trust model matches the rest of the repo: the server is spawned by the agent client on the owner's machine, so no token is needed (unlike the browser-facing `local-agent` sidecar). `publish_manuscript` is the only write; everything else is read-only. Going public stays a human toggle flip, never a tool call.
 

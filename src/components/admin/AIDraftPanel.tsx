@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { Loader2, Sparkles, ArrowRight, AlertCircle, ChevronDown, Lightbulb } from "lucide-react";
-import { buildSystemPrompt } from "@/lib/admin-prompts";
+import {
+  Loader2, Sparkles, ArrowRight, AlertCircle,
+  ChevronDown, Lightbulb, FileText, Link,
+} from "lucide-react";
+import { buildSystemPrompt, buildFormatPrompt } from "@/lib/admin-prompts";
 import { FALLBACK_COVER } from "@/lib/utils";
 import { ModelPicker } from "@/components/ui/ModelPicker";
 import { resolveDefaultModel } from "@/lib/modelPref";
@@ -58,9 +61,13 @@ export interface AIDraft {
   [key: string]: unknown;
 }
 
+type Mode = "ai-generate" | "format-paste";
+
 export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultType }: AIDraftPanelProps) {
+  const [mode, setMode] = useState<Mode>("ai-generate");
   const [input, setInput] = useState(initialInput ?? "");
-  const [status, setStatus] = useState<"idle" | "generating" | "done" | "error">("idle");
+  const [url, setUrl] = useState("");
+  const [status, setStatus] = useState<"idle" | "generating" | "formatting" | "done" | "error">("idle");
   const [error, setError] = useState("");
   const [reasoning, setReasoning] = useState("");
   const [preview, setPreview] = useState<{ type?: string; title?: string } | null>(null);
@@ -70,7 +77,7 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
   const [selectedProvider, setSelectedProvider] = useState<string>("");
   const abortRef = useRef<AbortController | null>(null);
 
-  // Sync input when initialInput changes (e.g. navigating from a different note)
+  // Sync input when initialInput changes
   useEffect(() => {
     if (initialInput !== undefined) setInput(initialInput);
   }, [initialInput]);
@@ -101,7 +108,9 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
   const selected = models.find((m) => m.id === selectedModel && m.provider === selectedProvider);
   const aiUnavailable = !modelsReady || models.length === 0;
 
-  const generate = async () => {
+  // ── AI Generate ───────────────────────────────────────────────────────
+
+  const generateWithAI = async () => {
     if (!input.trim() || disabled || aiUnavailable) return;
     setStatus("generating");
     setError("");
@@ -167,8 +176,6 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
             }
             const content = delta?.content || "";
             accumulated += content;
-            // Attempt to parse the full structure as fields arrive.
-            // Once parsed, show live type/title preview without raw JSON.
             if (!previewed) {
               const js = accumulated.indexOf("{");
               const je = accumulated.lastIndexOf("}");
@@ -177,10 +184,10 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
                   const partial = JSON.parse(accumulated.slice(js, je + 1));
                   if (partial.type || partial.title) {
                     setPreview({ type: partial.type, title: partial.title });
-                    previewed = true; // one shot: first valid parse captures the preview
+                    previewed = true;
                   }
                 } catch {
-                  // incomplete JSON — keep streaming
+                  // incomplete JSON
                 }
               }
             }
@@ -190,7 +197,6 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
         }
       }
 
-      // Parse final accumulated JSON
       const jsonStart = accumulated.indexOf("{");
       const jsonEnd = accumulated.lastIndexOf("}");
       if (jsonStart === -1 || jsonEnd === -1) {
@@ -202,9 +208,6 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
         throw new Error("AI response missing required fields (type, title)");
       }
 
-      // Models sometimes put an image *description* instead of a URL (or
-      // omit image entirely). Never let that reach the page: swap in the
-      // fallback cover so cards render, and keep a real alt description.
       if (!/^https?:\/\//i.test(draft.image || "")) {
         draft.image = FALLBACK_COVER;
       }
@@ -223,57 +226,334 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
     }
   };
 
+  // ── Format Paste (LLM with format-only prompt) ──────────────────────
+
+  const formatPaste = async () => {
+    const content = input.trim();
+    const srcUrl = url.trim();
+    if (!content && !srcUrl) return;
+    setStatus("formatting");
+    setError("");
+    setReasoning("");
+    setPreview(null);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const contentType = (defaultType || "story") as ContentType;
+
+      // If we have a URL but no content, fetch the URL content first via
+      // the import endpoint, then format.
+      let formatContent = content;
+      let formatUrl = srcUrl;
+      if (srcUrl && !content) {
+        const importRes = await fetch("/api/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: srcUrl }),
+        });
+        const importData = await importRes.json();
+        if (importRes.ok && importData.text) {
+          formatContent = importData.text;
+          formatUrl = importData.url || srcUrl;
+        }
+      }
+
+      if (!formatContent.trim()) {
+        throw new Error("No content to format.");
+      }
+
+      const parts = [
+        `Format this content as a Soma ${defaultType || "story"} manuscript.`,
+        `Preserve every character exactly as written.`,
+      ];
+      if (formatUrl) {
+        parts.push(`Source URL: ${formatUrl}`);
+      }
+      parts.push(`Content to format:`, `---`, formatContent.trim(), `---`);
+      const userMessage = parts.join("\n");
+
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemPrompt: buildFormatPrompt(contentType),
+          userMessage,
+          model: selectedModel,
+          provider: selectedProvider,
+          stream: true,
+          max_tokens: 24000,
+        }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        const hint = errText.includes("not configured")
+          ? `${selectedProvider} key not configured — pick another model from the dropdown.`
+          : `AI service error (${res.status}): ${errText}`;
+        throw new Error(hint);
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let accumulated = "";
+      let accumulatedReasoning = "";
+      let previewed = false;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith("data: ")) continue;
+          const data = trimmed.slice(6);
+          if (data === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(data);
+            const delta = parsed.choices?.[0]?.delta;
+            const rc = delta?.reasoning_content;
+            if (rc) {
+              accumulatedReasoning += rc;
+              setReasoning(accumulatedReasoning);
+            }
+            const content = delta?.content || "";
+            accumulated += content;
+            if (!previewed) {
+              const js = accumulated.indexOf("{");
+              const je = accumulated.lastIndexOf("}");
+              if (js >= 0 && je > js) {
+                try {
+                  const partial = JSON.parse(accumulated.slice(js, je + 1));
+                  if (partial.type || partial.title) {
+                    setPreview({ type: partial.type, title: partial.title });
+                    previewed = true;
+                  }
+                } catch {
+                  // incomplete JSON
+                }
+              }
+            }
+          } catch {
+            // incomplete SSE frame
+          }
+        }
+      }
+
+      // Parse final accumulated JSON
+      const jsonStart = accumulated.indexOf("{");
+      const jsonEnd = accumulated.lastIndexOf("}");
+      if (jsonStart === -1 || jsonEnd === -1) {
+        throw new Error("LLM response did not contain valid JSON");
+      }
+      const jsonStr = accumulated.slice(jsonStart, jsonEnd + 1);
+      const draft = JSON.parse(jsonStr) as AIDraft;
+
+      // Require at least a title
+      if (!draft.title) {
+        throw new Error("LLM response missing title");
+      }
+      draft.type = contentType;
+
+      // Clean up cover image
+      if (!/^https?:\/\//i.test(draft.image || "")) {
+        draft.image = FALLBACK_COVER;
+      }
+      if (!draft.imageAlt || draft.imageAlt.length > 80 || /^https?:\/\//i.test(draft.imageAlt)) {
+        draft.imageAlt = "Content cover image";
+      }
+
+      // If we fetched a URL, attach it as a source
+      if (formatUrl && !draft.sources?.length) {
+        draft.sources = [{ type: "web", title: "Imported", url: formatUrl }];
+      }
+
+      // Post-process: group numbered list items with their sub-paragraphs.
+      // The LLM puts each line as a separate body[] entry, but sub-paragraphs
+      // that follow a numbered header (e.g. "11. text") should be combined
+      // into the same entry so they indent under the list item.
+      if (draft.body?.length) {
+        const grouped: string[] = [];
+        let current: string[] = [];
+        for (const entry of draft.body) {
+          if (/^\d+\.\s/.test(entry)) {
+            // Start a new group for this numbered item
+            if (current.length > 0) grouped.push(current.join("\n\n"));
+            current = [entry];
+          } else if (current.length > 0) {
+            // Sub-paragraph of the current numbered item
+            current.push(entry);
+          } else {
+            // Standalone text before any numbered item
+            grouped.push(entry);
+          }
+        }
+        if (current.length > 0) grouped.push(current.join("\n\n"));
+        draft.body = grouped;
+      }
+
+      setStatus("done");
+      onDraft(draft);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setStatus("idle");
+        return;
+      }
+      setError(err instanceof Error ? err.message : "Format failed");
+      setStatus("error");
+    }
+  };
+
+  // ── Common ────────────────────────────────────────────────────────────
+
+  const isBusy = status === "generating" || status === "formatting";
+
+  const handleAction = () => {
+    if (isBusy || disabled) return;
+    if (mode === "ai-generate") generateWithAI();
+    else formatPaste();
+  };
+
+  const hasInput = mode === "ai-generate"
+    ? !!input.trim()
+    : !!input.trim() || !!url.trim();
+
+  const generateDisabled = !hasInput || isBusy || disabled || (mode === "ai-generate" && aiUnavailable);
+
+  // ── Render ────────────────────────────────────────────────────────────
+
   return (
     <div className="space-y-md">
-      <div>
-        <label className="font-sora text-label-caps text-on-surface block mb-sm">
-          What do you want to create?
-        </label>
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Describe your idea in plain language... e.g. 'A guide to deploying TypeScript projects on Cloudflare Workers with D1 and R2'"
-          className="w-full min-h-[120px] p-lg bg-surface border border-border-default text-on-surface font-dm-sans text-body-base placeholder:text-on-surface-muted focus:outline-none focus:border-primary resize-y"
-          disabled={status === "generating" || disabled}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-              e.preventDefault();
-              generate();
-            }
-          }}
-        />
-        <p className="font-dm-sans text-xs text-on-surface-muted mt-xs">
-          Press {navigator.platform.includes("Mac") ? "Cmd" : "Ctrl"}+Enter to generate
-        </p>
+      {/* Mode toggle */}
+      <div className="flex border border-border-default rounded-md overflow-hidden">
+        <button
+          onClick={() => { setMode("ai-generate"); setError(""); setPreview(null); }}
+          className={`flex-1 flex items-center justify-center gap-sm px-lg py-md text-label-caps uppercase tracking-widest transition-colors ${
+            mode === "ai-generate"
+              ? "bg-primary text-on-primary"
+              : "bg-surface text-on-surface-muted hover:text-on-surface"
+          }`}
+        >
+          <Sparkles className="w-4 h-4" />
+          AI Generate
+        </button>
+        <button
+          onClick={() => { setMode("format-paste"); setError(""); setPreview(null); }}
+          className={`flex-1 flex items-center justify-center gap-sm px-lg py-md text-label-caps uppercase tracking-widest transition-colors ${
+            mode === "format-paste"
+              ? "bg-primary text-on-primary"
+              : "bg-surface text-on-surface-muted hover:text-on-surface"
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          Format Paste
+        </button>
       </div>
 
-      {/* Model picker + Generate button row */}
-      <div className="flex flex-wrap items-center gap-md">
-        {/* Model picker dropdown */}
-        <ModelPicker
-          models={models}
-          selectedModel={selectedModel}
-          selectedProvider={selectedProvider}
-          onChange={(id, provider) => {
-            setSelectedModel(id);
-            setSelectedProvider(provider);
-          }}
-          disabled={status === "generating" || disabled}
-          unavailable={aiUnavailable}
-        />
+      {/* Input area */}
+      {mode === "ai-generate" ? (
+        <div>
+          <label className="font-sora text-label-caps text-on-surface block mb-sm">
+            What do you want to create?
+          </label>
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Describe your idea in plain language... e.g. 'A guide to deploying TypeScript projects on Cloudflare Workers with D1 and R2'"
+            className="w-full min-h-[120px] p-lg bg-surface border border-border-default text-on-surface font-dm-sans text-body-base placeholder:text-on-surface-muted focus:outline-none focus:border-primary resize-y"
+            disabled={isBusy || disabled}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                handleAction();
+              }
+            }}
+          />
+          <p className="font-dm-sans text-xs text-on-surface-muted mt-xs">
+            Press {navigator.platform.includes("Mac") ? "Cmd" : "Ctrl"}+Enter to generate
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-md">
+          <div>
+            <label className="font-sora text-label-caps text-on-surface block mb-sm">
+              Paste markdown content
+            </label>
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Paste markdown content here... headings, code blocks, images, blockquotes all preserved."
+              className="w-full min-h-[200px] p-lg bg-surface border border-border-default text-on-surface font-dm-sans text-body-base placeholder:text-on-surface-muted focus:outline-none focus:border-primary resize-y font-mono text-sm"
+              disabled={isBusy || disabled}
+            />
+          </div>
+          <div className="flex items-center gap-md">
+            <div className="flex-1 h-px bg-border-default" />
+            <span className="font-dm-sans text-xs text-on-surface-muted">or</span>
+            <div className="flex-1 h-px bg-border-default" />
+          </div>
+          <div>
+            <label className="font-sora text-label-caps text-on-surface block mb-sm">
+              Or fetch from a URL
+            </label>
+            <div className="flex gap-md">
+              <div className="flex-1 relative">
+                <Link className="absolute left-md top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-muted" />
+                <input
+                  type="url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="https://example.com/blog/post"
+                  className="w-full pl-xl pr-md py-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm placeholder:text-on-surface-muted focus:outline-none focus:border-primary"
+                  disabled={isBusy || disabled}
+                />
+              </div>
+            </div>
+            <p className="font-dm-sans text-xs text-on-surface-muted mt-xs">
+              Enter a URL to fetch and format. If you paste markdown above, the URL becomes the source attribution.
+            </p>
+          </div>
+        </div>
+      )}
 
-        {/* Generate button */}
+      {/* Action row */}
+      <div className="flex flex-wrap items-center gap-md">
+        {mode === "ai-generate" && (
+          <ModelPicker
+            models={models}
+            selectedModel={selectedModel}
+            selectedProvider={selectedProvider}
+            onChange={(id, provider) => {
+              setSelectedModel(id);
+              setSelectedProvider(provider);
+            }}
+            disabled={isBusy || disabled}
+            unavailable={aiUnavailable}
+          />
+        )}
+
         <button
-          onClick={generate}
-          disabled={!input.trim() || status === "generating" || disabled || aiUnavailable}
+          onClick={handleAction}
+          disabled={generateDisabled}
           className="inline-flex items-center gap-sm px-xl py-md bg-primary text-on-primary font-sora text-label-caps uppercase tracking-widest hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {status === "generating" ? (
+          {isBusy ? (
             <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
+          ) : mode === "ai-generate" ? (
             <Sparkles className="w-4 h-4" />
+          ) : (
+            <FileText className="w-4 h-4" />
           )}
-          {status === "generating" ? "Generating..." : "Generate Content"}
+          {isBusy
+            ? (mode === "ai-generate" ? "Generating..." : "Formatting...")
+            : (mode === "ai-generate" ? "Generate Content" : "Format")}
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>
@@ -326,12 +606,27 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
         </div>
       )}
 
+      {/* Formatting progress */}
+      {status === "formatting" && (
+        <div className="flex items-center gap-md p-lg bg-surface-container border border-border-default">
+          <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0" />
+          <div>
+            <p className="font-sora text-sm text-on-surface">Formatting content...</p>
+            <p className="font-dm-sans text-xs text-on-surface-muted mt-xs">
+              Converting markdown to Soma manuscript format. Content preserved as-is.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Error */}
       {status === "error" && (
         <div className="flex items-start gap-md p-lg bg-surface-container border border-border-default border-l-4 border-l-error">
           <AlertCircle className="w-5 h-5 text-error shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="font-sora text-sm text-error font-medium">Generation failed</p>
+            <p className="font-sora text-sm text-error font-medium">
+              {mode === "ai-generate" ? "Generation failed" : "Format failed"}
+            </p>
             <p className="font-dm-sans text-xs text-on-surface-muted mt-xs">{error}</p>
           </div>
           <button
