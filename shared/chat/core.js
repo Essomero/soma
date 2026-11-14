@@ -13,7 +13,7 @@ import { extractErrorMessage } from "./errors.js";
 import { buildGeminiBody, translateGeminiStream } from "./gemini.js";
 import { buildActionPrompt } from "../tutor/actions.js";
 
-const MAX_USER_MESSAGE = 20000;
+const MAX_USER_MESSAGE = 100000;
 const MAX_SYSTEM_PROMPT = 60000;
 const MAX_MODEL_ID = 200;
 const DEFAULT_TIMEOUT_MS = 60000;
