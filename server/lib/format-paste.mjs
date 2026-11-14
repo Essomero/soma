@@ -265,14 +265,31 @@ function stripFirstHeading(tokens) {
 }
 
 /**
+ * Resolve a relative image URL against a base URL.
+ * Returns null if resolution fails or the URL is already absolute.
+ */
+function resolveUrl(src, baseUrl) {
+  if (!baseUrl) return null;
+  if (/^https?:\/\//i.test(src)) return src; // already absolute
+  try {
+    return new URL(src, baseUrl).href;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Clean markdown footnote artifacts that Turndown produces from HTML
  * footnote references (e.g. danluu.com articles). These include:
  * - Footnote definitions: [^id]: text
  * - Broken link syntax: orphaned [ and ](#fnref:...)
  * - Isolated footnote keywords like "return" (from return links)
+ *
+ * @param {string} md - raw markdown text
+ * @param {string} [baseUrl] - source page URL, used to resolve relative image paths
  */
-function cleanMarkdown(md) {
-  return md
+function cleanMarkdown(md, baseUrl) {
+  let result = md
     // Strip footnote definition lines: [^id]: text
     .replace(/^\[\^[\w-]+\]:\s*.*$/gm, "")
     // Strip ALL markdown links pointing to #fn: or #fnref: (footnote references).
@@ -286,10 +303,6 @@ function cleanMarkdown(md) {
     .replace(/\]\([^)]*#fn(?:ref)?:[\w-]+[^)]*\)/g, "")
     // Strip orphaned [ near end of line
     .replace(/\[\s*$/gm, "")
-    // Strip images with relative or non-HTTP URLs (would 404 on Soma's domain)
-    .replace(/!\[([^\]]*)\]\((?!https?:\/\/)[^)]+\)/g, (_m, alt) => alt || "")
-    // Strip linked images: [![alt](img_url)](page_url)  — keep the page URL as a text link
-    .replace(/\[!\[([^\]]*)\]\([^)]+\)\]\(([^)]+)\)/g, (_m, alt, url) => `[${alt || "image"}](${url})`)
     // Merge emphasis-only lines back into adjacent paragraphs.
     // PageMarkdown and similar tools may output *word* or _word_ on their own
     // line (with or without blank line separators), which marked renders as
@@ -298,10 +311,25 @@ function cleanMarkdown(md) {
     .replace(/(\S[^\n]*)\n\s*(_[^_]+_)\s*\n(\S[^\n]*)/g, "$1 $2 $3")
     // Collapse runs of 3+ newlines to 2
     .replace(/\n{3,}/g, "\n\n");
+
+  // Resolve relative image URLs against the source page, or strip if no baseUrl
+  if (baseUrl) {
+    result = result.replace(/!\[([^\]]*)\]\((?!https?:\/\/)([^)]+)\)/g, (_m, alt, url) => {
+      const resolved = resolveUrl(url, baseUrl);
+      return resolved ? `![${alt}](${resolved})` : alt || "";
+    });
+  } else {
+    result = result.replace(/!\[([^\]]*)\]\((?!https?:\/\/)[^)]+\)/g, (_m, alt) => alt || "");
+  }
+
+  // Strip linked images: [![alt](img_url)](page_url)  — keep the page URL as a text link
+  result = result.replace(/\[!\[([^\]]*)\]\([^)]+\)\]\(([^)]+)\)/g, (_m, alt, url) => `[${alt || "image"}](${url})`);
+
+  return result;
 }
 
 export function markdownToManuscript(markdown, opts = {}) {
-  const cleaned = cleanMarkdown(markdown);
+  const cleaned = cleanMarkdown(markdown, opts.url);
   const tokens = marked.lexer(cleaned);
 
   // Extract metadata
