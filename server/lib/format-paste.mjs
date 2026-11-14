@@ -37,9 +37,23 @@ function tokensToBlocks(tokens) {
   for (const token of tokens) {
     switch (token.type) {
       case "paragraph": {
-        // Convert inline tokens so `token.tokens` is rendered as markdown
-        // text. We use `raw` which preserves the original source.
-        blocks.push(token.raw.trim());
+        // Check if this paragraph is a standalone image (single nested image
+        // token, no surrounding text). Marked nests standalone images inside
+        // paragraph tokens rather than emitting top-level image tokens.
+        const inlineTokens = token.tokens || [];
+        const isStandaloneImage = inlineTokens.length === 1 && inlineTokens[0].type === "image";
+        if (isStandaloneImage) {
+          const img = inlineTokens[0];
+          hasRichBlocks = true;
+          blocks.push({
+            type: "image",
+            src: img.href || "",
+            alt: img.text || img.title || "",
+            caption: img.title || undefined,
+          });
+        } else {
+          blocks.push(token.raw.trim());
+        }
         break;
       }
 
