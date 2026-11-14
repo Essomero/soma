@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, PenLine, Eye, Loader2, Save } from "lucide-react";
+import { ArrowLeft, PenLine, Eye, Loader2, Save, Sparkles } from "lucide-react";
 import { SkeletonForm } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import MarkdownHtml from "@/components/ui/MarkdownHtml";
@@ -38,6 +38,7 @@ export default function NotesEditorPage() {
   const [error, setError] = useState("");
   const [titleManuallyEdited, setTitleManuallyEdited] = useState(false);
   const [generatingTitle, setGeneratingTitle] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   // Focus the content textarea on mount (create mode) so the user can start
   // typing a note right away — the title gets drafted automatically.
@@ -135,6 +136,32 @@ export default function NotesEditorPage() {
       setSaving(false);
     }
   }, [title, content, saving, isEdit, slug, navigate]);
+
+  // ── AI Generate: auto-save then navigate to /admin/new ─────────────
+  const handleGenerate = useCallback(async () => {
+    const t = title.trim();
+    if (!t || !content.trim() || generating) return;
+    setGenerating(true);
+    setError("");
+    try {
+      let noteSlug = slug;
+      if (!isEdit) {
+        // Create mode — save first
+        const created = await createNote({ title: t, content });
+        noteSlug = created.slug;
+      } else {
+        // Edit mode — update first
+        await updateNote(noteSlug!, { title: t, content });
+      }
+      navigate("/admin/new", {
+        state: { sourceNote: { slug: noteSlug, title: t, content } },
+      });
+    } catch (e: unknown) {
+      const msg = e && typeof e === "object" && "message" in e ? String(e.message) : "Couldn't save the note.";
+      setError(msg);
+      setGenerating(false);
+    }
+  }, [title, content, generating, isEdit, slug, navigate]);
 
   // ── Keyboard shortcuts ─────────────────────────────────
   // Cmd/Ctrl+Enter or Cmd/Ctrl+S → save.
@@ -284,7 +311,7 @@ export default function NotesEditorPage() {
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-sm">
+        <div className="flex items-center gap-sm flex-wrap">
           <button
             onClick={handleSave}
             disabled={!title.trim() || !content.trim() || saving}
@@ -292,6 +319,14 @@ export default function NotesEditorPage() {
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {saving ? "Saving..." : isEdit ? "Save changes" : "Create note"}
+          </button>
+          <button
+            onClick={handleGenerate}
+            disabled={!title.trim() || !content.trim() || generating}
+            className="inline-flex items-center gap-xs px-xl py-md rounded-lg font-sora text-sm bg-surface border border-border-default text-brand hover:bg-surface-container hover:border-brand/50 disabled:opacity-50 disabled:hover:border-border-default disabled:hover:bg-surface transition-colors"
+          >
+            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {generating ? "Saving..." : "Generate with AI"}
           </button>
           <Link
             to={isEdit ? `/notes/${slug}` : "/notes"}
