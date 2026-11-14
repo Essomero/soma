@@ -76,8 +76,11 @@ export const myStory: StoryContent = {
   publishedAt: "2026-10-29T00:00:00.000Z",                   // MUST be the actual creation date in YYYY-MM-DD or full ISO 8601
   tags: ["Tag1", "Tag2"],
   topics: ["technology"],               // must be valid topic slugs
-  source: { name: "Author - Platform", url: "https://..." }, // optional single-source republish
-  references: [{ title: "Source Title", url: "https://...", description: "Optional note" }], // optional multi-source synthesis
+  // ATTRIBUTION: always populate sources and references for cited content
+  sources: [{ name: "Author - Platform", url: "https://..." }], // republished content origins
+  references: [
+    { title: "Source Title", url: "https://...", description: "Optional note about this reference" },
+  ], // cited sources for facts, data, quotes
 
   // Simple layout
   intro: "Opening paragraph that hooks the reader...",
@@ -135,7 +138,10 @@ export const myGuide: GuideContent = {
   pullQuotes: [
     { quote: "The strongest, most quotable line from the first section." },
   ],
-  references: [{ title: "Source Title", url: "https://...", description: "Optional note" }],
+  // ATTRIBUTION: always populate sources and references for cited content
+  references: [
+    { title: "Source Title", url: "https://...", description: "Optional note about this reference" },
+  ],
 };`,
 
   doc: `// A doc: lookup answers. Sections stand alone; a reader scans and re-reads,

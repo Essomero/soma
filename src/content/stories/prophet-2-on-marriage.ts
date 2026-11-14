@@ -13,7 +13,7 @@ export const prophet2OnMarriage = {
   topics: ["philosophy"],
   archived: false,
   listed: false,
-  source: { name: "Kahlil Gibran: The Prophet (1923), via Project Gutenberg", url: "https://www.gutenberg.org/ebooks/58585" },
+  sources: [{ name: "Kahlil Gibran: The Prophet (1923), via Project Gutenberg", url: "https://www.gutenberg.org/ebooks/58585" }],
   intro: `*Let there be spaces in your togetherness, and let the winds of the heavens dance between you.*`,
   body: [
     "Gibran is not arguing for distance. He is arguing that closeness without slack turns into control: two pillars holding up the same temple, but not standing in each other's shadow. The oak and the cypress do not grow in each other's shadow either.",

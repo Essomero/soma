@@ -265,6 +265,53 @@ export default function FeaturedArticlePage() {
         </article>
       </section>
 
+      {/* Sources : republished content attribution */}
+      {row?.sources && row.sources.length > 0 && (
+        <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant border-t border-border-default">
+          <h2 className="font-sora text-headline-md text-on-surface mb-xl">Sources</h2>
+          <div className="flex flex-wrap gap-md">
+            {row.sources.map((s, i) => (
+              <a
+                key={i}
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-sm px-md py-sm bg-surface-container-low border border-border-default rounded-lg font-sora text-[10px] uppercase tracking-widest text-on-surface-muted hover:text-primary hover:border-primary/50 transition-colors"
+              >
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                {s.name}
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* References : multi-source attribution */}
+      {row?.references && row.references.length > 0 && (
+        <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant border-t border-border-default">
+          <h2 className="font-sora text-headline-md text-on-surface mb-xl">References</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-md max-w-4xl">
+            {row.references.map((ref, i) => (
+              <a
+                key={i}
+                href={ref.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-start gap-sm p-md bg-surface-container-low border border-border-default rounded-lg hover:border-primary/50 transition-colors group"
+              >
+                <span className="font-sora text-xs text-on-surface-muted flex-shrink-0 mt-0.5">{i + 1}.</span>
+                <div>
+                  <p className="font-sora text-sm text-on-surface group-hover:text-primary transition-colors">{ref.title}</p>
+                  {ref.description && (
+                    <p className="font-dm-sans text-xs text-on-surface-muted mt-xs">{ref.description}</p>
+                  )}
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Comments */}
       <div className="print:hidden">
       <Comments storySlug={STORY_SLUG} storyContext={{ title: "AI-accelerated learning you own", body: storyText }} refreshSignal={commentsRefresh} />

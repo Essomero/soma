@@ -1037,16 +1037,21 @@ export default function StoryPage() {
                 )}
               </div>
             )}
-            {story.source && (
-              <a
-                href={story.source.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-sm px-md py-sm bg-surface-container-low border border-border-default rounded-lg font-sora text-[10px] uppercase tracking-widest text-on-surface-muted hover:text-primary hover:border-primary/50 transition-colors mb-xxl"
-              >
-                <ExternalLink className="w-3 h-3" />
-                Source: {story.source.name}
-              </a>
+            {story.sources && story.sources.length > 0 && (
+              <div className="flex flex-wrap gap-sm mb-xxl">
+                {story.sources.map((s, si) => (
+                  <a
+                    key={si}
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-sm px-md py-sm bg-surface-container-low border border-border-default rounded-lg font-sora text-[10px] uppercase tracking-widest text-on-surface-muted hover:text-primary hover:border-primary/50 transition-colors"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Source: {s.name}
+                  </a>
+                ))}
+              </div>
             )}
           </div>
         </div>

@@ -13,7 +13,7 @@ export const prophet4OnWork = {
   topics: ["philosophy"],
   archived: false,
   listed: false,
-  source: { name: "Kahlil Gibran: The Prophet (1923), via Project Gutenberg", url: "https://www.gutenberg.org/ebooks/58585" },
+  sources: [{ name: "Kahlil Gibran: The Prophet (1923), via Project Gutenberg", url: "https://www.gutenberg.org/ebooks/58585" }],
   intro: `*Work is love made visible. And if you cannot work with love but only with distaste, it is better that you should leave your work.*`,
   body: [
     "Gibran draws the hardest line in the book: unloving work is not neutral, it is poison. Bread baked with bitterness feeds bitterness. Most productivity advice tries to optimize the distaste. Gibran says to quit instead.",

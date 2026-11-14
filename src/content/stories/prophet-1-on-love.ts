@@ -13,7 +13,7 @@ export const prophet1OnLove = {
   topics: ["philosophy"],
   archived: false,
   listed: false,
-  source: { name: "Kahlil Gibran: The Prophet (1923), via Project Gutenberg", url: "https://www.gutenberg.org/ebooks/58585" },
+  sources: [{ name: "Kahlil Gibran: The Prophet (1923), via Project Gutenberg", url: "https://www.gutenberg.org/ebooks/58585" }],
   intro: `*When love beckons to you follow him, though his ways are hard and steep. And when his wings enfold you yield to him, though the sword hidden among his pinions may wound you.*`,
   body: [
     "Gibran opens with a warning that sounds like bad news: the thing you want will also hurt you, and that is not a flaw in the deal. Love crowns you and crucifies you in the same passage. Anyone who has stayed with a hard subject past the beginner stage recognizes the shape immediately.",
