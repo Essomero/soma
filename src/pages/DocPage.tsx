@@ -1,4 +1,5 @@
 import { Link, useParams } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
 import { formatDate } from "@/lib/format-date";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
@@ -8,18 +9,73 @@ import ShareButtons from "@/components/ui/ShareButtons";
 import PrintButton from "@/components/ui/PrintButton";
 import { SkeletonDocLayout } from "@/components/ui/Skeleton";
 import { Edit3 } from "lucide-react";
-import { useContentItem } from "@/lib/content";
-import type { DocContent, TocItem } from "@/types";
+import { useContentItem, useContentList } from "@/lib/content";
+import type { DocContent, TocItem, TestContent } from "@/types";
 import { md, contentToMarkdown } from "@/lib/markdown";
 import { useAuth } from "@/lib/AuthContext";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import SafeImage from "@/components/ui/SafeImage";
+import ContentTestButton from "@/components/ui/ContentTestButton";
+
+interface ModelInfo {
+  id: string;
+  label: string;
+  provider: string;
+  free?: boolean;
+}
+
+const DEFAULT_MODELS: ModelInfo[] = [
+  { id: "deepseek-flash", label: "DeepSeek Flash", provider: "deepseek" },
+  { id: "deepseek-v4-pro", label: "DeepSeek V4 Pro", provider: "deepseek" },
+];
 
 export default function DocPage() {
   const { slug } = useParams<{ slug: string }>();
   const { data: doc, loading } = useContentItem<DocContent>("doc", slug);
   const { isOwner } = useAuth();
   usePageMeta({ title: doc?.title, description: doc?.description, image: doc?.image });
+
+  // ── AI model state (for quiz generation) ──────────────
+  const [inlineModels, setInlineModels] = useState<ModelInfo[]>(DEFAULT_MODELS);
+  const [inlineAiReady, setInlineAiReady] = useState(false);
+  const [inlineAiModel, setInlineAiModel] = useState<string>("deepseek-flash");
+  const [inlineAiProvider, setInlineAiProvider] = useState<string>("deepseek");
+
+  useEffect(() => {
+    fetch("/api/models")
+      .then(r => r.json())
+      .then(data => {
+        setInlineModels(data.models ?? []);
+        setInlineAiReady(true);
+        if (data.models?.length) {
+          const current = data.models.find((m: ModelInfo) => m.id === inlineAiModel && m.provider === inlineAiProvider);
+          if (!current) {
+            setInlineAiModel(data.models[0].id);
+            setInlineAiProvider(data.models[0].provider);
+          }
+        }
+      })
+      .catch(() => { setInlineModels([]); setInlineAiReady(true); });
+  }, []);
+
+  // ── Tests linked to this content ───────────────────────
+  const allTests = useContentList<TestContent>("test").data ?? [];
+  const existingTestSlug = useMemo(() => {
+    if (!slug) return undefined;
+    const match = allTests.find((t) => t.docSlug === slug);
+    return match?.slug;
+  }, [allTests, slug]);
+
+  // Build full text content for quiz generation
+  const docText = doc
+    ? [
+        doc.description,
+        ...doc.sections.flatMap((s) => [
+          s.intro || "",
+          ...s.items.flatMap((item) => [item.question, ...item.answer.map((a) => (typeof a === "string" ? a : a.type === "code" ? a.code : ""))]),
+        ]),
+      ].join(" ")
+    : "";
 
   if (loading) {
     return (
@@ -188,6 +244,27 @@ export default function DocPage() {
           </div>
         </div>
       </article>
+
+      {/* Quiz me — generate or take test linked to this content */}
+      {slug && doc && (
+        <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-lg border-t border-border-default mt-giant">
+          <ContentTestButton
+            contentText={docText}
+            contentTitle={doc?.title || ""}
+            slug={slug}
+            contentType="doc"
+            existingTestSlug={existingTestSlug}
+            models={inlineModels}
+            selectedModel={inlineAiModel}
+            selectedProvider={inlineAiProvider}
+            aiReady={inlineAiReady}
+            onModelChange={(m, p) => {
+              setInlineAiModel(m);
+              if (p) setInlineAiProvider(p);
+            }}
+          />
+        </section>
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Minus, Terminal, UserCheck, AlertTriangle, Lightbulb, Shield, Zap } from "lucide-react";
 import { SkeletonDocLayout } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
@@ -18,14 +18,27 @@ import PrintButton from "@/components/ui/PrintButton";
 import SafeImage from "@/components/ui/SafeImage";
 import { Edit3 } from "lucide-react";
 import { useContentItem, useContentList } from "@/lib/content";
-import type { GuideContent } from "@/types";
+import type { GuideContent, TestContent } from "@/types";
 import { useAuth } from "@/lib/AuthContext";
 import { md, mdBlock, contentToMarkdown } from "@/lib/markdown";
 import { type HighlightData } from "@/lib/highlights";
+import ContentTestButton from "@/components/ui/ContentTestButton";
 
 import type { BentoCardData, PullQuoteData } from "@/types";
 import type { LucideIcon } from "lucide-react";
 import { usePageMeta } from "@/hooks/usePageMeta";
+
+interface ModelInfo {
+  id: string;
+  label: string;
+  provider: string;
+  free?: boolean;
+}
+
+const DEFAULT_MODELS: ModelInfo[] = [
+  { id: "deepseek-flash", label: "DeepSeek Flash", provider: "deepseek" },
+  { id: "deepseek-v4-pro", label: "DeepSeek V4 Pro", provider: "deepseek" },
+];
 
 // Icon map for tip cards (matches ship-soma pattern)
 const tipIcons: Record<string, LucideIcon> = {
@@ -43,12 +56,43 @@ export default function GuideContentPage() {
   const highlightClickRef = useRef<(id: number) => void>(() => {});
   const content = guide ?? null;
   const otherGuides = (guides ?? []).filter((g) => g.id !== guide?.id).slice(0, 3);
-  const storyText = [
+  const contentText = [
     content?.intro || "",
     ...(content?.body || []),
     ...(content?.sections?.flatMap((s) => s.paragraphs.filter((p): p is string => typeof p === "string")) || []),
   ].join(" ");
   usePageMeta({ title: guide?.title, description: guide?.excerpt, image: guide?.image });
+
+  // ── Tests linked to this content ───────────────────────
+  const allTests = useContentList<TestContent>("test").data ?? [];
+  const existingTestSlug = useMemo(() => {
+    if (!slug) return undefined;
+    const match = allTests.find((t) => t.guideSlug === slug);
+    return match?.slug;
+  }, [allTests, slug]);
+
+  // ── AI model state (for quiz generation) ──────────────
+  const [inlineModels, setInlineModels] = useState<ModelInfo[]>(DEFAULT_MODELS);
+  const [inlineAiReady, setInlineAiReady] = useState(false);
+  const [inlineAiModel, setInlineAiModel] = useState<string>("deepseek-flash");
+  const [inlineAiProvider, setInlineAiProvider] = useState<string>("deepseek");
+
+  useEffect(() => {
+    fetch("/api/models")
+      .then(r => r.json())
+      .then(data => {
+        setInlineModels(data.models ?? []);
+        setInlineAiReady(true);
+        if (data.models?.length) {
+          const current = data.models.find((m: ModelInfo) => m.id === inlineAiModel && m.provider === inlineAiProvider);
+          if (!current) {
+            setInlineAiModel(data.models[0].id);
+            setInlineAiProvider(data.models[0].provider);
+          }
+        }
+      })
+      .catch(() => { setInlineModels([]); setInlineAiReady(true); });
+  }, []);
 
   // Extract TOC from ## headings (body) and structured section headings
   const tocBody = (content?.body || [])
@@ -339,6 +383,27 @@ export default function GuideContentPage() {
         </section>
       )}
 
+      {/* Quiz me — generate or take test linked to this content */}
+      {slug && content && (
+        <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-lg border-t border-border-default">
+          <ContentTestButton
+            contentText={contentText}
+            contentTitle={guide?.title || ""}
+            slug={slug}
+            contentType="guide"
+            existingTestSlug={existingTestSlug}
+            models={inlineModels}
+            selectedModel={inlineAiModel}
+            selectedProvider={inlineAiProvider}
+            aiReady={inlineAiReady}
+            onModelChange={(m, p) => {
+              setInlineAiModel(m);
+              if (p) setInlineAiProvider(p);
+            }}
+          />
+        </section>
+      )}
+
       {/* Comments */}
       {slug && content && (
         <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant">
@@ -372,7 +437,7 @@ export default function GuideContentPage() {
       {slug && (
         <InlineHighlights
           slug={slug}
-          storyText={storyText}
+          storyText={contentText}
           storyTitle={guide?.title || ""}
           articleRef={articleRef}
           isOwner={isOwner}

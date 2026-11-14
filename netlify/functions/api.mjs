@@ -15,11 +15,7 @@ function chatKeys() {
     gemini: process.env.GEMINI_API_KEY || "",
     groq: process.env.GROQ_API_KEY || "",
     cerebras: process.env.CEREBRAS_API_KEY || "",
-    straitly:
-      process.env.STRAITLY_API_KEY ||
-      process.env.STRAIGHTLY_API_KEY ||
-      process.env.STRIGHTLY_API_KEY ||
-      "",
+    straitly: process.env.STRAITLY_API_KEY || "",
   };
 }
 
@@ -528,7 +524,7 @@ export default async (req, context) => {
       if (process.env.GROQ_API_KEY) {
         models.push({ id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B Versatile", provider: "groq", free: false });
       }
-      if (process.env.STRAITLY_API_KEY || process.env.STRAIGHTLY_API_KEY || process.env.STRIGHTLY_API_KEY) {
+      if (process.env.STRAITLY_API_KEY) {
         models.push({ id: "deepseek/deepseek-v4-1-flash", label: "DeepSeek V4.1 Flash", provider: "straitly", free: false });
         models.push({ id: "gemini-3.8-flash", label: "Gemini 3.8 Flash", provider: "straitly", free: false });
       }
