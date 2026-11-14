@@ -15,7 +15,7 @@ function chatKeys(env) {
     gemini: env.GEMINI_API_KEY || "",
     groq: env.GROQ_API_KEY || "",
     cerebras: env.CEREBRAS_API_KEY || "",
-    straitly: env.STRAITLY_API_KEY || env.STRAIGHTLY_API_KEY || env.STRIGHTLY_API_KEY || "",
+    straitly: env.STRAITLY_API_KEY || "",
   };
 }
 
@@ -540,7 +540,7 @@ export async function onRequest(context) {
       const OPENROUTER_KEY = env.OPENROUTER_API_KEY || "";
       const GROQ_KEY = env.GROQ_API_KEY || "";
       const CEREBRAS_KEY = env.CEREBRAS_API_KEY || "";
-      const STRAITLY_KEY = env.STRAITLY_API_KEY || env.STRAIGHTLY_API_KEY || env.STRIGHTLY_API_KEY || "";
+      const STRAITLY_KEY = env.STRAITLY_API_KEY || "";
       const DEEPSEEK_MODELS = [
         { id: "deepseek-flash", label: "DeepSeek Flash", provider: "deepseek", free: false },
         { id: "deepseek-v4-pro", label: "DeepSeek V4 Pro", provider: "deepseek", free: false },

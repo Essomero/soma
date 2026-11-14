@@ -8,11 +8,7 @@ function envKeys() {
     gemini: process.env.GEMINI_API_KEY || "",
     groq: process.env.GROQ_API_KEY || "",
     cerebras: process.env.CEREBRAS_API_KEY || "",
-    straitly:
-      process.env.STRAITLY_API_KEY ||
-      process.env.STRAIGHTLY_API_KEY ||
-      process.env.STRIGHTLY_API_KEY ||
-      "",
+    straitly: process.env.STRAITLY_API_KEY || "",
   };
 }
 
