@@ -347,56 +347,85 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
         }
       }
 
-      // Parse final accumulated JSON
-      const jsonStart = accumulated.indexOf("{");
-      const jsonEnd = accumulated.lastIndexOf("}");
-      if (jsonStart === -1 || jsonEnd === -1) {
-        throw new Error("LLM response did not contain valid JSON");
-      }
-      const jsonStr = accumulated.slice(jsonStart, jsonEnd + 1);
-      const draft = JSON.parse(jsonStr) as AIDraft;
+      // Parse final accumulated JSON with fallback to deterministic library
+      // for very long content where the LLM runs out of output budget.
+      let draft: AIDraft;
+      let llmFailed = false;
 
-      // Require at least a title
-      if (!draft.title) {
-        throw new Error("LLM response missing title");
+      try {
+        const jsonStart = accumulated.indexOf("{");
+        const jsonEnd = accumulated.lastIndexOf("}");
+        if (jsonStart === -1 || jsonEnd === -1) throw new Error("No JSON found");
+        const jsonStr = accumulated.slice(jsonStart, jsonEnd + 1);
+        draft = JSON.parse(jsonStr) as AIDraft;
+        if (!draft.title) throw new Error("Missing title");
+      } catch {
+        // LLM output was truncated or malformed — fall back to deterministic
+        // library for the body content, keep any metadata the LLM produced.
+        llmFailed = true;
+        const fallbackRes = await fetch("/api/format-paste", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: formatContent,
+            url: formatUrl,
+            type: defaultType || "story",
+          }),
+          signal: AbortSignal.timeout(30_000),
+        });
+        const fallbackData = await fallbackRes.json();
+        if (!fallbackRes.ok) throw new Error(fallbackData.error || "Format failed");
+
+        draft = {
+          type: contentType,
+          reasoning: "Content too long for LLM formatting — body from deterministic library. Edit metadata as needed.",
+          title: fallbackData.title || "Untitled",
+          excerpt: fallbackData.excerpt || "",
+          category: "Imported",
+          author: { name: "Imported" },
+          image: fallbackData.image || FALLBACK_COVER,
+          imageAlt: fallbackData.imageAlt || "Content cover image",
+          tags: ["Imported"],
+          topics: [],
+          intro: "",
+          body: fallbackData.body || [],
+          sources: formatUrl ? [{ type: "web", title: "Imported", url: formatUrl }] : [],
+        };
       }
+
       draft.type = contentType;
 
-      // Clean up cover image
-      if (!/^https?:\/\//i.test(draft.image || "")) {
-        draft.image = FALLBACK_COVER;
-      }
-      if (!draft.imageAlt || draft.imageAlt.length > 80 || /^https?:\/\//i.test(draft.imageAlt)) {
-        draft.imageAlt = "Content cover image";
-      }
-
-      // If we fetched a URL, attach it as a source
-      if (formatUrl && !draft.sources?.length) {
-        draft.sources = [{ type: "web", title: "Imported", url: formatUrl }];
-      }
-
-      // Post-process: group numbered list items with their sub-paragraphs.
-      // The LLM puts each line as a separate body[] entry, but sub-paragraphs
-      // that follow a numbered header (e.g. "11. text") should be combined
-      // into the same entry so they indent under the list item.
-      if (draft.body?.length) {
-        const grouped: string[] = [];
-        let current: string[] = [];
-        for (const entry of draft.body) {
-          if (/^\d+\.\s/.test(entry)) {
-            // Start a new group for this numbered item
-            if (current.length > 0) grouped.push(current.join("\n\n"));
-            current = [entry];
-          } else if (current.length > 0) {
-            // Sub-paragraph of the current numbered item
-            current.push(entry);
-          } else {
-            // Standalone text before any numbered item
-            grouped.push(entry);
-          }
+      if (!llmFailed) {
+        // Clean up cover image
+        if (!/^https?:\/\//i.test(draft.image || "")) {
+          draft.image = FALLBACK_COVER;
         }
-        if (current.length > 0) grouped.push(current.join("\n\n"));
-        draft.body = grouped;
+        if (!draft.imageAlt || draft.imageAlt.length > 80 || /^https?:\/\//i.test(draft.imageAlt)) {
+          draft.imageAlt = "Content cover image";
+        }
+
+        // If we fetched a URL, attach it as a source
+        if (formatUrl && !draft.sources?.length) {
+          draft.sources = [{ type: "web", title: "Imported", url: formatUrl }];
+        }
+
+        // Post-process: group numbered list items with their sub-paragraphs.
+        if (draft.body?.length) {
+          const grouped: string[] = [];
+          let current: string[] = [];
+          for (const entry of draft.body) {
+            if (/^\d+\.\s/.test(entry)) {
+              if (current.length > 0) grouped.push(current.join("\n\n"));
+              current = [entry];
+            } else if (current.length > 0) {
+              current.push(entry);
+            } else {
+              grouped.push(entry);
+            }
+          }
+          if (current.length > 0) grouped.push(current.join("\n\n"));
+          draft.body = grouped;
+        }
       }
 
       setStatus("done");
