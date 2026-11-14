@@ -108,6 +108,10 @@ function rowToDraft(row: Record<string, unknown>, type: ContentType): AIDraft {
     description: str(c.description) || undefined,
   }));
 
+  // Visibility & featured flags (saved in meta_json / body_json)
+  draft.isFeatured = row.isFeatured === true;
+  draft.listed = row.listed !== false;
+
   // Doc: sections mean DocSection[] (number/heading/anchor/items)
   if (type === "doc") {
     draft.docSections = asRecordArray(row.sections).map((s) => ({
@@ -211,8 +215,13 @@ export default function AdminEditPage() {
     setSuccess("");
 
     try {
+      // Pull isFeatured from body so it goes into meta_json (mapRow reads
+      // meta.featured). Strip it from bodyPayload — it's not a body field.
+      const isFeatured = data.body?.isFeatured === true;
+      const { isFeatured: _, ...restBody } = data.body || {};
+
       const bodyPayload = {
-        ...data.body,
+        ...restBody,
         category: data.category,
         author: data.author,
         publishedAt: data.publishedAt,
@@ -230,7 +239,7 @@ export default function AdminEditPage() {
           type: data.type,
           title: data.title,
           excerpt: data.excerpt,
-          meta: {},
+          meta: { featured: isFeatured },
           body: bodyPayload,
           status: data.status,
         }),

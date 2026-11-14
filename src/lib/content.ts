@@ -46,17 +46,12 @@ export function fetchContentItem<T>(type: string, slug: string): Promise<T> {
   return p;
 }
 
-/** All items of a type, ordered by position. Owner session sees private rows too. */
+/** All items of a type, ordered by position. Owner session sees private rows too.
+ *  Not cached: the response varies by auth state (private vs published rows),
+ *  and a stale list is worse than an extra fetch. */
 export function fetchContentList<T>(type: string, q?: string): Promise<T[]> {
-  const key = q ? `${type}?q=${q}` : type;
-  let p = listCache.get(key) as Promise<T[]> | undefined;
-  if (!p) {
-    const url = `/api/content?type=${encodeURIComponent(type)}${q ? `&q=${encodeURIComponent(q)}` : ""}`;
-    p = get<T[]>(url);
-    listCache.set(key, p);
-    p.catch(() => listCache.delete(key));
-  }
-  return p;
+  const url = `/api/content?type=${encodeURIComponent(type)}${q ? `&q=${encodeURIComponent(q)}` : ""}`;
+  return get<T[]>(url);
 }
 
 export interface ContentState<T> {
