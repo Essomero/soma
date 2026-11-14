@@ -337,7 +337,6 @@ export function markdownToManuscript(markdown, opts = {}) {
   const title = opts.title || autoTitle || "Untitled";
   const slug = opts.slug || slugify(title);
   const excerpt = extractExcerptFromTokens(tokens);
-  const cover = extractCoverFromTokens(tokens);
 
   // Strip the first h1 from tokens — it's the title and would duplicate in the body
   const bodyTokens = autoTitle ? stripFirstHeading(tokens) : tokens;
@@ -345,14 +344,15 @@ export function markdownToManuscript(markdown, opts = {}) {
   // Convert to blocks
   const { hasRichBlocks, blocks } = tokensToBlocks(bodyTokens);
 
-  // Build the output
+  // Build the output — use fallback cover image, never promote content images.
+  // Content images (diagrams, screenshots) don't work as hero banners.
   const result = {
     slug,
     category: "Imported",
     title,
     excerpt,
-    image: cover?.url || "https://images.unsplash.com/photo-1504711434969-e33886168d6c?w=1200&h=675&fit=crop",
-    imageAlt: cover?.alt || "Reading content on Soma",
+    image: "https://images.unsplash.com/photo-1504711434969-e33886168d6c?w=1200&h=675&fit=crop",
+    imageAlt: "Reading content on Soma",
     author: { name: "Imported" },
     publishedAt: new Date().toISOString(),
     tags: ["Imported"],
