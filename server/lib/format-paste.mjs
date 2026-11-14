@@ -250,8 +250,30 @@ function stripFirstHeading(tokens) {
   return [...tokens.slice(0, idx), ...tokens.slice(idx + 1)];
 }
 
+/**
+ * Clean markdown footnote artifacts that Turndown produces from HTML
+ * footnote references (e.g. danluu.com articles). These include:
+ * - Footnote definitions: [^id]: text
+ * - Broken link syntax: orphaned [ and ](#fnref:...)
+ * - Isolated footnote keywords like "return" (from return links)
+ */
+function cleanMarkdown(md) {
+  return md
+    // Strip footnote definition lines: [^id]: text
+    .replace(/^\[\^[\w-]+\]:\s*.*$/gm, "")
+    // Strip footnote reference links: [text](#fnref:id) — whole thing
+    .replace(/\[([^\]]*)\]\(#fnref:[\w-]+\)/g, (_match, text) => text)
+    // Strip orphaned ](#fnref:...) fragments
+    .replace(/\]\(#fnref:[\w-]+\)/g, "")
+    // Strip orphaned [ at end of lines (from broken footnote refs)
+    .replace(/\[(\s*)$/gm, "")
+    // Remove empty lines resulting from the above (3+ newlines → 2)
+    .replace(/\n{3,}/g, "\n\n");
+}
+
 export function markdownToManuscript(markdown, opts = {}) {
-  const tokens = marked.lexer(markdown);
+  const cleaned = cleanMarkdown(markdown);
+  const tokens = marked.lexer(cleaned);
 
   // Extract metadata
   const autoTitle = extractTitleFromTokens(tokens, markdown);
