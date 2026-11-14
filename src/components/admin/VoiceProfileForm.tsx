@@ -64,20 +64,10 @@ export default function VoiceProfileForm({ initial, onSave, onCancel }: VoicePro
   };
 
   return (
-    <div className="bg-surface border border-border-default p-lg">
-      <div className="flex items-center justify-between mb-lg">
-        <h3 className="font-sora text-sm font-semibold text-on-surface">
-          {isEditing ? "Edit Voice Profile" : "Create Voice Profile"}
-        </h3>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="text-on-surface-muted hover:text-on-surface"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-
+    <div>
+      <h3 className="font-sora text-sm font-semibold text-on-surface mb-lg">
+        {isEditing ? "Edit Voice Profile" : "Create Voice Profile"}
+      </h3>
       <form onSubmit={handleSave} className="space-y-lg">
         {/* Name */}
         <div>

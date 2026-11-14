@@ -238,7 +238,7 @@ function VoiceProfileFormModal({ editingProfile, onSave, onClose }: VPFormModalP
       onClick={onClose}
     >
       <div
-        className="bg-surface border border-border-default rounded-lg w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-lg"
+        className="bg-surface border border-border-default rounded-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
