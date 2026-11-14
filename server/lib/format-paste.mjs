@@ -263,10 +263,13 @@ function cleanMarkdown(md) {
     .replace(/^\[\^[\w-]+\]:\s*.*$/gm, "")
     // Strip ALL markdown links pointing to #fn: or #fnref: (footnote references).
     // Turndown converts <a href="#fn:1">[1]</a> to [\[1\]](#fn:1)
-    // and <a href="#fnref:1">[return]</a> to [\[return\]](#fnref:1)
-    .replace(/\[.*?\]\(#fn(?:ref)?:[\w-]+\)/g, "")
-    // Strip orphaned ](#fn:...) or ](#fnref:...) fragments
-    .replace(/\]\(#fn(?:ref)?:[\w-]+\)/g, "")
+    // and <a href="#fnref:1">[return]</a> to [\[return\]](#fnref:1).
+    // PageMarkdown outputs full URLs: [1](https://danluu.com/testing/#fn:S)
+    // and nested brackets: [[return]](https://danluu.com/testing/#fnref:S)
+    .replace(/\[\[.*?\]\]\([^)]*#fn(?:ref)?:[\w-]+[^)]*\)/g, "")
+    .replace(/\[.*?\]\([^)]*#fn(?:ref)?:[\w-]+[^)]*\)/g, "")
+    // Strip orphaned ](...#fn:...) or ](...#fnref:...) fragments (also full URLs)
+    .replace(/\]\([^)]*#fn(?:ref)?:[\w-]+[^)]*\)/g, "")
     // Strip orphaned [ near end of line
     .replace(/\[\s*$/gm, "")
     // Strip images with relative or non-HTTP URLs (would 404 on Soma's domain)
