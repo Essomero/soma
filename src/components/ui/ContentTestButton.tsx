@@ -141,7 +141,7 @@ export default function ContentTestButton({
           <button
             onClick={() => generateTest(true)}
             disabled={busy || aiUnavailable}
-            className="inline-flex items-center gap-sm px-xl py-md rounded-lg font-sora text-sm transition-all bg-primary/5 border border-primary/20 text-primary/80 hover:bg-primary/10 hover:border-primary/40 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-sm px-xl py-md rounded-lg font-sora text-sm transition-all bg-primary/15 border border-primary/40 text-primary hover:bg-primary/20 hover:border-primary/60 disabled:opacity-40 disabled:cursor-not-allowed"
             title="Replace the existing test with new questions"
           >
             {regenerating ? (
