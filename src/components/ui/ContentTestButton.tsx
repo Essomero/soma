@@ -103,7 +103,7 @@ export default function ContentTestButton({
           onClick={() => generateTest(false)}
           disabled={busy || aiUnavailable}
           className={`inline-flex items-center gap-sm px-xl py-md rounded-lg font-sora text-sm transition-all
-            ${busy ? "bg-primary/10 border border-primary/30 text-primary" : existingTestSlug ? "bg-secondary/10 border border-secondary/40 text-secondary" : "bg-surface-container-low border border-border-default text-on-surface-muted hover:border-primary/40 hover:text-primary"}
+            ${busy ? "bg-primary/10 border border-primary/30 text-primary" : existingTestSlug ? "bg-secondary/10 border border-secondary/40 text-secondary" : "bg-primary/10 border border-primary/30 text-primary"}
             disabled:opacity-40 disabled:cursor-not-allowed`}
           title={
             aiUnavailable
@@ -141,7 +141,7 @@ export default function ContentTestButton({
           <button
             onClick={() => generateTest(true)}
             disabled={busy || aiUnavailable}
-            className="inline-flex items-center gap-sm px-xl py-md rounded-lg font-sora text-sm transition-all bg-surface-container-low border border-border-default text-on-surface-muted hover:border-primary/40 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-sm px-xl py-md rounded-lg font-sora text-sm transition-all bg-primary/5 border border-primary/20 text-primary/80 hover:bg-primary/10 hover:border-primary/40 disabled:opacity-40 disabled:cursor-not-allowed"
             title="Replace the existing test with new questions"
           >
             {regenerating ? (
