@@ -125,10 +125,26 @@ function extractQuizQuestions(raw) {
     const parsed = JSON.parse(cleaned);
     const questions = Array.isArray(parsed) ? parsed : (parsed.questions || []);
     if (!Array.isArray(questions)) return [];
+
+    const seenIds = new Set();
     return questions.filter((q) => {
-      if (!q.id || !q.question) return false;
+      // Must have id and question text
+      if (!q.id || !q.question || typeof q.id !== "string") return false;
+      // No duplicate IDs
+      if (seenIds.has(q.id)) return false;
+      seenIds.add(q.id);
+
       if (q.type === "open") return true;
-      return Array.isArray(q.options) && q.options.length > 0 && Array.isArray(q.correctOptionIds) && q.correctOptionIds.length > 0;
+
+      // Multiple-choice: validate options and correct answer
+      if (!Array.isArray(q.options) || q.options.length === 0) return false;
+      if (!Array.isArray(q.correctOptionIds) || q.correctOptionIds.length === 0) return false;
+
+      // Every correctOptionId must reference an existing option
+      const validIds = new Set(q.options.map((o) => o.id));
+      if (!q.correctOptionIds.every((id) => validIds.has(id))) return false;
+
+      return true;
     });
   } catch {
     return [];
@@ -264,6 +280,7 @@ async function handleTests(req, res) {
     const body = req.body || {};
     if (body.action === "generate") {
       if (!requireAuth(req, res)) return;
+      if (!rateLimit(req, res, { key: "tests-generate", limit: 10, windowMs: 60_000 })) return;
       const { contentSlug, contentTitle, contentText, contentType, model, provider, force } = body;
       if (!contentSlug || !contentText) {
         return res.status(400).json({ error: "contentSlug and contentText required" });
@@ -286,10 +303,10 @@ async function handleTests(req, res) {
         await query("DELETE FROM test_submissions WHERE tenant_id = ? AND test_slug = ?", [tenant_id, testSlug]);
       }
 
-      // Truncate content to fit the chat API's 20k userMessage limit
+      // Truncate content to fit the chat API's 20k userMessage limit (14k leaves buffer for title + prompt overhead)
       const truncated =
-        contentText.length > 15000
-          ? contentText.slice(0, 15000) + "\n\n[...content truncated for length]"
+        contentText.length > 14000
+          ? contentText.slice(0, 14000) + "\n\n[...content truncated for length]"
           : contentText;
 
       // Scale question count to content length and type
@@ -346,6 +363,8 @@ async function handleTests(req, res) {
         author: { name: "Soma", title: "Learning Platform" },
         publishedAt: new Date().toISOString(),
         storySlug: contentType === "story" ? contentSlug : undefined,
+        guideSlug: contentType === "guide" ? contentSlug : undefined,
+        docSlug: contentType === "doc" ? contentSlug : undefined,
         estimatedMinutes: Math.ceil(questions.length * 2),
         passingScore: 80,
         sources: [

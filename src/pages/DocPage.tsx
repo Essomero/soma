@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { formatDate } from "@/lib/format-date";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
@@ -9,8 +9,8 @@ import ShareButtons from "@/components/ui/ShareButtons";
 import PrintButton from "@/components/ui/PrintButton";
 import { SkeletonDocLayout } from "@/components/ui/Skeleton";
 import { Edit3 } from "lucide-react";
-import { useContentItem } from "@/lib/content";
-import type { DocContent, TocItem } from "@/types";
+import { useContentItem, useContentList } from "@/lib/content";
+import type { DocContent, TocItem, TestContent } from "@/types";
 import { md, contentToMarkdown } from "@/lib/markdown";
 import { useAuth } from "@/lib/AuthContext";
 import { usePageMeta } from "@/hooks/usePageMeta";
@@ -57,6 +57,14 @@ export default function DocPage() {
       })
       .catch(() => { setInlineModels([]); setInlineAiReady(true); });
   }, []);
+
+  // ── Tests linked to this content ───────────────────────
+  const allTests = useContentList<TestContent>("test").data ?? [];
+  const existingTestSlug = useMemo(() => {
+    if (!slug) return undefined;
+    const match = allTests.find((t) => t.docSlug === slug);
+    return match?.slug;
+  }, [allTests, slug]);
 
   // Build full text content for quiz generation
   const docText = doc
@@ -245,6 +253,7 @@ export default function DocPage() {
             contentTitle={doc?.title || ""}
             slug={slug}
             contentType="doc"
+            existingTestSlug={existingTestSlug}
             models={inlineModels}
             selectedModel={inlineAiModel}
             selectedProvider={inlineAiProvider}

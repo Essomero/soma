@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Minus, Terminal, UserCheck, AlertTriangle, Lightbulb, Shield, Zap } from "lucide-react";
 import { SkeletonDocLayout } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
@@ -18,7 +18,7 @@ import PrintButton from "@/components/ui/PrintButton";
 import SafeImage from "@/components/ui/SafeImage";
 import { Edit3 } from "lucide-react";
 import { useContentItem, useContentList } from "@/lib/content";
-import type { GuideContent } from "@/types";
+import type { GuideContent, TestContent } from "@/types";
 import { useAuth } from "@/lib/AuthContext";
 import { md, mdBlock, contentToMarkdown } from "@/lib/markdown";
 import { type HighlightData } from "@/lib/highlights";
@@ -56,12 +56,20 @@ export default function GuideContentPage() {
   const highlightClickRef = useRef<(id: number) => void>(() => {});
   const content = guide ?? null;
   const otherGuides = (guides ?? []).filter((g) => g.id !== guide?.id).slice(0, 3);
-  const storyText = [
+  const contentText = [
     content?.intro || "",
     ...(content?.body || []),
     ...(content?.sections?.flatMap((s) => s.paragraphs.filter((p): p is string => typeof p === "string")) || []),
   ].join(" ");
   usePageMeta({ title: guide?.title, description: guide?.excerpt, image: guide?.image });
+
+  // ── Tests linked to this content ───────────────────────
+  const allTests = useContentList<TestContent>("test").data ?? [];
+  const existingTestSlug = useMemo(() => {
+    if (!slug) return undefined;
+    const match = allTests.find((t) => t.guideSlug === slug);
+    return match?.slug;
+  }, [allTests, slug]);
 
   // ── AI model state (for quiz generation) ──────────────
   const [inlineModels, setInlineModels] = useState<ModelInfo[]>(DEFAULT_MODELS);
@@ -379,10 +387,11 @@ export default function GuideContentPage() {
       {slug && content && (
         <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-lg border-t border-border-default">
           <ContentTestButton
-            contentText={storyText}
+            contentText={contentText}
             contentTitle={guide?.title || ""}
             slug={slug}
             contentType="guide"
+            existingTestSlug={existingTestSlug}
             models={inlineModels}
             selectedModel={inlineAiModel}
             selectedProvider={inlineAiProvider}
@@ -428,7 +437,7 @@ export default function GuideContentPage() {
       {slug && (
         <InlineHighlights
           slug={slug}
-          storyText={storyText}
+          storyText={contentText}
           storyTitle={guide?.title || ""}
           articleRef={articleRef}
           isOwner={isOwner}

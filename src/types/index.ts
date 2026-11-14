@@ -711,6 +711,8 @@ export interface TestContent {
   topics?: string[];
   archived?: boolean;
   storySlug?: string; // Links this test directly to a lesson story
+  guideSlug?: string; // Links this test directly to a guide
+  docSlug?: string;   // Links this test directly to a doc
   courseSlug?: string; // Optional course association
   estimatedMinutes?: number;
   defaultTimeLimitSeconds?: number; // fallback per question (e.g. 45)
