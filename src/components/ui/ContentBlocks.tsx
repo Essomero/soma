@@ -261,7 +261,7 @@ export default function ContentBlocks({ blocks, firstDropCap, sectionIndex = 0, 
       }
       const html = mdBlock(block);
       return (
-        <div key={idx} data-section-index={sectionIndex} data-paragraph-index={idx} className={`font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md ${isFirstText ? "drop-cap" : ""}`}>
+        <div key={idx} data-section-index={sectionIndex} data-paragraph-index={idx} className={`story-prose font-dm-sans text-body-base text-on-surface leading-relaxed max-w-3xl space-y-md ${isFirstText ? "drop-cap" : ""}`}>
           {relevantHighlights.length > 0 ? (
             <HighlightRenderer html={html} sectionIndex={sectionIndex} paragraphIndex={idx} highlights={relevantHighlights} onHighlightClick={onHighlightClick} />
           ) : (

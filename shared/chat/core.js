@@ -13,7 +13,7 @@ import { extractErrorMessage } from "./errors.js";
 import { buildGeminiBody, translateGeminiStream } from "./gemini.js";
 import { buildActionPrompt } from "../tutor/actions.js";
 
-const MAX_USER_MESSAGE = 20000;
+const MAX_USER_MESSAGE = 100000;
 const MAX_SYSTEM_PROMPT = 60000;
 const MAX_MODEL_ID = 200;
 const DEFAULT_TIMEOUT_MS = 60000;
@@ -143,7 +143,7 @@ export async function runChat({
     const reasoning = isReasoningModel(selectedModel);
     const maxTokens = reasoning
       ? clamp(Number(body.max_tokens) || 64000, 1, 64000)
-      : clamp(Number(body.max_tokens) || 3500, 1, 8000);
+      : clamp(Number(body.max_tokens) || 3500, 1, 24000);
 
     const r = await fetchImpl(config.url, {
       method: "POST",

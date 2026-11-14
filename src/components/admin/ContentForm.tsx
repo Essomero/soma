@@ -378,11 +378,8 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
     estimatedMinutes: typeof values.estimatedMinutes === "number" ? values.estimatedMinutes : undefined,
     passingScore: typeof values.passingScore === "number" ? values.passingScore : undefined,
     sources: recordArray(values.sources).map((s) => ({
-      type: str(s.type),
-      storySlug: str(s.storySlug) || undefined,
-      guideSlug: str(s.guideSlug) || undefined,
-      docSlug: str(s.docSlug) || undefined,
-      title: str(s.title) || undefined,
+      type: str(s.type) || "web",
+      title: str(s.title) || str(s.name) || undefined,
       url: str(s.url) || undefined,
     })),
     questions: recordArray(values.questions).map((q) => ({
@@ -1032,6 +1029,12 @@ export default function ContentForm({ initial, onSave, onCancel, saving }: Conte
         { name: "url", type: "string", required: true, description: "URL" },
         { name: "description", type: "string", required: false, description: "Optional note" },
       ] satisfies FieldSchema[], { title: "", url: "", description: "" })}
+
+      {/* Sources / attribution (rich-text types) — where content was imported or republished from */}
+      {isRichText && renderArrayEditor("sources", "Sources", [
+        { name: "name", type: "string", required: true, description: "Source name (publication, site, author)" },
+        { name: "url", type: "string", required: true, description: "Source URL" },
+      ] satisfies FieldSchema[], { name: "", url: "" })}
 
       {/* Tip cards (guide only) */}
       {type === "guide" && renderArrayEditor("tipCards", "Tip Cards", [

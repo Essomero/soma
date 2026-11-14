@@ -660,6 +660,36 @@ export default async (req, context) => {
       }
     }
 
+    if (route === "format-paste") {
+      if (method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "Content-Type": "application/json" } });
+      if (!requireAuth()) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+      try {
+        const { default: handler } = await import("../../api/format-paste.js");
+        const body = await req.json().catch(() => ({}));
+        const vercelReq = {
+          method,
+          url: req.url,
+          body,
+          headers: { cookie: req.headers.get("cookie") || "" },
+        };
+        let statusCode = 200;
+        let responseBody = null;
+        const vercelRes = {
+          status(code) { statusCode = code; return this; },
+          json(data) { responseBody = data; return this; },
+          setHeader() {},
+          end() {},
+        };
+        await handler(vercelReq, vercelRes);
+        return new Response(JSON.stringify(responseBody), {
+          status: statusCode,
+          headers: { "Content-Type": "application/json" },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: "Format paste failed: " + (e.message || e) }), { status: 500, headers: { "Content-Type": "application/json" } });
+      }
+    }
+
     if (route === "voice-profiles") {
       if (!requireAuth()) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
       try {

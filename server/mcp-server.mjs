@@ -18,11 +18,12 @@
 import { createInterface } from "node:readline";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { existsSync, readdirSync, statSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, statSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { extractMeta, extractPlainText, classifyUrl, resolveArxivUrl } from "./lib/extract-html.mjs";
+import { markdownToManuscript, manuscriptToSource } from "./lib/format-paste.mjs";
 import { envKeys, envOptions } from "../shared/env.js";
 import { runChat } from "../shared/chat/core.js";
 
@@ -211,6 +212,68 @@ async function verifyUrl(url) {
     return `GET ${body.status} ${body.ok ? "OK" : "FAILED"} (final: ${body.url})`;
   }
   return `HEAD ${head.status} ${head.ok ? "OK" : "FAILED"} (final: ${head.url})`;
+}
+
+async function formatPaste({ content, url, title, slug, type }) {
+  let markdown = content || "";
+  let sourceUrl = url || "";
+
+  // If URL provided, fetch it first (reuse import logic)
+  if (url && !content) {
+    const result = await importContent(url, type);
+    const parsed = JSON.parse(result);
+    markdown = parsed.text || "";
+    sourceUrl = parsed.url || url;
+    if (!title) title = parsed.title || "";
+    type = type || parsed.suggestedType || "story";
+  }
+
+  if (!markdown.trim()) {
+    throw new Error("No content to format. Provide content (markdown text) or url (to fetch).");
+  }
+
+  // Default type
+  type = type || "story";
+
+  // Convert to manuscript
+  const ms = markdownToManuscript(markdown, { title, slug, url: sourceUrl, type });
+
+  // Ensure unique slug in drafts/
+  const draftDir = join(rootDir, "drafts", type);
+  if (!existsSync(draftDir)) {
+    mkdirSync(draftDir, { recursive: true });
+  }
+
+  let finalSlug = ms.slug;
+  let filePath = join(draftDir, `${finalSlug}.ts`);
+  let counter = 2;
+  while (existsSync(filePath)) {
+    finalSlug = `${ms.slug}-${counter++}`;
+    filePath = join(draftDir, `${finalSlug}.ts`);
+  }
+  ms.slug = finalSlug;
+
+  // Write the manuscript file
+  const source = manuscriptToSource(ms);
+  writeFileSync(filePath, `${source}\n`, "utf8");
+
+  return JSON.stringify({
+    file: filePath,
+    slug: finalSlug,
+    title: ms.title,
+    excerpt: ms.excerpt,
+    type,
+    blocks: (ms.body?.length || 0) + (ms.sections?.reduce((a, s) => a + s.paragraphs.length, 0) || 0),
+    hasSections: !!ms.sections,
+    wordCount: (ms.body || []).reduce((a, p) => a + p.split(/\s+/).filter(Boolean).length, 0) +
+      (ms.sections || []).reduce((a, s) =>
+        a + s.paragraphs.reduce((pa, p) =>
+          pa + (typeof p === "string" ? p : JSON.stringify(p)).split(/\s+/).filter(Boolean).length, 0
+        ), 0
+      ),
+    sourceUrl: sourceUrl || undefined,
+    nextStep: `validate: validate_manuscript with ["${filePath}"]`,
+  }, null, 2);
 }
 
 async function importContent(url, suggestedType) {
@@ -643,6 +706,28 @@ const TOOLS = [
       required: ["files", "profile"],
     },
     run: async (input) => humanizeManuscript({ files: requireArr(input.files, "files"), profile: input.profile }),
+  },
+  {
+    name: "format_paste",
+    description: "Paste URL or markdown and get it formatted as a beautiful Soma manuscript. Preserves all content — only changes structure to fit Soma's block format. Writes to drafts/<type>/<slug>.ts. Use this when you want to import external content without rewriting it.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        content: { type: "string", description: "Raw markdown text to format (mutually exclusive with url)" },
+        url: { type: "string", description: "URL to fetch and format (mutually exclusive with content)" },
+        title: { type: "string", description: "Optional title override (auto-detected from first h1)" },
+        slug: { type: "string", description: "Optional slug override (auto-generated from title)" },
+        type: { type: "string", description: "Content type: story, guide, doc (default: story)" },
+      },
+      required: [],
+    },
+    run: async (input) => formatPaste({
+      content: input.content,
+      url: input.url,
+      title: input.title,
+      slug: input.slug,
+      type: input.type,
+    }),
   },
 ];
 
