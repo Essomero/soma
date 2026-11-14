@@ -368,7 +368,9 @@ async function humanizeManuscript({ files, profile }) {
     if (exportMatch) {
       try {
         // Evaluate as JS by wrapping in parens and using Function constructor
-        // This is safe because the files are authored/committed by the owner
+        // Safe: files are authored/committed by the owner (dev tool reading local
+        // manuscripts only). If an import inside the export triggers side effects,
+        // they run here before the tool returns — avoid imports in prose-only objects.
         bodyObj = new Function(`return (${exportMatch[1]})`)();
       } catch {
         // Fallback: try manual extraction of known patterns
@@ -446,17 +448,23 @@ async function humanizeManuscript({ files, profile }) {
       return orig !== rew;
     });
 
-    // Write back to the file: replace the body in the export
-    const origStr = JSON.stringify(bodyObj, null, 2);
-    const newStr = JSON.stringify(rewritten, null, 2);
-    const updatedSource = source.replace(origStr, newStr);
-
-    if (updatedSource === source) {
-      // Try more aggressive: replace between the first { and last } in the export
-      results.push({ file, changed_fields: changedFields, warning: "In-place replacement may have missed some fields; verify manually" });
+    // Write back to the file: find the export default body range by character offset
+    // so replacement is exact regardless of key order or duplicate values.
+    const exportKw = "export default ";
+    const kwIdx = source.indexOf(exportKw);
+    if (kwIdx === -1) {
+      results.push({ file, changed_fields: changedFields, warning: "Could not locate export default in source; verify manually" });
+      continue;
+    }
+    const bodyOpen = source.indexOf("{", kwIdx + exportKw.length);
+    const bodyClose = source.lastIndexOf("}");
+    if (bodyOpen === -1 || bodyClose === -1 || bodyClose <= bodyOpen) {
+      results.push({ file, changed_fields: changedFields, warning: "Could not locate export body braces; verify manually" });
       continue;
     }
 
+    const newBodyStr = JSON.stringify(rewritten, null, 2);
+    const updatedSource = source.slice(0, bodyOpen) + newBodyStr + source.slice(bodyClose + 1);
     writeFileSync(fullPath, updatedSource, "utf8");
     results.push({ file, changed_fields: changedFields, reasoning: `Humanized using "${profileName}"` });
   }

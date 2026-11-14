@@ -101,7 +101,7 @@ export default function AdminDashboardPage() {
   const [showImport, setShowImport] = useState(false);
 
   // Pagination
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(0);
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages - 1);
@@ -462,7 +462,7 @@ export default function AdminDashboardPage() {
                   { value: "50", label: "50 / page" },
                   { value: "100", label: "100 / page" },
                 ]}
-                placeholder="25 / page"
+                placeholder="10 / page"
               />
               {totalPages > 1 && (
                 <>

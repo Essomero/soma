@@ -393,6 +393,9 @@ async function handleHumanize(req, res) {
 export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(204).end();
 
+  // All voice profile endpoints mutate data or consume AI keys: auth required.
+  if (!requireAuth(req, res)) return;
+
   // Parse path for sub-routes
   const { id, action } = parsePath(req.url);
 

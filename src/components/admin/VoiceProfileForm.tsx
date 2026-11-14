@@ -34,7 +34,7 @@ export default function VoiceProfileForm({ initial, onSave, onCancel }: VoicePro
 
   const parseSamples = (): string[] => {
     return samplesText
-      .split(/---/)
+      .split(/\n---\n/)
       .map((s) => s.trim())
       .filter(Boolean);
   };

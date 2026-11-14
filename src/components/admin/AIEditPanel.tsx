@@ -197,6 +197,35 @@ export default function AIEditPanel({ currentJson, onUpdate, contentType }: AIEd
   const selected = models.find((m) => m.id === selectedModel && m.provider === selectedProvider);
   const aiUnavailable = !modelsReady || models.length === 0;
 
+  const runHumanize = async (profileId: string) => {
+    setHumanizeStatus("sending");
+    setHumanizeError("");
+    setHumanizeReasoning("");
+    try {
+      const res = await fetch("/api/voice-profiles/humanize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profile_id: profileId,
+          content_json: currentJson,
+          content_type: contentType || "story",
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(err.error || "Humanization failed");
+      }
+      const data = await res.json();
+      const parsed = JSON.parse(data.rewritten_json);
+      onUpdate(parsed);
+      setHumanizeReasoning(data.reasoning || "Content rewritten to match voice profile");
+      setHumanizeStatus("idle");
+    } catch (err) {
+      setHumanizeError(err instanceof Error ? err.message : "Humanization failed");
+      setHumanizeStatus("error");
+    }
+  };
+
   const submit = async () => {
     if (!prompt.trim() || status === "sending" || !selected) return;
     setStatus("sending");
@@ -378,34 +407,7 @@ export default function AIEditPanel({ currentJson, onUpdate, contentType }: AIEd
             ) : voiceProfiles.length === 1 ? (
               <button
                 type="button"
-                onClick={async () => {
-                  setHumanizeStatus("sending");
-                  setHumanizeError("");
-                  setHumanizeReasoning("");
-                  try {
-                    const res = await fetch("/api/voice-profiles/humanize", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        profile_id: voiceProfiles[0].id,
-                        content_json: currentJson,
-                        content_type: contentType || "story",
-                      }),
-                    });
-                    if (!res.ok) {
-                      const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-                      throw new Error(err.error || "Humanization failed");
-                    }
-                    const data = await res.json();
-                    const parsed = JSON.parse(data.rewritten_json);
-                    onUpdate(parsed);
-                    setHumanizeReasoning(data.reasoning || "Content rewritten to match voice profile");
-                    setHumanizeStatus("idle");
-                  } catch (err) {
-                    setHumanizeError(err instanceof Error ? err.message : "Humanization failed");
-                    setHumanizeStatus("error");
-                  }
-                }}
+                onClick={() => runHumanize(voiceProfiles[0].id)}
                 disabled={humanizeStatus === "sending"}
                 className="inline-flex items-center gap-1 px-sm py-xs text-[10px] font-sora uppercase tracking-widest border transition-colors bg-surface text-on-surface-muted hover:border-primary/40 hover:text-on-surface disabled:opacity-40 disabled:cursor-not-allowed"
               >
@@ -429,35 +431,7 @@ export default function AIEditPanel({ currentJson, onUpdate, contentType }: AIEd
                 </select>
                 <button
                   type="button"
-                  onClick={async () => {
-                    if (!selectedProfileId) return;
-                    setHumanizeStatus("sending");
-                    setHumanizeError("");
-                    setHumanizeReasoning("");
-                    try {
-                      const res = await fetch("/api/voice-profiles/humanize", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          profile_id: selectedProfileId,
-                          content_json: currentJson,
-                          content_type: contentType || "story",
-                        }),
-                      });
-                      if (!res.ok) {
-                        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-                        throw new Error(err.error || "Humanization failed");
-                      }
-                      const data = await res.json();
-                      const parsed = JSON.parse(data.rewritten_json);
-                      onUpdate(parsed);
-                      setHumanizeReasoning(data.reasoning || "Content rewritten to match voice profile");
-                      setHumanizeStatus("idle");
-                    } catch (err) {
-                      setHumanizeError(err instanceof Error ? err.message : "Humanization failed");
-                      setHumanizeStatus("error");
-                    }
-                  }}
+                  onClick={() => { if (selectedProfileId) runHumanize(selectedProfileId); }}
                   disabled={!selectedProfileId || humanizeStatus === "sending"}
                   className="inline-flex items-center gap-1 px-sm py-xs text-[10px] font-sora uppercase tracking-widest border transition-colors bg-surface text-on-surface-muted hover:border-primary/40 hover:text-on-surface disabled:opacity-40 disabled:cursor-not-allowed"
                 >
