@@ -23,6 +23,7 @@ import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { extractMeta, extractPlainText, classifyUrl, resolveArxivUrl } from "./lib/extract-html.mjs";
+import { envKeys, envOptions } from "../shared/env.js";
 import { runChat } from "../shared/chat/core.js";
 
 import { CONTENT_TYPES, TOPICS, TEMPLATES, ROUTE_BASE, WORKFLOW_NOTE } from "./mcp-content-data.mjs";
@@ -290,26 +291,6 @@ async function importContent(url, suggestedType) {
 
 // ── Voice profile humanize (MCP tool) ───────────────
 
-function envKeys() {
-  return {
-    deepseek: process.env.DEEPSEEK_API_KEY || "",
-    openrouter: process.env.OPENROUTER_API_KEY || "",
-    gemini: process.env.GEMINI_API_KEY || "",
-    groq: process.env.GROQ_API_KEY || "",
-    cerebras: process.env.CEREBRAS_API_KEY || "",
-    straitly: process.env.STRAITLY_API_KEY || "",
-  };
-}
-
-function envOptions() {
-  return {
-    geminiDisabled: process.env.GEMINI_DISABLED === "1" || process.env.GEMINI_DISABLED === "true",
-    reasoningEffort: process.env.DEEPSEEK_REASONING_EFFORT,
-    referer: "https://soma.mayanja.dev",
-    title: "Soma",
-  };
-}
-
 // Manuscript-relevant prose fields per content type (fields whose text content
 // should be rewritten). Non-text fields (slug, author, publishedAt, image,
 // imageAlt, tags, meta fields) are preserved as-is.
@@ -504,11 +485,13 @@ function extractBodyFields(source) {
   let match;
   while ((match = keyRe.exec(source)) !== null) {
     const key = match[1];
-    const val = match[2].trim();
     if (!key || key === "export" || key === "default") continue;
+    // Strip trailing comma and inline // comments
+    let val = match[2].replace(/,?\s*(\/\/.*)?$/, "").trim();
+    if (!val) continue;
     // Store simple string values
-    if (val.startsWith('"') || val.startsWith("'")) {
-      obj[key] = val.replace(/^["']|["']$/g, "");
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+      obj[key] = val.slice(1, -1);
     } else if (val.startsWith("[")) {
       obj[key] = val; // keep as raw string for comparison
     } else if (val === "true" || val === "false") {
