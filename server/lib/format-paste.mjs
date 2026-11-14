@@ -261,13 +261,15 @@ function cleanMarkdown(md) {
   return md
     // Strip footnote definition lines: [^id]: text
     .replace(/^\[\^[\w-]+\]:\s*.*$/gm, "")
-    // Strip footnote reference links: [text](#fnref:id) — whole thing
-    .replace(/\[([^\]]*)\]\(#fnref:[\w-]+\)/g, (_match, text) => text)
-    // Strip orphaned ](#fnref:...) fragments
-    .replace(/\]\(#fnref:[\w-]+\)/g, "")
-    // Strip orphaned [ at end of lines (from broken footnote refs)
-    .replace(/\[(\s*)$/gm, "")
-    // Remove empty lines resulting from the above (3+ newlines → 2)
+    // Strip ALL markdown links pointing to #fn: or #fnref: (footnote references).
+    // Turndown converts <a href="#fn:1">[1]</a> to [\[1\]](#fn:1)
+    // and <a href="#fnref:1">[return]</a> to [\[return\]](#fnref:1)
+    .replace(/\[.*?\]\(#fn(?:ref)?:[\w-]+\)/g, "")
+    // Strip orphaned ](#fn:...) or ](#fnref:...) fragments
+    .replace(/\]\(#fn(?:ref)?:[\w-]+\)/g, "")
+    // Strip orphaned [ near end of line
+    .replace(/\[\s*$/gm, "")
+    // Collapse runs of 3+ newlines to 2
     .replace(/\n{3,}/g, "\n\n");
 }
 
