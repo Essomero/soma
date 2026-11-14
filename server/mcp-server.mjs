@@ -362,19 +362,50 @@ async function humanizeManuscript({ files, profile }) {
     const contentType = dirMatch ? dirMatch[1] : "story";
     const slug = relPath.replace(/^drafts\/\w+\//, "").replace(/\.ts$/, "");
 
-    // Parse the TS export to extract the body object
+    // Parse the TS export to extract the body object.
+    // Supports both `export default { … }` and `export const name: Type = { … }`.
     let bodyObj = {};
-    const exportMatch = source.match(/export\s+default\s*(\{[\s\S]*?\n\})/);
-    if (exportMatch) {
-      try {
-        // Evaluate as JS by wrapping in parens and using Function constructor
-        // Safe: files are authored/committed by the owner (dev tool reading local
-        // manuscripts only). If an import inside the export triggers side effects,
-        // they run here before the tool returns — avoid imports in prose-only objects.
-        bodyObj = new Function(`return (${exportMatch[1]})`)();
-      } catch {
-        // Fallback: try manual extraction of known patterns
-        bodyObj = extractBodyFields(source);
+    let bodyStart = -1;
+    let bodyEnd = -1;
+
+    // Find the opening { by looking after an export assignment's = sign
+    const exportRe = /export\s+(?:default|const\s+\w+(?:\s*:\s*\w+(?:\[\])?\s*)?\s*=\s*)\s*(\{)/;
+    const exportMatch = source.match(exportRe);
+    if (exportMatch && exportMatch.index !== undefined) {
+      const openIdx = exportMatch.index + exportMatch[0].indexOf("{");
+      // Brace count from openIdx to find the matching closing }
+      let depth = 1;
+      let inString = false;
+      let stringChar = "";
+      let escaped = false;
+      let closeIdx = -1;
+      for (let i = openIdx + 1; i < source.length; i++) {
+        const ch = source[i];
+        if (escaped) { escaped = false; continue; }
+        if (inString) {
+          if (ch === "\\") { escaped = true; continue; }
+          if (ch === stringChar) inString = false;
+          continue;
+        }
+        if (ch === '"' || ch === "'" || ch === "`") { inString = true; stringChar = ch; continue; }
+        if (ch === "{") depth++;
+        if (ch === "}") {
+          depth--;
+          if (depth === 0) { closeIdx = i; break; }
+        }
+      }
+      if (closeIdx !== -1) {
+        bodyStart = openIdx;
+        bodyEnd = closeIdx;
+        const raw = source.slice(bodyStart + 1, bodyEnd);
+        try {
+          // Safe: files are authored/committed by the owner (dev tool reading local
+          // manuscripts only). If an import inside the export triggers side effects,
+          // they run here before the tool returns — avoid imports in prose-only objects.
+          bodyObj = new Function(`return ({\n${raw}\n})`)();
+        } catch {
+          bodyObj = extractBodyFields(`{${raw}}`);
+        }
       }
     }
 
@@ -448,23 +479,13 @@ async function humanizeManuscript({ files, profile }) {
       return orig !== rew;
     });
 
-    // Write back to the file: find the export default body range by character offset
-    // so replacement is exact regardless of key order or duplicate values.
-    const exportKw = "export default ";
-    const kwIdx = source.indexOf(exportKw);
-    if (kwIdx === -1) {
-      results.push({ file, changed_fields: changedFields, warning: "Could not locate export default in source; verify manually" });
+    // Write back to the file: use brace-counted range from parse step.
+    if (bodyStart === -1 || bodyEnd === -1) {
+      results.push({ file, changed_fields: changedFields, warning: "Could not locate body range; verify manually" });
       continue;
     }
-    const bodyOpen = source.indexOf("{", kwIdx + exportKw.length);
-    const bodyClose = source.lastIndexOf("}");
-    if (bodyOpen === -1 || bodyClose === -1 || bodyClose <= bodyOpen) {
-      results.push({ file, changed_fields: changedFields, warning: "Could not locate export body braces; verify manually" });
-      continue;
-    }
-
     const newBodyStr = JSON.stringify(rewritten, null, 2);
-    const updatedSource = source.slice(0, bodyOpen) + newBodyStr + source.slice(bodyClose + 1);
+    const updatedSource = source.slice(0, bodyStart + 1) + newBodyStr + source.slice(bodyEnd);
     writeFileSync(fullPath, updatedSource, "utf8");
     results.push({ file, changed_fields: changedFields, reasoning: `Humanized using "${profileName}"` });
   }

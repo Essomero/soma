@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Mic, Loader2 } from "lucide-react";
+import { Plus, Mic, Loader2, X } from "lucide-react";
+import { useScrollLock } from "@/lib/useScrollLock";
 import VoiceProfileCard, { type VoiceProfileData } from "./VoiceProfileCard";
 import VoiceProfileForm from "./VoiceProfileForm";
 
@@ -158,24 +159,22 @@ export default function VoiceProfileList({ refreshKey }: VoiceProfileListProps) 
         </div>
       )}
 
-      {/* Form (create/edit) */}
+      {/* Form modal */}
       {showForm && (
-        <div className="mb-lg">
-          <VoiceProfileForm
-            initial={editingProfile ? {
-              id: editingProfile.id,
-              name: editingProfile.name,
-              description: editingProfile.description,
-              samples: editingProfile.samples,
-              style_prompt: editingProfile.style_prompt,
-            } : null}
-            onSave={handleSave}
-            onCancel={() => {
-              setShowForm(false);
-              setEditingProfile(null);
-            }}
-          />
-        </div>
+        <VoiceProfileFormModal
+          editingProfile={editingProfile ? {
+            id: editingProfile.id,
+            name: editingProfile.name,
+            description: editingProfile.description,
+            samples: editingProfile.samples,
+            style_prompt: editingProfile.style_prompt,
+          } : null}
+          onSave={handleSave}
+          onClose={() => {
+            setShowForm(false);
+            setEditingProfile(null);
+          }}
+        />
       )}
 
       {/* Profile cards grid */}
@@ -212,6 +211,58 @@ export default function VoiceProfileList({ refreshKey }: VoiceProfileListProps) 
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Modal wrapper ────────────────────────────────────
+
+interface VPFormModalProps {
+  editingProfile: {
+    id: string;
+    name: string;
+    description: string;
+    samples: string[];
+    style_prompt: string;
+  } | null;
+  onSave: (data: { name: string; description: string; samples: string[] }, analyze: boolean) => Promise<void>;
+  onClose: () => void;
+}
+
+function VoiceProfileFormModal({ editingProfile, onSave, onClose }: VPFormModalProps) {
+  useScrollLock(true);
+
+  return (
+    <div
+      className="fixed inset-0 z-modal-confirm bg-background/60 backdrop-blur-sm flex items-center justify-center p-xl"
+      onClick={onClose}
+    >
+      <div
+        className="bg-surface border border-border-default rounded-lg w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close button */}
+        <div className="flex justify-end pt-md pr-md">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-on-surface-muted hover:text-on-surface"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="px-lg pb-lg">
+          <VoiceProfileForm
+            initial={editingProfile}
+            onSave={async (data, analyze) => {
+              await onSave(data, analyze);
+              onClose();
+            }}
+            onCancel={onClose}
+          />
+        </div>
+      </div>
     </div>
   );
 }
