@@ -39,6 +39,7 @@ import { collectPriorTurns } from "../../shared/tutor/memory.js";
 import { useScrollLock } from "@/lib/useScrollLock";
 import { buildLessonIndex, resolveSectionAnchors, storyCodePrefix } from "@/lib/storyLinks";
 import SafeImage from "@/components/ui/SafeImage";
+import ContentTestButton from "@/components/ui/ContentTestButton";
 
 interface ModelInfo {
   id: string;
@@ -1379,6 +1380,25 @@ export default function StoryPage() {
               )}
             </div>
             <StarRating storySlug={slug} />
+          </div>
+
+          {/* Quiz me — generate or take test linked to this content */}
+          <div className="mt-md">
+            <ContentTestButton
+              contentText={storyText}
+              contentTitle={story?.title || ""}
+              slug={slug}
+              contentType="story"
+              existingTestSlug={lessonTest?.slug}
+              models={inlineModels}
+              selectedModel={inlineAiModel}
+              selectedProvider={inlineAiProvider}
+              aiReady={inlineAiReady}
+              onModelChange={(m, p) => {
+                setInlineAiModel(m);
+                if (p) setInlineAiProvider(p);
+              }}
+            />
           </div>
         </section>
       )}

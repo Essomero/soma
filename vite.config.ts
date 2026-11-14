@@ -13,7 +13,7 @@ function chatDevPlugin(env: Record<string, string>) {
   const GEMINI_DISABLED = env.GEMINI_DISABLED === "1" || env.GEMINI_DISABLED === "true";
   const GROQ_KEY = env.GROQ_API_KEY || "";
   const CEREBRAS_KEY = env.CEREBRAS_API_KEY || "";
-  const STRAITLY_KEY = env.STRAITLY_API_KEY || env.STRAIGHTLY_API_KEY || env.STRIGHTLY_API_KEY || "";
+  const STRAITLY_KEY = env.STRAITLY_API_KEY || "";
 
   const keys: string[] = [];
   if (DEEPSEEK_KEY) keys.push("DeepSeek");
@@ -433,7 +433,14 @@ function chatDevPlugin(env: Record<string, string>) {
       // Local API fallback: serve /api/* from api/*.js with the same owner
       // bypass as `npm run server`, so plain `npm run dev` runs the same
       // handlers as production instead of hand-written copies.
-      for (const k of ["TURSO_DATABASE_URL", "TURSO_DB", "TURSO_AUTH_TOKEN", "TURSO_TOKEN", "SITE_PASSWORD", "UNSPLASH_ACCESS_KEY", "UNSPLASH_APP_ID"]) {
+      for (const k of [
+          "TURSO_DATABASE_URL", "TURSO_DB", "TURSO_AUTH_TOKEN", "TURSO_TOKEN",
+          "SITE_PASSWORD", "UNSPLASH_ACCESS_KEY", "UNSPLASH_APP_ID",
+          "DEEPSEEK_API_KEY", "OPENROUTER_API_KEY", "GEMINI_API_KEY",
+          "GROQ_API_KEY", "CEREBRAS_API_KEY",
+          "STRAITLY_API_KEY",
+          "DEEPSEEK_REASONING_EFFORT", "GEMINI_DISABLED",
+        ]) {
         if (!process.env[k] && env[k]) process.env[k] = env[k];
       }
       const localHandlerCache: Record<string, any> = {};
