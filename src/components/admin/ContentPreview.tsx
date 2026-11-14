@@ -50,21 +50,52 @@ function renderEntry(entry: string | object): string {
 
 export default function ContentPreview({ draft, onBack }: ContentPreviewProps) {
   const body = useMemo(() => {
-    const parts = draft.body ?? [];
-    return parts.length > 0 ? parts.map((p) => mdBlock(p)).join('<div class="h-4"></div>') : "";
+    const parts = (draft.body ?? []) as (string | ContentBlock)[];
+    if (parts.length === 0) return "";
+    const fragments: string[] = [];
+    for (const p of parts) {
+      if (typeof p === "string") {
+        fragments.push(mdBlock(p));
+      } else if (isBlock(p)) {
+        if (p.type === "image") {
+          fragments.push(`<figure class="my-xxl rounded-lg overflow-hidden border border-border-default"><img src="${p.src.replace(/&/g, "&amp;").replace(/"/g, "&quot;")}" alt="${(p.alt || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;")}" class="w-full" />${p.caption ? `<figcaption class="px-xl py-md font-dm-sans text-sm text-on-surface-muted italic bg-surface-container-low border-t border-border-default">${p.caption}</figcaption>` : ""}</figure>`);
+        } else {
+          fragments.push(renderEntry(p));
+        }
+      }
+    }
+    return fragments.join('<div class="h-4"></div>');
   }, [draft.body]);
 
   const sections = useMemo(
     () => (draft.sections ?? []).slice(0, 20).map((s) => {
-      // Batch all paragraphs into one mdBlock call instead of per-paragraph,
-      // which avoids hundreds of marked.parse + hljs invocations in large content.
-      const combined = (s.paragraphs ?? [])
-        .map((p) => (typeof p === "string" ? p : ""))
-        .filter(Boolean)
-        .join("\n\n");
+      // Split paragraphs into runs of strings (batched into one mdBlock) and
+      // ContentBlocks (rendered individually as HTML fragments).
+      const paragraphs = (s.paragraphs ?? []) as (string | ContentBlock)[];
+      const fragments: string[] = [];
+      let textRun: string[] = [];
+      const flushText = () => {
+        if (textRun.length > 0) {
+          fragments.push(mdBlock(textRun.join("\n\n")));
+          textRun = [];
+        }
+      };
+      for (const p of paragraphs) {
+        if (typeof p === "string") {
+          textRun.push(p);
+        } else if (isBlock(p)) {
+          flushText();
+          if (p.type === "image") {
+            fragments.push(`<figure class="my-xxl rounded-lg overflow-hidden border border-border-default"><img src="${p.src.replace(/&/g, "&amp;").replace(/"/g, "&quot;")}" alt="${(p.alt || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;")}" class="w-full" />${p.caption ? `<figcaption class="px-xl py-md font-dm-sans text-sm text-on-surface-muted italic bg-surface-container-low border-t border-border-default">${p.caption}</figcaption>` : ""}</figure>`);
+          } else {
+            fragments.push(renderEntry(p));
+          }
+        }
+      }
+      flushText();
       return {
         heading: s.heading,
-        html: combined ? mdBlock(combined) : "",
+        html: fragments.join(""),
       };
     }),
     [draft.sections],
