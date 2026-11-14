@@ -291,6 +291,27 @@ export default function GuideContentPage() {
         </div>
       </article>
 
+      {/* Sources : republished content attribution */}
+      {content?.sources && content.sources.length > 0 && (
+        <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant border-t border-border-default">
+          <h2 className="font-sora text-headline-md text-on-surface mb-xl">Sources</h2>
+          <div className="flex flex-wrap gap-md">
+            {content.sources.map((s, i) => (
+              <a
+                key={i}
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-sm px-md py-sm bg-surface-container-low border border-border-default rounded-lg font-sora text-[10px] uppercase tracking-widest text-on-surface-muted hover:text-primary hover:border-primary/50 transition-colors"
+              >
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                {s.name}
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* References */}
       {content?.references && content.references.length > 0 && (
         <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant">

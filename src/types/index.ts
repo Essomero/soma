@@ -297,7 +297,7 @@ export interface StoryContent {
   body: string[];
   pullQuote?: PullQuoteData;
   // Attribution
-  source?: { name: string; url: string };  // Single source : republished content (Twitter thread, etc.)
+  sources?: { name: string; url: string }[];  // One or more republished content sources
   references?: { title: string; url: string; description?: string }[];  // Multi-source : original synthesis/research
 
   // Content lifecycle
@@ -347,6 +347,8 @@ export interface GuideContent {
   isFeatured?: boolean;
   intro: string;
   body: string[];
+  // Attribution
+  sources?: { name: string; url: string }[];  // One or more republished content sources
   sections?: Array<{ heading: string; paragraphs: (string | ContentBlock)[] }>;
   bentoHighlights?: BentoCardData[];
   pullQuotes?: PullQuoteData[];
@@ -365,6 +367,9 @@ export interface FeaturedContent {
   /** UTC ISO 8601 timestamp — formatted to display date at render time */
   publishedAt: string;
   tagline?: string;
+  // Attribution
+  sources?: { name: string; url: string }[];  // One or more republished content sources
+  references?: { title: string; url: string; description?: string }[];  // Multi-source : original synthesis/research
   bentoHighlights?: BentoCardData[];
   pullQuotes?: PullQuoteData[];
   sections?: Array<{ heading: string; paragraphs: (string | ContentBlock)[] }>;
@@ -419,6 +424,9 @@ export interface PodcastEpisodeFull {
   guests?: { name: string; role: string; description: string; color: string }[];
   transcript?: { speaker: string; text: string; start?: number }[]; // start: seconds into audio, for transcript sync
   relatedReading?: { tag: string; title: string; image: string; color: string; href: string }[];
+  // Attribution
+  sources?: { name: string; url: string }[];  // One or more republished content sources
+  references?: { title: string; url: string; description?: string }[];  // Original research / synthesis citations
 }
 
 // ── Guide ─────────────────────────────────────────────

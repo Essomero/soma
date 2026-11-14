@@ -144,7 +144,11 @@ const STORY_FIELDS: FieldSchema[] = [
     { name: "title", type: "string", required: true, description: "Card title.", placeholder: "Shapes Over Names" },
     { name: "description", type: "markdown", required: true, description: "Card content." },
   ]},
-  { name: "references", type: "object[]", required: false, description: "Sources and further reading. Attribution for claims and ideas.", children: [
+  { name: "sources", type: "object[]", required: false, description: "Republished content origins. Populate when this content was first published elsewhere.", children: [
+    { name: "name", type: "string", required: true, description: "Publisher or platform name." },
+    { name: "url", type: "string", required: true, description: "URL of the original publication." },
+  ]},
+  { name: "references", type: "object[]", required: false, description: "Sources and further reading. REQUIRED when the story references external data, quotes, or factual claims.", constraints: "Each reference needs a title and a reachable URL. Description is optional.", children: [
     { name: "title", type: "string", required: true, description: "Reference title." },
     { name: "url", type: "string", required: true, description: "Reference URL." },
     { name: "description", type: "string", required: false, description: "Optional note about the reference." },
@@ -174,6 +178,15 @@ const GUIDE_FIELDS: FieldSchema[] = [
     { name: "label", type: "string", required: true, description: "Card label." },
     { name: "title", type: "string", required: true, description: "Card title." },
     { name: "description", type: "markdown", required: true, description: "Card content." },
+  ]},
+  { name: "sources", type: "object[]", required: false, description: "Republished content origins. Populate when this content was first published elsewhere.", children: [
+    { name: "name", type: "string", required: true, description: "Publisher or platform name." },
+    { name: "url", type: "string", required: true, description: "URL of the original publication." },
+  ]},
+  { name: "references", type: "object[]", required: false, description: "Sources and further reading. REQUIRED when the guide references external data, quotes, or factual claims.", constraints: "Each reference needs a title and a reachable URL. Description is optional.", children: [
+    { name: "title", type: "string", required: true, description: "Reference title." },
+    { name: "url", type: "string", required: true, description: "Reference URL." },
+    { name: "description", type: "string", required: false, description: "Optional note about the reference." },
   ]},
 ];
 
@@ -230,6 +243,15 @@ const FEATURED_FIELDS: FieldSchema[] = [
     { name: "label", type: "string", required: true, description: "Card label." },
     { name: "title", type: "string", required: true, description: "Card title." },
     { name: "description", type: "markdown", required: true, description: "Card content." },
+  ]},
+  { name: "sources", type: "object[]", required: false, description: "Republished content origins. Populate when this content was first published elsewhere.", children: [
+    { name: "name", type: "string", required: true, description: "Publisher or platform name." },
+    { name: "url", type: "string", required: true, description: "URL of the original publication." },
+  ]},
+  { name: "references", type: "object[]", required: false, description: "Sources and further reading. REQUIRED when the article references external data, quotes, or factual claims.", constraints: "Each reference needs a title and a reachable URL. Description is optional.", children: [
+    { name: "title", type: "string", required: true, description: "Reference title." },
+    { name: "url", type: "string", required: true, description: "Reference URL." },
+    { name: "description", type: "string", required: false, description: "Optional note about the reference." },
   ]},
 ];
 
@@ -643,5 +665,6 @@ ${buildExamplePrompt(s.type)}`
 1. Choose the closest-fitting type from the list above.
 2. If the idea fits multiple, pick the best one and explain in reasoning.
 3. Generate REALISTIC, SUBSTANTIVE content — actual paragraphs, not outlines or placeholders.
-4. Use markdown within text fields.`;
+4. Use markdown within text fields.
+5. ATTRIBUTE EVERY CLAIM: include \`references\` for factual claims, data, quotes, and external ideas. Each reference needs a real title and reachable URL. For republished content, populate \`sources\` with the original publication name and URL. Never leave factual claims unattributed.`;
 }

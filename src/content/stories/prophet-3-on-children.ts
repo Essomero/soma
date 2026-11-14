@@ -13,7 +13,7 @@ export const prophet3OnChildren = {
   topics: ["philosophy"],
   archived: false,
   listed: false,
-  source: { name: "Kahlil Gibran: The Prophet (1923), via Project Gutenberg", url: "https://www.gutenberg.org/ebooks/58585" },
+  sources: [{ name: "Kahlil Gibran: The Prophet (1923), via Project Gutenberg", url: "https://www.gutenberg.org/ebooks/58585" }],
   intro: `*Your children are not your children. They are the sons and daughters of Life's longing for itself.*`,
   body: [
     "Gibran's most quoted passage is really about authorship. The parent is the bow, the child the living arrow, and the archer has aims the bow will never see. Your job is stability and aim, not ownership of the flight.",

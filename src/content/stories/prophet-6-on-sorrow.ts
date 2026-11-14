@@ -13,7 +13,7 @@ export const prophet6OnSorrow = {
   topics: ["philosophy"],
   archived: false,
   listed: false,
-  source: { name: "Kahlil Gibran: The Prophet (1923), via Project Gutenberg", url: "https://www.gutenberg.org/ebooks/58585" },
+  sources: [{ name: "Kahlil Gibran: The Prophet (1923), via Project Gutenberg", url: "https://www.gutenberg.org/ebooks/58585" }],
   intro: `*Your joy is your sorrow unmasked. And the selfsame well from which your laughter rises was oftentimes filled with your tears.*`,
   body: [
     "Gibran's claim is mechanical, not sentimental: joy and sorrow draw from the same well. The deeper the sorrow carved it, the more joy it can hold. A learner who has never been stuck cannot feel the click when the type system finally makes sense.",

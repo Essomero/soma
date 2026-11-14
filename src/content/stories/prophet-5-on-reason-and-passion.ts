@@ -13,7 +13,7 @@ export const prophet5OnReasonAndPassion = {
   topics: ["philosophy"],
   archived: false,
   listed: false,
-  source: { name: "Kahlil Gibran: The Prophet (1923), via Project Gutenberg", url: "https://www.gutenberg.org/ebooks/58585" },
+  sources: [{ name: "Kahlil Gibran: The Prophet (1923), via Project Gutenberg", url: "https://www.gutenberg.org/ebooks/58585" }],
   intro: `*Your soul is oftentimes a battlefield, upon which your reason and your judgment wage war against your passion and your appetite.*`,
   body: [
     "Gibran refuses to crown a winner. Reason alone leaves you becalmed: all rudder, no wind, going nowhere with perfect discipline. Passion alone leaves you rudderless: plenty of wind, no direction, exciting right up to the rocks.",
