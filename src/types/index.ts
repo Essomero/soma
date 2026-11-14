@@ -331,6 +331,18 @@ export interface NoteArticle {
   updatedAt: string | null;
 }
 
+/** Voice profile captures the author's writing style for humanization rewrites. */
+export interface VoiceProfile {
+  id: string;
+  tenant_id: string;        // always 'default' for single-tenant
+  name: string;             // e.g. "Benjamin's Voice"
+  description: string;       // optional blurb about the voice
+  samples: string[];         // 3-5 writing sample texts the user provided
+  style_prompt: string;      // the LLM-generated style analysis prompt
+  created_at: string;        // ISO 8601
+  updated_at: string;        // ISO 8601
+}
+
 export interface GuideContent {
   id: string;        // same as slug
   slug: string;

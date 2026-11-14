@@ -157,6 +157,23 @@ const MIGRATIONS = [
       try { await q("CREATE UNIQUE INDEX IF NOT EXISTS idx_lab_attempts_tenant_unique ON lab_attempts(tenant_id, content_slug, lab_id)", []); } catch {}
     },
   },
+  {
+    id: "003_voice_profiles",
+    description: "Add voice_profiles table for AI humanization rewrites",
+    up: async (q) => {
+      await q(`CREATE TABLE IF NOT EXISTS voice_profiles (
+        id TEXT PRIMARY KEY,
+        tenant_id TEXT NOT NULL DEFAULT 'default',
+        name TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        samples_json TEXT NOT NULL DEFAULT '[]',
+        style_prompt TEXT NOT NULL DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`, []);
+      console.log("[migrate] voice_profiles table ready");
+    },
+  },
 ];
 
 let _migrationsEnsured = false;

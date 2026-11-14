@@ -18,11 +18,12 @@
 import { createInterface } from "node:readline";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { existsSync, readdirSync, statSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, statSync, readFileSync, writeFileSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { extractMeta, extractPlainText, classifyUrl, resolveArxivUrl } from "./lib/extract-html.mjs";
+import { runChat } from "../shared/chat/core.js";
 
 import { CONTENT_TYPES, TOPICS, TEMPLATES, ROUTE_BASE, WORKFLOW_NOTE } from "./mcp-content-data.mjs";
 
@@ -287,6 +288,207 @@ async function importContent(url, suggestedType) {
   });
 }
 
+// ── Voice profile humanize (MCP tool) ───────────────
+
+function envKeys() {
+  return {
+    deepseek: process.env.DEEPSEEK_API_KEY || "",
+    openrouter: process.env.OPENROUTER_API_KEY || "",
+    gemini: process.env.GEMINI_API_KEY || "",
+    groq: process.env.GROQ_API_KEY || "",
+    cerebras: process.env.CEREBRAS_API_KEY || "",
+    straitly: process.env.STRAITLY_API_KEY || "",
+  };
+}
+
+function envOptions() {
+  return {
+    geminiDisabled: process.env.GEMINI_DISABLED === "1" || process.env.GEMINI_DISABLED === "true",
+    reasoningEffort: process.env.DEEPSEEK_REASONING_EFFORT,
+    referer: "https://soma.mayanja.dev",
+    title: "Soma",
+  };
+}
+
+// Manuscript-relevant prose fields per content type (fields whose text content
+// should be rewritten). Non-text fields (slug, author, publishedAt, image,
+// imageAlt, tags, meta fields) are preserved as-is.
+const PROSE_FIELDS = {
+  story:    ["title", "excerpt", "intro", "body", "pullQuotes", "sections"],
+  guide:    ["title", "excerpt", "intro", "body", "sections"],
+  doc:      ["title", "excerpt", "sections"],
+  featured: ["title", "excerpt", "intro", "body", "sections"],
+};
+
+async function humanizeManuscript({ files, profile }) {
+  if (!files || !Array.isArray(files) || files.length === 0) {
+    throw new Error("files must be a non-empty array of manuscript paths");
+  }
+
+  // Resolve profile
+  let profileName = "";
+  let stylePrompt = "";
+  if (typeof profile === "object" && profile.style_prompt) {
+    // Inline profile
+    profileName = profile.name || "Inline profile";
+    stylePrompt = profile.style_prompt;
+  } else if (typeof profile === "string") {
+    // Fetch from DB
+    const db = getDb();
+    const rows = await db.execute("SELECT name, style_prompt FROM voice_profiles WHERE id = ?", [profile]);
+    if (!rows.rows || rows.rows.length === 0) {
+      throw new Error(`Voice profile not found: ${profile}`);
+    }
+    profileName = String(rows.rows[0].name || "");
+    stylePrompt = String(rows.rows[0].style_prompt || "");
+    if (!stylePrompt) {
+      throw new Error(`Voice profile "${profileName}" has not been analyzed. Run analyze first.`);
+    }
+  } else {
+    throw new Error("profile must be a profile ID string or an object with name and style_prompt");
+  }
+
+  const results = [];
+
+  for (const file of files) {
+    const fullPath = resolve(join(rootDir, file));
+    if (!existsSync(fullPath)) throw new Error(`no such file: ${file}`);
+    const source = readFileSync(fullPath, "utf8");
+
+    // Infer content type from directory: drafts/<type>/<slug>.ts
+    const rel = resolve(rootDir);
+    const relPath = fullPath.startsWith(rel) ? fullPath.slice(rel.length + 1) : fullPath;
+    const dirMatch = relPath.match(/^drafts\/(\w+)\//);
+    const contentType = dirMatch ? dirMatch[1] : "story";
+    const slug = relPath.replace(/^drafts\/\w+\//, "").replace(/\.ts$/, "");
+
+    // Parse the TS export to extract the body object
+    let bodyObj = {};
+    const exportMatch = source.match(/export\s+default\s*(\{[\s\S]*?\n\})/);
+    if (exportMatch) {
+      try {
+        // Evaluate as JS by wrapping in parens and using Function constructor
+        // This is safe because the files are authored/committed by the owner
+        bodyObj = new Function(`return (${exportMatch[1]})`)();
+      } catch {
+        // Fallback: try manual extraction of known patterns
+        bodyObj = extractBodyFields(source);
+      }
+    }
+
+    if (!bodyObj || Object.keys(bodyObj).length === 0) {
+      results.push({ file, error: "Could not parse manuscript body" });
+      continue;
+    }
+
+    // Build the system prompt
+    const textFields = PROSE_FIELDS[contentType] || ["title", "excerpt", "body"];
+    const systemPrompt = [
+      stylePrompt,
+      "",
+      "You are rewriting existing content to match the voice profile above.",
+      "Keep EVERY fact, reference, source, and structural field. Change only tone, register, sentence structure, and flow.",
+      "",
+      "Content type: " + contentType,
+      "\nText fields to rewrite: " + textFields.join(", "),
+      "\nKeep all structural fields exactly as-is.",
+      "\nRespond with valid JSON only — the same shape as the input, with text fields rewritten.",
+    ].join("\n");
+
+    const userMessage = [
+      "Rewrite this content to match the voice profile. Keep every fact, every reference, every source, every structural field. Change only the tone, register, sentence structure, and flow to match the voice.",
+      "",
+      "CURRENT CONTENT:",
+      JSON.stringify(bodyObj, null, 2),
+      "",
+      "Respond with the JSON object only.",
+    ].join("\n");
+
+    const result = await runChat({
+      body: { systemPrompt, userMessage, stream: false, max_tokens: 8000 },
+      keys: envKeys(),
+      options: envOptions(),
+    });
+
+    let rewrittenRaw = "";
+    if (result.kind === "json") {
+      const body = result.body;
+      rewrittenRaw = typeof body === "string" ? body : (body?.choices?.[0]?.message?.content || body?.content || "");
+    } else if (result.kind === "error") {
+      results.push({ file, error: `LLM error: ${result.body?.error || "unknown"}` });
+      continue;
+    } else {
+      results.push({ file, error: "Unexpected response format" });
+      continue;
+    }
+
+    // Extract JSON
+    let cleaned = rewrittenRaw.replace(/```json\s*/gi, "").replace(/```\s*$/gm, "").trim();
+    const jsonStart = cleaned.indexOf("{");
+    const jsonEnd = cleaned.lastIndexOf("}");
+    if (jsonStart === -1 || jsonEnd === -1) {
+      results.push({ file, error: "Response did not contain valid JSON" });
+      continue;
+    }
+
+    let rewritten;
+    try {
+      rewritten = JSON.parse(cleaned.slice(jsonStart, jsonEnd + 1));
+    } catch (e) {
+      results.push({ file, error: `Failed to parse rewritten JSON: ${e.message}` });
+      continue;
+    }
+
+    // Detect which text fields changed
+    const changedFields = textFields.filter((f) => {
+      const orig = JSON.stringify(bodyObj[f]);
+      const rew = JSON.stringify(rewritten[f]);
+      return orig !== rew;
+    });
+
+    // Write back to the file: replace the body in the export
+    const origStr = JSON.stringify(bodyObj, null, 2);
+    const newStr = JSON.stringify(rewritten, null, 2);
+    const updatedSource = source.replace(origStr, newStr);
+
+    if (updatedSource === source) {
+      // Try more aggressive: replace between the first { and last } in the export
+      results.push({ file, changed_fields: changedFields, warning: "In-place replacement may have missed some fields; verify manually" });
+      continue;
+    }
+
+    writeFileSync(fullPath, updatedSource, "utf8");
+    results.push({ file, changed_fields: changedFields, reasoning: `Humanized using "${profileName}"` });
+  }
+
+  return JSON.stringify({
+    applied: results.filter((r) => r.changed_fields).map((r) => r.file),
+    profile: profileName,
+    results,
+  }, null, 2);
+}
+
+function extractBodyFields(source) {
+  // Fallback: parse the TS export's key-value structure with basic regex
+  const obj = {};
+  const keyRe = /^\s*(\w+)\s*:\s*(.+)$/gm;
+  let match;
+  while ((match = keyRe.exec(source)) !== null) {
+    const key = match[1];
+    const val = match[2].trim();
+    if (!key || key === "export" || key === "default") continue;
+    // Store simple string values
+    if (val.startsWith('"') || val.startsWith("'")) {
+      obj[key] = val.replace(/^["']|["']$/g, "");
+    } else if (val.startsWith("[")) {
+      obj[key] = val; // keep as raw string for comparison
+    } else if (val === "true" || val === "false") {
+      obj[key] = val === "true";
+    }
+  }
+  return obj;
+}
+
 // ── Tool registry ───────────────────────────────────────────────────────────
 
 const TOOLS = [
@@ -398,6 +600,36 @@ const TOOLS = [
       required: ["url"],
     },
     run: async ({ url }) => verifyUrl(requireStr(url, "url")),
+  },
+  {
+    name: "humanize_manuscript",
+    description: "Apply a voice profile to rewrite a staged manuscript's body in the author's style. Keeps all facts, changes tone/register/structure to match the profile.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        files: {
+          type: "array",
+          items: { type: "string" },
+          description: "Manuscript paths, e.g. [\"drafts/story/my-slug.ts\"]",
+        },
+        profile: {
+          oneOf: [
+            { type: "string", description: "Voice profile ID (fetched from DB)" },
+            {
+              type: "object",
+              properties: {
+                name: { type: "string", description: "Profile name" },
+                style_prompt: { type: "string", description: "Style analysis prompt" },
+              },
+              required: ["name", "style_prompt"],
+            },
+          ],
+          description: "Voice profile ID string or inline { name, style_prompt } object",
+        },
+      },
+      required: ["files", "profile"],
+    },
+    run: async (input) => humanizeManuscript({ files: requireArr(input.files, "files"), profile: input.profile }),
   },
 ];
 

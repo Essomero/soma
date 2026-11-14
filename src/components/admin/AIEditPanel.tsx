@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Loader2, Sparkles, AlertCircle, Wand2, ChevronDown, Lightbulb } from "lucide-react";
+import { Loader2, Sparkles, AlertCircle, Wand2, ChevronDown, Lightbulb, Mic } from "lucide-react";
 import { buildSystemPrompt } from "@/lib/admin-prompts";
 import Tooltip from "@/components/ui/Tooltip";
 import { ModelPicker } from "@/components/ui/ModelPicker";
@@ -16,6 +16,8 @@ interface AIEditPanelProps {
   currentJson: string;
   /** Callback with the updated partial AIDraft. Caller merges into form state. */
   onUpdate: (partial: Record<string, unknown>) => void;
+  /** Content type for voice profile humanization. */
+  contentType?: string;
 }
 
 /**
@@ -117,7 +119,7 @@ Leave the rest of the content unchanged.`,
   },
 ];
 
-export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps) {
+export default function AIEditPanel({ currentJson, onUpdate, contentType }: AIEditPanelProps) {
   const [panelOpen, setPanelOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "error">("idle");
@@ -130,6 +132,14 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedProvider, setSelectedProvider] = useState("");
   const abortRef = useRef<AbortController | null>(null);
+
+  // Voice profile humanize state
+  const [humanizeStatus, setHumanizeStatus] = useState<"idle" | "loading" | "sending" | "error">("idle");
+  const [humanizeError, setHumanizeError] = useState("");
+  const [humanizeReasoning, setHumanizeReasoning] = useState("");
+  const [voiceProfiles, setVoiceProfiles] = useState<Array<{ id: string; name: string; style_prompt: string }>>([]);
+  const [selectedProfileId, setSelectedProfileId] = useState("");
+  const [profilesLoaded, setProfilesLoaded] = useState(false);
 
   useEffect(() => {
     fetch("/api/models")
@@ -152,6 +162,29 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
         setModelsReady(true);
       });
   }, []);
+
+  // Load voice profiles when panel opens
+  useEffect(() => {
+    if (!panelOpen || profilesLoaded) return;
+    fetch("/api/voice-profiles")
+      .then((r) => r.json())
+      .then((data) => {
+        const list = Array.isArray(data) ? data : [];
+        setVoiceProfiles(list.map((p: { id: string; name: string; style_prompt: string }) => ({
+          id: p.id,
+          name: p.name,
+          style_prompt: p.style_prompt,
+        })));
+        if (list.length > 0) {
+          setSelectedProfileId(list[0].id);
+        }
+        setProfilesLoaded(true);
+      })
+      .catch(() => {
+        setVoiceProfiles([]);
+        setProfilesLoaded(true);
+      });
+  }, [panelOpen, profilesLoaded]);
 
   // Abort any in-flight edit stream on unmount so the loop doesn't
   // keep the JS thread busy after the component is gone (e.g. switching
@@ -327,6 +360,138 @@ export default function AIEditPanel({ currentJson, onUpdate }: AIEditPanelProps)
               </button>
             ))}
           </div>
+
+          {/* Humanize with Voice */}
+          <div className="flex items-center gap-sm pt-xs">
+            <div className="h-px flex-1 bg-border-default" />
+            <span className="font-sora text-[9px] text-on-surface-muted uppercase tracking-widest">Voice</span>
+            <div className="h-px flex-1 bg-border-default" />
+          </div>
+          <div className="flex items-center gap-sm flex-wrap">
+            {profilesLoaded && voiceProfiles.length === 0 ? (
+              <Tooltip label="Create a voice profile in the admin dashboard first">
+                <span className="inline-flex items-center gap-1 px-sm py-xs text-[10px] font-sora uppercase tracking-widest border border-border-default text-on-surface-muted opacity-50 cursor-not-allowed">
+                  <Mic className="w-3 h-3" />
+                  Humanize with Voice
+                </span>
+              </Tooltip>
+            ) : voiceProfiles.length === 1 ? (
+              <button
+                type="button"
+                onClick={async () => {
+                  setHumanizeStatus("sending");
+                  setHumanizeError("");
+                  setHumanizeReasoning("");
+                  try {
+                    const res = await fetch("/api/voice-profiles/humanize", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        profile_id: voiceProfiles[0].id,
+                        content_json: currentJson,
+                        content_type: contentType || "story",
+                      }),
+                    });
+                    if (!res.ok) {
+                      const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+                      throw new Error(err.error || "Humanization failed");
+                    }
+                    const data = await res.json();
+                    const parsed = JSON.parse(data.rewritten_json);
+                    onUpdate(parsed);
+                    setHumanizeReasoning(data.reasoning || "Content rewritten to match voice profile");
+                    setHumanizeStatus("idle");
+                  } catch (err) {
+                    setHumanizeError(err instanceof Error ? err.message : "Humanization failed");
+                    setHumanizeStatus("error");
+                  }
+                }}
+                disabled={humanizeStatus === "sending"}
+                className="inline-flex items-center gap-1 px-sm py-xs text-[10px] font-sora uppercase tracking-widest border transition-colors bg-surface text-on-surface-muted hover:border-primary/40 hover:text-on-surface disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {humanizeStatus === "sending" ? (
+                  <><Loader2 className="w-3 h-3 animate-spin" /> Humanizing…</>
+                ) : (
+                  <><Mic className="w-3 h-3" /> Humanize with Voice</>
+                )}
+              </button>
+            ) : voiceProfiles.length > 1 ? (
+              <>
+                <select
+                  value={selectedProfileId}
+                  onChange={(e) => setSelectedProfileId(e.target.value)}
+                  className="px-sm py-xs text-[10px] font-sora bg-surface border border-border-default text-on-surface focus:outline-none focus:border-primary"
+                >
+                  <option value="">Select a voice profile…</option>
+                  {voiceProfiles.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!selectedProfileId) return;
+                    setHumanizeStatus("sending");
+                    setHumanizeError("");
+                    setHumanizeReasoning("");
+                    try {
+                      const res = await fetch("/api/voice-profiles/humanize", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          profile_id: selectedProfileId,
+                          content_json: currentJson,
+                          content_type: contentType || "story",
+                        }),
+                      });
+                      if (!res.ok) {
+                        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+                        throw new Error(err.error || "Humanization failed");
+                      }
+                      const data = await res.json();
+                      const parsed = JSON.parse(data.rewritten_json);
+                      onUpdate(parsed);
+                      setHumanizeReasoning(data.reasoning || "Content rewritten to match voice profile");
+                      setHumanizeStatus("idle");
+                    } catch (err) {
+                      setHumanizeError(err instanceof Error ? err.message : "Humanization failed");
+                      setHumanizeStatus("error");
+                    }
+                  }}
+                  disabled={!selectedProfileId || humanizeStatus === "sending"}
+                  className="inline-flex items-center gap-1 px-sm py-xs text-[10px] font-sora uppercase tracking-widest border transition-colors bg-surface text-on-surface-muted hover:border-primary/40 hover:text-on-surface disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {humanizeStatus === "sending" ? (
+                    <><Loader2 className="w-3 h-3 animate-spin" /> Humanizing…</>
+                  ) : (
+                    <><Mic className="w-3 h-3" /> Humanize</>
+                  )}
+                </button>
+              </>
+            ) : null}
+          </div>
+
+          {humanizeError && (
+            <div className="flex items-start gap-2 p-sm bg-error/10 border border-error/30 rounded text-xs font-dm-sans text-on-surface">
+              <AlertCircle className="w-3.5 h-3.5 text-error shrink-0 mt-0.5" />
+              <span className="whitespace-pre-wrap">{humanizeError}</span>
+            </div>
+          )}
+
+          {humanizeReasoning && (
+            <details className="group">
+              <summary className="flex items-center gap-md cursor-pointer list-none p-md bg-surface border border-border-default border-l-4 border-l-success hover:bg-surface-container transition-colors">
+                <Mic className="w-4 h-4 text-success shrink-0" />
+                <span className="font-sora text-xs font-semibold text-on-surface">Voice: {voiceProfiles.length === 1 ? voiceProfiles[0].name : selectedProfileId ? voiceProfiles.find(p => p.id === selectedProfileId)?.name || "Humanized" : "Humanized"}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-on-surface-muted ml-auto transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="max-h-48 overflow-y-auto p-md bg-surface border-x border-b border-border-default">
+                <p className="font-dm-sans text-xs text-on-surface-muted whitespace-pre-wrap leading-relaxed">
+                  {humanizeReasoning}
+                </p>
+              </div>
+            </details>
+          )}
 
           {/* Custom model dropdown */}
           <div className="flex items-center gap-sm">

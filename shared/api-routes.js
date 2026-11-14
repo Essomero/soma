@@ -23,6 +23,7 @@ export const ROUTE_HANDLERS = {
   export: "export",
   import: "import",
   models: "models",
+  "voice-profiles": "voice-profiles",
   comments: "social",
   highlights: "social",
   notes: "social",
@@ -46,6 +47,7 @@ export const HANDLER_FILES = [
   "proof",
   "social",
   "system",
+  "voice-profiles",
 ];
 
 /** Public routes served by one handler, e.g. "social" -> ["comments","highlights","notes"]. */

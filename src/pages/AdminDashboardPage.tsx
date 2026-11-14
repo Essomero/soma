@@ -7,6 +7,7 @@ import AccentBar from "@/components/ui/AccentBar";
 import LocalAgentPanel from "@/components/admin/LocalAgentPanel";
 import ImportFromUrlPanel from "@/components/admin/ImportFromUrlPanel";
 import ExportModal from "@/components/admin/ExportModal";
+import VoiceProfileList from "@/components/admin/VoiceProfileList";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { invalidateContentCache } from "@/lib/content";
 import Select from "@/components/ui/Select";
@@ -57,6 +58,7 @@ export default function AdminDashboardPage() {
   const [filterType, setFilterType] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<string>("");
   const [search, setSearch] = useState("");
+  const [voiceProfileRefreshKey, setVoiceProfileRefreshKey] = useState(0);
 
   usePageMeta({ title: "Admin Dashboard", description: "Manage all Soma content" });
 
@@ -269,6 +271,11 @@ export default function AdminDashboardPage() {
           <p className="font-sora text-2xl text-on-surface-muted font-bold">{stats.private}</p>
           <p className="font-dm-sans text-sm text-on-surface-muted font-medium mt-3">Private</p>
         </div>
+      </div>
+
+      {/* Voice Profiles */}
+      <div className="mb-xl p-lg bg-surface border border-border-default">
+        <VoiceProfileList refreshKey={voiceProfileRefreshKey} />
       </div>
 
       {/* Filters */}
