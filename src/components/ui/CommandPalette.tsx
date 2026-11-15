@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Search, CornerDownLeft, History, X, BookOpen, Mic, Compass, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useScrollLock } from "@/lib/useScrollLock";
+import VoiceInputButton from "@/components/ui/VoiceInputButton";
 
 interface CommandPaletteProps {
   open: boolean;
@@ -171,7 +172,14 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
               if (e.key === "ArrowUp") { e.preventDefault(); setSelectedIdx((i) => Math.max(i - 1, -1)); }
             }}
           />
-          <kbd className="bg-surface-variant text-on-surface-muted px-2 py-1 rounded text-[10px] font-bold border border-border-default ml-md">ESC</kbd>
+          <VoiceInputButton
+            onResult={(text) => {
+              setQuery(text);
+              setSelectedIdx(-1);
+            }}
+            className="ml-auto mr-2"
+          />
+          <kbd className="bg-surface-variant text-on-surface-muted px-2 py-1 rounded text-[10px] font-bold border border-border-default">ESC</kbd>
         </div>
 
         {/* Content */}

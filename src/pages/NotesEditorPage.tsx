@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, PenLine, Eye, Loader2, Save, Sparkles, Mic } from "lucide-react";
 import { useWebSpeech, isWebSpeechSupported, type SpeechResultHandler } from "@/hooks/useWebSpeech";
 import DictationBar from "@/components/editor/DictationBar";
+import VoiceInputButton from "@/components/ui/VoiceInputButton";
 import { SkeletonForm } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import MarkdownHtml from "@/components/ui/MarkdownHtml";

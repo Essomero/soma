@@ -4,6 +4,7 @@ import { Search, CornerDownLeft, Command, StickyNote, BookOpen, Mic, Bookmark, C
 import { fetchNotesSearch } from "@/lib/notes";
 import { cn } from "@/lib/utils";
 import type { NoteArticle } from "@/types";
+import VoiceInputButton from "@/components/ui/VoiceInputButton";
 
 const TYPE_ROUTES: Record<string, string> = {
   story: "stories",
@@ -413,6 +414,14 @@ export default function LandingSearch() {
                 setTimeout(() => setFocused(false), 200);
               }}
               onKeyDown={handleKeyDown}
+            />
+            <VoiceInputButton
+              onResult={(text) => {
+                setQuery(text);
+                setSelectedIdx(-1);
+                inputRef.current?.focus();
+              }}
+              className="mr-2"
             />
             {hasQuery && (
               <button
