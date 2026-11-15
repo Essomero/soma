@@ -487,7 +487,7 @@ export default async function handler(req, res) {
 
       const typeList = req.query.type === "all"
         ? Object.keys(ROUTE_BASE)
-        : [req.query.type];
+        : req.query.type.split(",").filter(Boolean);
       const typePlaceholders = typeList.map(() => "?").join(",");
       const typeArgs = typeList;
       const typeClause = `ci.type IN (${typePlaceholders})`;

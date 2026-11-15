@@ -13,18 +13,19 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 import { formatDate } from "@/lib/format-date";
 import SafeImage from "@/components/ui/SafeImage";
 
-type ContentRow = Record<string, unknown> & { type: string; slug: string; title: string };
+// Three types fetched in one query via comma-separated type param.
+type StoryOrGuide = StoryContent & { type: string; isFeatured?: boolean };
 
 export default function HomePage() {
-  const allQ = useContentList<ContentRow>("all");
+  const storiesQ = useContentList<StoryOrGuide>("story,guide,podcast");
   usePageMeta({});
-  if (allQ.loading) {
+  if (storiesQ.loading) {
     return <SkeletonHome />;
   }
-  const all = allQ.data ?? [];
-  const stories = all.filter((i) => i.type === "story") as unknown as StoryContent[];
-  const guides = all.filter((i) => i.type === "guide") as unknown as GuideContent[];
-  const podcastEpisodes = all.filter((i) => i.type === "podcast") as unknown as PodcastEpisodeFull[];
+  const raw = storiesQ.data ?? [];
+  const stories = raw.filter((i) => i.type === "story") as StoryContent[];
+  const guides = raw.filter((i) => i.type === "guide") as GuideContent[];
+  const podcastEpisodes = raw.filter((i) => i.type === "podcast") as unknown as PodcastEpisodeFull[];
 
   const featuredStories = (() => {
     // Explicitly featured stories first, then newest as filler
