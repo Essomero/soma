@@ -78,14 +78,10 @@ async function main() {
   console.log(`  DB: ${dbPath}`);
   console.log("");
 
-  // Verify FTS tables exist (virtual tables appear as type='table' in sqlite_master)
-  const tables: Array<{ name: string }> = (await db.execute(
-    "SELECT name FROM sqlite_master WHERE name IN ('note_fts', 'content_fts')"
-  )).rows as Array<{ name: string }>;
-  const existing = new Set(tables.map((r) => r.name));
-
   for (const tbl of TABLES) {
-    if (!existing.has(tbl.name)) {
+    try {
+      await db.execute(`SELECT 1 FROM ${tbl.name} LIMIT 0`);
+    } catch {
       console.log(`  ${tbl.name}: table not found — skipping`);
       continue;
     }
