@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, CornerDownLeft, Command, StickyNote, BookOpen, Mic, Bookmark, Compass, Loader2 } from "lucide-react";
 import { fetchNotesSearch } from "@/lib/notes";
-import { createNote } from "@/lib/notes";
 import { cn } from "@/lib/utils";
 import type { NoteArticle } from "@/types";
 
@@ -58,7 +57,6 @@ export default function LandingSearch() {
   const [contentResults, setContentResults] = useState<LiveResult[]>([]);
   const [noteResults, setNoteResults] = useState<LiveResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [creating, setCreating] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState(-1);
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -251,16 +249,8 @@ export default function LandingSearch() {
   }, []);
 
   const handleCreateNote = useCallback(
-    async (title: string) => {
-      setCreating(true);
-      try {
-        const note = await createNote({ title, content: "" });
-        navigate(`/notes/${note.slug}/edit`, { replace: true });
-      } catch {
-        navigate("/notes/new", { state: { title } });
-      } finally {
-        setCreating(false);
-      }
+    (text: string) => {
+      navigate("/notes/new", { state: { initialContent: text } });
     },
     [navigate]
   );
@@ -537,14 +527,13 @@ export default function LandingSearch() {
                       e.preventDefault();
                       handleCreateNote(trimmed);
                     }}
-                    disabled={creating}
                   >
                     <div className="w-10 h-10 rounded-lg bg-accent-blue-neon/10 shrink-0 flex items-center justify-center">
-                      <StickyNote className={cn("w-4 h-4", creating ? "animate-spin" : "", "text-accent-blue-neon")} />
+                      <StickyNote className="w-4 h-4 text-accent-blue-neon" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <span className="font-sora text-sm font-semibold text-accent-blue-neon block">
-                        {creating ? "Creating note..." : `Start a note about "${trimmed}"`}
+                        {`Start a note about "${trimmed}"`}
                       </span>
                       <span className="text-xs text-on-surface-muted mt-0.5 block">
                         Opens the editor to refine your idea

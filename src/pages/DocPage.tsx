@@ -15,6 +15,7 @@ import { md, contentToMarkdown } from "@/lib/markdown";
 import { useAuth } from "@/lib/AuthContext";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import SafeImage from "@/components/ui/SafeImage";
+import SourceNoteBanner from "@/components/admin/SourceNoteBanner";
 import ContentTestButton from "@/components/ui/ContentTestButton";
 
 interface ModelInfo {
@@ -245,7 +246,13 @@ export default function DocPage() {
         </div>
       </article>
 
-      {/* Quiz me — generate or take test linked to this content */}
+      {/* Source note banner : owner only — shown when content was generated from a note */}
+      {isOwner && (doc as any).meta?.sourceNote && (
+        <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant border-t border-border-default">
+          <SourceNoteBanner sourceNote={(doc as any).meta.sourceNote} />
+        </section>
+      )}
+
       {slug && doc && (
         <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-lg border-t border-border-default mt-giant">
           <ContentTestButton

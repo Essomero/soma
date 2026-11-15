@@ -14,6 +14,7 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import StoryJumpButtons from "@/components/ui/StoryJumpButtons";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import PrintButton from "@/components/ui/PrintButton";
+import SourceNoteBanner from "@/components/admin/SourceNoteBanner";
 import { useContentItem, useContentList, invalidateContentCache } from "@/lib/content";
 import type { StoryContent, CourseContent, BookContent, SeriesContent, TestContent } from "@/types";
 import { ArrowLeft, ArrowRight, ExternalLink, Check, Copy, Bookmark, Loader2, Trash2, Bot, PenLine, Eye, Send, X, ChevronDown, Reply, Maximize2, Sparkles, Edit3, Archive } from "lucide-react";
@@ -1400,6 +1401,13 @@ export default function StoryPage() {
               }}
             />
           </div>
+        </section>
+      )}
+
+      {/* Source note banner : owner only — shown when content was generated from a note */}
+      {isOwner && (story as any).meta?.sourceNote && (
+        <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant border-t border-border-default">
+          <SourceNoteBanner sourceNote={(story as any).meta.sourceNote} />
         </section>
       )}
 

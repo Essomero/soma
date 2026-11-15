@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, PenLine, Eye, Loader2, Save, Sparkles } from "lucide-react";
 import { SkeletonForm } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
@@ -25,13 +25,15 @@ export default function NotesEditorPage() {
   const { slug } = useParams<{ slug: string }>();
   const isEdit = !!slug;
   const navigate = useNavigate();
+  const location = useLocation();
+  const initialContent = (location.state as { initialContent?: string } | null)?.initialContent;
 
   const titleRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLTextAreaElement>(null);
   // Cursor position to restore after React commits a Tab insertion
   const cursorRef = useRef<number | null>(null);
   const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState(initialContent ?? "");
   const [tab, setTab] = useState<"write" | "preview">("write");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(isEdit);
@@ -40,10 +42,12 @@ export default function NotesEditorPage() {
   const [generatingTitle, setGeneratingTitle] = useState(false);
   const [generating, setGenerating] = useState(false);
 
-  // Focus the content textarea on mount (create mode) so the user can start
-  // typing a note right away — the title gets drafted automatically.
+  // Focus the textarea on mount in create mode so the user can keep typing.
+  // Clear the history state so back-navigation doesn't re-fill stale text.
   useEffect(() => {
-    if (!isEdit) contentRef.current?.focus();
+    if (isEdit) return;
+    contentRef.current?.focus();
+    window.history.replaceState({}, "");
   }, [isEdit]);
 
   // ── Auto-title: draft a title from content as the user types ───────────

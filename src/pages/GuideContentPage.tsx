@@ -15,6 +15,7 @@ import Comments from "@/components/ui/Comments";
 import ContentBlocks from "@/components/ui/ContentBlocks";
 import InlineHighlights from "@/components/ui/InlineHighlights";
 import PrintButton from "@/components/ui/PrintButton";
+import SourceNoteBanner from "@/components/admin/SourceNoteBanner";
 import SafeImage from "@/components/ui/SafeImage";
 import { Edit3 } from "lucide-react";
 import { useContentItem, useContentList } from "@/lib/content";
@@ -353,6 +354,13 @@ export default function GuideContentPage() {
               </a>
             ))}
           </div>
+        </section>
+      )}
+
+      {/* Source note banner : owner only — shown when content was generated from a note */}
+      {isOwner && (guide as any).meta?.sourceNote && (
+        <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant border-t border-border-default">
+          <SourceNoteBanner sourceNote={(guide as any).meta.sourceNote} />
         </section>
       )}
 
