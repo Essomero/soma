@@ -102,6 +102,7 @@ export default function SearchResultsPage() {
       fetchNotesSearch(q).catch(() => [] as NoteArticle[]),
     ]);
 
+    const seen = new Set<string>();
     const merged = [...contentResults, ...notes.map((n) => ({
       id: `note-${n.slug}`,
       slug: n.slug,
@@ -111,7 +112,11 @@ export default function SearchResultsPage() {
       publishedAt: n.createdAt,
       updatedAt: n.updatedAt,
       href: `/notes/${n.slug}`,
-    }))];
+    }))].filter((r) => {
+      if (seen.has(r.id)) return false;
+      seen.add(r.id);
+      return true;
+    });
 
     if (reset) {
       setAllResults(merged);

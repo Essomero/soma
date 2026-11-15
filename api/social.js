@@ -67,6 +67,13 @@ async function syncNoteFts(slug, title, content) {
     {
       type: "execute",
       stmt: {
+        sql: `DELETE FROM note_fts WHERE slug = ?`,
+        args: [dbArg(slug)],
+      },
+    },
+    {
+      type: "execute",
+      stmt: {
         sql: `INSERT INTO note_fts(slug, title, content) VALUES (?, ?, ?)`,
         args: [dbArg(slug), dbArg(title), dbArg(content)],
       },
@@ -86,7 +93,7 @@ async function deleteNoteFts(slug) {
     {
       type: "execute",
       stmt: {
-        sql: `INSERT INTO note_fts(note_fts, slug, title, content) VALUES ('delete', ?, '', '')`,
+        sql: `DELETE FROM note_fts WHERE slug = ?`,
         args: [dbArg(slug)],
       },
     },
