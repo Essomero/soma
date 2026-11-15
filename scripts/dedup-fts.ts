@@ -73,10 +73,14 @@ async function main() {
   console.log("");
 
   const db = await getDb();
+  const dbInfo = await db.execute("PRAGMA database_list");
+  const dbPath = (dbInfo.rows[0] as Record<string, unknown>)?.file ?? "unknown";
+  console.log(`  DB: ${dbPath}`);
+  console.log("");
 
-  // Verify FTS tables exist
+  // Verify FTS tables exist (virtual tables appear as type='table' in sqlite_master)
   const tables: Array<{ name: string }> = (await db.execute(
-    "SELECT name FROM sqlite_master WHERE type='virtual' AND name IN ('note_fts', 'content_fts')"
+    "SELECT name FROM sqlite_master WHERE name IN ('note_fts', 'content_fts')"
   )).rows as Array<{ name: string }>;
   const existing = new Set(tables.map((r) => r.name));
 
