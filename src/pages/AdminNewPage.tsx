@@ -113,7 +113,10 @@ export default function AdminNewPage() {
           type: data.type,
           title: data.title,
           excerpt: data.excerpt,
-          meta: { featured: isFeatured },
+          meta: {
+            featured: isFeatured,
+            ...(sourceNote && { sourceNote: { slug: sourceNote.slug, title: sourceNote.title } }),
+          },
           body: bodyPayload,
           status: data.status,
           updatedAt: data.updatedAt,
