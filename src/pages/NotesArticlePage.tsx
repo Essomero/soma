@@ -1,6 +1,9 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Edit3, Trash2, Loader2, Link2Off, Clipboard, Check, Sparkles } from "lucide-react";
+import { ArrowLeft, Edit3, Trash2, Loader2, Link2Off, Clipboard, Check, Sparkles, Volume2, Square } from "lucide-react";
+import { useChromeTts, isChromeTtsSupported } from "@/hooks/useChromeTts";
+import { checkSonAvailability, synthesizeSpeechWithSon } from "@/lib/sonClient";
+import type { SonStatus } from "@/lib/sonClient";
 import { SkeletonNotesArticle } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
@@ -124,6 +127,68 @@ export default function NotesArticlePage() {
   const highlightClickRef = useRef<(id: number) => void>(() => {});
 
   const { isPublic, toggle } = usePublicState(slug ?? "");
+
+  // ── TTS read-aloud (Son when online, Chrome TTS as fallback) ──
+  const chromeTts = useChromeTts();
+  const chromeTtsOk = isChromeTtsSupported();
+
+  const [sonStatus, setSonStatus] = useState<SonStatus>({ available: false, url: "" });
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [sonPlaying, setSonPlaying] = useState(false);
+
+  const ttsAvailable = sonStatus.available || chromeTtsOk;
+
+  // Check Son availability on mount
+  useEffect(() => {
+    checkSonAvailability().then(setSonStatus);
+  }, []);
+
+  // Cleanup Son audio on unmount
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+      if (audioRef.current?.src) URL.revokeObjectURL(audioRef.current.src);
+    };
+  }, []);
+
+  const handleListen = useCallback(async () => {
+    // If already speaking via Son, stop
+    if (sonPlaying) {
+      audioRef.current?.pause();
+      if (audioRef.current?.src) {
+        URL.revokeObjectURL(audioRef.current.src);
+        audioRef.current.src = "";
+      }
+      setSonPlaying(false);
+      return;
+    }
+
+    // If already speaking via Chrome, stop
+    if (chromeTts.speaking || chromeTts.paused) {
+      chromeTts.stop();
+      return;
+    }
+
+    if (!article) return;
+
+    if (sonStatus.available) {
+      // Son TTS: synthesize and play via <audio>
+      try {
+        const blobUrl = await synthesizeSpeechWithSon({ text: article.content });
+        const audio = new Audio(blobUrl);
+        audioRef.current = audio;
+        audio.onended = () => setSonPlaying(false);
+        audio.onerror = () => setSonPlaying(false);
+        audio.play();
+        setSonPlaying(true);
+      } catch {
+        setSonPlaying(false);
+      }
+    } else {
+      // Chrome TTS: speak directly, no cleanup needed
+      chromeTts.start(article.content);
+    }
+  }, [sonPlaying, sonStatus.available, chromeTts, article]);
 
   // ── Proof summary (owner only) ────────────────────────
   const { proofs: allProofs, loading: proofsLoading } = useAllProofs();
@@ -337,6 +402,32 @@ export default function NotesArticlePage() {
               >
                 <Edit3 className="w-3.5 h-3.5" /> Edit
               </Link>
+              {ttsAvailable && (
+                <Tooltip label={
+                  sonPlaying || chromeTts.speaking ? "Stop reading" :
+                  chromeTts.paused ? "Resume" :
+                  "Read aloud"
+                }>
+                  <button
+                    onClick={handleListen}
+                    className={`inline-flex items-center gap-xs px-md py-sm rounded-md font-sora text-xs bg-surface border transition-colors ${
+                      sonPlaying || chromeTts.speaking || chromeTts.paused
+                        ? "border-secondary text-secondary hover:bg-secondary/10"
+                        : "border-border-default text-on-surface-muted hover:text-secondary hover:border-secondary/50"
+                    }`}
+                  >
+                    {sonPlaying || chromeTts.speaking ? (
+                      <><Square className="w-3.5 h-3.5" /> Stop</>
+                    ) : chromeTts.paused ? (
+                      <><Volume2 className="w-3.5 h-3.5" /> Resume</>
+                    ) : sonStatus.available ? (
+                      <><Volume2 className="w-3.5 h-3.5" /> Listen (Son)</>
+                    ) : (
+                      <><Volume2 className="w-3.5 h-3.5" /> Listen</>
+                    )}
+                  </button>
+                </Tooltip>
+              )}
               <Tooltip label={noteCopied ? "Copied!" : "Copy note as Markdown"}>
                 <button
                   onClick={handleCopyNote}

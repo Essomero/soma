@@ -5,7 +5,7 @@
  * Reference: useWebSpeech.ts in Son client.
  */
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type SpeechResultHandler = (text: string, isFinal: boolean) => void;
 
@@ -28,13 +28,22 @@ export interface UseWebSpeechOptions {
   lang?: string;
 }
 
+export interface WebSpeechState {
+  /** Whether the recognizer is actively listening. */
+  isRecognizing: boolean;
+  /** Whether audio input (sound) is currently being detected by the recognizer. */
+  soundActive: boolean;
+  /** The latest interim (non-final) transcription text. Clears when the utterance becomes final. */
+  interimText: string;
+}
+
 export function useWebSpeech({
   enabled,
   onResult,
   onSoundChange,
   onError,
   lang = "en-US",
-}: UseWebSpeechOptions) {
+}: UseWebSpeechOptions): WebSpeechState {
   const handlerRef = useRef(onResult);
   handlerRef.current = onResult;
   const soundRef = useRef(onSoundChange);
@@ -43,10 +52,14 @@ export function useWebSpeech({
   errorRef.current = onError;
 
   const [isRecognizing, setIsRecognizing] = useState(false);
+  const [soundActive, setSoundActive] = useState(false);
+  const [interimText, setInterimText] = useState("");
 
   useEffect(() => {
     if (!enabled) {
       setIsRecognizing(false);
+      setSoundActive(false);
+      setInterimText("");
       return;
     }
 
@@ -72,13 +85,30 @@ export function useWebSpeech({
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         const r = event.results[i];
         if (r?.[0]?.transcript) {
-          handlerRef.current(r[0].transcript, Boolean(r.isFinal));
+          const transcript = r[0].transcript;
+          const isFinal = Boolean(r.isFinal);
+
+          // Track interim text for live preview
+          if (isFinal) {
+            setInterimText("");
+          } else {
+            setInterimText(transcript);
+          }
+
+          handlerRef.current(transcript, isFinal);
         }
       }
     };
 
-    rec.onsoundstart = () => soundRef.current?.(true);
-    rec.onsoundend = () => soundRef.current?.(false);
+    rec.onsoundstart = () => {
+      setSoundActive(true);
+      soundRef.current?.(true);
+    };
+
+    rec.onsoundend = () => {
+      setSoundActive(false);
+      soundRef.current?.(false);
+    };
 
     rec.onstart = () => {
       setIsRecognizing(true);
@@ -93,14 +123,15 @@ export function useWebSpeech({
     };
 
     let restarting = true;
-    let restartTimer: number | null = null;
+    let restartTimer: number | undefined;
 
     rec.onend = () => {
       setIsRecognizing(false);
+      setSoundActive(false);
       soundRef.current?.(false);
       if (!restarting) return;
       restartTimer = window.setTimeout(() => {
-        restartTimer = null;
+        restartTimer = undefined;
         if (!restarting) return;
         try {
           rec.start();
@@ -118,16 +149,18 @@ export function useWebSpeech({
 
     return () => {
       restarting = false;
-      if (restartTimer !== null) clearTimeout(restartTimer);
+      clearTimeout(restartTimer);
       try {
         rec.stop();
       } catch {
         // Already stopped
       }
       setIsRecognizing(false);
+      setSoundActive(false);
+      setInterimText("");
       soundRef.current?.(false);
     };
   }, [enabled, lang, onError]);
 
-  return { isRecognizing };
+  return { isRecognizing, soundActive, interimText };
 }
