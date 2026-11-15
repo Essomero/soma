@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Outlet } from "react-router-dom";
 import { ReactLenis } from "lenis/react";
 import ScrollToTop from "@/lib/ScrollToTop";
@@ -39,7 +40,9 @@ function LayoutInner() {
           <CommandPalette open={open} onClose={() => setOpen(false)} />
           <Header />
           <main className="flex-1">
-            <Outlet />
+            <Suspense fallback={<div className="animate-pulse min-h-[60vh]" />}>
+              <Outlet />
+            </Suspense>
           </main>
           <Footer />
         </div>
