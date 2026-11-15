@@ -487,7 +487,7 @@ export default async function handler(req, res) {
 
       const typeList = req.query.type === "all"
         ? Object.keys(ROUTE_BASE)
-        : [req.query.type];
+        : req.query.type.split(",").filter(Boolean);
       const typePlaceholders = typeList.map(() => "?").join(",");
       const typeArgs = typeList;
       const typeClause = `ci.type IN (${typePlaceholders})`;
@@ -507,8 +507,8 @@ export default async function handler(req, res) {
 
       const orderBy = "updated_at DESC, position ASC";
       const rows = await query(
-        `SELECT * FROM content_items WHERE tenant_id = ? AND type = ?${statusValue ? " AND status = ?" : ""} ORDER BY ${orderBy}`,
-        statusValue ? [tenant_id, req.query.type, statusValue] : [tenant_id, req.query.type]);
+        `SELECT * FROM content_items AS ci WHERE ci.tenant_id = ? AND ${typeClause}${statusClause} ORDER BY ${orderBy}`,
+        [tenant_id, ...typeArgs, ...statusArgs]);
       return res.json(rows.map(mapRow));
     }
 

@@ -7,23 +7,28 @@ import PodcastCard from "@/components/cards/PodcastCard";
 import Button from "@/components/ui/Button";
 import Tag from "@/components/ui/Tag";
 import { useContentList, toCard } from "@/lib/content";
-import type { StoryContent, GuideContent, PodcastEpisodeFull } from "@/types";
+import type { StoryContent, GuideContent, PodcastEpisode } from "@/types";
 import { Link } from "react-router-dom";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { formatDate } from "@/lib/format-date";
 import SafeImage from "@/components/ui/SafeImage";
 
+// Three types fetched in one query via comma-separated type param.
+// StoryOrGuide is the superset of fields needed from the mixed-type response:
+// it carries isFeatured for the featured-stories logic and type for the client-side filter.
+// PodcastEpisode is the narrow card-level subset — the 5 fields it needs exist in any API row.
+type StoryOrGuide = StoryContent & { type: string; isFeatured?: boolean };
+
 export default function HomePage() {
-  const storiesQ = useContentList<StoryContent>("story");
-  const guidesQ = useContentList<GuideContent>("guide");
-  const podcastQ = useContentList<PodcastEpisodeFull>("podcast");
+  const contentQ = useContentList<StoryOrGuide>("story,guide,podcast");
   usePageMeta({});
-  if (storiesQ.loading || guidesQ.loading || podcastQ.loading) {
+  if (contentQ.loading) {
     return <SkeletonHome />;
   }
-  const stories = storiesQ.data ?? [];
-  const guides = guidesQ.data ?? [];
-  const podcastEpisodes = podcastQ.data ?? [];
+  const raw = contentQ.data ?? [];
+  const stories = raw.filter((i) => i.type === "story") as StoryContent[];
+  const guides = raw.filter((i) => i.type === "guide") as GuideContent[];
+  const podcastEpisodes = raw.filter((i) => i.type === "podcast") as PodcastEpisode[];
 
   const featuredStories = (() => {
     // Explicitly featured stories first, then newest as filler

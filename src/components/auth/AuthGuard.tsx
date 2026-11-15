@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import LoginPage from "@/pages/LoginPage";
 import { AuthContext } from "@/lib/AuthContext";
@@ -141,7 +141,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ isOwner }}>
-      {children}
+      <Suspense fallback={<div className="animate-pulse min-h-[60vh]" />}>
+        {children}
+      </Suspense>
     </AuthContext.Provider>
   );
 }
