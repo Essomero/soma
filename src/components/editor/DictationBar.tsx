@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { Mic, MicOff, Square, Sparkles, AlertCircle, ChevronDown } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Mic, MicOff, Square, Sparkles, AlertCircle } from "lucide-react";
 
 // ── Device types ──────────────────────────────────────
 
@@ -46,22 +46,32 @@ export default function DictationBar({
   active,
 }: DictationBarProps) {
   const [devices, setDevices] = useState<AudioInputInfo[]>([]);
-  const [showDevices, setShowDevices] = useState(false);
 
   // Load audio input devices on mount
   useEffect(() => {
     if (typeof navigator === "undefined") return;
+    let mounted = true;
+
+    const loadDevices = () =>
+      listAudioInputs().then((list) => {
+        if (mounted) setDevices(list);
+      });
+
     // Request mic permission so enumerateDevices returns labels
     navigator.mediaDevices
       .getUserMedia({ audio: true })
       .then((stream) => {
         stream.getTracks().forEach((t) => t.stop());
-        listAudioInputs().then(setDevices);
+        loadDevices();
       })
       .catch(() => {
         // Permission denied — still list devices, labels will be empty
-        listAudioInputs().then(setDevices);
+        loadDevices();
       });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const defaultDevice = devices.length > 0 ? devices[0] : null;
@@ -121,37 +131,11 @@ export default function DictationBar({
 
         {/* Controls */}
         <div className="flex items-center gap-sm flex-wrap">
-          {/* Device selector */}
-          {isRecognizing && devices.length > 0 && (
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowDevices(!showDevices)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface border border-border-default/60 text-xs text-on-surface-muted hover:text-on-surface transition-colors"
-              >
-                <span className="font-sora text-[11px] max-w-[120px] truncate">
-                  {defaultDevice?.label || "Mic"}
-                </span>
-                <ChevronDown className="w-3 h-3" />
-              </button>
-              {showDevices && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setShowDevices(false)} />
-                  <div className="absolute right-0 top-full mt-1 z-20 w-56 bg-surface border border-border-default rounded-lg shadow-xl py-1 max-h-48 overflow-y-auto">
-                    {devices.map((d) => (
-                      <button
-                        key={d.deviceId}
-                        type="button"
-                        className="w-full text-left px-3 py-2 text-xs font-dm-sans text-on-surface hover:bg-surface-container transition-colors truncate"
-                        onClick={() => setShowDevices(false)}
-                      >
-                        {d.label}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
+          {/* Active device indicator (read-only — webkitSpeechRecognition always uses default mic) */}
+          {isRecognizing && defaultDevice && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-surface border border-border-default/60 text-[11px] font-sora text-on-surface-muted max-w-[180px] truncate">
+              {defaultDevice.label}
+            </span>
           )}
 
           {/* Stop / toggle button */}

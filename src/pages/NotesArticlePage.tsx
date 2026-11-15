@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Edit3, Trash2, Loader2, Link2Off, Clipboard, Check, Sparkles, Volume2, Square } from "lucide-react";
 import { useChromeTts, isChromeTtsSupported } from "@/hooks/useChromeTts";
-import { checkSonAvailability, synthesizeSpeechWithSon } from "@/lib/sonClient";
+import { checkSonAvailability, synthesizeSpeechWithSon, cleanForSpeech } from "@/lib/sonClient";
 import type { SonStatus } from "@/lib/sonClient";
 import { SkeletonNotesArticle } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
@@ -185,8 +185,8 @@ export default function NotesArticlePage() {
         setSonPlaying(false);
       }
     } else {
-      // Chrome TTS: speak directly, no cleanup needed
-      chromeTts.start(article.content);
+      // Chrome TTS: clean markdown so it doesn't read syntax aloud
+      chromeTts.start(cleanForSpeech(article.content));
     }
   }, [sonPlaying, sonStatus.available, chromeTts, article]);
 

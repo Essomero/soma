@@ -52,11 +52,10 @@ export default function NotesEditorPage() {
   const dictationRef = useRef("");
   const handleSttResult = useCallback<SpeechResultHandler>((text, isFinal) => {
     if (isFinal) {
-      const word = dictationRef.current + text;
       dictationRef.current = "";
       setContent((prev) => {
         const trimmed = prev.trimEnd();
-        return trimmed ? `${trimmed} ${word}` : word;
+        return trimmed ? `${trimmed} ${text}` : text;
       });
     } else {
       dictationRef.current = text;
