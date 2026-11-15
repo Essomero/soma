@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, PenLine, Eye, Loader2, Save, Sparkles } from "lucide-react";
+import { ArrowLeft, PenLine, Eye, Loader2, Save, Sparkles, Mic } from "lucide-react";
+import { useWebSpeech, isWebSpeechSupported, type SpeechResultHandler } from "@/hooks/useWebSpeech";
+import DictationBar from "@/components/editor/DictationBar";
 import { SkeletonForm } from "@/components/ui/Skeleton";
 import AccentBar from "@/components/ui/AccentBar";
 import MarkdownHtml from "@/components/ui/MarkdownHtml";
@@ -41,6 +43,52 @@ export default function NotesEditorPage() {
   const [titleManuallyEdited, setTitleManuallyEdited] = useState(false);
   const [generatingTitle, setGeneratingTitle] = useState(false);
   const [generating, setGenerating] = useState(false);
+
+  // ── Chrome STT dictation ─────────────────────────────
+  const sttSupported = isWebSpeechSupported();
+  const [sttActive, setSttActive] = useState(false);
+  const [sttError, setSttError] = useState<string | null>(null);
+
+  const dictationRef = useRef("");
+  const handleSttResult = useCallback<SpeechResultHandler>((text, isFinal) => {
+    if (isFinal) {
+      dictationRef.current = "";
+      setContent((prev) => {
+        const trimmed = prev.trimEnd();
+        return trimmed ? `${trimmed} ${text}` : text;
+      });
+    } else {
+      dictationRef.current = text;
+    }
+  }, []);
+
+  const handleSttError = useCallback((code: string) => {
+    setSttError(
+      code === "not-allowed" ? "Microphone access denied — allow it in your browser settings." :
+      code === "no-speech" ? "No speech detected. Check your microphone." :
+      code === "aborted" ? "" :
+      code === "not-supported" ? "Speech recognition not supported in this browser." :
+      `Speech recognition error: ${code}`,
+    );
+    if (code !== "aborted") setSttActive(false);
+  }, []);
+
+  const { isRecognizing, soundActive, interimText } = useWebSpeech({
+    enabled: sttActive,
+    onResult: handleSttResult,
+    onError: handleSttError,
+  });
+
+  const toggleStt = useCallback(() => {
+    setSttActive((prev) => !prev);
+    setSttError(null);
+  }, []);
+
+  // Clear error when user types
+  const handleContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setContent(e.target.value);
+    setSttError(null);
+  }, []);
 
   // Focus the textarea on mount in create mode so the user can keep typing.
   // Clear the history state so back-navigation doesn't re-fill stale text.
@@ -280,17 +328,45 @@ export default function NotesEditorPage() {
                 <Eye className="w-3 h-3" /> Preview
               </button>
             </div>
-            <span className="font-sora text-[10px] text-on-surface-muted uppercase tracking-widest">
-              Markdown
-            </span>
+            <div className="flex items-center gap-sm">
+              {sttSupported && (
+                <button
+                  type="button"
+                  onClick={toggleStt}
+                  className={`inline-flex items-center gap-xs px-md py-sm font-sora text-[10px] uppercase tracking-widest border-b-2 transition-colors ${
+                    sttActive
+                      ? "border-error text-error"
+                      : "border-transparent text-on-surface-muted hover:text-on-surface"
+                  }`}
+                  title={sttActive ? "Stop dictation" : "Start voice dictation"}
+                >
+                  <Mic className={`w-3 h-3 ${sttActive ? "animate-pulse" : ""}`} />
+                </button>
+              )}
+              <span className="font-sora text-[10px] text-on-surface-muted uppercase tracking-widest">
+                Markdown
+              </span>
+            </div>
           </div>
+
+          {/* Dictation bar */}
+          {sttSupported && sttActive && (
+            <DictationBar
+              isRecognizing={isRecognizing}
+              soundActive={soundActive}
+              interimText={interimText}
+              error={sttError}
+              onToggle={toggleStt}
+              active={sttActive}
+            />
+          )}
 
           {/* Body */}
           {tab === "write" ? (
             <textarea
               ref={contentRef}
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={handleContentChange}
               onKeyDown={handleTextareaKeyDown}
               placeholder={PREVIEW_PLACEHOLDER}
               rows={24}
