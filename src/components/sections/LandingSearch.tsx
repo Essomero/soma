@@ -66,8 +66,10 @@ export default function LandingSearch() {
   const trimmed = query.trim();
   const hasQuery = trimmed.length > 0;
 
-  // Combined display items: content results first, then notes.
-  const combinedResults = [...contentResults, ...noteResults];
+  // Combined display items: content results first, then notes, deduped by type+slug.
+  const combinedResults = [...contentResults, ...noteResults].filter(
+    (r, i, arr) => i === arr.findIndex((x) => x.type === r.type && x.slug === r.slug)
+  );
   // "Create a note" always appears when there's text, regardless of results.
   const showCreateOption = hasQuery;
   // Total selectable items: results + 1 create option when query present.

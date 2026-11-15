@@ -90,8 +90,14 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
         const r = await fetch(`/api/content?type=all&q=${encodeURIComponent(trimmed)}&limit=5`);
         if (!r.ok) { setLiveResults([]); return; }
         const data = await r.json();
+        const seen = new Set<string>();
         setLiveResults(
-          (data || []).map((item: any) => ({
+          (data || []).filter((item: any) => {
+            const key = `${item.type}/${item.slug}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          }).map((item: any) => ({
             slug: item.slug,
             type: item.type,
             title: item.title,

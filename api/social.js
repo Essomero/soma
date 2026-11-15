@@ -67,6 +67,13 @@ async function syncNoteFts(slug, title, content) {
     {
       type: "execute",
       stmt: {
+        sql: `INSERT INTO note_fts(note_fts, slug, title, content) VALUES ('delete', ?, '', '')`,
+        args: [dbArg(slug)],
+      },
+    },
+    {
+      type: "execute",
+      stmt: {
         sql: `INSERT INTO note_fts(slug, title, content) VALUES (?, ?, ?)`,
         args: [dbArg(slug), dbArg(title), dbArg(content)],
       },
