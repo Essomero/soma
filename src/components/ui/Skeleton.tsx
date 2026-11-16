@@ -698,6 +698,8 @@ export function SkeletonHome() {
           <div className="absolute top-1/4 -left-1/4 w-3/5 h-3/5 rounded-full bg-[#6b3fa0]/30 blur-[120px]" />
           <div className="absolute bottom-1/4 -right-1/4 w-3/5 h-2/3 rounded-full bg-[#2563eb]/25 blur-[120px]" />
           <div className="absolute top-1/2 left-1/3 w-1/3 h-1/3 rounded-full bg-[#06b6d4]/20 blur-[100px]" />
+          {/* Bottom fade to blend with content section — matches LandingSearch exactly */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         </div>
         <div className="relative z-10 w-full max-w-2xl mx-auto px-6 -mt-16">
           <Skeleton className="h-12 md:h-14 w-3/4 mx-auto mb-3" />
