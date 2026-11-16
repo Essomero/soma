@@ -19,6 +19,11 @@ export default function Header() {
   const { theme, toggleTheme } = useTheme();
   const isHome = location.pathname === "/";
   const topOfHome = isHome && !scrolled;
+  const handleSignOut = () => {
+    document.cookie = "soma_auth=; Path=/; Max-Age=0";
+    document.cookie = "soma_session=; Path=/; Max-Age=0";
+    window.location.href = "/auth/logout";
+  };
   useEffect(() => {
     // In local dev AuthGuard bypasses login but doesn't set the cookie.
     // The rest of the app relies on the cookie only for the "create" and
@@ -148,11 +153,7 @@ export default function Header() {
             <div className="hidden lg:block">
               <Tooltip label="Sign out" position="bottom" align="end">
                 <button
-                  onClick={() => {
-                    document.cookie = "soma_auth=; Path=/; Max-Age=0";
-                    document.cookie = "soma_session=; Path=/; Max-Age=0";
-                    window.location.href = "/auth/logout";
-                  }}
+                  onClick={handleSignOut}
                   className="p-2 text-on-surface-variant hover:text-error rounded-lg hover:bg-surface-container-low transition-colors"
                   aria-label="Sign out"
                 >
@@ -166,11 +167,7 @@ export default function Header() {
             authed={authed}
             theme={theme}
             onToggleTheme={toggleTheme}
-            onSignOut={() => {
-              document.cookie = "soma_auth=; Path=/; Max-Age=0";
-              document.cookie = "soma_session=; Path=/; Max-Age=0";
-              window.location.href = "/auth/logout";
-            }}
+            onSignOut={handleSignOut}
           />
         </div>
       </nav>

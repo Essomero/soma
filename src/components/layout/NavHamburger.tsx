@@ -115,6 +115,7 @@ export default function NavHamburger({ links, authed, theme, onToggleTheme, onSi
         {/* Theme toggle */}
         {theme && onToggleTheme && (
           <button
+            type="button"
             onClick={() => { onToggleTheme(); setOpen(false); }}
             className="flex items-center justify-between w-full px-lg py-sm font-sora text-sm uppercase tracking-widest transition-colors text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
             aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
@@ -139,6 +140,7 @@ export default function NavHamburger({ links, authed, theme, onToggleTheme, onSi
               Admin
             </Link>
             <button
+              type="button"
               onClick={() => { setOpen(false); onSignOut?.(); }}
               className="flex items-center gap-md w-full px-lg py-sm font-sora text-sm uppercase tracking-widest transition-colors text-on-surface-variant hover:text-error hover:bg-surface-container"
             >
