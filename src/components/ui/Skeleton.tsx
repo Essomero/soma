@@ -691,10 +691,16 @@ export function SkeletonTestDrill() {
 export function SkeletonHome() {
   return (
     <>
-      {/* Search hero skeleton */}
+      {/* Search hero skeleton — same cosmic gradient as LandingSearch so the load transition feels seamless */}
       <header className="relative w-full min-h-[90vh] overflow-hidden flex items-center justify-center">
-        <div className="absolute inset-0 z-0 bg-surface-container-low" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-background/60 to-background" />
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-b from-[#e8e4f0] via-[#d4d0e8] to-[#e8e4f0] dark:from-[#0a0a1a] dark:via-[#0f0f2e] dark:to-[#0a0a1a]" />
+          <div className="absolute top-1/4 -left-1/4 w-3/5 h-3/5 rounded-full bg-[#6b3fa0]/30 blur-[120px]" />
+          <div className="absolute bottom-1/4 -right-1/4 w-3/5 h-2/3 rounded-full bg-[#2563eb]/25 blur-[120px]" />
+          <div className="absolute top-1/2 left-1/3 w-1/3 h-1/3 rounded-full bg-[#06b6d4]/20 blur-[100px]" />
+          {/* Bottom fade to blend with content section — matches LandingSearch exactly */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+        </div>
         <div className="relative z-10 w-full max-w-2xl mx-auto px-6 -mt-16">
           <Skeleton className="h-12 md:h-14 w-3/4 mx-auto mb-3" />
           <Skeleton className="h-5 w-2/5 mx-auto mb-10" />

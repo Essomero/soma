@@ -17,6 +17,13 @@ export default function Header() {
   const location = useLocation();
   const { setOpen } = useSearch();
   const { theme, toggleTheme } = useTheme();
+  const isHome = location.pathname === "/";
+  const topOfHome = isHome && !scrolled;
+  const handleSignOut = () => {
+    document.cookie = "soma_auth=; Path=/; Max-Age=0";
+    document.cookie = "soma_session=; Path=/; Max-Age=0";
+    window.location.href = "/auth/logout";
+  };
   useEffect(() => {
     // In local dev AuthGuard bypasses login but doesn't set the cookie.
     // The rest of the app relies on the cookie only for the "create" and
@@ -41,12 +48,15 @@ export default function Header() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 w-full border-b border-border-default bg-surface/80 backdrop-blur-md transition-shadow",
+        "sticky top-0 z-50 w-full transition-shadow",
+        topOfHome
+          ? "bg-transparent border-transparent"
+          : "border-b border-border-default bg-surface/80 backdrop-blur-md",
         scrolled && "shadow-xl"
       )}
     >
       <nav className="mx-auto flex max-w-readme items-center justify-between px-gutter md:px-margin-desktop h-16">
-        {/* Left: Logo + essential links + hamburger */}
+        {/* Left: Logo + essential links */}
         <div className="flex items-center gap-lg">
           <Link
             to="/"
@@ -61,7 +71,7 @@ export default function Header() {
             />
             {siteTitle}
           </Link>
-          <div className="hidden md:flex items-center gap-lg">
+          <div className="hidden lg:flex items-center gap-lg">
             {ESSENTIAL_LINKS.map((link) => {
               const isActive =
                 link.href === "/"
@@ -83,60 +93,82 @@ export default function Header() {
               );
             })}
           </div>
-<NavHamburger links={innerNavLinks} authed={authed} />
         </div>
 
-        {/* Right: Theme toggle + Search + New Note + Sign Out */}
+        {/* Right: actions + hamburger (hamburger always last) */}
         <div className="flex items-center gap-sm md:gap-md">
+          {/* Note: full button on desktop, icon-only on mobile */}
           {authed && (
-            <Link
-              to="/notes/new"
-              className="inline-flex items-center gap-sm px-xl py-md bg-primary text-on-primary font-sora text-sm uppercase tracking-widest hover:bg-primary-hover transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Note
-            </Link>
+            <>
+              <Link
+                to="/notes/new"
+                className="hidden lg:inline-flex items-center gap-sm px-xl py-md bg-primary text-on-primary font-sora text-sm uppercase tracking-widest hover:bg-primary-hover transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Note
+              </Link>
+              <Link
+                to="/notes/new"
+                className="lg:hidden p-2 text-on-surface-variant hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-colors"
+                aria-label="New note"
+              >
+                <Plus className="w-5 h-5" />
+              </Link>
+            </>
           )}
-          <Tooltip label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} position="bottom">
-            <button
-              onClick={toggleTheme}
-              className="p-2 text-on-surface-variant hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-colors"
-              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              {theme === "dark" ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-slate-700" />}
-            </button>
-          </Tooltip>
+          {/* Theme toggle: inline on desktop only */}
+          <div className="hidden lg:block">
+            <Tooltip label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} position="bottom">
+              <button
+                onClick={toggleTheme}
+                className="p-2 text-on-surface-variant hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-colors"
+                aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {theme === "dark" ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-slate-700" />}
+              </button>
+            </Tooltip>
+          </div>
+          {/* Search: always inline */}
           <Tooltip label="Search (Cmd+K)" position="bottom">
             <button onClick={() => setOpen(true)} className="p-2 text-on-surface-variant hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-colors" aria-label="Search (Cmd+K)">
               <Search className="w-5 h-5" />
             </button>
           </Tooltip>
-          <Tooltip label="GitHub" position="bottom">
-            <a
-              href="https://github.com/Essomero/soma"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 text-on-surface-variant hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-colors"
-              aria-label="Soma on GitHub"
-            >
-              <Github className="w-5 h-5" />
-            </a>
-          </Tooltip>
-          {authed && (
-            <Tooltip label="Sign out" position="bottom" align="end">
-              <button
-                onClick={() => {
-                  document.cookie = "soma_auth=; Path=/; Max-Age=0";
-                  document.cookie = "soma_session=; Path=/; Max-Age=0";
-                  window.location.href = "/auth/logout";
-                }}
-                className="p-2 text-on-surface-variant hover:text-error rounded-lg hover:bg-surface-container-low transition-colors"
-                aria-label="Sign out"
+          {/* GitHub: inline on desktop only */}
+          <div className="hidden lg:block">
+            <Tooltip label="GitHub" position="bottom">
+              <a
+                href="https://github.com/Essomero/soma"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 text-on-surface-variant hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-colors"
+                aria-label="Soma on GitHub"
               >
-                <LogOut className="w-4 h-4" />
-              </button>
+                <Github className="w-5 h-5" />
+              </a>
             </Tooltip>
+          </div>
+          {/* Sign out: inline on desktop only */}
+          {authed && (
+            <div className="hidden lg:block">
+              <Tooltip label="Sign out" position="bottom" align="end">
+                <button
+                  onClick={handleSignOut}
+                  className="p-2 text-on-surface-variant hover:text-error rounded-lg hover:bg-surface-container-low transition-colors"
+                  aria-label="Sign out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </Tooltip>
+            </div>
           )}
+          <NavHamburger
+            links={innerNavLinks}
+            authed={authed}
+            theme={theme}
+            onToggleTheme={toggleTheme}
+            onSignOut={handleSignOut}
+          />
         </div>
       </nav>
     </header>
