@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Sun, Moon, Plus, Github, LogOut, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { NavItem } from "@/types";
 import Tooltip from "@/components/ui/Tooltip";
@@ -10,9 +10,15 @@ interface NavHamburgerProps {
   links: NavItem[];
   /** When true, show an Admin link at the bottom of the menu. */
   authed?: boolean;
+  /** Current theme for the inline toggle inside the dropdown. */
+  theme?: "dark" | "light";
+  /** Called when the user taps the theme toggle in the dropdown. */
+  onToggleTheme?: () => void;
+  /** Called when the user taps Sign out inside the dropdown. */
+  onSignOut?: () => void;
 }
 
-export default function NavHamburger({ links, authed }: NavHamburgerProps) {
+export default function NavHamburger({ links, authed, theme, onToggleTheme, onSignOut }: NavHamburgerProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const location = useLocation();
@@ -78,13 +84,68 @@ export default function NavHamburger({ links, authed }: NavHamburgerProps) {
             </Link>
           );
         })}
+        {/* Separator before utility items */}
+        <div className="border-t border-border-default mx-lg my-xs" />
+
+        {/* New Note — shown only in the dropdown on mobile/tablet; desktop (lg+) has it inline */}
         {authed && (
           <Link
-            to="/admin"
-            className="block px-lg py-sm font-sora text-sm uppercase tracking-widest transition-colors text-on-surface-variant hover:text-on-surface hover:bg-surface-container border-t border-border-default mt-sm pt-sm"
+            to="/notes/new"
+            onClick={() => setOpen(false)}
+            className="lg:hidden flex items-center gap-md w-full px-lg py-sm font-sora text-sm uppercase tracking-widest transition-colors text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
           >
-            Admin
+            <Plus className="w-4 h-4" />
+            New Note
           </Link>
+        )}
+
+        {/* GitHub */}
+        <a
+          href="https://github.com/Essomero/soma"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => setOpen(false)}
+          className="flex items-center gap-md w-full px-lg py-sm font-sora text-sm uppercase tracking-widest transition-colors text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+        >
+          <Github className="w-4 h-4" />
+          GitHub
+          <ExternalLink className="w-3 h-3 ml-auto text-on-surface-muted" />
+        </a>
+
+        {/* Theme toggle */}
+        {theme && onToggleTheme && (
+          <button
+            onClick={() => { onToggleTheme(); setOpen(false); }}
+            className="flex items-center justify-between w-full px-lg py-sm font-sora text-sm uppercase tracking-widest transition-colors text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            <span className="flex items-center gap-md">
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              Theme
+            </span>
+            <span className="text-xs text-on-surface-muted">{theme === "dark" ? "Light" : "Dark"}</span>
+          </button>
+        )}
+
+        {/* Admin + Sign out */}
+        {authed && (
+          <>
+            <div className="border-t border-border-default mx-lg my-xs" />
+            <Link
+              to="/admin"
+              onClick={() => setOpen(false)}
+              className="block px-lg py-sm font-sora text-sm uppercase tracking-widest transition-colors text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+            >
+              Admin
+            </Link>
+            <button
+              onClick={() => { setOpen(false); onSignOut?.(); }}
+              className="flex items-center gap-md w-full px-lg py-sm font-sora text-sm uppercase tracking-widest transition-colors text-on-surface-variant hover:text-error hover:bg-surface-container"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign out
+            </button>
+          </>
         )}
       </div>
     </div>
