@@ -300,6 +300,11 @@ function toFtsQuery(input) {
   return tokens.join(" ");
 }
 
+// Simple in-memory list cache: TTL 60s. Key = `${tenant_id}:${typeList}:${statusValue||'all'}`.
+// Cache populates on first request; subsequent loads within TTL are instant.
+const listCache = new Map();
+const LIST_CACHE_TTL = 60_000; // 60 seconds
+
 let _ftsInitialized = false;
 let _tablesReady = false;
 
@@ -506,10 +511,17 @@ export default async function handler(req, res) {
       }
 
       const orderBy = "updated_at DESC, position ASC";
+      const cacheKey = `${tenant_id}:${typeList.join(',')}:${statusValue || 'all'}`;
+      const cached = listCache.get(cacheKey);
+      if (cached && Date.now() - cached.ts < LIST_CACHE_TTL) {
+        return res.json(cached.data);
+      }
       const rows = await query(
         `SELECT * FROM content_items AS ci WHERE ci.tenant_id = ? AND ${typeClause}${statusClause} ORDER BY ${orderBy}`,
         [tenant_id, ...typeArgs, ...statusArgs]);
-      return res.json(rows.map(mapRow));
+      const data = rows.map(mapRow);
+      listCache.set(cacheKey, { data, ts: Date.now() });
+      return res.json(data);
     }
 
     if (req.method === "GET") {
@@ -545,6 +557,13 @@ export default async function handler(req, res) {
       if (row) {
         await syncFts(slug, type, title || row.title || "", excerpt || row.excerpt || "", body);
       }
+      // Invalidate all list cache entries for this tenant
+      const tenantPrefix = `${tenant_id}:`;
+      for (const key of listCache.keys()) {
+        if (key.startsWith(tenantPrefix)) {
+          listCache.delete(key);
+        }
+      }
       return res.status(201).json(mapRow(row));
     }
 
@@ -569,3 +588,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Internal server error" });
   }
 }
+
+
