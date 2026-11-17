@@ -579,6 +579,13 @@ export default async function handler(req, res) {
         await query("DELETE FROM content_items WHERE tenant_id = ? AND slug = ?", [tenant_id, slug]);
         await deleteFts(slug);
       }
+      // Invalidate all list cache entries for this tenant
+      const tenantPrefix = `${tenant_id}:`;
+      for (const key of listCache.keys()) {
+        if (key.startsWith(tenantPrefix)) {
+          listCache.delete(key);
+        }
+      }
       return res.json({ success: true });
     }
 
