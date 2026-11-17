@@ -148,7 +148,7 @@ async function remoteQuery(sql, args) {
     stmt: { sql, args: args.map(wrapArg) },
   }];
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  const timeout = setTimeout(() => controller.abort(), 30000);
   try {
     const r = await fetch(DB_URL + "/v2/pipeline", {
       method: "POST",
@@ -160,7 +160,6 @@ async function remoteQuery(sql, args) {
     const data = await r.json().catch(() => null);
     if (!r.ok) {
       console.error("[_db] remote FAIL:", r.status, JSON.stringify(data).slice(0, 500));
-      // For local sqld, fall back to local only if remote truly unreachable, not on SQL error
       if (r.status >= 500 || r.status === 0) return localQuery(sql, args);
       return [];
     }
@@ -194,7 +193,7 @@ async function remotePipeline(stmts) {
   const headers = { "Content-Type": "application/json" };
   if (TOKEN) headers["Authorization"] = "Bearer " + TOKEN;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  const timeout = setTimeout(() => controller.abort(), 30000);
   try {
     const r = await fetch(DB_URL + "/v2/pipeline", {
       method: "POST",
@@ -206,7 +205,6 @@ async function remotePipeline(stmts) {
     const data = await r.json().catch(() => null);
     if (!r.ok) {
       console.error("[_db] pipeline FAIL:", r.status, JSON.stringify(data).slice(0, 500));
-      // Local sqld fallback for pipeline
       let last = [];
       for (const s of stmts) {
         last = await localQuery(s.sql || s.stmt?.sql, (s.args || s.stmt?.args || []).map(unwrapArg));
