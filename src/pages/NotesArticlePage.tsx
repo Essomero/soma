@@ -453,6 +453,7 @@ export default function NotesArticlePage() {
                         title: article.title,
                         content: article.content,
                       },
+                      autoGenerate: true,
                     },
                   })
                 }

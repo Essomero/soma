@@ -196,6 +196,32 @@ export default function NotesEditorPage() {
     if (!t || !content.trim() || generating) return;
     setGenerating(true);
     setError("");
+
+    // Check for configured AI model before navigating. Without one the
+    // admin page would just show an error — redirect to settings instead.
+    try {
+      const configRes = await fetch("/api/config");
+      const config = configRes.ok ? await configRes.json() : {};
+      const hasDefaultModel = !!config.defaultModel;
+      if (!hasDefaultModel) {
+        setGenerating(false);
+        // Check whether keys exist at all (any provider has a key)
+        const hasAnyKey = config.providers
+          ? Object.values(config.providers).some(
+              (p: any) => p?.hasKey === true
+            )
+          : true; // providers unknown — let the admin page handle it
+        if (!hasAnyKey) {
+          navigate("/settings");
+          return;
+        }
+        navigate("/settings");
+        return;
+      }
+    } catch {
+      // Config fetch failed — proceed anyway, AIDraftPanel will handle it
+    }
+
     try {
       let noteSlug = slug;
       if (!isEdit) {
@@ -207,7 +233,7 @@ export default function NotesEditorPage() {
         await updateNote(noteSlug!, { title: t, content });
       }
       navigate("/admin/new", {
-        state: { sourceNote: { slug: noteSlug, title: t, content } },
+        state: { sourceNote: { slug: noteSlug, title: t, content }, autoGenerate: true },
       });
     } catch (e: unknown) {
       const msg = e && typeof e === "object" && "message" in e ? String(e.message) : "Couldn't save the note.";

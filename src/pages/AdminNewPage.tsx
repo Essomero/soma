@@ -18,8 +18,12 @@ export default function AdminNewPage() {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const defaultType = params.get("type") || undefined;
-  const sourceNote = (location.state as { sourceNote?: { slug: string; title: string; content: string } } | null)
-    ?.sourceNote;
+  const locationState = location.state as {
+    sourceNote?: { slug: string; title: string; content: string };
+    autoGenerate?: boolean;
+  } | null;
+  const sourceNote = locationState?.sourceNote;
+  const autoGenerate = locationState?.autoGenerate === true;
 
   const initialPrompt = useMemo(() => {
     // Check for import-draft from Import Anything workflow
@@ -240,7 +244,7 @@ export default function AdminNewPage() {
         {/* AI Drafting Panel — shown when no draft yet */}
         {!draft && (
           <section className="p-xl bg-surface border border-border-default">
-            <AIDraftPanel onDraft={handleDraft} disabled={saving} initialInput={initialPrompt} defaultType={defaultType} />
+            <AIDraftPanel onDraft={handleDraft} disabled={saving} initialInput={initialPrompt} defaultType={defaultType} autoGenerate={autoGenerate} />
           </section>
         )}
 
