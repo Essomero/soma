@@ -4,9 +4,9 @@ export const somaVisionRoadmap = {
   slug: "soma-vision-roadmap",
   category: "Perspective // Product Vision",
   subcategory: "Technology // Learning",
-  title: "Soma: Reversing the Atrophy of Thought",
+  title: "Soma: Pages that teach, tests that verify",
   excerpt:
-    "Generative AI made producing content trivial and retaining it rare. Soma exists to reverse the atrophy of thought: learning you own, proved out loud, published when ready. Here is where the product is headed and the architecture that gets us there.",
+    "ChatGPT gives you answers in a chat bubble. Every new message pushes the previous one further up. Soma uses a different format: persistent pages with sections, diagrams, math, and one-click tests that check if you actually understood it.",
   image:
     "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200&h=675&fit=crop",
   imageAlt:
@@ -18,44 +18,44 @@ export const somaVisionRoadmap = {
   topics: ["technology", "philosophy", "open-source"],
 
   intro:
-    "Generative AI made producing content trivial and retaining it rare. We read summaries, paste snippets into voids, and mistake convenience for comprehension. Illusion of competence is up, retention is down. Soma exists to reverse that: sovereign learning you own, a margin tutor that challenges you, drills you run with your own hands, and oral proof that proves you own it. All on evening coffee terms, not school's. This piece is the honest audit of where Soma is today, where the vision asks it to go, and the architecture that gets us there without throwing anything away.",
+    "ChatGPT gives you an answer in a chat bubble. Every new message pushes the previous one further up. You scroll, you branch, you lose context. Soma uses a different format: persistent pages with sections, diagrams, math, and one-click tests that check if you actually understood it. This piece is the honest audit of where Soma is today, where it's headed, and the architecture that gets us there.",
 
   body: [
-    "Open your laptop and ask any model to summarize a paper. It does, in three bullets. You nod, copy the summary into a doc, and move on. An hour later, could you explain the second bullet without looking?",
-    "That is the new normal. Producing content got cheap. Retaining it got rare. Soma's job is to make retaining it delightful, not punitive.",
+    "Open your laptop and ask any model to explain WebSocket backpressure. It gives you a wall of text with bullet points. You read it, nod, and forget half of it by next week.",
+    "Every new message pushes the previous explanation further up. You scroll to find that one paragraph that made it click. You can't. You branch the conversation to keep it. Now you have two threads and no way to merge them.",
+    "Chat is built for conversation. It's great for that. It's terrible as a container for knowledge. Soma uses a page format instead.",
   ],
 
   bentoHighlights: [
     {
-      label: "SOVEREIGN BY DEFAULT",
-      title: "Your Ideas Live in Your Database",
+      label: "PAGES, NOT CHAT LOGS",
+      title: "A page stays a page. A chat log keeps growing.",
       description:
-        "Open-source at github.com/Essomero/soma. Notes, highlights, tests, and every paragraph sit in edge SQLite you own. One file backup at /app/data/soma.db. Fork stays public, writing stays private.",
+        "Every message in a chat pushes the previous one further up. Soma uses a page format: sections you navigate, diagrams that render, math that typesets. Persistent by design.",
     },
     {
-      label: "ZERO FRICTION SAAS",
-      title: "Open a Tab and Start Thinking",
+      label: "LEARN, THEN VERIFY",
+      title: "Read with AI. Prove it with a test.",
       description:
-        "Same binary across Docker, Vercel + Turso, Fly, Railway, Netlify, Cloudflare. Self-host in 60 seconds or use the hosted workspace. SaaS is deploy config, not a product fork.",
+        "Highlight any paragraph and the margin AI explains or challenges it. One click generates a test that checks whether you actually understood the topic, not whether you can spot a paragraph you read five minutes ago.",
     },
     {
-      label: "LEARN, PROVE, PUBLISH",
-      title: "Margin Tutor + Hands-on Drills + Oral Verification",
+      label: "RUNS WHERE YOU WANT",
+      title: "Self-host or use the cloud. Same product.",
       description:
-        "Select any paragraph and ask the margin AI to explain, challenge, or run a Socratic session. Run drills with your own hands in Soma Labs. Then prove it out loud to Son and flip one toggle to publish.",
+        "Docker compose up in 60 seconds, or deploy to Vercel with Turso. Your data in your database either way. SaaS is deploy config, not a fork.",
     },
   ],
 
   pullQuotes: [
     {
       quote:
-        "We refuse to treat AI as a replacement for human cognition. We use it as an aggressive, high-friction multiplier that turns passive consumption into active mastery.",
-      attribution: "THE THESIS",
+        "ChatGPT gives you an answer. Soma helps you learn it. Different formats for different moments.",
+      attribution: "THE DISTINCTION",
     },
     {
       quote:
-        "Think in private on your own terms, prove your understanding out loud, and make public what you wish. This is learning reimagined.",
-      attribution: "EVENING COFFEE, NOT SCHOOL",
+        "A page stays a page. Navigate sections, ask the margin AI, generate a test. That's a learning format, not a conversation format.",
     },
   ],
 
