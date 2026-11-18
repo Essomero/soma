@@ -128,7 +128,7 @@ export default function NavHamburger({ links, authed, theme, onToggleTheme, onSi
           </button>
         )}
 
-        {/* Admin + Sign out */}
+        {/* Admin + Settings + Sign out */}
         {authed && (
           <>
             <div className="border-t border-border-default mx-lg my-xs" />
@@ -138,6 +138,13 @@ export default function NavHamburger({ links, authed, theme, onToggleTheme, onSi
               className="block px-lg py-sm font-sora text-sm uppercase tracking-widest transition-colors text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
             >
               Admin
+            </Link>
+            <Link
+              to="/settings"
+              onClick={() => setOpen(false)}
+              className="block px-lg py-sm font-sora text-sm uppercase tracking-widest transition-colors text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+            >
+              Settings
             </Link>
             <button
               type="button"

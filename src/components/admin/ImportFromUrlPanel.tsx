@@ -107,7 +107,7 @@ export default function ImportFromUrlModal({ open, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-xxl pb-xl"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-xxl pb-xl overscroll-contain"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       {/* Backdrop */}

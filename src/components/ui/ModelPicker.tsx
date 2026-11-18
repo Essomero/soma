@@ -212,7 +212,7 @@ export function ModelPicker({
         className={`inline-flex items-center gap-sm px-md py-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm hover:border-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${className}`}
       >
         <span className="truncate">
-          {triggerLabel ?? (selected ? selected.label : unavailable ? "No models available" : "Loading...")}
+          {triggerLabel ?? (selected ? selected.label : unavailable ? "No models available" : models.length === 0 ? "Loading..." : "Pick model")}
         </span>
         <ChevronDown
           className={`w-4 h-4 text-on-surface-muted shrink-0 transition-transform ${
@@ -226,7 +226,7 @@ export function ModelPicker({
           ref={listRef}
           role="listbox"
           tabIndex={-1}
-          className={`absolute z-50 min-w-[200px] sm:min-w-[260px] max-h-[400px] overflow-y-auto bg-surface border border-border-default rounded-lg shadow-xl py-xs ${
+          className={`absolute z-50 min-w-[200px] sm:min-w-[260px] max-h-[400px] overflow-y-auto overscroll-contain bg-surface border border-border-default rounded-lg shadow-xl py-xs ${
             openUpward ? "bottom-full mb-1" : "top-full mt-1"
           } ${align === "right" ? "right-0" : "left-0"}`}
         >

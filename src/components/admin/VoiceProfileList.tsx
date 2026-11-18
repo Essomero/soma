@@ -229,7 +229,7 @@ function VoiceProfileFormModal({ editingProfile, onSave, onClose }: VPFormModalP
 
   return (
     <div
-      className="fixed inset-0 z-modal-confirm bg-background/60 backdrop-blur-sm flex items-center justify-center p-xl"
+      className="fixed inset-0 z-modal-confirm bg-background/60 backdrop-blur-sm flex items-center justify-center p-xl overscroll-contain"
       onClick={onClose}
     >
       <div

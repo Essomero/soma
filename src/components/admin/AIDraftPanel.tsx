@@ -83,16 +83,22 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
     if (initialInput !== undefined) setInput(initialInput);
   }, [initialInput]);
 
-  // Fetch available models on mount
+  // Fetch available models and configured default on mount
   useEffect(() => {
-    fetch("/api/models")
-      .then((r) => r.json())
-      .then((data) => {
-        const list: ModelInfo[] = data.models ?? [];
+    Promise.all([
+      fetch("/api/models").then(r => r.json()),
+      fetch("/api/config").then(r => r.json()).catch(() => ({ defaultModel: null })),
+    ])
+      .then(([modelData, configData]) => {
+        const list: ModelInfo[] = modelData.models ?? [];
         setModels(list);
         setModelsReady(true);
         if (list.length > 0) {
-          const pref = resolveDefaultModel(list, "deepseek-flash");
+          // Priority: configured default → saved pref → first available
+          const configuredDefault = configData?.defaultModel;
+          const pref = configuredDefault && list.some((m) => m.id === configuredDefault)
+            ? configuredDefault
+            : resolveDefaultModel(list, "deepseek-flash");
           const m = pref ? list.find((x) => x.id === pref) : list[0];
           if (m) {
             setSelectedModel(m.id);

@@ -39,6 +39,7 @@ function getMode() {
 }
 
 
+
 function getRemoteConfig() {
   const raw = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").trim();
   const token = (process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || "").trim();
@@ -140,94 +141,71 @@ function unwrapArg(a) {
 async function remoteQuery(sql, args) {
   args = args || [];
   const { url: DB_URL, token: TOKEN } = getRemoteConfig();
-  if (!DB_URL) return localQuery(sql, args);
+  if (!DB_URL) return [];
   const headers = { "Content-Type": "application/json" };
   if (TOKEN) headers["Authorization"] = "Bearer " + TOKEN;
+  const wrapped = args.map(wrapArg);
   const requests = [{
     type: "execute",
-    stmt: { sql, args: args.map(wrapArg) },
+    stmt: { sql, args: wrapped },
   }];
+  const body = JSON.stringify({ requests });
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
-  try {
-    const r = await fetch(DB_URL + "/v2/pipeline", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ requests }),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-    const data = await r.json().catch(() => null);
-    if (!r.ok) {
-      console.error("[_db] remote FAIL:", r.status, JSON.stringify(data).slice(0, 500));
-      if (r.status >= 500 || r.status === 0) return localQuery(sql, args);
-      return [];
-    }
-    const result = data?.results?.[0]?.response?.result;
-    if (!result) {
-      console.error("[_db] unexpected format:", JSON.stringify(data).slice(0, 300));
-      return [];
-    }
-    const cols = (result.cols || []).map((c) => c.name || c);
-    return (result.rows || []).map((row) => {
-      const obj = {};
-      cols.forEach((c, i) => { obj[c] = val(row[i]); });
-      return obj;
-    });
-  } catch (e) {
-    clearTimeout(timeout);
-    console.error("[_db] remote query error:", e?.message);
-    return localQuery(sql, args);
+  const timeout = setTimeout(() => controller.abort(), 2000);
+  const r = await fetch(DB_URL + "/v2/pipeline", {
+    method: "POST",
+    headers,
+    body,
+    signal: controller.signal,
+  });
+  clearTimeout(timeout);
+  const data = await r.json().catch(() => null);
+  if (!r.ok) {
+    return [];
   }
+  const result = data?.results?.[0]?.response?.result;
+  if (!result) {
+    return [];
+  }
+  const cols = (result.cols || []).map((c) => c.name || c);
+  return (result.rows || []).map((row) => {
+    const obj = {};
+    cols.forEach((c, i) => { obj[c] = val(row[i]); });
+    return obj;
+  });
 }
 
 async function remotePipeline(stmts) {
   const { url: DB_URL, token: TOKEN } = getRemoteConfig();
-  if (!DB_URL) {
-    let last = [];
-    for (const s of stmts) {
-      last = await localQuery(s.sql || s.stmt?.sql, (s.args || s.stmt?.args || []).map(unwrapArg));
-    }
-    return last;
-  }
+  if (!DB_URL) return [];
   const headers = { "Content-Type": "application/json" };
   if (TOKEN) headers["Authorization"] = "Bearer " + TOKEN;
+  const body = JSON.stringify({ requests: stmts });
+  const firstSql = stmts[0]?.stmt?.sql?.slice(0, 80) || "?";
+  const firstArgs = stmts[0]?.stmt?.args?.map(a => typeof a === "string" ? `${a.slice(0, 12)}...` : a) || [];
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
-  try {
-    const r = await fetch(DB_URL + "/v2/pipeline", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ requests: stmts }),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-    const data = await r.json().catch(() => null);
-    if (!r.ok) {
-      console.error("[_db] pipeline FAIL:", r.status, JSON.stringify(data).slice(0, 500));
-      let last = [];
-      for (const s of stmts) {
-        last = await localQuery(s.sql || s.stmt?.sql, (s.args || s.stmt?.args || []).map(unwrapArg));
-      }
-      return last;
-    }
-    const lastResult = data?.results?.[data.results.length - 1]?.response?.result;
-    if (!lastResult) return [];
-    const cols = (lastResult.cols || []).map((c) => c.name || c);
-    return (lastResult.rows || []).map((row) => {
-      const obj = {};
-      cols.forEach((c, i) => { obj[c] = val(row[i]); });
-      return obj;
-    });
-  } catch (e) {
-    clearTimeout(timeout);
-    console.error("[_db] pipeline error:", e?.message);
-    let last = [];
-    for (const s of stmts) {
-      last = await localQuery(s.sql || s.stmt?.sql, (s.args || s.stmt?.args || []).map(unwrapArg));
-    }
-    return last;
+  const timeout = setTimeout(() => controller.abort(), 2000);
+  const r = await fetch(DB_URL + "/v2/pipeline", {
+    method: "POST",
+    headers,
+    body,
+    signal: controller.signal,
+  });
+  clearTimeout(timeout);
+  const data = await r.json().catch(() => null);
+  if (!r.ok) {
+    return [];
   }
+  const lastResult = data?.results?.[data.results.length - 1]?.response?.result;
+  if (!lastResult) {
+    return [];
+  }
+  const cols = (lastResult.cols || []).map((c) => c.name || c);
+  return (lastResult.rows || []).map((row) => {
+    const obj = {};
+    cols.forEach((c, i) => { obj[c] = val(row[i]); });
+    return obj;
+  });
 }
 
 

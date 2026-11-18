@@ -188,7 +188,7 @@ export default function CoverImagePicker({ image, imageAlt, onChange }: CoverIma
 
       {/* Search Modal */}
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm overscroll-contain">
           <div
             ref={modalRef}
             className="w-full max-w-3xl max-h-[85vh] bg-surface border border-border-default shadow-2xl flex flex-col mx-md"

@@ -1,16 +1,6 @@
 import { requireAuth } from "./_auth.js";
 import { runChat } from "../shared/chat/core.js";
-
-function envKeys() {
-  return {
-    deepseek: process.env.DEEPSEEK_API_KEY || "",
-    openrouter: process.env.OPENROUTER_API_KEY || "",
-    gemini: process.env.GEMINI_API_KEY || "",
-    groq: process.env.GROQ_API_KEY || "",
-    cerebras: process.env.CEREBRAS_API_KEY || "",
-    straitly: process.env.STRAITLY_API_KEY || "",
-  };
-}
+import { envKeysWithFallback } from "./settings.js";
 
 function envOptions() {
   return {
@@ -56,9 +46,11 @@ export default async function handler(req, res) {
   // customApiUrl/customApiKey deliberately ignored: the shared core picks the
   // endpoint and key from the provider map. Any client-supplied URL would turn
   // this authenticated proxy into a fetch oracle.
+  // Keys come from DB settings (set via /api/config) with env var fallback.
+  const { keys } = await envKeysWithFallback();
   const result = await runChat({
     body: req.body || {},
-    keys: envKeys(),
+    keys,
     options: envOptions(),
   });
 

@@ -19,12 +19,14 @@
 export const ROUTE_HANDLERS = {
   auth: "auth",
   chat: "chat",
+  config: "settings",
   content: "content",
   export: "export",
   "format-paste": "format-paste",
   import: "import",
   models: "models",
-  "voice-profiles": "voice-profiles",
+  verify: "settings",
+  "voice-profiles": "settings",
   comments: "social",
   highlights: "social",
   notes: "social",
@@ -47,9 +49,9 @@ export const HANDLER_FILES = [
   "import",
   "models",
   "proof",
+  "settings",
   "social",
   "system",
-  "voice-profiles",
 ];
 
 /** Public routes served by one handler, e.g. "social" -> ["comments","highlights","notes"]. */

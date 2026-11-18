@@ -98,6 +98,17 @@ export default function ContentTestButton({
   return (
     <div>
       <div className="flex items-center gap-sm flex-wrap">
+        {/* Model picker */}
+        <ModelPicker
+          models={models}
+          selectedModel={selectedModel}
+          selectedProvider={selectedProvider}
+          onChange={onModelChange}
+          disabled={busy || aiUnavailable}
+          unavailable={aiUnavailable}
+          className="shrink-0"
+        />
+
         {/* Primary action: generate or take test */}
         <button
           onClick={() => generateTest(false)}
@@ -124,17 +135,6 @@ export default function ContentTestButton({
             {generating ? "Generating..." : regenerating ? "Regenerating..." : existingTestSlug ? "Take test" : "Test me"}
           </span>
         </button>
-
-        {/* Model picker */}
-        <ModelPicker
-          models={models}
-          selectedModel={selectedModel}
-          selectedProvider={selectedProvider}
-          onChange={onModelChange}
-          disabled={busy || aiUnavailable}
-          unavailable={aiUnavailable}
-          className="shrink-0"
-        />
 
         {/* Regenerate (only when a test already exists) */}
         {existingTestSlug && (

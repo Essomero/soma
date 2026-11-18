@@ -142,14 +142,19 @@ export default function AIEditPanel({ currentJson, onUpdate, contentType }: AIEd
   const [profilesLoaded, setProfilesLoaded] = useState(false);
 
   useEffect(() => {
-    fetch("/api/models")
-      .then((r) => r.json())
-      .then((data) => {
-        const list: ModelInfo[] = data.models ?? [];
+    Promise.all([
+      fetch("/api/models").then(r => r.json()),
+      fetch("/api/config").then(r => r.json()).catch(() => ({ defaultModel: null })),
+    ])
+      .then(([modelData, configData]) => {
+        const list: ModelInfo[] = modelData.models ?? [];
         setModels(list);
         setModelsReady(true);
         if (list.length > 0) {
-          const pref = resolveDefaultModel(list, "deepseek-flash");
+          const configuredDefault = configData?.defaultModel;
+          const pref = configuredDefault && list.some((m) => m.id === configuredDefault)
+            ? configuredDefault
+            : resolveDefaultModel(list, "deepseek-flash");
           const m = pref ? list.find((x) => x.id === pref) : list[0];
           if (m) {
             setSelectedModel(m.id);
@@ -465,9 +470,9 @@ export default function AIEditPanel({ currentJson, onUpdate, contentType }: AIEd
                 </p>
               </div>
             </details>
-          )}
+)}
 
-          {/* Custom model dropdown */}
+          {/* Model picker */}
           <div className="flex items-center gap-sm">
             <span className="font-sora text-[10px] text-on-surface-muted uppercase tracking-wider shrink-0">Model</span>
             <ModelPicker
@@ -490,7 +495,7 @@ export default function AIEditPanel({ currentJson, onUpdate, contentType }: AIEd
             rows={3}
             disabled={aiUnavailable}
             placeholder='e.g. "Make this more beginner-friendly" or "Add three more sections about deployment"'
-            className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm placeholder:text-on-surface-muted focus:outline-none focus:border-primary resize-y disabled:opacity-40"
+            className="w-full bg-surface border border-border-default rounded-lg px-md py-sm font-dm-sans text-sm text-on-surface placeholder-on-surface-muted/50 focus:outline-none focus:border-primary transition-colors disabled:opacity-40 resize-y"
           />
 
           {/* Actions */}

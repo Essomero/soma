@@ -221,7 +221,7 @@ function ChartLoaded({ block, Recharts, zoomed, setZoomed, mergedData }: { block
       {figcaption}
 
       {zoomed && (
-        <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-sm flex items-center justify-center cursor-zoom-out" onClick={() => setZoomed(false)} role="dialog" aria-modal="true" aria-label={block.title ?? "Chart"}>
+        <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-sm flex items-center justify-center cursor-zoom-out overscroll-contain" onClick={() => setZoomed(false)} role="dialog" aria-modal="true" aria-label={block.title ?? "Chart"}>
           <button type="button" aria-label="Close" className="absolute top-4 right-4 inline-flex items-center justify-center w-10 h-10 rounded-full bg-surface text-on-surface-muted hover:text-on-surface border border-border-default hover:border-primary/50 transition-colors z-[110]" onClick={(e) => { e.stopPropagation(); setZoomed(false); }}>
             <X size={18} strokeWidth={2} />
           </button>

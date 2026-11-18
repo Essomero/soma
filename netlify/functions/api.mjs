@@ -690,11 +690,10 @@ export default async (req, context) => {
       }
     }
 
-    if (route === "voice-profiles") {
+    if (route === "config" || route === "verify" || route === "voice-profiles") {
       if (!requireAuth()) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
       try {
-        const { default: handler } = await import("../../api/voice-profiles.js");
-        // Build a Vercel-compatible req object from the Netlify request
+        const { default: handler } = await import("../../api/settings.js");
         const method = req.method;
         const body = method === "GET" || method === "DELETE" ? {} : await req.json().catch(() => ({}));
         const vercelReq = {
@@ -719,7 +718,7 @@ export default async (req, context) => {
           headers: { "Content-Type": "application/json" },
         });
       } catch (e) {
-        return new Response(JSON.stringify({ error: "Voice profiles error: " + (e.message || e) }), { status: 500, headers: { "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ error: "Settings error: " + (e.message || e) }), { status: 500, headers: { "Content-Type": "application/json" } });
       }
     }
 

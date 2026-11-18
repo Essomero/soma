@@ -143,7 +143,7 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-start justify-center pt-32 px-md bg-background/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-start justify-center pt-32 px-md bg-background/60 backdrop-blur-sm overscroll-contain"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="w-full max-w-[680px] bg-surface-container-low border border-border-default rounded-lg shadow-[0_0_40px_-10px_rgba(33,139,255,0.15)] overflow-hidden flex flex-col max-h-[520px]">

@@ -31,6 +31,7 @@ const NotesArticlePage = lazy(() => import("@/pages/NotesArticlePage"));
 const TestsIndexPage = lazy(() => import("@/pages/TestsIndexPage"));
 const TestPage = lazy(() => import("@/pages/TestPage"));
 const TestPrintPage = lazy(() => import("@/pages/TestPrintPage"));
+const SettingsPage = lazy(() => import("@/pages/SettingsPage"));
 const CollectionPrintPage = lazy(() => import("@/pages/CollectionPrintPage"));
 const SinglePrintPage = lazy(() => import("@/pages/SinglePrintPage"));
 const AdminDashboardPage = lazy(() => import("@/pages/AdminDashboardPage"));
@@ -219,6 +220,12 @@ const router = createBrowserRouter([
       {
         path: "admin/:type/:slug/edit",
         element: <AdminEditPage />,
+      },
+
+      // Settings (API keys, default model)
+      {
+        path: "settings",
+        element: <SettingsPage />,
       },
 
       // Notes (user-authored: index login-gated; article public if toggled)
