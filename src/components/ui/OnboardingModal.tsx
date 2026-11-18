@@ -97,19 +97,19 @@ export default function OnboardingModal() {
         const modelList = m.models || [];
         setModels(modelList);
 
-        const dbProviders = cfg?.providers || {};
-        const hasDbKey = Object.values(dbProviders).some((p: any) => p.source === "dashboard");
+        const provs = cfg?.providers || {};
+        const hasAnyKey = Object.values(provs).some((p: any) => p.hasKey);
         const hasDefault = !!cfg?.defaultModel;
 
-        // If default is already set, nothing to onboard
-        if (hasDefault && hasDbKey) return;
+        // If default is already set, skip onboarding entirely
+        if (hasDefault && hasAnyKey) return;
 
-        if (hasDbKey && !hasDefault) {
-          // Keys exist but no default model — skip to model picker
+        if (hasAnyKey && !hasDefault) {
+          // Keys exist (from env or dashboard) but no default model — skip to model picker
           setSkipKeyStep(true);
           setStep(2);
           setShow(true);
-        } else if (!hasDbKey) {
+        } else {
           // No keys at all — full flow
           setShow(true);
         }
@@ -179,13 +179,22 @@ export default function OnboardingModal() {
               ) : (
                 [0, 1, 2].map(i => (
                   <div key={i} className="flex items-center gap-lg">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-sora text-sm font-bold transition-colors ${
-                      i < step ? "bg-success text-on-success" :
-                      i === step ? "bg-primary text-on-primary" :
-                      "bg-surface-variant text-on-surface-muted"
-                    }`}>
+                    <button
+                      type="button"
+                      disabled={i >= step && !keyVerified && i > step + 1}
+                      onClick={() => {
+                        // Can only go back to completed steps or forward to next if key verified
+                        if (i < step) setStep(i);
+                        else if (i === step + 1 && (step === 1 ? keyVerified : true)) setStep(i);
+                      }}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center font-sora text-sm font-bold transition-colors ${
+                        i < step ? "bg-success text-on-success cursor-pointer hover:opacity-80" :
+                        i === step ? "bg-primary text-on-primary" :
+                        "bg-surface-variant text-on-surface-muted cursor-not-allowed"
+                      }`}
+                    >
                       {i < step ? <Check className="w-4 h-4" /> : i + 1}
-                    </div>
+                    </button>
                     {i < 2 && (
                       <div className={`w-12 h-0.5 transition-colors ${i < step ? "bg-success" : "bg-border-default"}`} />
                     )}
