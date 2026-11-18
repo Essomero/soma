@@ -25,6 +25,7 @@ export const ROUTE_HANDLERS = {
   "format-paste": "format-paste",
   import: "import",
   models: "models",
+  verify: "verify",
   "voice-profiles": "voice-profiles",
   comments: "social",
   highlights: "social",
@@ -51,6 +52,7 @@ export const HANDLER_FILES = [
   "proof",
   "social",
   "system",
+  "verify",
   "voice-profiles",
 ];
 

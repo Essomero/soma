@@ -32,60 +32,14 @@ export function isTursoConfigured() {
   return hasUrl && (hasToken || isLocalSqtyd);
 }
 
-let _remoteFailed = false;
-
 function getMode() {
   if (_mode) return _mode;
-  // If remote previously failed in this process, skip straight to local
-  if (_remoteFailed) { _mode = "local"; return _mode; }
   _mode = isTursoConfigured() ? "remote" : "local";
+  console.log("[debug][_db] getMode:", _mode);
   return _mode;
 }
 
-function markRemoteFailed() {
-  if (!_remoteFailed) {
-    _remoteFailed = true;
-    _mode = "local";
-    console.warn("[_db] Remote Turso unreachable — falling back to local SQLite for this process");
-  }
-}
 
-
-/**
- * Verify remote connectivity at startup with a fast timeout.
- * Called once when the module loads, before any request handler.
- * If the remote is unreachable, immediately fall back to local
- * so the first request doesn't pay a timeout penalty.
- */
-async function verifyRemote() {
-  if (!isTursoConfigured()) return;
-  const { url, token } = getRemoteConfig();
-  try {
-    const controller = new AbortController();
-    const t = setTimeout(() => controller.abort(), 500); // 500ms — should respond in <100ms
-    const r = await fetch(`${url}/v2/pipeline`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify({ requests: [{ type: "execute", stmt: { sql: "SELECT 1", args: [] } }] }),
-      signal: controller.signal,
-    });
-    clearTimeout(t);
-    if (!r.ok) {
-      console.warn(`[_db] Remote Turso responded with ${r.status} — falling back to local SQLite`);
-      markRemoteFailed();
-    }
-  } catch (e) {
-    const msg = e && typeof e === "object" && "message" in e ? e.message : String(e);
-    console.warn(`[_db] Remote Turso unreachable (${msg}) — falling back to local SQLite`);
-    markRemoteFailed();
-  }
-}
-
-// Run connectivity check immediately on module load. No top-level await needed.
-verifyRemote().catch(() => {});
 
 function getRemoteConfig() {
   const raw = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").trim();
@@ -188,7 +142,7 @@ function unwrapArg(a) {
 async function remoteQuery(sql, args) {
   args = args || [];
   const { url: DB_URL, token: TOKEN } = getRemoteConfig();
-  if (!DB_URL) return localQuery(sql, args);
+  if (!DB_URL) return [];
   const headers = { "Content-Type": "application/json" };
   if (TOKEN) headers["Authorization"] = "Bearer " + TOKEN;
   const requests = [{
@@ -197,88 +151,58 @@ async function remoteQuery(sql, args) {
   }];
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 2000);
-  try {
-    const r = await fetch(DB_URL + "/v2/pipeline", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ requests }),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-    const data = await r.json().catch(() => null);
-    if (!r.ok) {
-      console.error("[_db] remote FAIL:", r.status, JSON.stringify(data).slice(0, 500));
-      if (r.status >= 500 || r.status === 0) { markRemoteFailed(); return localQuery(sql, args); }
-      return [];
-    }
-    const result = data?.results?.[0]?.response?.result;
-    if (!result) {
-      console.error("[_db] unexpected format:", JSON.stringify(data).slice(0, 300));
-      return [];
-    }
-    const cols = (result.cols || []).map((c) => c.name || c);
-    return (result.rows || []).map((row) => {
-      const obj = {};
-      cols.forEach((c, i) => { obj[c] = val(row[i]); });
-      return obj;
-    });
-  } catch (e) {
-    clearTimeout(timeout);
-    console.error("[_db] remote query error:", e?.message);
-    markRemoteFailed();
-    return localQuery(sql, args);
+  const r = await fetch(DB_URL + "/v2/pipeline", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ requests }),
+    signal: controller.signal,
+  });
+  clearTimeout(timeout);
+  const data = await r.json().catch(() => null);
+  if (!r.ok) {
+    console.error("[_db] remote FAIL:", r.status, JSON.stringify(data).slice(0, 500));
+    return [];
   }
+  const result = data?.results?.[0]?.response?.result;
+  if (!result) {
+    console.error("[_db] unexpected format:", JSON.stringify(data).slice(0, 300));
+    return [];
+  }
+  const cols = (result.cols || []).map((c) => c.name || c);
+  return (result.rows || []).map((row) => {
+    const obj = {};
+    cols.forEach((c, i) => { obj[c] = val(row[i]); });
+    return obj;
+  });
 }
 
 async function remotePipeline(stmts) {
   const { url: DB_URL, token: TOKEN } = getRemoteConfig();
-  if (!DB_URL) {
-    let last = [];
-    for (const s of stmts) {
-      last = await localQuery(s.sql || s.stmt?.sql, (s.args || s.stmt?.args || []).map(unwrapArg));
-    }
-    return last;
-  }
+  if (!DB_URL) return [];
   const headers = { "Content-Type": "application/json" };
   if (TOKEN) headers["Authorization"] = "Bearer " + TOKEN;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 2000);
-  try {
-    const r = await fetch(DB_URL + "/v2/pipeline", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ requests: stmts }),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-    const data = await r.json().catch(() => null);
-    if (!r.ok) {
-      console.error("[_db] pipeline FAIL:", r.status, JSON.stringify(data).slice(0, 500));
-      markRemoteFailed();
-      let last = [];
-      for (const s of stmts) {
-        last = await localQuery(s.sql || s.stmt?.sql, (s.args || s.stmt?.args || []).map(unwrapArg));
-      }
-      return last;
-    }
-    const lastResult = data?.results?.[data.results.length - 1]?.response?.result;
-    if (!lastResult) return [];
-    const cols = (lastResult.cols || []).map((c) => c.name || c);
-    return (lastResult.rows || []).map((row) => {
-      const obj = {};
-      cols.forEach((c, i) => { obj[c] = val(row[i]); });
-      return obj;
-    });
-  } catch (e) {
-    clearTimeout(timeout);
-    console.error("[_db] pipeline error:", e?.message);
-    markRemoteFailed();
-    let last = [];
-    for (const s of stmts) {
-      last = await localQuery(s.sql || s.stmt?.sql, (s.args || s.stmt?.args || []).map(unwrapArg));
-    }
-    return last;
+  const r = await fetch(DB_URL + "/v2/pipeline", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ requests: stmts }),
+    signal: controller.signal,
+  });
+  clearTimeout(timeout);
+  const data = await r.json().catch(() => null);
+  if (!r.ok) {
+    console.error("[_db] pipeline FAIL:", r.status, JSON.stringify(data).slice(0, 500));
+    return [];
   }
+  const lastResult = data?.results?.[data.results.length - 1]?.response?.result;
+  if (!lastResult) return [];
+  const cols = (lastResult.cols || []).map((c) => c.name || c);
+  return (lastResult.rows || []).map((row) => {
+    const obj = {};
+    cols.forEach((c, i) => { obj[c] = val(row[i]); });
+    return obj;
+  });
 }
 
 

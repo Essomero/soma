@@ -21,33 +21,24 @@ interface ModelInfo {
 }
 
 /**
- * Verify a provider key by calling its models endpoint.
+ * Verify a provider key.
+ * Proxies through the server to avoid CORS issues with provider APIs.
  * Returns null on success, or an error message on failure.
  */
 async function verifyKey(provider: string, key: string): Promise<string | null> {
-  const endpoints: Record<string, string> = {
-    openrouter: "https://openrouter.ai/api/v1/models",
-    deepseek: "https://api.deepseek.com/models",
-    gemini: `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`,
-    groq: "https://api.groq.com/openai/v1/models",
-    cerebras: "https://api.cerebras.ai/v1/models",
-    straitly: "https://api.straitly.ai/v1/models",
-  };
-  const url = endpoints[provider];
-  if (!url) return "Unknown provider";
-
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
-    const r = await fetch(url, {
-      headers: provider === "gemini" ? {} : { Authorization: `Bearer ${key}` },
+    const r = await fetch("/api/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider, key }),
       signal: controller.signal,
     });
     clearTimeout(timeout);
-    if (r.ok) return null;
-    if (r.status === 401) return "Invalid key — check it and try again";
-    if (r.status === 403) return "Key does not have access to this provider";
-    return `Provider returned ${r.status} — check your key`;
+    const data = await r.json();
+    if (data.ok) return null;
+    return data.error || "Could not reach provider — check your network";
   } catch {
     return "Could not reach provider — check your network";
   }
@@ -125,11 +116,28 @@ export default function OnboardingModal() {
     if (err) {
       setVerifyError(err);
       setVerifying(false);
-    } else {
-      setKeyVerified(true);
-      setVerifying(false);
-      setStep(2);
+      return;
     }
+    // Save the key (POST body, not URL — never exposed in logs/history)
+    // so the next /api/models call picks it up via envKeysWithFallback.
+    try {
+      const configRes = await fetch("/api/config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ providers: { [selectedProvider]: apiKey.trim() } }),
+      });
+      console.log("[debug][onboarding] PUT /api/config:", await configRes.json());
+
+      const mRes = await fetch("/api/models");
+      const m = await mRes.json();
+      console.log("[debug][onboarding] GET /api/models — total:", m.models?.length, "straitly:", m.models?.filter((x: { provider: string }) => x.provider === "straitly").length);
+      if (m.models) setModels(m.models);
+    } catch (e) {
+      console.error("[debug][onboarding] save/refresh error:", e);
+    }
+    setKeyVerified(true);
+    setVerifying(false);
+    setStep(2);
   };
 
   const handleSave = async () => {

@@ -37,16 +37,17 @@ export async function envKeysWithFallback() {
   // Try to read DB settings
   let dbKeys = {};
   try {
-    const rows = await query(
-      `SELECT key, value FROM user_settings WHERE key LIKE ?`,
-      [arg(`${KEY_PREFIX}%`)],
-    );
-    for (const row of rows) {
-      const provider = row.key.replace(KEY_PREFIX, "");
-      dbKeys[provider] = row.value;
+    for (const p of PROVIDER_FIELDS) {
+      // Hardcoded key string — remote pipeline doesn't bind ? args correctly
+      const rows = await query(
+        `SELECT value FROM user_settings WHERE key = '${KEY_PREFIX}${p}'`,
+      );
+      if (rows.length > 0) {
+        dbKeys[p] = rows[0].value;
+      }
     }
-  } catch {
-    // Table may not exist yet — that's fine, fall back to env
+  } catch (e) {
+    console.warn("[debug][envKeys] DB query failed:", e?.message || e);
   }
 
   // Merge: DB wins over env
@@ -60,6 +61,9 @@ export async function envKeysWithFallback() {
       sources[p] = envVars[p] ? "env" : null;
     }
   }
+
+  console.log("[debug][envKeys] keys:", Object.fromEntries(PROVIDER_FIELDS.map(p => [p, keys[p] ? `${keys[p].slice(0, 10)}...` : null])));
+  console.log("[debug][envKeys] sources:", JSON.stringify(sources));
 
   return { keys, sources };
 }
@@ -107,6 +111,8 @@ export default async function handler(req, res) {
 
   if (req.method === "PUT") {
     const body = req.body || {};
+    console.log("[debug][config] PUT /api/config body keys:", Object.keys(body), "has straitly:", !!body?.providers?.straitly);
+
     const stmts = [];
 
     // Save provider keys
@@ -158,7 +164,12 @@ export default async function handler(req, res) {
     }
 
     if (stmts.length > 0) {
-      try { await runPipeline(stmts); } catch (e) {
+      try {
+        await runPipeline(stmts);
+        // Read back to confirm
+        const check = await query(`SELECT value FROM user_settings WHERE key = 'provider.straitly'`);
+        console.log("[debug][config] wrote", stmts.length, "stmts, readback provider.straitly =", check.length ? check[0].value?.slice(0, 10) + "..." : "NOT FOUND");
+      } catch (e) {
         return res.status(500).json({ error: `Failed to save settings: ${e.message}` });
       }
     }

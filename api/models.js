@@ -329,12 +329,20 @@ let cachedStraitlyModels = null;
 let cacheStraitlyTime = 0;
 
 async function fetchStraitlyModels(key) {
-  if (!key) return [];
-  if (cachedStraitlyModels && Date.now() - cacheStraitlyTime < CACHE_TTL) return cachedStraitlyModels;
+  if (!key) {
+    console.log("[debug][straitly] no key, returning []");
+    return [];
+  }
+  if (cachedStraitlyModels && Date.now() - cacheStraitlyTime < CACHE_TTL) {
+    console.log("[debug][straitly] returning cached, age ms:", Date.now() - cacheStraitlyTime);
+    return cachedStraitlyModels;
+  }
 
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
+
+    console.log("[debug][straitly] fetching", STRAITLY_URL, "key prefix:", key.slice(0, 8));
 
     const r = await fetch(STRAITLY_URL, {
       headers: {
@@ -346,6 +354,8 @@ async function fetchStraitlyModels(key) {
 
     clearTimeout(timeout);
 
+    console.log("[debug][straitly] fetch status:", r.status);
+
     if (!r.ok) {
       console.error(`Straitly models error ${r.status}`);
       return cachedStraitlyModels || STRAITLY_MODELS;
@@ -353,6 +363,7 @@ async function fetchStraitlyModels(key) {
 
     const data = await r.json();
     const rawList = Array.isArray(data.data) ? data.data : Array.isArray(data.models) ? data.models : [];
+    console.log("[debug][straitly] rawList items:", rawList.length);
     const modelMap = {};
     for (const m of rawList) {
       const id = m.id || m.name;
@@ -365,12 +376,13 @@ async function fetchStraitlyModels(key) {
         context_length: remote?.context_window || remote?.context_length || null,
       };
     });
+    console.log("[debug][straitly] returning", models.length, "models");
     const result = models;
     cachedStraitlyModels = result;
     cacheStraitlyTime = Date.now();
     return result;
   } catch (e) {
-    console.error("Straitly fetch error:", e.message);
+    console.error("[debug][straitly] fetch error in catch:", e.message);
     return cachedStraitlyModels || STRAITLY_MODELS;
   }
 }
@@ -387,6 +399,8 @@ export default async function handler(req, res) {
   // Keys come from DB settings with env var fallback
   const { keys } = await envKeysWithFallback();
 
+  console.log("[debug][models] GET /api/models straitly key present:", !!keys.straitly, "len:", (keys.straitly || "").length);
+
   try {
     const [geminiModels, openrouterModels, groqModels, cerebrasModels, straitlyModels] = await Promise.all([
       fetchGeminiModels(keys.gemini),
@@ -395,6 +409,7 @@ export default async function handler(req, res) {
       fetchCerebrasModels(keys.cerebras),
       fetchStraitlyModels(keys.straitly),
     ]);
+    console.log("[debug][models] straitlyModels count:", straitlyModels.length);
 
     // Only advertise providers whose keys are configured. A model in this
     // list must be callable: otherwise the UI enables AI actions that can
