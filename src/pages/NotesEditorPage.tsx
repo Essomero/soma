@@ -212,10 +212,10 @@ export default function NotesEditorPage() {
             )
           : true; // providers unknown — let the admin page handle it
         if (!hasAnyKey) {
-          navigate("/settings");
+          navigate("/settings", { state: { focus: "providers" } });
           return;
         }
-        navigate("/settings");
+        navigate("/settings", { state: { focus: "defaultModel" } });
         return;
       }
     } catch {
