@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Save, Loader2, Check, AlertCircle } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
+import { ModelPicker, type ModelInfo } from "@/components/ui/ModelPicker";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -30,7 +31,7 @@ export default function SettingsPage() {
   usePageMeta({ title: "Settings", description: "Manage API keys and default model" });
 
   const [config, setConfig] = useState<ConfigData | null>(null);
-  const [models, setModels] = useState<{ id: string; label: string; provider: string }[]>([]);
+  const [models, setModels] = useState<ModelInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
@@ -40,6 +41,7 @@ export default function SettingsPage() {
   const keyInputsRef = useRef(keyInputs);
   keyInputsRef.current = keyInputs;
   const [defaultModel, setDefaultModel] = useState("");
+  const [defaultModelProvider, setDefaultModelProvider] = useState("");
   const defaultModelRef = useRef(defaultModel);
   defaultModelRef.current = defaultModel;
 
@@ -51,6 +53,11 @@ export default function SettingsPage() {
     ]).then(([cfg, m]) => {
       setConfig(cfg);
       setDefaultModel(cfg.defaultModel || "");
+          // Derive provider from model list when config loads
+          if (cfg.defaultModel && m.models) {
+            const match = m.models.find((x: ModelInfo) => x.id === cfg.defaultModel);
+            if (match) setDefaultModelProvider(match.provider);
+          }
       setModels(m.models || []);
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -165,16 +172,15 @@ export default function SettingsPage() {
           <p className="font-dm-sans text-sm text-on-surface-muted mb-md">
             Used for margin AI, content generation, and test creation when no specific model is chosen.
           </p>
-          <select
-            value={defaultModel}
-            onChange={e => setDefaultModel(e.target.value)}
-            className="w-full sm:w-80 bg-surface border border-border-default rounded-lg px-md py-sm text-sm text-on-surface focus:outline-none focus:border-primary transition-colors"
-          >
-            <option value="">No default — pick per action</option>
-            {models.map(m => (
-              <option key={m.id} value={m.id}>{m.label}</option>
-            ))}
-          </select>
+          <ModelPicker
+            models={models}
+            selectedModel={defaultModel}
+            selectedProvider={defaultModelProvider}
+            onChange={(id, provider) => {
+              setDefaultModel(id);
+              setDefaultModelProvider(provider);
+            }}
+          />
         </div>
       )}
 
