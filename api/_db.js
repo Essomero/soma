@@ -57,7 +57,7 @@ function markRemoteFailed() {
  * If the remote is unreachable, immediately fall back to local
  * so the first request doesn't pay a timeout penalty.
  */
-async function verifyRemote(): Promise<void> {
+async function verifyRemote() {
   if (!isTursoConfigured()) return;
   const { url, token } = getRemoteConfig();
   try {
