@@ -302,8 +302,13 @@ export default function NotesEditorPage() {
               // NOTES : {isEdit ? "EDIT NOTE" : "NEW NOTE"}
             </p>
             <h1 className="font-sora text-headline-md text-on-surface">
-              {isEdit ? "Edit your note" : "Write a note"}
+              {isEdit ? "Refine your idea" : "Draft your idea"}
             </h1>
+            {!isEdit && (
+              <p className="font-dm-sans text-sm text-on-surface-muted mt-sm">
+                Jot down your thoughts, then let AI turn them into rich interactive content.
+              </p>
+            )}
           </div>
           <Link
             to={isEdit ? `/notes/${slug}` : "/notes"}
