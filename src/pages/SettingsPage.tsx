@@ -46,7 +46,7 @@ export default function SettingsPage() {
   defaultModelRef.current = defaultModel;
 
   useEffect(() => {
-    if (!isOwner) return;
+    if (!isOwner) { setLoading(false); return; }
     Promise.all([
       fetch("/api/config").then(r => r.json()),
       fetch("/api/models").then(r => r.json()),
