@@ -160,7 +160,7 @@ function MermaidBlock({ diagram, caption }: { diagram: string; caption?: string 
       </figure>
 
       {expanded && createPortal(
-        <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-sm flex items-center justify-center cursor-zoom-out" onClick={() => setExpanded(false)}>
+        <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-sm flex items-center justify-center cursor-zoom-out overscroll-contain" onClick={() => setExpanded(false)}>
           <button type="button" aria-label="Close" className="absolute top-4 right-4 inline-flex items-center justify-center w-10 h-10 rounded-full bg-surface text-on-surface-muted hover:text-on-surface border border-border-default hover:border-primary/50 transition-colors z-[110]" onClick={() => setExpanded(false)}>
             <X size={20} strokeWidth={2} />
           </button>
@@ -197,7 +197,7 @@ function ImageBlock({ src, alt, caption }: { src: string; alt: string; caption?:
       </figure>
 
       {expanded && (
-        <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-sm flex items-center justify-center cursor-zoom-out p-2" onClick={() => setExpanded(false)}>
+        <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-sm flex items-center justify-center cursor-zoom-out p-2 overscroll-contain" onClick={() => setExpanded(false)}>
           <button type="button" aria-label="Close" className="absolute top-4 right-4 inline-flex items-center justify-center w-10 h-10 rounded-full bg-surface text-on-surface-muted hover:text-on-surface border border-border-default hover:border-primary/50 transition-colors z-[110]" onClick={() => setExpanded(false)}>
             <X size={20} strokeWidth={2} />
           </button>

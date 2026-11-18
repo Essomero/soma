@@ -768,7 +768,7 @@ export default function InlineHighlights({
         />
       )}
       {activeHighlight && !inlineExpanded && (
-        <div className="fixed inset-0 z-modal-above-r3f" onClick={() => setActiveHighlight(null)}>
+        <div className="fixed inset-0 z-modal-above-r3f overscroll-contain" onClick={() => setActiveHighlight(null)}>
           <div className="absolute bg-surface border border-border-default rounded-xl shadow-2xl w-80 max-h-96 flex flex-col"
             style={{ left: Math.max(8, Math.min(activeHighlight.x - 160, window.innerWidth - 340)), top: Math.min(activeHighlight.y + 8, window.innerHeight - 400) }}
             onClick={e => e.stopPropagation()}>
@@ -831,7 +831,7 @@ export default function InlineHighlights({
         </div>
       )}
       {activeHighlight && inlineExpanded && (
-        <div className="fixed inset-0 z-modal-above-r3f bg-background/95 backdrop-blur-sm flex items-center justify-center p-xl" onClick={() => { setInlineExpanded(false); setActiveHighlight(null); }}>
+        <div className="fixed inset-0 z-modal-above-r3f bg-background/95 backdrop-blur-sm flex items-center justify-center p-xl overscroll-contain" onClick={() => { setInlineExpanded(false); setActiveHighlight(null); }}>
           <div className="bg-surface border border-border-default rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-lg py-md border-b border-border-default">
               <span className="font-sora text-xs text-on-surface-muted uppercase tracking-widest">{headerLabel}</span>
