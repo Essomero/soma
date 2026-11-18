@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Brain, Loader2, ExternalLink, RefreshCw } from "lucide-react";
-import { ModelPicker } from "./ModelPicker";
 
 // ── Types ─────────────────────────────────────────────
 
@@ -124,17 +123,6 @@ export default function ContentTestButton({
             {generating ? "Generating..." : regenerating ? "Regenerating..." : existingTestSlug ? "Take test" : "Test me"}
           </span>
         </button>
-
-        {/* Model picker */}
-        <ModelPicker
-          models={models}
-          selectedModel={selectedModel}
-          selectedProvider={selectedProvider}
-          onChange={onModelChange}
-          disabled={busy || aiUnavailable}
-          unavailable={aiUnavailable}
-          className="shrink-0"
-        />
 
         {/* Regenerate (only when a test already exists) */}
         {existingTestSlug && (

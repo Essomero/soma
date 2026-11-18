@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { Loader2, Sparkles, AlertCircle, Wand2, ChevronDown, Lightbulb, Mic } from "lucide-react";
 import { buildSystemPrompt } from "@/lib/admin-prompts";
 import Tooltip from "@/components/ui/Tooltip";
-import { ModelPicker } from "@/components/ui/ModelPicker";
 import { resolveDefaultModel } from "@/lib/modelPref";
 
 interface ModelInfo {
@@ -142,14 +141,19 @@ export default function AIEditPanel({ currentJson, onUpdate, contentType }: AIEd
   const [profilesLoaded, setProfilesLoaded] = useState(false);
 
   useEffect(() => {
-    fetch("/api/models")
-      .then((r) => r.json())
-      .then((data) => {
-        const list: ModelInfo[] = data.models ?? [];
+    Promise.all([
+      fetch("/api/models").then(r => r.json()),
+      fetch("/api/config").then(r => r.json()).catch(() => ({ defaultModel: null })),
+    ])
+      .then(([modelData, configData]) => {
+        const list: ModelInfo[] = modelData.models ?? [];
         setModels(list);
         setModelsReady(true);
         if (list.length > 0) {
-          const pref = resolveDefaultModel(list, "deepseek-flash");
+          const configuredDefault = configData?.defaultModel;
+          const pref = configuredDefault && list.some((m) => m.id === configuredDefault)
+            ? configuredDefault
+            : resolveDefaultModel(list, "deepseek-flash");
           const m = pref ? list.find((x) => x.id === pref) : list[0];
           if (m) {
             setSelectedModel(m.id);
@@ -466,22 +470,6 @@ export default function AIEditPanel({ currentJson, onUpdate, contentType }: AIEd
               </div>
             </details>
           )}
-
-          {/* Custom model dropdown */}
-          <div className="flex items-center gap-sm">
-            <span className="font-sora text-[10px] text-on-surface-muted uppercase tracking-wider shrink-0">Model</span>
-            <ModelPicker
-              models={models}
-              selectedModel={selectedModel}
-              selectedProvider={selectedProvider}
-              onChange={(id, provider) => {
-                setSelectedModel(id);
-                setSelectedProvider(provider);
-              }}
-              unavailable={aiUnavailable}
-              className="px-md py-xs font-sora text-xs"
-            />
-          </div>
 
           {/* Input */}
           <textarea
