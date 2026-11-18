@@ -148,7 +148,7 @@ async function remoteQuery(sql, args) {
     stmt: { sql, args: args.map(wrapArg) },
   }];
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
+  const timeout = setTimeout(() => controller.abort(), 5000);
   try {
     const r = await fetch(DB_URL + "/v2/pipeline", {
       method: "POST",
@@ -193,7 +193,7 @@ async function remotePipeline(stmts) {
   const headers = { "Content-Type": "application/json" };
   if (TOKEN) headers["Authorization"] = "Bearer " + TOKEN;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
+  const timeout = setTimeout(() => controller.abort(), 5000);
   try {
     const r = await fetch(DB_URL + "/v2/pipeline", {
       method: "POST",
