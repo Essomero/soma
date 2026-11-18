@@ -86,6 +86,7 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
   const navigate = useNavigate();
   const abortRef = useRef<AbortController | null>(null);
   const autoTriggeredRef = useRef(false);
+  const configErrorRef = useRef(false);
 
   // Sync input when initialInput changes
   useEffect(() => {
@@ -130,15 +131,17 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
         "No AI model configured. " +
         "Set a default model in Settings before generating from a note."
       );
+      configErrorRef.current = true;
       setStatus("error");
       autoTriggeredRef.current = true;
       return;
     }
-    if (!modelsReady || models.length === 0) {
+    if (models.length === 0) {
       setError(
-        "No AI provider keys configured. " +
-        "Add API keys in Settings before generating from a note."
+        "No AI models available. " +
+        "Check that at least one provider has a valid API key in Settings."
       );
+      configErrorRef.current = true;
       setStatus("error");
       autoTriggeredRef.current = true;
       return;
@@ -158,6 +161,7 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
     if (!input.trim() || disabled || aiUnavailable) return;
     setStatus("generating");
     setError("");
+    configErrorRef.current = false;
     setReasoning("");
     setPreview(null);
 
@@ -626,7 +630,7 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
               {mode === "ai-generate" ? "Generation failed" : "Format failed"}
             </p>
             <p className="font-dm-sans text-xs text-on-surface-muted mt-xs">{error}</p>
-            {autoGenerate && (
+            {autoGenerate && configErrorRef.current && (
               <button
                 onClick={() => navigate("/settings")}
                 className="mt-sm inline-flex items-center gap-xs font-sora text-xs text-accent-blue-neon hover:underline"
@@ -637,7 +641,7 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
             )}
           </div>
           <button
-            onClick={() => setStatus("idle")}
+            onClick={() => { setStatus("idle"); configErrorRef.current = false; }}
             className="font-sora text-xs text-on-surface-muted hover:text-on-surface underline"
           >
             Dismiss
