@@ -43,10 +43,49 @@ function getMode() {
 }
 
 function markRemoteFailed() {
-  _remoteFailed = true;
-  _mode = "local";
+  if (!_remoteFailed) {
+    _remoteFailed = true;
+    _mode = "local";
+    console.warn("[_db] Remote Turso unreachable — falling back to local SQLite for this process");
+  }
 }
 
+
+/**
+ * Verify remote connectivity at startup with a fast timeout.
+ * Called once when the module loads, before any request handler.
+ * If the remote is unreachable, immediately fall back to local
+ * so the first request doesn't pay a timeout penalty.
+ */
+async function verifyRemote(): Promise<void> {
+  if (!isTursoConfigured()) return;
+  const { url, token } = getRemoteConfig();
+  try {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), 500); // 500ms — should respond in <100ms
+    const r = await fetch(`${url}/v2/pipeline`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ requests: [{ type: "execute", stmt: { sql: "SELECT 1", args: [] } }] }),
+      signal: controller.signal,
+    });
+    clearTimeout(t);
+    if (!r.ok) {
+      console.warn(`[_db] Remote Turso responded with ${r.status} — falling back to local SQLite`);
+      markRemoteFailed();
+    }
+  } catch (e) {
+    const msg = e && typeof e === "object" && "message" in e ? e.message : String(e);
+    console.warn(`[_db] Remote Turso unreachable (${msg}) — falling back to local SQLite`);
+    markRemoteFailed();
+  }
+}
+
+// Run connectivity check immediately on module load. No top-level await needed.
+verifyRemote().catch(() => {});
 
 function getRemoteConfig() {
   const raw = (process.env.TURSO_DATABASE_URL || process.env.TURSO_DB || "").trim();
