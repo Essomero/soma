@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Save, Loader2, Check, AlertCircle } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
 import { ModelPicker, type ModelInfo } from "@/components/ui/ModelPicker";
@@ -27,7 +27,10 @@ interface ConfigData {
 
 export default function SettingsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isOwner } = useAuth();
+  const modelSectionRef = useRef<HTMLDivElement>(null);
+  const providersRef = useRef<HTMLDivElement>(null);
   usePageMeta({ title: "Settings", description: "Manage API keys and default model" });
 
   const [config, setConfig] = useState<ConfigData | null>(null);
@@ -62,6 +65,18 @@ export default function SettingsPage() {
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [isOwner]);
+
+  // ── Scroll to focus target when navigating from note generation ─────
+  useEffect(() => {
+    const focus = (location.state as { focus?: string } | null)?.focus;
+    if (!focus) return;
+    // Small delay to let the page render
+    const timer = setTimeout(() => {
+      const el = focus === "defaultModel" ? modelSectionRef.current : providersRef.current;
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [location.state]);
 
   const handleKeyChange = useCallback((provider: string, value: string) => {
     setKeyInputs(prev => ({ ...prev, [provider]: value }));
@@ -196,7 +211,7 @@ export default function SettingsPage() {
 
       {/* Default model — single dropdown at top */}
       {models.length > 0 && (
-        <div className="bg-surface-container-low rounded-xl border border-border-default p-xl mb-lg">
+        <div ref={modelSectionRef} className="bg-surface-container-low rounded-xl border border-border-default p-xl mb-lg">
           <label className="font-sora text-label-caps text-on-surface block mb-sm">Default model</label>
           <p className="font-dm-sans text-sm text-on-surface-muted mb-md">
             Used for margin AI, content generation, and test creation when no specific model is chosen.
@@ -224,7 +239,7 @@ export default function SettingsPage() {
       )}
 
       {/* Provider cards */}
-      <div className="space-y-lg">
+      <div ref={providersRef} className="space-y-lg">
         {PROVIDERS.map(p => {
           const state = config?.providers?.[p.id];
           const inputVal = keyInputs[p.id] !== undefined ? keyInputs[p.id] : "";
