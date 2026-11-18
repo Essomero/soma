@@ -141,7 +141,6 @@ function chatDevPlugin(env: Record<string, string>) {
         const name = m ? m[1] : "";
         const mapped = handlerForRoute(name);
         if (!mapped) return next();
-        if (name === "models") console.log("[debug][vite-mw] /api/models -> handler:", mapped);
         try {
           const handler = await loadLocalHandler(mapped);
           const u = new URL(req.url || "", "http://localhost");

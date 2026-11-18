@@ -47,7 +47,6 @@ export async function envKeysWithFallback() {
       }
     }
   } catch (e) {
-    console.warn("[debug][envKeys] DB query failed:", e?.message || e);
   }
 
   // Merge: DB wins over env
@@ -62,8 +61,6 @@ export async function envKeysWithFallback() {
     }
   }
 
-  console.log("[debug][envKeys] keys:", Object.fromEntries(PROVIDER_FIELDS.map(p => [p, keys[p] ? `${keys[p].slice(0, 10)}...` : null])));
-  console.log("[debug][envKeys] sources:", JSON.stringify(sources));
 
   return { keys, sources };
 }
@@ -111,7 +108,6 @@ export default async function handler(req, res) {
 
   if (req.method === "PUT") {
     const body = req.body || {};
-    console.log("[debug][config] PUT /api/config body keys:", Object.keys(body), "has straitly:", !!body?.providers?.straitly);
 
     const stmts = [];
 
@@ -167,8 +163,8 @@ export default async function handler(req, res) {
       try {
         await runPipeline(stmts);
         // Read back to confirm
-        const check = await query(`SELECT value FROM user_settings WHERE key = 'provider.straitly'`);
-        console.log("[debug][config] wrote", stmts.length, "stmts, readback provider.straitly =", check.length ? check[0].value?.slice(0, 10) + "..." : "NOT FOUND");
+        const sk = await query(`SELECT value FROM user_settings WHERE key = 'provider.straitly'`);
+        const dm = await query(`SELECT value FROM user_settings WHERE key = 'default_model'`);
       } catch (e) {
         return res.status(500).json({ error: `Failed to save settings: ${e.message}` });
       }

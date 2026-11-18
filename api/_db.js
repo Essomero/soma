@@ -35,7 +35,6 @@ export function isTursoConfigured() {
 function getMode() {
   if (_mode) return _mode;
   _mode = isTursoConfigured() ? "remote" : "local";
-  console.log("[debug][_db] getMode:", _mode);
   return _mode;
 }
 
@@ -145,27 +144,27 @@ async function remoteQuery(sql, args) {
   if (!DB_URL) return [];
   const headers = { "Content-Type": "application/json" };
   if (TOKEN) headers["Authorization"] = "Bearer " + TOKEN;
+  const wrapped = args.map(wrapArg);
   const requests = [{
     type: "execute",
-    stmt: { sql, args: args.map(wrapArg) },
+    stmt: { sql, args: wrapped },
   }];
+  const body = JSON.stringify({ requests });
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 2000);
   const r = await fetch(DB_URL + "/v2/pipeline", {
     method: "POST",
     headers,
-    body: JSON.stringify({ requests }),
+    body,
     signal: controller.signal,
   });
   clearTimeout(timeout);
   const data = await r.json().catch(() => null);
   if (!r.ok) {
-    console.error("[_db] remote FAIL:", r.status, JSON.stringify(data).slice(0, 500));
     return [];
   }
   const result = data?.results?.[0]?.response?.result;
   if (!result) {
-    console.error("[_db] unexpected format:", JSON.stringify(data).slice(0, 300));
     return [];
   }
   const cols = (result.cols || []).map((c) => c.name || c);
@@ -181,22 +180,26 @@ async function remotePipeline(stmts) {
   if (!DB_URL) return [];
   const headers = { "Content-Type": "application/json" };
   if (TOKEN) headers["Authorization"] = "Bearer " + TOKEN;
+  const body = JSON.stringify({ requests: stmts });
+  const firstSql = stmts[0]?.stmt?.sql?.slice(0, 80) || "?";
+  const firstArgs = stmts[0]?.stmt?.args?.map(a => typeof a === "string" ? `${a.slice(0, 12)}...` : a) || [];
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 2000);
   const r = await fetch(DB_URL + "/v2/pipeline", {
     method: "POST",
     headers,
-    body: JSON.stringify({ requests: stmts }),
+    body,
     signal: controller.signal,
   });
   clearTimeout(timeout);
   const data = await r.json().catch(() => null);
   if (!r.ok) {
-    console.error("[_db] pipeline FAIL:", r.status, JSON.stringify(data).slice(0, 500));
     return [];
   }
   const lastResult = data?.results?.[data.results.length - 1]?.response?.result;
-  if (!lastResult) return [];
+  if (!lastResult) {
+    return [];
+  }
   const cols = (lastResult.cols || []).map((c) => c.name || c);
   return (lastResult.rows || []).map((row) => {
     const obj = {};
