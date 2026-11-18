@@ -32,6 +32,15 @@
     { "source": "/api/public", "destination": "/api/system" },
     { "source": "/api/public/", "destination": "/api/system" },
     { "source": "/api/public/:path*", "destination": "/api/system" },
+    { "source": "/api/config", "destination": "/api/settings" },
+    { "source": "/api/config/", "destination": "/api/settings" },
+    { "source": "/api/config/:path*", "destination": "/api/settings" },
+    { "source": "/api/verify", "destination": "/api/settings" },
+    { "source": "/api/verify/", "destination": "/api/settings" },
+    { "source": "/api/verify/:path*", "destination": "/api/settings" },
+    { "source": "/api/voice-profiles", "destination": "/api/settings" },
+    { "source": "/api/voice-profiles/", "destination": "/api/settings" },
+    { "source": "/api/voice-profiles/:path*", "destination": "/api/settings" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "headers": [

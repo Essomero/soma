@@ -120,7 +120,7 @@ function chatDevPlugin(env: Record<string, string>) {
       async function loadLocalHandler(name: string) {
         if (!localHandlerCache[name]) {
           if (name === "content") localHandlerCache[name] = (await import("./api/content.js")).default;
-          else if (name === "config") localHandlerCache[name] = (await import("./api/config.js")).default;
+          else if (name === "settings") localHandlerCache[name] = (await import("./api/settings.js")).default;
           else if (name === "engagement") localHandlerCache[name] = (await import("./api/engagement.js")).default;
           else if (name === "social") localHandlerCache[name] = (await import("./api/social.js")).default;
           else if (name === "system") localHandlerCache[name] = (await import("./api/system.js")).default;
@@ -130,8 +130,6 @@ function chatDevPlugin(env: Record<string, string>) {
           else if (name === "format-paste") localHandlerCache[name] = (await import("./api/format-paste.js")).default;
           else if (name === "models") localHandlerCache[name] = (await import("./api/models.js")).default;
           else if (name === "auth") localHandlerCache[name] = (await import("./api/auth.js")).default;
-          else if (name === "verify") localHandlerCache[name] = (await import("./api/verify.js")).default;
-          else if (name === "voice-profiles") localHandlerCache[name] = (await import("./api/voice-profiles.js")).default;
           else localHandlerCache[name] = (await import("./api/content.js")).default;
         }
         return localHandlerCache[name];
