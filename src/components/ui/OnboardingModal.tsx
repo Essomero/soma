@@ -275,11 +275,10 @@ export default function OnboardingModal() {
                     onClick={() => { setSelectedProvider(p.id); setApiKey(""); setKeyVerified(false); setVerifyError(null); setStep(1); }}
                     className={`flex items-center gap-md px-lg py-md rounded-xl border transition-all font-sora text-sm ${
                       selectedProvider === p.id
-                        ? "bg-primary/10 border-primary text-on-surface"
-                        : "bg-surface border-border-default text-on-surface-muted hover:border-primary/50 hover:text-on-surface"
+                        ? "bg-primary/15 border-primary text-on-surface"
+                        : "bg-surface-container-high border-border-default text-on-surface-muted hover:border-primary/50 hover:text-on-surface hover:bg-surface-container"
                     }`}
                   >
-                    <div className={`w-3 h-3 rounded-full shrink-0 ${selectedProvider === p.id ? "bg-primary" : "bg-on-surface-muted/30"}`} />
                     {p.label}
                   </button>
                 ))}
