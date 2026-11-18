@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { X, Check, ArrowRight, Save, Loader2, AlertCircle } from "lucide-react";
 import { ModelPicker } from "./ModelPicker";
+import { useScrollLock } from "@/lib/useScrollLock";
 
 const DISMISS_KEY = "soma.onboarding.dismissed";
 
@@ -108,6 +109,8 @@ export default function OnboardingModal() {
       .catch(() => {});
   }, []);
 
+  useScrollLock(show);
+
   const handleVerify = async () => {
     if (!apiKey.trim()) return;
     setVerifying(true);
@@ -126,14 +129,11 @@ export default function OnboardingModal() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ providers: { [selectedProvider]: apiKey.trim() } }),
       });
-      console.log("[debug][onboarding] PUT /api/config:", await configRes.json());
 
       const mRes = await fetch("/api/models");
       const m = await mRes.json();
-      console.log("[debug][onboarding] GET /api/models — total:", m.models?.length, "straitly:", m.models?.filter((x: { provider: string }) => x.provider === "straitly").length);
       if (m.models) setModels(m.models);
     } catch (e) {
-      console.error("[debug][onboarding] save/refresh error:", e);
     }
     setKeyVerified(true);
     setVerifying(false);
@@ -174,8 +174,8 @@ export default function OnboardingModal() {
   const stepOffset = skipKeyStep ? 0 : 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-surface-container-low border border-border-default rounded-2xl shadow-2xl max-w-lg w-full mx-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/40 backdrop-blur-sm overscroll-contain" onClick={dismiss}>
+      <div className="bg-surface-container-low border border-border-default rounded-2xl shadow-2xl max-w-lg w-full mx-4" onClick={(e) => e.stopPropagation()}>
         {/* Header with stepper dots */}
         {!done && (
           <div className="flex items-center justify-between p-xl border-b border-border-default">
@@ -242,7 +242,7 @@ export default function OnboardingModal() {
                 Pick one below so AI features don't prompt you every time.
               </p>
               {models.length > 0 ? (
-                <div className="mb-lg">
+                <div className="flex items-center gap-md flex-wrap">
                   <ModelPicker
                     models={models}
                     selectedModel={selectedModel}
@@ -252,22 +252,20 @@ export default function OnboardingModal() {
                       setSelectedModelProvider(provider);
                     }}
                   />
+                  <button
+                    onClick={handleSave}
+                    disabled={saving || !selectedModel}
+                    className="inline-flex items-center gap-sm px-lg py-md bg-primary text-on-primary font-sora text-sm rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {saving ? "Saving..." : "Set default"}
+                  </button>
                 </div>
               ) : (
                 <p className="font-dm-sans text-sm text-on-surface-muted mb-lg">
                   No models available. Check your provider keys in Settings.
                 </p>
               )}
-              <div className="flex items-center justify-end gap-md">
-                <button
-                  onClick={handleSave}
-                  disabled={saving || !selectedModel}
-                  className="inline-flex items-center gap-sm px-xl py-md bg-primary text-on-primary font-sora text-label-caps uppercase tracking-widest rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  {saving ? "Saving..." : "Set default model"}
-                </button>
-              </div>
               <DismissBar dismiss={dismiss} dismissPermanent={dismissPermanent} />
             </>
           ) : step === 0 ? (

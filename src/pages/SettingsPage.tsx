@@ -105,7 +105,11 @@ export default function SettingsPage() {
       if (configResp.ok) {
         const fresh = await configResp.json();
         setConfig(fresh);
-        if (fresh.defaultModel) setDefaultModel(fresh.defaultModel);
+        if (fresh.defaultModel) {
+          setDefaultModel(fresh.defaultModel);
+          const match = models.find((m) => m.id === fresh.defaultModel);
+          if (match) setDefaultModelProvider(match.provider);
+        }
       }
       setKeyInputs({});
       setStatus({ ok: true, msg: "Settings saved." });

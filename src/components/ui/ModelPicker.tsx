@@ -226,7 +226,7 @@ export function ModelPicker({
           ref={listRef}
           role="listbox"
           tabIndex={-1}
-          className={`absolute z-50 min-w-[200px] sm:min-w-[260px] max-h-[400px] overflow-y-auto bg-surface border border-border-default rounded-lg shadow-xl py-xs ${
+          className={`absolute z-50 min-w-[200px] sm:min-w-[260px] max-h-[400px] overflow-y-auto overscroll-contain bg-surface border border-border-default rounded-lg shadow-xl py-xs ${
             openUpward ? "bottom-full mb-1" : "top-full mt-1"
           } ${align === "right" ? "right-0" : "left-0"}`}
         >
