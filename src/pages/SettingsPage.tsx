@@ -172,15 +172,25 @@ export default function SettingsPage() {
           <p className="font-dm-sans text-sm text-on-surface-muted mb-md">
             Used for margin AI, content generation, and test creation when no specific model is chosen.
           </p>
-          <ModelPicker
-            models={models}
-            selectedModel={defaultModel}
-            selectedProvider={defaultModelProvider}
-            onChange={(id, provider) => {
-              setDefaultModel(id);
-              setDefaultModelProvider(provider);
-            }}
-          />
+          <div className="flex items-center gap-md">
+            <ModelPicker
+              models={models}
+              selectedModel={defaultModel}
+              selectedProvider={defaultModelProvider}
+              onChange={(id, provider) => {
+                setDefaultModel(id);
+                setDefaultModelProvider(provider);
+              }}
+            />
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center gap-sm px-lg py-md bg-primary text-on-primary font-sora text-label-caps uppercase tracking-widest rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {saving ? "Saving..." : "Save"}
+            </button>
+          </div>
         </div>
       )}
 
