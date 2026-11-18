@@ -447,6 +447,7 @@ function chatDevPlugin(env: Record<string, string>) {
       async function loadLocalHandler(name: string) {
         if (!localHandlerCache[name]) {
           if (name === "content") localHandlerCache[name] = (await import("./api/content.js")).default;
+          else if (name === "config") localHandlerCache[name] = (await import("./api/config.js")).default;
           else if (name === "engagement") localHandlerCache[name] = (await import("./api/engagement.js")).default;
           else if (name === "social") localHandlerCache[name] = (await import("./api/social.js")).default;
           else if (name === "system") localHandlerCache[name] = (await import("./api/system.js")).default;
