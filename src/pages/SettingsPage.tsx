@@ -156,6 +156,31 @@ export default function SettingsPage() {
         Environment variables are used as fallback when no key is set here.
       </p>
 
+      {/* Onboarding banner — shown when no keys and no default model */}
+      {config && !Object.values(config.providers).some(p => p.hasKey) && (
+        <div className="bg-accent-orange/10 border border-accent-orange/30 rounded-xl p-xl mb-xl">
+          <h2 className="font-sora text-label-caps text-accent-orange mb-sm">No AI provider configured</h2>
+          <p className="font-dm-sans text-sm text-on-surface-muted mb-md">
+            Content creation, margin AI tutoring, and test generation need an API key. 
+            Pick a provider below, paste your key, select a default model, then save.
+          </p>
+          <p className="font-dm-sans text-xs text-on-surface-muted">
+            Keys are stored in your database and never exposed. If you have API keys in your <code className="text-accent-orange">.env</code> file, they will show with an "env" badge.
+          </p>
+        </div>
+      )}
+
+      {/* No default model warning — only when keys exist but no default picked */}
+      {config && Object.values(config.providers).some(p => p.hasKey) && models.length > 0 && !defaultModel && (
+        <div className="bg-accent-orange/5 border border-accent-orange/20 rounded-xl p-xl mb-xl">
+          <h2 className="font-sora text-label-caps text-accent-orange mb-sm">No default model selected</h2>
+          <p className="font-dm-sans text-sm text-on-surface-muted">
+            AI features will prompt you to pick a model each time. 
+            Set a default above to skip that step.
+          </p>
+        </div>
+      )}
+
       {status && (
         <div className={`flex items-center gap-md px-lg py-md rounded-lg mb-xl ${
           status.ok ? "bg-success/10 text-success border border-success/20" : "bg-danger/10 text-danger border border-danger/20"
