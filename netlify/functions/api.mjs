@@ -723,6 +723,40 @@ export default async (req, context) => {
       }
     }
 
+    if (route === "config") {
+      if (!requireAuth()) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+      try {
+        const { default: handler } = await import("../../api/config.js");
+        const method = req.method;
+        const body = method === "GET" ? {} : await req.json().catch(() => ({}));
+        const vercelReq = { method, url: req.url, query: Object.fromEntries(new URL(req.url).searchParams), body, headers: { cookie: req.headers.get("cookie") || "", "x-tenant-id": tenant_id }, localBypass: true };
+        let statusCode = 200;
+        let responseBody = null;
+        const vercelRes = { status(code) { statusCode = code; return this; }, json(data) { responseBody = data; return this; }, setHeader() {}, end() {} };
+        await handler(vercelReq, vercelRes);
+        return new Response(JSON.stringify(responseBody), { status: statusCode, headers: { "Content-Type": "application/json" } });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: "Config error: " + (e.message || e) }), { status: 500, headers: { "Content-Type": "application/json" } });
+      }
+    }
+
+    if (route === "verify") {
+      if (!requireAuth()) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+      try {
+        const { default: handler } = await import("../../api/verify.js");
+        const method = req.method;
+        const body = method === "GET" ? {} : await req.json().catch(() => ({}));
+        const vercelReq = { method, url: req.url, query: Object.fromEntries(new URL(req.url).searchParams), body, headers: { cookie: req.headers.get("cookie") || "", "x-tenant-id": tenant_id }, localBypass: true };
+        let statusCode = 200;
+        let responseBody = null;
+        const vercelRes = { status(code) { statusCode = code; return this; }, json(data) { responseBody = data; return this; }, setHeader() {}, end() {} };
+        await handler(vercelReq, vercelRes);
+        return new Response(JSON.stringify(responseBody), { status: statusCode, headers: { "Content-Type": "application/json" } });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: "Verify error: " + (e.message || e) }), { status: 500, headers: { "Content-Type": "application/json" } });
+      }
+    }
+
     return new Response(JSON.stringify({ error: `Route ${route} not implemented` }), { status: 501, headers: { "Content-Type": "application/json" } });
   } catch (e) {
     console.error("[netlify]", e);
