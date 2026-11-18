@@ -212,7 +212,7 @@ export function ModelPicker({
         className={`inline-flex items-center gap-sm px-md py-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm hover:border-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${className}`}
       >
         <span className="truncate">
-          {triggerLabel ?? (selected ? selected.label : unavailable ? "No models available" : "Loading...")}
+          {triggerLabel ?? (selected ? selected.label : unavailable ? "No models available" : models.length === 0 ? "Loading..." : "Select model...")}
         </span>
         <ChevronDown
           className={`w-4 h-4 text-on-surface-muted shrink-0 transition-transform ${
