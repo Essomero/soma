@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Save, Loader2, Check, AlertCircle } from "lucide-react";
 import AccentBar from "@/components/ui/AccentBar";
@@ -37,7 +37,11 @@ export default function SettingsPage() {
 
   // Per-provider key inputs
   const [keyInputs, setKeyInputs] = useState<Record<string, string>>({});
+  const keyInputsRef = useRef(keyInputs);
+  keyInputsRef.current = keyInputs;
   const [defaultModel, setDefaultModel] = useState("");
+  const defaultModelRef = useRef(defaultModel);
+  defaultModelRef.current = defaultModel;
 
   useEffect(() => {
     if (!isOwner) return;
@@ -60,10 +64,14 @@ export default function SettingsPage() {
     setSaving(true);
     setStatus(null);
 
+    // Read from refs to avoid re-render on keystroke
+    const currentKeyInputs = keyInputsRef.current;
+    const currentDefaultModel = defaultModelRef.current;
+
     // Build providers object: only include non-empty keyInputs as new values
     const providers: Record<string, string | null> = {};
     for (const p of PROVIDERS) {
-      const input = keyInputs[p.id];
+      const input = currentKeyInputs[p.id];
       if (input !== undefined) {
         providers[p.id] = input.trim() || null;
       }
@@ -71,7 +79,7 @@ export default function SettingsPage() {
 
     const body: Record<string, unknown> = {};
     if (Object.keys(providers).length > 0) body.providers = providers;
-    if (defaultModel) body.defaultModel = defaultModel;
+    if (currentDefaultModel) body.defaultModel = currentDefaultModel;
 
     try {
       const r = await fetch("/api/config", {
@@ -100,7 +108,7 @@ export default function SettingsPage() {
     } finally {
       setSaving(false);
     }
-  }, [keyInputs, defaultModel]);
+  }, []); // reads from refs, not state
 
   if (!isOwner) {
     return (
