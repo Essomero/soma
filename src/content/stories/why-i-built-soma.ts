@@ -3,9 +3,9 @@ import type { StoryContent, ArticleCardData } from "@/types";
 // Legacy data for the custom DeveloperStoryPage layout
 export const benjaminStory = {
   id: "origin-story",
-  title: "AI-accelerated learning you own",
+  title: "Search anything. Learn it. Prove it.",
   description:
-    "I love to learn. I love markdown, graphs, illustrations, and maths. Obsidian was my go-to for local notes, but it never cut it for shareability, online access, or the web. I built Soma to close that gap.",
+    "ChatGPT gives you an answer in a chat bubble. You read it, nod, and forget it by next week. No diagrams, no way to interact, no test to check if it stuck. I built a tool that treats learning as a loop: read, interact, verify.",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
   location: "Kampala, Uganda",
   social: "@Essomero",
@@ -43,29 +43,31 @@ export const benjaminMoreStories: ArticleCardData[] = [
 export const whyIBuiltSoma = {
   slug: "origin-story",
   category: "Community // Developer Story",
-  title: "AI-accelerated learning you own",
+  title: "Search anything. Learn it. Prove it.",
   excerpt:
-    "I love to learn. I love markdown, graphs, illustrations, and maths. Obsidian was perfect for local notes. But shareability, online access from every device, and proper web rendering? It never cut it. I built Soma to close that gap.",
+    "ChatGPT gives you an answer in a chat bubble. Every new message pushes the previous one further up. You scroll, you branch, you lose context. Soma uses a different format: persistent pages with sections, diagrams, math, and one-click tests that verify understanding.",
   image:
     "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&h=675&fit=crop",
   imageAlt: "Benjamin Mayanja",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
   publishedAt: "2026-10-28T21:00:00Z",
-  tags: ["Learning", "Open Source", "Sovereignty"],
+  tags: ["Learning", "Open Source"],
   intro:
-    "I'm Benjamin Mayanja. I build Soma, an AI-accelerated learning platform you own. It works with whatever you already use. Point any LLM or coding agent at the repo, it loads the bundled skill and starts creating or editing content. It also ships an MCP server and deploys to Vercel in 60 seconds. All you need is an API key to your favorite model and it gets working fast. And it's beautiful, designed for how visual learners actually learn.",
+    "I want to understand WebSocket backpressure. I ask ChatGPT. It gives me a wall of text with bullet points. I read it, nod, and forget half of it by next week. If I want to check whether I actually understood it, I'm on my own. No diagram, no way to interact, no test. Just a chat log I'll never look at again. Soma uses a different format.",
   body: [
-    "I love to learn new things. I wanted one centralized place to learn. I'm a visual learner. I love markdown, I love graphs, illustrations, and maths laid out beautifully side by side.",
-    "For years Obsidian was my go-to. I still use it for local notes. But it never cut it for shareability and online access from all my devices. It's built for the Obsidian app, not for web content. Their AI integrations are also built for note-taking, not for learning workflows.",
-    "I built Soma (Luganda: to read, study, learn) to close that gap. AI-accelerated learning that you own. And it works with whatever you're already using.",
-    "Point any LLM or coding agent at the codebase. It loads the skill and starts creating or editing content. There's an MCP server shipped with the repo. It works entirely on the web and deploys to Vercel in 60 seconds. All you need is an API key to your favorite model and it gets working fast.",
-    "And it's beautiful. I love beautiful content. Every page is designed for readers who learn by looking. Mermaid diagrams beside KaTeX math beside interactive 3D scenes beside runnable code blocks. If you learn visually, you get the same treatment as someone who reads cover to cover.",
-    "Your words live in your own Turso database, an edge SQLite you control behind one password you invent. Fork the repo, import it into Vercel, add the password, deploy. There's no Soma cloud holding your writing hostage. Pulling my updates never touches your words. Nothing locks you in either. Copy any page as markdown or export a PDF for print.",
-    "This is the gap I wanted closed. One centralized place to learn, AI-accelerated, that you own, that works with whatever you already use, that's beautiful by default, and that deploys in 60 seconds. Soma is that place.",
+    "ChatGPT is for getting answers. You ask, it replies, you move on. Fast, useful, ephemeral. Soma is for learning. The format is different for a reason.",
+    "Every new message in a chat pushes the previous explanation further up. You scroll to find that one paragraph that made it click. You can't. You branch the conversation to keep it. Now you have two threads and no way to merge them. Even if you save the chat, sharing it means the other person reads a messy log with half finished thoughts and \"can you explain that again?\" messages.",
+    "Chat is built for conversation. It's great for that. It's terrible as a container for knowledge.",
+    "Soma uses a page format. Search anything, you get a page with sections, Mermaid diagrams, KaTeX math, code blocks, callouts. A page stays a page. You don't scroll through 40 messages to find the part about backpressure strategies. You click the section heading.",
+    "Highlight any paragraph and the margin AI explains it, challenges it, or simplifies it. Drop a 3D scene where a picture won't do. When you think you've got it, one click generates a test. Multiple choice, written, or oral. Checks whether you actually understood the topic, not whether you can spot a paragraph you read five minutes ago.",
+    "You use ChatGPT when you need a quick answer. You use Soma when you want it to stick. They're different tools.",
+    "Clone the repo. Open it in Claude Code, Cursor, or any coding agent. The bundled skill files and MCP server tell your agents exactly how to create, validate, and publish content. No setup, no config. Agents are more powerful than any browser interface. Your coding agent is a full publishing partner.",
+    "Three repos, one loop. Soma is where you learn. Soma Labs is where you drill it. Son is a voice agent for oral exams. Read it, drill it, explain it. When all three feel easy, you know it.",
+    "Luganda: to read, study, learn.",
   ],
   pullQuote: {
     quote:
-      "AI-accelerated learning that you own. And it works with whatever you're already using.",
+      "ChatGPT is for getting answers. Soma is for learning them. Different formats for different moments.",
     attribution: "Benjamin Mayanja",
   },
 };

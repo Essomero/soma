@@ -3,9 +3,9 @@ import type { FeaturedContent } from "@/types";
 export const somaVisionRoadmap: FeaturedContent = {
   slug: "soma-vision-roadmap",
   tag: "FEATURED ARTICLE // SOMA VISION",
-  title: "Soma: Reversing the Atrophy of Thought",
+  title: "Soma: Pages that teach, tests that verify",
   description:
-    "Generative AI made producing content trivial and retaining it rare. Soma exists to reverse the atrophy of thought: learning you own, proved out loud, published when ready. Here is where the product is headed and the architecture that gets us there.",
+    "ChatGPT gives you answers in a chat bubble. Every new message pushes the previous one further up. You scroll, you branch, you lose context. Soma uses a different format: persistent pages with sections, diagrams, math, and one-click tests that check if you actually understood it. Here is where the product is headed and the architecture that gets us there.",
   image:
     "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1600&h=900&fit=crop",
   imageAlt:
@@ -13,47 +13,46 @@ export const somaVisionRoadmap: FeaturedContent = {
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
   publishedAt: "2026-11-09T00:00:00Z",
   tagline:
-    "Sovereign by default, zero-friction SaaS when you want it, and a learn-prove-publish loop that feels like evening coffee.",
+    "ChatGPT for answers. Soma for learning. Pages that stay pages, tests that verify understanding.",
   bentoHighlights: [
     {
-      label: "SOVEREIGN BY DEFAULT",
-      title: "Your Ideas Live in Your Database",
+      label: "PAGES, NOT CHAT LOGS",
+      title: "A page stays a page. A chat log keeps growing.",
       description:
-        "Open-source at github.com/Essomero/soma. Notes, highlights, tests, and every paragraph sit in edge SQLite you own. One file backup at /app/data/soma.db. Fork stays public, writing stays private.",
+        "Every message in a chat pushes the previous one further up. Soma uses a page format: sections you navigate, diagrams that render, math that typesets. Persistent by design.",
     },
     {
-      label: "ZERO FRICTION SAAS",
-      title: "Open a Tab and Start Thinking",
+      label: "LEARN, THEN VERIFY",
+      title: "Read with AI. Prove it with a test.",
       description:
-        "Same binary across Docker, Vercel + Turso, Fly, Railway, Netlify, Cloudflare. Self-host in 60 seconds or use the hosted workspace. SaaS is deploy config, not a product fork.",
+        "Highlight any paragraph and the margin AI explains or challenges it. One click generates a test that checks whether you actually understood the topic, not whether you can spot a paragraph you read five minutes ago.",
     },
     {
-      label: "LEARN, PROVE, PUBLISH",
-      title: "Margin Tutor + Hands-on Drills + Oral Verification",
+      label: "RUNS WHERE YOU WANT",
+      title: "Self-host or use the cloud. Same product.",
       description:
-        "Select any paragraph and ask the margin AI to explain, challenge, or run a Socratic session. Run drills with your own hands in Soma Labs. Then prove it out loud to Son and flip one toggle to publish.",
+        "Docker compose up in 60 seconds, or deploy to Vercel with Turso. Your data in your database either way. SaaS is deploy config, not a fork.",
     },
   ],
   pullQuotes: [
     {
       quote:
-        "We refuse to treat AI as a replacement for human cognition. We use it as an aggressive, high-friction multiplier that turns passive consumption into active mastery.",
-      attribution: "THE THESIS",
+        "ChatGPT gives you an answer. Soma helps you learn it. Different formats for different moments.",
+      attribution: "THE DISTINCTION",
     },
     {
       quote:
-        "Think in private on your own terms, prove your understanding out loud, and make public what you wish. This is learning reimagined.",
-      attribution: "EVENING COFFEE, NOT SCHOOL",
+        "A page stays a page. Navigate sections, ask the margin AI, generate a test. That's a learning format, not a conversation format.",
     },
   ],
   sections: [
     {
-      heading: "The Core Thesis: Reversing the Atrophy of Thought",
+      heading: "The problem with chat interfaces",
       paragraphs: [
-        "Open your laptop and ask any model to summarize a paper. It does, in three bullets. You nod, copy the summary into a doc, and move on. An hour later, could you explain the second bullet without looking?",
-        "That is the new normal. Generative AI made the world remarkably efficient at producing content and dangerously passive at retaining it. We read summaries, scroll feeds, and paste code snippets into voids, mistaking convenience for comprehension. The illusion of competence is at an all-time high while deep retention is at an all-time low.",
-        "**Soma exists to reverse this trend.**",
-        "We don't replace human cognition. We use AI as an aggressive, high-friction cognitive multiplier. Learning on Soma feels like an evening coffee ritual: warm, inviting, low-pressure, entirely for you, yet backed by rigorous multi-modal proof of understanding.",
+        "Open your laptop and ask any model to explain WebSocket backpressure. It gives you a wall of text with bullet points. You read it, nod, and forget half of it by next week.",
+        "Every new message pushes the previous explanation further up. You scroll to find that one paragraph that made it click. You can't. You branch the conversation to keep it. Now you have two threads and no way to merge them.",
+        "Chat is built for conversation. It's great for that. It's terrible as a container for knowledge.",
+        "**Soma uses a different format.** Search anything, you get a page with sections, Mermaid diagrams, KaTeX math, code blocks, callouts. A page stays a page. Highlight any paragraph and the margin AI explains it, challenges it, or simplifies it. When you think you've got it, one click generates a test that checks whether you actually understood it.",
         {
           type: "callout" as const,
           variant: "info" as const,
@@ -79,7 +78,7 @@ export const somaVisionRoadmap: FeaturedContent = {
       ],
     },
     {
-      heading: "Pillar I: Sovereign by Default",
+      heading: "Runs on your infra, no lock-in",
       paragraphs: [
         "Traditional learning apps hold your thoughts hostage in proprietary clouds. Soma inverts that. You own the whole thing.",
         "The repo is MIT at `github.com/Essomero/soma`. Your content lives in SQLite you control, edge or local file, behind one password you invent. `SQLITE_PATH` defaults to `/app/data/soma.db` inside Docker, mounted as a single-file volume `soma_data`. Copy that file and you backed up your brain. The content store, highlights, comments, notes, progress — all in there. No tracking scripts, no telemetry, zero lock-in.",
@@ -93,7 +92,7 @@ export const somaVisionRoadmap: FeaturedContent = {
       ],
     },
     {
-      heading: "Pillar II: Managed SaaS With Zero Friction",
+      heading: "Cloud when you want it",
       paragraphs: [
         "Self-hosting is freedom with friction. Some learners just want to open a tab and start thinking. They shouldn't have to wireshark env vars to get there.",
         "The fix isn't a second codebase. SaaS is the same binary (`server/index.mjs` + `api/*.js`) with different deploy config. Today's self-host flow is `git clone`, set `SITE_PASSWORD`, `docker compose up`. Hosted flow is fork into Vercel, add Turso integration, add `SITE_PASSWORD`, deploy. Both land private rows visible only to the owner behind the password.",
@@ -107,7 +106,7 @@ export const somaVisionRoadmap: FeaturedContent = {
       ],
     },
     {
-      heading: "Pillar III: Learn It, Prove It, Publish It",
+      heading: "The loop: read, interact, verify",
       paragraphs: [
         "This is the core loop. Today it's linear: read, maybe highlight, maybe test. The vision wants a cycle you actually enjoy repeating.",
         {
@@ -186,7 +185,7 @@ export const somaVisionRoadmap: FeaturedContent = {
       ],
     },
     {
-      heading: "Evening Coffee, Not School",
+      heading: "What the experience should feel like",
       paragraphs: [
         "Soma is deliberately not an LMS. No assignments, no due dates, no cohort mechanics. No screaming streak counters.",
         "You drop in a complex research paper, a piece of classic lit, an architectural blueprint, or a casual weekend curiosity. Soma builds the interactive learning fabric around it through the agent skill pipeline — paste a URL or PDF, the MCP server scaffolds a typed manuscript into gitignored `drafts/<type>/`, validates, publishes private, you preview at `localhost:5173`, then flip when ready.",

@@ -23,9 +23,9 @@ const STORY_SLUG = "origin-story";
 // Author-profile config for this bespoke page (not prose content).
 const benjaminStory = {
   id: "origin-story",
-  title: "Think on paper, but digital: why I built Soma",
+  title: "Search anything. Learn it. Prove it.",
   description:
-    "Most tools force a trade: publish before you understand, or understand in a silo nobody can see. I built Soma so learning and publishing live in the same place, on infrastructure you own.",
+    "ChatGPT gives you an answer in a chat bubble. Every new message pushes the previous one further up. You scroll, you branch, you lose context. Soma uses a different format: persistent pages with sections, diagrams, math, and one-click tests that verify understanding.",
   author: { name: "Benjamin Mayanja", handle: "@Essomero" },
   location: "Kampala, Uganda",
   social: "@Essomero",
@@ -45,7 +45,7 @@ export default function DeveloperStoryPage() {
   const intro = typeof storyRow?.intro === "string" ? storyRow.intro : "";
   const body = Array.isArray(storyRow?.body) ? (storyRow.body as string[]) : [];
   const storyText = [intro, ...body].join(" ");
-  usePageMeta({ title: (typeof storyRow?.title === "string" && storyRow.title) || "AI-accelerated learning you own", description: intro || undefined });
+  usePageMeta({ title: (typeof storyRow?.title === "string" && storyRow.title) || "Search anything. Learn it. Prove it.", description: intro || undefined });
   const moreStories = (storyRows ?? []).filter((s) => s.slug !== STORY_SLUG).slice(0, 3).map(toCard);
   return (
     <div>
