@@ -53,6 +53,24 @@ async function verifyKey(provider: string, key: string): Promise<string | null> 
   }
 }
 
+function DismissBar({ dismiss, dismissPermanent }: { dismiss: () => void; dismissPermanent: () => void }) {
+  return (
+    <div className="flex items-center gap-md pt-lg mt-lg border-t border-border-default">
+      <span className="font-dm-sans text-xs text-on-surface-muted">
+        Configure anytime in <button onClick={() => { dismiss(); window.location.href = "/settings"; }} className="underline hover:text-on-surface transition-colors">Settings</button>
+      </span>
+      <span className="text-on-surface-muted/30 text-xs mx-xs">|</span>
+      <button onClick={dismissPermanent} className="font-sora text-xs text-on-surface-muted hover:text-on-surface underline transition-colors">
+        Don't show again
+      </button>
+      <span className="text-on-surface-muted/30 text-xs">|</span>
+      <button onClick={dismiss} className="font-sora text-xs text-on-surface-muted hover:text-on-surface transition-colors">
+        Dismiss
+      </button>
+    </div>
+  );
+}
+
 export default function OnboardingModal() {
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
@@ -133,6 +151,10 @@ export default function OnboardingModal() {
   };
 
   const dismiss = () => {
+    setShow(false);
+  };
+
+  const dismissPermanent = () => {
     setShow(false);
     localStorage.setItem(DISMISS_KEY, "1");
   };
@@ -220,9 +242,6 @@ export default function OnboardingModal() {
                 </p>
               )}
               <div className="flex items-center justify-end gap-md">
-                <button onClick={dismiss} className="font-sora text-sm text-on-surface-muted hover:text-on-surface transition-colors">
-                  Skip
-                </button>
                 <button
                   onClick={handleSave}
                   disabled={saving || !selectedModel}
@@ -232,6 +251,7 @@ export default function OnboardingModal() {
                   {saving ? "Saving..." : "Set default model"}
                 </button>
               </div>
+              <DismissBar dismiss={dismiss} dismissPermanent={dismissPermanent} />
             </>
           ) : step === 0 ? (
             <>
@@ -255,6 +275,7 @@ export default function OnboardingModal() {
                   </button>
                 ))}
               </div>
+              <DismissBar dismiss={dismiss} dismissPermanent={dismissPermanent} />
             </>
           ) : step === 1 ? (
             <>
@@ -310,6 +331,7 @@ export default function OnboardingModal() {
                   )}
                 </button>
               </div>
+              <DismissBar dismiss={dismiss} dismissPermanent={dismissPermanent} />
             </>
           ) : (
             <>
@@ -348,6 +370,7 @@ export default function OnboardingModal() {
                   {saving ? "Saving..." : "Finish setup"}
                 </button>
               </div>
+              <DismissBar dismiss={dismiss} dismissPermanent={dismissPermanent} />
             </>
           )}
         </div>
