@@ -4,6 +4,7 @@ import { ReactLenis } from "lenis/react";
 import ScrollToTop from "@/lib/ScrollToTop";
 import { SearchProvider, useSearch } from "@/lib/SearchContext";
 import CommandPalette from "@/components/ui/CommandPalette";
+import OnboardingModal from "@/components/ui/OnboardingModal";
 import AuthGuard from "@/components/auth/AuthGuard";
 import Header from "./Header";
 import Footer from "./Footer";
@@ -38,6 +39,7 @@ function LayoutInner() {
         <div className="min-h-screen flex flex-col">
           <ScrollToTop />
           <CommandPalette open={open} onClose={() => setOpen(false)} />
+          <OnboardingModal />
           <Header />
           <main className="flex-1">
             <Suspense fallback={<div className="animate-pulse min-h-[60vh]" />}>
