@@ -1,5 +1,5 @@
 import { requireAuth } from "./_auth.js";
-import { envKeysWithFallback } from "./config.js";
+import { envKeysWithFallback } from "./settings.js";
 
 const GEMINI_DISABLED = process.env.GEMINI_DISABLED === "1" || process.env.GEMINI_DISABLED === "true";
 const STRAITLY_URL = "https://api.straitly.ai/v1/models";

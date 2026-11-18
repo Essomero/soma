@@ -1,26 +1,250 @@
 import { requireAuth } from "./_auth.js";
-import { query as dbQuery, runPipeline, arg } from "./_db.js";
+import { query, runPipeline, arg } from "./_db.js";
 import { getTenantId } from "./_tenant.js";
 import { envKeys, envOptions } from "../shared/env.js";
 import { runChat } from "../shared/chat/core.js";
-// ── Path parsing ─────────────────────────────────────
+import { apiRouteFromPath } from "../shared/api-routes.js";
+
+// ── Route dispatch ──────────────────────────────────
+
+function getSubRoute(req) {
+  return apiRouteFromPath(req.url);
+}
+
+// ═══════════════════════════════════════════════════════
+// Provider-level helpers shared by config and verify
+// ══════════════════════════════════════════════════��════
+
+const PROVIDER_FIELDS = [
+  "deepseek",
+  "openrouter",
+  "gemini",
+  "groq",
+  "cerebras",
+  "straitly",
+];
+
+const KEY_PREFIX = "provider.";
+
+/**
+ * Read all keys from DB settings, falling back to env vars.
+ *
+ * Returns an object like { deepseek: "sk-...", openrouter: "sk-or-...", ... }
+ * with the effective key for each provider (DB wins over env).
+ *
+ * Also returns the `sources` object so the API can report where each
+ * key came from.
+ *
+ * This is the function chat.js and models.js should import instead of
+ * reading process.env directly.
+ */
+export async function envKeysWithFallback() {
+  const envVars = {
+    deepseek: process.env.DEEPSEEK_API_KEY || "",
+    openrouter: process.env.OPENROUTER_API_KEY || "",
+    gemini: process.env.GEMINI_API_KEY || "",
+    groq: process.env.GROQ_API_KEY || "",
+    cerebras: process.env.CEREBRAS_API_KEY || "",
+    straitly: process.env.STRAITLY_API_KEY || "",
+  };
+
+  // Try to read DB settings
+  let dbKeys = {};
+  try {
+    for (const p of PROVIDER_FIELDS) {
+      const rows = await query(
+        `SELECT value FROM user_settings WHERE key = '${KEY_PREFIX}${p}'`,
+      );
+      if (rows.length > 0) {
+        dbKeys[p] = rows[0].value;
+      }
+    }
+  } catch (e) {
+  }
+
+  // Merge: DB wins over env
+  const keys = { ...envVars };
+  const sources = {};
+  for (const p of PROVIDER_FIELDS) {
+    if (dbKeys[p]) {
+      keys[p] = dbKeys[p];
+      sources[p] = "dashboard";
+    } else {
+      sources[p] = envVars[p] ? "env" : null;
+    }
+  }
+
+
+  return { keys, sources };
+}
+
+// ═══════════════════════════════════════════════════════
+// config — GET/PUT provider keys and default model
+// ═══════════════════════════════════════════════════════
+
+const ENSURE_TABLE = `CREATE TABLE IF NOT EXISTS user_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TEXT DEFAULT (datetime('now'))
+)`;
+
+async function handleConfigRoute(req, res) {
+  if (req.method === "OPTIONS") return res.status(204).end();
+  if (!requireAuth(req, res)) return;
+
+  try { await query(ENSURE_TABLE); } catch {}
+
+  if (req.method === "GET") {
+    const { keys, sources } = await envKeysWithFallback();
+
+    let defaultModel = null;
+    try {
+      const rows = await query(
+        `SELECT value FROM user_settings WHERE key = 'default_model'`,
+      );
+      if (rows.length > 0) defaultModel = rows[0].value;
+    } catch {}
+
+    const providers = {};
+    for (const p of PROVIDER_FIELDS) {
+      providers[p] = {
+        hasKey: !!keys[p],
+        source: sources[p],
+      };
+    }
+
+    return res.status(200).json({ providers, defaultModel });
+  }
+
+  if (req.method === "PUT") {
+    const body = req.body || {};
+
+    const stmts = [];
+
+    if (body.providers) {
+      for (const p of PROVIDER_FIELDS) {
+        const val = body.providers[p];
+        if (val === undefined) continue;
+        const provKey = `${KEY_PREFIX}${p}`;
+        if (val && typeof val === "string" && val.trim()) {
+          stmts.push({
+            type: "execute",
+            stmt: {
+              sql: `INSERT INTO user_settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
+                    ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
+              args: [arg(provKey), arg(val.trim())],
+            },
+          });
+        } else {
+          stmts.push({
+            type: "execute",
+            stmt: {
+              sql: `DELETE FROM user_settings WHERE key = ?`,
+              args: [arg(provKey)],
+            },
+          });
+        }
+      }
+    }
+
+    if (body.defaultModel !== undefined) {
+      if (body.defaultModel && typeof body.defaultModel === "string" && body.defaultModel.trim()) {
+        stmts.push({
+          type: "execute",
+          stmt: {
+            sql: `INSERT INTO user_settings (key, value, updated_at) VALUES ('default_model', ?, datetime('now'))
+                  ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
+            args: [arg(body.defaultModel.trim())],
+          },
+        });
+      } else {
+        stmts.push({
+          type: "execute",
+          stmt: {
+            sql: `DELETE FROM user_settings WHERE key = 'default_model'`,
+          },
+        });
+      }
+    }
+
+    if (stmts.length > 0) {
+      try {
+        await runPipeline(stmts);
+      } catch (e) {
+        return res.status(500).json({ error: `Failed to save settings: ${e.message}` });
+      }
+    }
+
+    return res.status(200).json({ ok: true });
+  }
+
+  return res.status(405).json({ error: "Method not allowed" });
+}
+
+// ═══════════════════════════════════════════════════════
+// verify — POST proxy key validation
+// ═══════════════════════════════════════════════════════
+
+const ENDPOINTS = {
+  openrouter: "https://openrouter.ai/api/v1/models",
+  deepseek: "https://api.deepseek.com/models",
+  gemini: "https://generativelanguage.googleapis.com/v1beta/models",
+  groq: "https://api.groq.com/openai/v1/models",
+  cerebras: "https://api.cerebras.ai/v1/models",
+  straitly: "https://api.straitly.ai/v1/models",
+};
+
+async function handleVerifyRoute(req, res) {
+  if (req.method === "OPTIONS") return res.status(204).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  if (!requireAuth(req, res)) return;
+
+  const { provider, key } = req.body || {};
+  if (!provider || !key) return res.status(400).json({ error: "provider and key are required" });
+
+  const url = ENDPOINTS[provider];
+  if (!url) return res.status(400).json({ error: `Unknown provider: ${provider}` });
+
+  const fetchUrl = provider === "gemini" ? `${url}?key=${key}` : url;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    const r = await fetch(fetchUrl, {
+      headers: provider === "gemini"
+        ? {}
+        : { Authorization: `Bearer ${key}` },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (r.ok) return res.json({ ok: true });
+
+    if (r.status === 401) return res.json({ ok: false, error: "Invalid key — check it and try again" });
+    if (r.status === 403) return res.json({ ok: false, error: "Key does not have access to this provider" });
+    return res.json({ ok: false, error: `Provider returned ${r.status} — check your key` });
+  } catch (e) {
+    return res.json({ ok: false, error: "Could not reach provider — check your network" });
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// voice-profiles — CRUD + analyze + humanize
+// ═══════════════════════════════════════════════════════
 
 function parsePath(url) {
   const path = (url || "").split("?")[0].split("#")[0];
-  // /api/voice-profiles → {}, /api/voice-profiles/id → { id }, /api/voice-profiles/id/analyze → { id, action }
   const parts = path.split("/").filter(Boolean);
-  // parts = ["api", "voice-profiles", ...]
   if (parts.length < 3 || parts[1] !== "voice-profiles") return {};
   const id = parts[2] || null;
   const action = parts[3] || null;
   return { id, action };
 }
 
-// ── Migration ────────────────────────────────────────
-
 let _tableEnsured = false;
 
-const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS voice_profiles (
+const VP_CREATE_TABLE = `CREATE TABLE IF NOT EXISTS voice_profiles (
   id TEXT PRIMARY KEY,
   tenant_id TEXT NOT NULL DEFAULT 'default',
   name TEXT NOT NULL,
@@ -33,16 +257,14 @@ const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS voice_profiles (
 
 async function ensureTable() {
   if (_tableEnsured) return;
-  try { await dbQuery(CREATE_TABLE); } catch {}
+  try { await query(VP_CREATE_TABLE); } catch {}
   _tableEnsured = true;
 }
 
-async function query(sql, args) {
+async function vpQuery(sql, args) {
   await ensureTable();
-  return dbQuery(sql, args);
+  return query(sql, args);
 }
-
-// ── Helpers ──────────────────────────────────────────
 
 function mapRow(r) {
   if (!r) return null;
@@ -66,8 +288,6 @@ function generateId() {
 
 const HUMANIZABLE_TYPES = new Set(["story", "guide", "doc", "featured"]);
 
-// ── Analysis prompt builder ──────────────────────────
-
 function buildAnalysisPrompt(samples) {
   const sampleText = samples.map((s, i) => `[Sample ${i + 1}]\n${s}`).join("\n\n");
   return {
@@ -84,11 +304,9 @@ function buildAnalysisPrompt(samples) {
   };
 }
 
-// ── Endpoint handlers ────────────────────────────────
-
 async function handleList(req, res) {
   const tenant_id = getTenantId(req);
-  const rows = await query(
+  const rows = await vpQuery(
     "SELECT * FROM voice_profiles WHERE tenant_id = ? ORDER BY updated_at DESC",
     [tenant_id],
   );
@@ -112,7 +330,7 @@ async function handleCreate(req, res) {
   const now = new Date().toISOString();
   const samplesJson = JSON.stringify(samples);
 
-  const rows = await query(
+  const rows = await vpQuery(
     `INSERT INTO voice_profiles (id, tenant_id, name, description, samples_json, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)
      RETURNING *`,
@@ -123,7 +341,7 @@ async function handleCreate(req, res) {
 
 async function handleGet(req, res, id) {
   const tenant_id = getTenantId(req);
-  const rows = await query(
+  const rows = await vpQuery(
     "SELECT * FROM voice_profiles WHERE id = ? AND tenant_id = ?",
     [id, tenant_id],
   );
@@ -135,7 +353,7 @@ async function handleGet(req, res, id) {
 
 async function handleUpdate(req, res, id) {
   const tenant_id = getTenantId(req);
-  const existing = await query(
+  const existing = await vpQuery(
     "SELECT * FROM voice_profiles WHERE id = ? AND tenant_id = ?",
     [id, tenant_id],
   );
@@ -161,10 +379,9 @@ async function handleUpdate(req, res, id) {
   }
 
   const now = new Date().toISOString();
-  // If samples changed, clear the style_prompt so the user re-analyzes
   const newStylePrompt = samplesChanged ? "" : row.style_prompt;
 
-  const rows = await query(
+  const rows = await vpQuery(
     `UPDATE voice_profiles
      SET name = ?, description = ?, samples_json = ?, style_prompt = ?, updated_at = ?
      WHERE id = ? AND tenant_id = ?
@@ -178,7 +395,7 @@ async function handleUpdate(req, res, id) {
 
 async function handleDelete(req, res, id) {
   const tenant_id = getTenantId(req);
-  await query(
+  await vpQuery(
     "DELETE FROM voice_profiles WHERE id = ? AND tenant_id = ?",
     [id, tenant_id],
   );
@@ -187,7 +404,7 @@ async function handleDelete(req, res, id) {
 
 async function handleAnalyze(req, res, id) {
   const tenant_id = getTenantId(req);
-  const rows = await query(
+  const rows = await vpQuery(
     "SELECT * FROM voice_profiles WHERE id = ? AND tenant_id = ?",
     [id, tenant_id],
   );
@@ -232,7 +449,7 @@ async function handleAnalyze(req, res, id) {
   }
 
   const now = new Date().toISOString();
-  const updated = await query(
+  const updated = await vpQuery(
     `UPDATE voice_profiles SET style_prompt = ?, updated_at = ? WHERE id = ? RETURNING *`,
     [stylePrompt.trim(), now, id],
   );
@@ -252,9 +469,8 @@ async function handleHumanize(req, res) {
     });
   }
 
-  // Fetch profile
   const tenant_id = getTenantId(req);
-  const rows = await query(
+  const rows = await vpQuery(
     "SELECT * FROM voice_profiles WHERE id = ? AND tenant_id = ?",
     [profile_id, tenant_id],
   );
@@ -267,7 +483,6 @@ async function handleHumanize(req, res) {
     return res.status(400).json({ error: "Voice profile has not been analyzed yet. Click 'Analyze' first." });
   }
 
-  // Parse the content JSON to validate
   let parsedContent;
   try {
     parsedContent = typeof content_json === "string" ? JSON.parse(content_json) : content_json;
@@ -323,7 +538,6 @@ async function handleHumanize(req, res) {
   } else if (result.kind === "error") {
     return res.status(502).json({ error: `Humanization failed: ${result.body?.error || "unknown error"}` });
   } else {
-    // Stream response — read it (though we asked for non-stream)
     try {
       const reader = result.stream?.getReader();
       if (reader) {
@@ -341,7 +555,6 @@ async function handleHumanize(req, res) {
     }
   }
 
-  // Extract JSON from response
   let cleaned = rewrittenRaw.replace(/```json\s*/gi, "").replace(/```\s*$/gm, "").trim();
   const jsonStart = cleaned.indexOf("{");
   const jsonEnd = cleaned.lastIndexOf("}");
@@ -367,34 +580,23 @@ async function handleHumanize(req, res) {
   });
 }
 
-// ── Main handler ─────────────────────────────────────
-
-export default async function handler(req, res) {
+async function handleVoiceProfilesRoute(req, res) {
   if (req.method === "OPTIONS") return res.status(204).end();
-
-  // All voice profile endpoints mutate data or consume AI keys: auth required.
   if (!requireAuth(req, res)) return;
 
-  // Parse path for sub-routes
   const { id, action } = parsePath(req.url);
 
   try {
-    // Special: /api/voice-profiles/humanize (no id, action="humanize")
-    // parsePath gives: parts = ["api","voice-profiles"], parts[3] = "humanize"
-    // but that's actually id="humanize", action=null
-    // Fix: check if id === "humanize" and there's no next segment
     if (id === "humanize" && !action) {
       if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
       return handleHumanize(req, res);
     }
 
-    // With ID and action: /api/voice-profiles/:id/analyze
     if (id && action === "analyze") {
       if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
       return handleAnalyze(req, res, id);
     }
 
-    // With ID: /api/voice-profiles/:id
     if (id) {
       if (req.method === "GET") return handleGet(req, res, id);
       if (req.method === "PUT") return handleUpdate(req, res, id);
@@ -402,13 +604,32 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: "Method not allowed" });
     }
 
-    // No ID: /api/voice-profiles
     if (req.method === "GET") return handleList(req, res);
     if (req.method === "POST") return handleCreate(req, res);
 
     return res.status(405).json({ error: "Method not allowed" });
   } catch (e) {
     console.error("Voice profiles handler error:", e instanceof Error ? e.message : String(e));
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// Main dispatch
+// ═══════════════════════════════════════════════════════
+
+export default async function handler(req, res) {
+  if (req.method === "OPTIONS") return res.status(204).end();
+  if (!requireAuth(req, res)) return;
+
+  const route = getSubRoute(req);
+  try {
+    if (route === "config") return handleConfigRoute(req, res);
+    if (route === "verify") return handleVerifyRoute(req, res);
+    if (route === "voice-profiles") return handleVoiceProfilesRoute(req, res);
+    return res.status(404).json({ error: "Unknown settings route" });
+  } catch (e) {
+    console.error("Settings handler error:", e instanceof Error ? e.message : String(e));
     return res.status(500).json({ error: "Internal server error" });
   }
 }

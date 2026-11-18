@@ -1,6 +1,6 @@
 import { requireAuth } from "./_auth.js";
 import { runChat } from "../shared/chat/core.js";
-import { envKeysWithFallback } from "./config.js";
+import { envKeysWithFallback } from "./settings.js";
 
 function envOptions() {
   return {
