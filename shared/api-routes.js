@@ -19,6 +19,7 @@
 export const ROUTE_HANDLERS = {
   auth: "auth",
   chat: "chat",
+  config: "config",
   content: "content",
   export: "export",
   "format-paste": "format-paste",
@@ -40,6 +41,7 @@ export const ROUTE_HANDLERS = {
 export const HANDLER_FILES = [
   "auth",
   "chat",
+  "config",
   "content",
   "engagement",
   "export",
