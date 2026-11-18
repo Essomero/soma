@@ -1,12 +1,7 @@
 import { requireAuth } from "./_auth.js";
+import { envKeysWithFallback } from "./config.js";
 
-const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || "";
-const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || "";
-const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_DISABLED = process.env.GEMINI_DISABLED === "1" || process.env.GEMINI_DISABLED === "true";
-const GROQ_KEY = process.env.GROQ_API_KEY || "";
-const CEREBRAS_KEY = process.env.CEREBRAS_API_KEY || "";
-const STRAITLY_KEY = process.env.STRAITLY_API_KEY || "";
 const STRAITLY_URL = "https://api.straitly.ai/v1/models";
 
 // Curated Straitly models (displayed under Straitly section)
@@ -78,8 +73,8 @@ let cachedORModels = null;
 let cacheORTime = 0;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-async function fetchOpenRouterModels() {
-  if (!OPENROUTER_KEY) return [];
+async function fetchOpenRouterModels(key) {
+  if (!key) return [];
   if (cachedORModels && Date.now() - cacheORTime < CACHE_TTL) return cachedORModels;
 
   try {
@@ -88,7 +83,7 @@ async function fetchOpenRouterModels() {
 
     const r = await fetch("https://openrouter.ai/api/v1/models", {
       headers: {
-        "Authorization": `Bearer ${OPENROUTER_KEY}`,
+        "Authorization": `Bearer ${key}`,
         "Content-Type": "application/json",
       },
       signal: controller.signal,
@@ -149,8 +144,8 @@ async function fetchOpenRouterModels() {
 let cachedGeminiModels = null;
 let cacheGeminiTime = 0;
 
-async function fetchGeminiModels() {
-  if (!GEMINI_KEY || GEMINI_DISABLED) return [];
+async function fetchGeminiModels(key) {
+  if (!key || GEMINI_DISABLED) return [];
   if (cachedGeminiModels && Date.now() - cacheGeminiTime < CACHE_TTL) return cachedGeminiModels;
 
   try {
@@ -158,7 +153,7 @@ async function fetchGeminiModels() {
     const timeout = setTimeout(() => controller.abort(), 8000);
 
     const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`,
       { signal: controller.signal }
     );
 
@@ -235,8 +230,8 @@ async function fetchGeminiModels() {
 let cachedGroqModels = null;
 let cacheGroqTime = 0;
 
-async function fetchGroqModels() {
-  if (!GROQ_KEY) return [];
+async function fetchGroqModels(key) {
+  if (!key) return [];
   if (cachedGroqModels && Date.now() - cacheGroqTime < CACHE_TTL) return cachedGroqModels;
 
   try {
@@ -245,7 +240,7 @@ async function fetchGroqModels() {
 
     const r = await fetch("https://api.groq.com/openai/v1/models", {
       headers: {
-        "Authorization": `Bearer ${GROQ_KEY}`,
+        "Authorization": `Bearer ${key}`,
         "Content-Type": "application/json",
       },
       signal: controller.signal,
@@ -288,8 +283,8 @@ async function fetchGroqModels() {
 let cachedCerebrasModels = null;
 let cacheCerebrasTime = 0;
 
-async function fetchCerebrasModels() {
-  if (!CEREBRAS_KEY) return [];
+async function fetchCerebrasModels(key) {
+  if (!key) return [];
   if (cachedCerebrasModels && Date.now() - cacheCerebrasTime < CACHE_TTL) return cachedCerebrasModels;
 
   try {
@@ -298,7 +293,7 @@ async function fetchCerebrasModels() {
 
     const r = await fetch("https://api.cerebras.ai/v1/models", {
       headers: {
-        "Authorization": `Bearer ${CEREBRAS_KEY}`,
+        "Authorization": `Bearer ${key}`,
         "Content-Type": "application/json",
       },
       signal: controller.signal,
@@ -333,8 +328,8 @@ async function fetchCerebrasModels() {
 let cachedStraitlyModels = null;
 let cacheStraitlyTime = 0;
 
-async function fetchStraitlyModels() {
-  if (!STRAITLY_KEY) return [];
+async function fetchStraitlyModels(key) {
+  if (!key) return [];
   if (cachedStraitlyModels && Date.now() - cacheStraitlyTime < CACHE_TTL) return cachedStraitlyModels;
 
   try {
@@ -343,7 +338,7 @@ async function fetchStraitlyModels() {
 
     const r = await fetch(STRAITLY_URL, {
       headers: {
-        "Authorization": `Bearer ${STRAITLY_KEY}`,
+        "Authorization": `Bearer ${key}`,
         "Content-Type": "application/json",
       },
       signal: controller.signal,
@@ -389,19 +384,22 @@ export default async function handler(req, res) {
   // [] for visitors, disabling AI buttons with an explanatory tooltip.
   if (!requireAuth(req, res)) return;
 
+  // Keys come from DB settings with env var fallback
+  const { keys } = await envKeysWithFallback();
+
   try {
     const [geminiModels, openrouterModels, groqModels, cerebrasModels, straitlyModels] = await Promise.all([
-      fetchGeminiModels(),
-      fetchOpenRouterModels(),
-      fetchGroqModels(),
-      fetchCerebrasModels(),
-      fetchStraitlyModels(),
+      fetchGeminiModels(keys.gemini),
+      fetchOpenRouterModels(keys.openrouter),
+      fetchGroqModels(keys.groq),
+      fetchCerebrasModels(keys.cerebras),
+      fetchStraitlyModels(keys.straitly),
     ]);
 
     // Only advertise providers whose keys are configured. A model in this
     // list must be callable: otherwise the UI enables AI actions that can
     // only fail with "AI service not configured".
-    const finalGemini = (GEMINI_KEY && !GEMINI_DISABLED) ? [...geminiModels] : [];
+    const finalGemini = (keys.gemini && !GEMINI_DISABLED) ? [...geminiModels] : [];
     if (finalGemini.length > 0 && !finalGemini.some(m => m.id === "gemini-flash-lite-latest")) {
       finalGemini.unshift({
         id: "gemini-flash-lite-latest",
@@ -412,7 +410,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const finalOR = OPENROUTER_KEY ? [...openrouterModels] : [];
+    const finalOR = keys.openrouter ? [...openrouterModels] : [];
     if (finalOR.length > 0 && !finalOR.some(m => m.id === "google/gemini-flash-lite-latest")) {
       finalOR.push({
         id: "google/gemini-flash-lite-latest",
@@ -423,7 +421,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const models = [...(DEEPSEEK_KEY ? DEEPSEEK_MODELS : []), ...finalGemini, ...finalOR, ...groqModels, ...cerebrasModels, ...straitlyModels];
+    const models = [...(keys.deepseek ? DEEPSEEK_MODELS : []), ...finalGemini, ...finalOR, ...groqModels, ...cerebrasModels, ...straitlyModels];
     return res.json({ models });
   } catch (e) {
     console.error("Models handler error:", e.message);
