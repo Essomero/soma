@@ -6,6 +6,7 @@ import {
 import { buildSystemPrompt, buildFormatPrompt, buildMetaPrompt } from "@/lib/admin-prompts";
 import { FALLBACK_COVER } from "@/lib/utils";
 
+import { ModelPicker } from "@/components/ui/ModelPicker";
 import { resolveDefaultModel } from "@/lib/modelPref";
 import type { ContentType } from "@/lib/admin-prompts";
 
@@ -482,6 +483,20 @@ export default function AIDraftPanel({ onDraft, disabled, initialInput, defaultT
 
       {/* Action row */}
       <div className="flex flex-wrap items-center gap-md">
+        {mode === "ai-generate" && (
+          <ModelPicker
+            models={models}
+            selectedModel={selectedModel}
+            selectedProvider={selectedProvider}
+            onChange={(id, provider) => {
+              setSelectedModel(id);
+              setSelectedProvider(provider);
+            }}
+            disabled={isBusy || disabled}
+            unavailable={aiUnavailable}
+          />
+        )}
+
         <button
           onClick={handleAction}
           disabled={generateDisabled}

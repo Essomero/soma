@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Brain, Loader2, ExternalLink, RefreshCw } from "lucide-react";
+import { ModelPicker } from "./ModelPicker";
 
 // ── Types ─────────────────────────────────────────────
 
@@ -97,6 +98,17 @@ export default function ContentTestButton({
   return (
     <div>
       <div className="flex items-center gap-sm flex-wrap">
+        {/* Model picker */}
+        <ModelPicker
+          models={models}
+          selectedModel={selectedModel}
+          selectedProvider={selectedProvider}
+          onChange={onModelChange}
+          disabled={busy || aiUnavailable}
+          unavailable={aiUnavailable}
+          className="shrink-0"
+        />
+
         {/* Primary action: generate or take test */}
         <button
           onClick={() => generateTest(false)}

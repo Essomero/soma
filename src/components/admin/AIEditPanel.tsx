@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Loader2, Sparkles, AlertCircle, Wand2, ChevronDown, Lightbulb, Mic } from "lucide-react";
 import { buildSystemPrompt } from "@/lib/admin-prompts";
 import Tooltip from "@/components/ui/Tooltip";
+import { ModelPicker } from "@/components/ui/ModelPicker";
 import { resolveDefaultModel } from "@/lib/modelPref";
 
 interface ModelInfo {
@@ -469,7 +470,23 @@ export default function AIEditPanel({ currentJson, onUpdate, contentType }: AIEd
                 </p>
               </div>
             </details>
-          )}
+)}
+
+          {/* Model picker */}
+          <div className="flex items-center gap-sm">
+            <span className="font-sora text-[10px] text-on-surface-muted uppercase tracking-wider shrink-0">Model</span>
+            <ModelPicker
+              models={models}
+              selectedModel={selectedModel}
+              selectedProvider={selectedProvider}
+              onChange={(id, provider) => {
+                setSelectedModel(id);
+                setSelectedProvider(provider);
+              }}
+              unavailable={aiUnavailable}
+              className="px-md py-xs font-sora text-xs"
+            />
+          </div>
 
           {/* Input */}
           <textarea
@@ -478,7 +495,7 @@ export default function AIEditPanel({ currentJson, onUpdate, contentType }: AIEd
             rows={3}
             disabled={aiUnavailable}
             placeholder='e.g. "Make this more beginner-friendly" or "Add three more sections about deployment"'
-            className="w-full p-md bg-surface border border-border-default text-on-surface font-dm-sans text-sm placeholder:text-on-surface-muted focus:outline-none focus:border-primary resize-y disabled:opacity-40"
+            className="w-full bg-surface border border-border-default rounded-lg px-md py-sm font-dm-sans text-sm text-on-surface placeholder-on-surface-muted/50 focus:outline-none focus:border-primary transition-colors disabled:opacity-40 resize-y"
           />
 
           {/* Actions */}
