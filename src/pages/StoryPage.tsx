@@ -1671,7 +1671,7 @@ export default function StoryPage() {
                             <MarkdownHtml html={mdBlock(comment.body)} className="prose prose-sm font-dm-sans text-sm text-on-surface leading-relaxed" />
                           )}
                           {/* Actions at bottom of card */}
-                          <div className="flex items-center gap-xs mt-sm pt-sm border-t border-border-default">
+                          <div className="flex items-center justify-end gap-xs mt-sm pt-sm border-t border-border-default">
                             {(!comment.body.trim() && comment.id < 0) ? null : (
                               <Tooltip label={copiedId === comment.id ? "Copied" : "Copy"}>
                               <button onClick={() => handleCopyComment(comment)}
@@ -1949,7 +1949,7 @@ export default function StoryPage() {
                             <MarkdownHtml html={mdBlock(comment.body)} className="prose prose-sm font-dm-sans text-sm text-on-surface leading-relaxed" />
                           )}
                           {/* Actions at bottom of card */}
-                          <div className="flex items-center gap-xs mt-sm pt-sm border-t border-border-default">
+                          <div className="flex items-center justify-end gap-xs mt-sm pt-sm border-t border-border-default">
                             {(!comment.body.trim() && comment.id < 0) ? null : (
                               <Tooltip label={copiedId === comment.id ? "Copied" : "Copy"}>
                               <button onClick={() => handleCopyComment(comment)}
