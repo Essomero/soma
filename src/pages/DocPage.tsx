@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { formatDate } from "@/lib/format-date";
 import AccentBar from "@/components/ui/AccentBar";
@@ -6,10 +6,11 @@ import Tag from "@/components/ui/Tag";
 import SidebarToc from "@/components/sections/SidebarToc";
 import ContentBlocks from "@/components/ui/ContentBlocks";
 import ShareButtons from "@/components/ui/ShareButtons";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import PrintButton from "@/components/ui/PrintButton";
 import { SkeletonDocLayout } from "@/components/ui/Skeleton";
-import { Edit3 } from "lucide-react";
-import { useContentItem, useContentList } from "@/lib/content";
+import { Edit3, Loader2, Trash2 } from "lucide-react";
+import { invalidateContentCache, useContentItem, useContentList } from "@/lib/content";
 import type { DocContent, TocItem, TestContent } from "@/types";
 import { md, contentToMarkdown } from "@/lib/markdown";
 import { useAuth } from "@/lib/AuthContext";
@@ -35,6 +36,11 @@ export default function DocPage() {
   const { data: doc, loading } = useContentItem<DocContent>("doc", slug);
   const { isOwner } = useAuth();
   usePageMeta({ title: doc?.title, description: doc?.description, image: doc?.image });
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [contentBusy, setContentBusy] = useState(false);
+  const [contentError, setContentError] = useState("");
+  const navigate = useNavigate();
 
   // ── AI model state (for quiz generation) ──────────────
   const [inlineModels, setInlineModels] = useState<ModelInfo[]>(DEFAULT_MODELS);
@@ -105,6 +111,26 @@ export default function DocPage() {
     href: `#${s.anchor}`,
   }));
 
+  const deleteContent = async () => {
+    if (!doc || contentBusy) return;
+    setContentBusy(true);
+    setContentError("");
+    try {
+      const r = await fetch(`/api/content?slug=${encodeURIComponent(slug!)}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      invalidateContentCache();
+      setDeleteOpen(false);
+      navigate("/docs");
+    } catch (err) {
+      setContentError(`Delete failed: ${err instanceof Error ? err.message : "unknown"}`);
+    } finally {
+      setContentBusy(false);
+    }
+  };
+
   return (
     <div className="pt-32 pb-giant">
       <article className="max-w-readme mx-auto px-gutter md:px-margin-desktop">
@@ -131,13 +157,24 @@ export default function DocPage() {
                 <div className="flex items-center gap-sm">
                   <PrintButton to={`/docs/${slug}/print`} compact />
                   {isOwner && (
-                    <Link to={`/admin/doc/${slug}/edit`}
-                      className="print:hidden inline-flex items-center gap-sm font-sora bg-primary text-on-primary border-primary hover:bg-primary-hover transition-all shadow-sm rounded-lg font-semibold px-md py-sm text-xs"
-                      title="Edit doc"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                      Edit
-                    </Link>
+                    <>
+                      <Link to={`/admin/doc/${slug}/edit`}
+                        className="print:hidden inline-flex items-center gap-sm font-sora bg-primary text-on-primary border-primary hover:bg-primary-hover transition-all shadow-sm rounded-lg font-semibold px-md py-sm text-xs"
+                        title="Edit doc"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        Edit
+                      </Link>
+                      <button
+                        onClick={() => setDeleteOpen(true)}
+                        disabled={contentBusy}
+                        className="print:hidden inline-flex items-center gap-sm font-sora bg-surface-container-low border border-border-default hover:border-error hover:text-error transition-all rounded-lg font-semibold px-md py-sm text-xs text-on-surface-muted disabled:opacity-50"
+                        title="Permanently delete this doc"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -271,6 +308,16 @@ export default function DocPage() {
             }}
           />
         </section>
+      )}
+      {deleteOpen && doc && (
+        <ConfirmModal
+          title="Delete doc?"
+          message={`"${doc.title}" (/docs/${slug}) will be permanently removed from the database.`}
+          confirmText="DELETE"
+          onConfirm={deleteContent}
+          onCancel={() => setDeleteOpen(false)}
+          loading={contentBusy}
+        />
       )}
     </div>
   );

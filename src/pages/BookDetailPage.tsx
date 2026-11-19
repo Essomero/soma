@@ -1,11 +1,13 @@
-import { useParams, Link } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { formatDate } from "@/lib/format-date";
-import { ArrowRight, Clock, BookOpen, Check, Printer, Edit3 } from "lucide-react";
+import { ArrowRight, Clock, BookOpen, Check, Printer, Edit3, Loader2, Trash2 } from "lucide-react";
 import { SkeletonCollectionDetail } from "@/components/ui/Skeleton";
 import Tooltip from "@/components/ui/Tooltip";
 import AccentBar from "@/components/ui/AccentBar";
 import Tag from "@/components/ui/Tag";
-import { useContentItem, useContentList } from "@/lib/content";
+import { invalidateContentCache, useContentItem, useContentList } from "@/lib/content";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import { useAuth } from "@/lib/AuthContext";
 import type { BookContent, StoryContent } from "@/types";
 import { useProgress } from "@/lib/useProgress";
@@ -26,6 +28,10 @@ const { isCompleted, toggle, progress } = useProgress(slug ?? "", chapterSlugs);
   const totalMinutes = book
     ? getTotalReadingTime(book.chapters.map((ch) => ch.storySlug), allStories)
     : 0;
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [contentBusy, setContentBusy] = useState(false);
+  const [contentError, setContentError] = useState("");
+  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -42,6 +48,26 @@ const { isCompleted, toggle, progress } = useProgress(slug ?? "", chapterSlugs);
       </div>
     );
   }
+
+  const deleteContent = async () => {
+    if (!book || contentBusy) return;
+    setContentBusy(true);
+    setContentError("");
+    try {
+      const r = await fetch(`/api/content?slug=${encodeURIComponent(slug!)}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      invalidateContentCache();
+      setDeleteOpen(false);
+      navigate("/books");
+    } catch (err) {
+      setContentError(`Delete failed: ${err instanceof Error ? err.message : "unknown"}`);
+    } finally {
+      setContentBusy(false);
+    }
+  };
 
   return (
     <div>
@@ -74,6 +100,15 @@ const { isCompleted, toggle, progress } = useProgress(slug ?? "", chapterSlugs);
                   <Edit3 className="w-3.5 h-3.5" />
                   <span>Edit</span>
                 </Link>
+                <button
+                  onClick={() => setDeleteOpen(true)}
+                  disabled={contentBusy}
+                  className="print:hidden inline-flex items-center gap-sm font-sora bg-surface-container-low border border-border-default hover:border-error hover:text-error transition-all rounded-lg font-semibold px-md py-sm text-xs text-on-surface-muted disabled:opacity-50"
+                  title="Permanently delete this book"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete</span>
+                </button>
               </>
             )}
           </div>
@@ -145,6 +180,16 @@ const { isCompleted, toggle, progress } = useProgress(slug ?? "", chapterSlugs);
         </div>
       </section>
 
+      {deleteOpen && book && (
+        <ConfirmModal
+          title="Delete book?"
+          message={`"${book.title}" (/books/${slug}) will be permanently removed from the database.`}
+          confirmText="DELETE"
+          onConfirm={deleteContent}
+          onCancel={() => setDeleteOpen(false)}
+          loading={contentBusy}
+        />
+      )}
     </div>
   );
 }
