@@ -110,11 +110,11 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
         setModels(data.models ?? []);
         setModelsReady(true);
         if (data.models?.length) {
-          const defaultModel = resolveDefaultModel(data.models, aiModel);
-          if (defaultModel) {
-            const m = data.models.find((x: ModelInfo) => x.id === defaultModel)!;
-            setAiModel(m.id);
-            setAiProvider(m.provider);
+          const targetId = resolveDefaultModel(data.models, aiModel) ?? aiModel;
+          const target = data.models.find((x: ModelInfo) => x.id === targetId);
+          if (target) {
+            setAiModel(target.id);
+            setAiProvider(target.provider);
           }
         }
       })

@@ -170,11 +170,11 @@ export default function InlineHighlights({
       setInlineModels(data.models ?? []);
       setInlineAiReady(true);
       if (data.models?.length) {
-        const defaultModel = resolveDefaultModel(data.models, inlineAiModel);
-        if (defaultModel) {
-          const m = data.models.find((x: ModelInfo) => x.id === defaultModel)!;
-          setInlineAiModel(m.id);
-          setInlineAiProvider(m.provider);
+        const targetId = resolveDefaultModel(data.models, inlineAiModel) ?? inlineAiModel;
+        const target = data.models.find((x: ModelInfo) => x.id === targetId);
+        if (target) {
+          setInlineAiModel(target.id);
+          setInlineAiProvider(target.provider);
         }
       }
     }).catch(() => { setInlineModels([]); setInlineAiReady(true); });

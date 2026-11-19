@@ -86,7 +86,7 @@ import type {
   GuideContent,
   DocContent,
 } from "@/types";
-import { readModelPref, DEFAULT_MODEL_ID } from "@/lib/modelPref";
+import { readModelPref, resolveDefaultModel, DEFAULT_MODEL_ID } from "@/lib/modelPref";
 
 interface ModelInfo {
   id: string;
@@ -384,15 +384,12 @@ export default function TestPage() {
         setModelsReady(true);
         if (data.models?.length) {
           if (!customConfig?.model) {
-            const saved = readModelPref();
-            const preferred =
-              (saved && data.models.find((m: ModelInfo) => m.id === saved)) ||
-              data.models.find((m: ModelInfo) => m.id === "deepseek-flash") ||
-              data.models.find((m: ModelInfo) => m.id.includes("deepseek-flash")) ||
-              data.models.find((m: ModelInfo) => m.id.includes("deepseek")) ||
-              data.models.find((m: ModelInfo) => m.id.includes("claude-sonnet")) ||
-              data.models[0];
-            if (preferred) setSelectedModel(preferred.id);
+            const targetId = resolveDefaultModel(data.models, selectedModel) ?? selectedModel;
+            const target = data.models.find((m: ModelInfo) => m.id === targetId);
+            if (target) {
+              setSelectedModel(target.id);
+              setSelectedProvider(target.provider);
+            }
           }
         }
       })
