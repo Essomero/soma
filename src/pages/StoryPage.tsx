@@ -41,6 +41,7 @@ import { useScrollLock } from "@/lib/useScrollLock";
 import { buildLessonIndex, resolveSectionAnchors, storyCodePrefix } from "@/lib/storyLinks";
 import SafeImage from "@/components/ui/SafeImage";
 import ContentTestButton from "@/components/ui/ContentTestButton";
+import { readModelPref, resolveDefaultModel, DEFAULT_MODEL_ID } from "@/lib/modelPref";
 
 interface ModelInfo {
   id: string;
@@ -335,7 +336,7 @@ export default function StoryPage() {
   const [inlineAiError, setInlineAiError] = useState<{id: number, message: string} | null>(null);
   const [inlineModels, setInlineModels] = useState<ModelInfo[]>(DEFAULT_MODELS);
   const [inlineAiReady, setInlineAiReady] = useState(false);
-  const [inlineAiModel, setInlineAiModel] = useState<string>("deepseek-flash");
+  const [inlineAiModel, setInlineAiModel] = useState<string>(() => readModelPref() || DEFAULT_MODEL_ID);
   const [inlineAiProvider, setInlineAiProvider] = useState<string>("deepseek");
   /** Accumulated reasoning/thinking content for draft comments (map: tempId → text). */
   const [thinkingDrafts, setThinkingDrafts] = useState<Map<number, string>>(new Map());
@@ -385,10 +386,11 @@ export default function StoryPage() {
         setInlineModels(data.models ?? []);
         setInlineAiReady(true);
         if (data.models?.length) {
-          const current = data.models.find((m: ModelInfo) => m.id === inlineAiModel && m.provider === inlineAiProvider);
-          if (!current) {
-            setInlineAiModel(data.models[0].id);
-            setInlineAiProvider(data.models[0].provider);
+          const targetId = resolveDefaultModel(data.models, inlineAiModel) ?? inlineAiModel;
+          const target = data.models.find((x: ModelInfo) => x.id === targetId);
+          if (target) {
+            setInlineAiModel(target.id);
+            setInlineAiProvider(target.provider);
           }
         }
       })
@@ -1523,7 +1525,7 @@ export default function StoryPage() {
                                 <>
                                   <SectionHeader label="DeepSeek" dotColor="#b8c3ff" />
                                   {deepseek.map(m => (
-                                    <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }}
+                                    <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }}
                                       className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>
                                       {m.label}
                                     </button>
@@ -1534,7 +1536,7 @@ export default function StoryPage() {
                                 <>
                                   <SectionHeader label="Gemini" dotColor="#47e175" />
                                   {gemini.map(m => (
-                                    <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }}
+                                    <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }}
                                       className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors flex items-center justify-between ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>
                                       <span className="truncate mr-sm">{m.label}</span>
                                       {m.free && <span className="text-[9px] text-accent-orange flex-shrink-0">FREE</span>}
@@ -1546,7 +1548,7 @@ export default function StoryPage() {
                                 <>
                                   <SectionHeader label="Groq" dotColor="#fde68a" />
                                   {groq.map(m => (
-                                    <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }}
+                                    <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }}
                                       className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>
                                       {m.label}
                                     </button>
@@ -1557,7 +1559,7 @@ export default function StoryPage() {
                                 <>
                                   <SectionHeader label="Cerebras" dotColor="#a78bfa" />
                                   {cerebras.map(m => (
-                                    <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }}
+                                    <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }}
                                       className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>
                                       {m.label}
                                     </button>
@@ -1566,7 +1568,7 @@ export default function StoryPage() {
                               )}
                               {straitly.length > 0 && (
                                 <>
-                                  <SectionHeader label="Straightly" dotColor="#06B6D4" />
+                                  <SectionHeader label="Straitly" dotColor="#06B6D4" />
                                   {straitly.map(m => (
                                     <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }}
                                       className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel && m.provider === inlineAiProvider ? "text-brand font-medium" : "text-on-surface"}`}>
@@ -1579,7 +1581,7 @@ export default function StoryPage() {
                                 <>
                                   <SectionHeader label="OpenRouter · Free" dotColor="#fb923c" />
                                   {openrouter.filter(m => m.free).map(m => (
-                                    <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }}
+                                    <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }}
                                       className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors flex items-center justify-between ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>
                                       <span className="truncate mr-sm">{m.label}</span>
                                       <span className="text-[9px] text-accent-orange flex-shrink-0">FREE</span>
@@ -1591,7 +1593,7 @@ export default function StoryPage() {
                                 <>
                                   <SectionHeader label="OpenRouter · Paid" dotColor="#fb923c" />
                                   {openrouter.filter(m => !m.free).map(m => (
-                                    <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }}
+                                    <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }}
                                       className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>
                                       {m.label}
                                     </button>
@@ -1906,13 +1908,13 @@ export default function StoryPage() {
                             ce = inlineModels.filter(m => m.provider === "cerebras"),
                             st = inlineModels.filter(m => m.provider === "straitly");
                           return (<>
-                            {d.length > 0 && (<><SectionHeader label="DeepSeek" dotColor="#b8c3ff" />{d.map(m => <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>{m.label}</button>)}</>)}
-                            {g.length > 0 && (<><SectionHeader label="Gemini" dotColor="#47e175" />{g.map(m => <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors flex items-center justify-between ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}><span className="truncate mr-sm">{m.label}</span>{m.free && <span className="text-[9px] text-accent-orange flex-shrink-0">FREE</span>}</button>)}</>)}
-                            {gr.length > 0 && (<><SectionHeader label="Groq" dotColor="#fde68a" />{gr.map(m => <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>{m.label}</button>)}</>)}
-                            {ce.length > 0 && (<><SectionHeader label="Cerebras" dotColor="#a78bfa" />{ce.map(m => <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>{m.label}</button>)}</>)}
-                            {st.length > 0 && (<><SectionHeader label="Straightly" dotColor="#06B6D4" />{st.map(m => <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel && m.provider === inlineAiProvider ? "text-brand font-medium" : "text-on-surface"}`}>{m.label}</button>)}</>)}
-                            {o.filter(m => m.free).length > 0 && (<><SectionHeader label="OpenRouter · Free" dotColor="#fb923c" />{o.filter(m => m.free).map(m => <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors flex items-center justify-between ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}><span className="truncate mr-sm">{m.label}</span>{m.free && <span className="text-[9px] text-accent-orange flex-shrink-0">FREE</span>}</button>)}</>)}
-                            {o.filter(m => !m.free).length > 0 && (<><SectionHeader label="OpenRouter · Paid" dotColor="#fb923c" />{o.filter(m => !m.free).map(m => <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>{m.label}</button>)}</>)}
+                            {d.length > 0 && (<><SectionHeader label="DeepSeek" dotColor="#b8c3ff" />{d.map(m => <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>{m.label}</button>)}</>)}
+                            {g.length > 0 && (<><SectionHeader label="Gemini" dotColor="#47e175" />{g.map(m => <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors flex items-center justify-between ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}><span className="truncate mr-sm">{m.label}</span>{m.free && <span className="text-[9px] text-accent-orange flex-shrink-0">FREE</span>}</button>)}</>)}
+                            {gr.length > 0 && (<><SectionHeader label="Groq" dotColor="#fde68a" />{gr.map(m => <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>{m.label}</button>)}</>)}
+                            {ce.length > 0 && (<><SectionHeader label="Cerebras" dotColor="#a78bfa" />{ce.map(m => <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>{m.label}</button>)}</>)}
+                            {st.length > 0 && (<><SectionHeader label="Straitly" dotColor="#06B6D4" />{st.map(m => <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel && m.provider === inlineAiProvider ? "text-brand font-medium" : "text-on-surface"}`}>{m.label}</button>)}</>)}
+                            {o.filter(m => m.free).length > 0 && (<><SectionHeader label="OpenRouter · Free" dotColor="#fb923c" />{o.filter(m => m.free).map(m => <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors flex items-center justify-between ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}><span className="truncate mr-sm">{m.label}</span>{m.free && <span className="text-[9px] text-accent-orange flex-shrink-0">FREE</span>}</button>)}</>)}
+                            {o.filter(m => !m.free).length > 0 && (<><SectionHeader label="OpenRouter · Paid" dotColor="#fb923c" />{o.filter(m => !m.free).map(m => <button key={m.id} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel ? "text-brand" : "text-on-surface"}`}>{m.label}</button>)}</>)}
                           </>);
                         })()}
                       </div>

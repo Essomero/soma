@@ -18,6 +18,7 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 import SafeImage from "@/components/ui/SafeImage";
 import SourceNoteBanner from "@/components/admin/SourceNoteBanner";
 import ContentTestButton from "@/components/ui/ContentTestButton";
+import { readModelPref, resolveDefaultModel, DEFAULT_MODEL_ID } from "@/lib/modelPref";
 
 interface ModelInfo {
   id: string;
@@ -45,7 +46,7 @@ export default function DocPage() {
   // ── AI model state (for quiz generation) ──────────────
   const [inlineModels, setInlineModels] = useState<ModelInfo[]>(DEFAULT_MODELS);
   const [inlineAiReady, setInlineAiReady] = useState(false);
-  const [inlineAiModel, setInlineAiModel] = useState<string>("deepseek-flash");
+  const [inlineAiModel, setInlineAiModel] = useState<string>(() => readModelPref() || DEFAULT_MODEL_ID);
   const [inlineAiProvider, setInlineAiProvider] = useState<string>("deepseek");
 
   useEffect(() => {
@@ -55,10 +56,11 @@ export default function DocPage() {
         setInlineModels(data.models ?? []);
         setInlineAiReady(true);
         if (data.models?.length) {
-          const current = data.models.find((m: ModelInfo) => m.id === inlineAiModel && m.provider === inlineAiProvider);
-          if (!current) {
-            setInlineAiModel(data.models[0].id);
-            setInlineAiProvider(data.models[0].provider);
+          const targetId = resolveDefaultModel(data.models, inlineAiModel) ?? inlineAiModel;
+          const target = data.models.find((x: ModelInfo) => x.id === targetId);
+          if (target) {
+            setInlineAiModel(target.id);
+            setInlineAiProvider(target.provider);
           }
         }
       })

@@ -66,6 +66,7 @@ import {
   setSonBackendUrl,
   synthesizeSpeechWithSon,
   prefetchQuestionAudio,
+  clearAudioCache,
   DEFAULT_VOICE_ID,
   KOKORO_VOICES,
   getSelectedKokoroVoice,
@@ -85,6 +86,7 @@ import type {
   GuideContent,
   DocContent,
 } from "@/types";
+import { readModelPref, resolveDefaultModel, DEFAULT_MODEL_ID } from "@/lib/modelPref";
 
 interface ModelInfo {
   id: string;
@@ -168,7 +170,7 @@ export default function TestPage() {
   // LLM Evaluation state
   const [models, setModels] = useState<ModelInfo[]>(DEFAULT_MODELS);
   const [modelsReady, setModelsReady] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<string>("deepseek-flash");
+  const [selectedModel, setSelectedModel] = useState<string>(() => readModelPref() || DEFAULT_MODEL_ID);
   const [selectedProvider, setSelectedProvider] = useState<string>("deepseek");
   const [isCustomAiModalOpen, setIsCustomAiModalOpen] = useState<boolean>(false);
   const [customAiConfig, setCustomAiConfig] = useState<CustomAiConfig>({});
@@ -287,6 +289,11 @@ export default function TestPage() {
     refreshSonStatus();
   }, [refreshSonStatus]);
 
+  // Clear audio cache when navigating between tests to prevent cross-test question ID collisions
+  useEffect(() => {
+    clearAudioCache();
+  }, [test?.slug]);
+
   // Prefetch Question 1 audio on the overview page and HOLD the exam until it is ready.
   // Entering Question 1 without cached audio means the candidate sits in a silent question
   // view while the examiner's prompt is still being synthesized.
@@ -377,13 +384,12 @@ export default function TestPage() {
         setModelsReady(true);
         if (data.models?.length) {
           if (!customConfig?.model) {
-            const preferred =
-              data.models.find((m: ModelInfo) => m.id === "deepseek-flash") ||
-              data.models.find((m: ModelInfo) => m.id.includes("deepseek-flash")) ||
-              data.models.find((m: ModelInfo) => m.id.includes("deepseek")) ||
-              data.models.find((m: ModelInfo) => m.id.includes("claude-sonnet")) ||
-              data.models[0];
-            if (preferred) setSelectedModel(preferred.id);
+            const targetId = resolveDefaultModel(data.models, selectedModel) ?? selectedModel;
+            const target = data.models.find((m: ModelInfo) => m.id === targetId);
+            if (target) {
+              setSelectedModel(target.id);
+              setSelectedProvider(target.provider);
+            }
           }
         }
       })
@@ -1571,7 +1577,7 @@ export default function TestPage() {
                     <Button
                       variant="primary"
                       onClick={handleNextQuestion}
-                      disabled={isNextAudioPreparing}
+                      disabled={isNextAudioPreparing || oral.isListeningPhase}
                       className="gap-2"
                     >
                       {isNextAudioPreparing ? (
@@ -1787,7 +1793,7 @@ export default function TestPage() {
                             )}
                             {straitlyModels.length > 0 && (
                               <>
-                                <SectionHeader label="Straightly" dotColor="#06B6D4" />
+                                <SectionHeader label="Straitly" dotColor="#06B6D4" />
                                 {straitlyModels.map((m) => (
                                   <button
                                     key={`${m.provider}-${m.id}`}

@@ -15,6 +15,7 @@ import { modeColor } from "@/lib/tutor/modeStyles";
 import { ThinkingSection } from "@/components/ui/ThinkingSection";
 import type { TutorMode } from "../../../shared/tutor/modes.js";
 import { collectPriorTurns } from "../../../shared/tutor/memory.js";
+import { readModelPref, resolveDefaultModel, DEFAULT_MODEL_ID } from "@/lib/modelPref";
 
 interface ModelInfo {
   id: string;
@@ -106,7 +107,7 @@ export default function InlineHighlights({
   const [inlineAiError, setInlineAiError] = useState<{id: number, message: string} | null>(null);
   const [inlineModels, setInlineModels] = useState<ModelInfo[]>(DEFAULT_MODELS);
   const [inlineAiReady, setInlineAiReady] = useState(false);
-  const [inlineAiModel, setInlineAiModel] = useState<string>("deepseek-flash");
+  const [inlineAiModel, setInlineAiModel] = useState<string>(() => readModelPref() || DEFAULT_MODEL_ID);
   const [inlineAiProvider, setInlineAiProvider] = useState<string>("deepseek");
   /** Accumulated reasoning/thinking content for draft comments (map: tempId → text). */
   const [thinkingDrafts, setThinkingDrafts] = useState<Map<number, string>>(new Map());
@@ -169,10 +170,11 @@ export default function InlineHighlights({
       setInlineModels(data.models ?? []);
       setInlineAiReady(true);
       if (data.models?.length) {
-        const current = data.models.find((m: ModelInfo) => m.id === inlineAiModel && m.provider === inlineAiProvider);
-        if (!current) {
-          setInlineAiModel(data.models[0].id);
-          setInlineAiProvider(data.models[0].provider);
+        const targetId = resolveDefaultModel(data.models, inlineAiModel) ?? inlineAiModel;
+        const target = data.models.find((x: ModelInfo) => x.id === targetId);
+        if (target) {
+          setInlineAiModel(target.id);
+          setInlineAiProvider(target.provider);
         }
       }
     }).catch(() => { setInlineModels([]); setInlineAiReady(true); });
@@ -793,7 +795,7 @@ export default function InlineHighlights({
                             {g.length > 0 && (<><SectionHeader label="Gemini" dotColor="#47e175" />{g.map(m => <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors flex items-center justify-between ${m.id === inlineAiModel && m.provider === inlineAiProvider ? "text-brand font-medium" : "text-on-surface"}`}><span className="truncate mr-sm">{m.label}</span>{m.free && <span className="text-[9px] text-accent-orange flex-shrink-0">FREE</span>}</button>)}</>)}
                             {gr.length > 0 && (<><SectionHeader label="Groq" dotColor="#fde68a" />{gr.map(m => <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel && m.provider === inlineAiProvider ? "text-brand font-medium" : "text-on-surface"}`}>{m.label}</button>)}</>)}
                             {ce.length > 0 && (<><SectionHeader label="Cerebras" dotColor="#a78bfa" />{ce.map(m => <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel && m.provider === inlineAiProvider ? "text-brand font-medium" : "text-on-surface"}`}>{m.label}</button>)}</>)}
-                            {st.length > 0 && (<><SectionHeader label="Straightly" dotColor="#06B6D4" />{st.map(m => <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel && m.provider === inlineAiProvider ? "text-brand font-medium" : "text-on-surface"}`}>{m.label}</button>)}</>)}
+                            {st.length > 0 && (<><SectionHeader label="Straitly" dotColor="#06B6D4" />{st.map(m => <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel && m.provider === inlineAiProvider ? "text-brand font-medium" : "text-on-surface"}`}>{m.label}</button>)}</>)}
                             {o.filter(m => m.free).length > 0 && (<><SectionHeader label="OpenRouter · Free" dotColor="#fb923c" />{o.filter(m => m.free).map(m => <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors flex items-center justify-between ${m.id === inlineAiModel && m.provider === inlineAiProvider ? "text-brand font-medium" : "text-on-surface"}`}><span className="truncate mr-sm">{m.label}</span>{m.free && <span className="text-[9px] text-accent-orange flex-shrink-0">FREE</span>}</button>)}</>)}
                             {o.filter(m => !m.free).length > 0 && (<><SectionHeader label="OpenRouter · Paid" dotColor="#fb923c" />{o.filter(m => !m.free).map(m => <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel && m.provider === inlineAiProvider ? "text-brand font-medium" : "text-on-surface"}`}>{m.label}</button>)}</>)}
                           </>);
@@ -853,7 +855,7 @@ export default function InlineHighlights({
                           {g.length > 0 && (<><SectionHeader label="Gemini" dotColor="#47e175" />{g.map(m => <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors flex items-center justify-between ${m.id === inlineAiModel && m.provider === inlineAiProvider ? "text-brand font-medium" : "text-on-surface"}`}><span className="truncate mr-sm">{m.label}</span>{m.free && <span className="text-[9px] text-accent-orange flex-shrink-0">FREE</span>}</button>)}</>)}
                           {gr.length > 0 && (<><SectionHeader label="Groq" dotColor="#fde68a" />{gr.map(m => <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel && m.provider === inlineAiProvider ? "text-brand font-medium" : "text-on-surface"}`}>{m.label}</button>)}</>)}
                           {ce.length > 0 && (<><SectionHeader label="Cerebras" dotColor="#a78bfa" />{ce.map(m => <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel && m.provider === inlineAiProvider ? "text-brand font-medium" : "text-on-surface"}`}>{m.label}</button>)}</>)}
-                          {st.length > 0 && (<><SectionHeader label="Straightly" dotColor="#06B6D4" />{st.map(m => <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel && m.provider === inlineAiProvider ? "text-brand font-medium" : "text-on-surface"}`}>{m.label}</button>)}</>)}
+                          {st.length > 0 && (<><SectionHeader label="Straitly" dotColor="#06B6D4" />{st.map(m => <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel && m.provider === inlineAiProvider ? "text-brand font-medium" : "text-on-surface"}`}>{m.label}</button>)}</>)}
                           {o.filter(m => m.free).length > 0 && (<><SectionHeader label="OpenRouter · Free" dotColor="#fb923c" />{o.filter(m => m.free).map(m => <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors flex items-center justify-between ${m.id === inlineAiModel && m.provider === inlineAiProvider ? "text-brand font-medium" : "text-on-surface"}`}><span className="truncate mr-sm">{m.label}</span>{m.free && <span className="text-[9px] text-accent-orange flex-shrink-0">FREE</span>}</button>)}</>)}
                           {o.filter(m => !m.free).length > 0 && (<><SectionHeader label="OpenRouter · Paid" dotColor="#fb923c" />{o.filter(m => !m.free).map(m => <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setInlineAiModel(m.id); setInlineAiProvider(m.provider); setInlineModelMenuOpen(false); }} className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === inlineAiModel && m.provider === inlineAiProvider ? "text-brand font-medium" : "text-on-surface"}`}>{m.label}</button>)}</>)}
                         </>);
