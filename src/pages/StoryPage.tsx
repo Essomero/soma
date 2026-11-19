@@ -1197,12 +1197,14 @@ export default function StoryPage() {
 
             {(story.intro || (story.body?.length ?? 0) > 0) ? (
               <>
-                {/* Intro (shown in both layouts) */}
+                {/* Intro (shown in both layouts) — use a unique sectionIndex so its
+                    paragraph indices don't collide with section 0's. */}
                 {story.intro && (
                   <div className="font-dm-sans text-body-base leading-relaxed text-on-surface mb-lg">
                     <ContentBlocks
                       blocks={[story.intro]}
                       firstDropCap={true}
+                      sectionIndex={-2}
                       highlights={highlights}
                       onHighlightClick={handleHighlightClick}
                       sectionRefs={sectionAnchors.refs}
@@ -1214,12 +1216,14 @@ export default function StoryPage() {
                 {/* Rich layout: sections + bento + multi pull quotes */}
                 {hasRichContent ? (
                   <>
-                    {/* Body (shown before bento in rich layout, merged as a single ContentBlocks block) */}
+                    {/* Body (shown before bento in rich layout, merged as a single ContentBlocks block)
+                        — use a unique sectionIndex so paragraph indices don't collide with section 0's. */}
                     {(story.body?.length ?? 0) > 0 && (
                       <div className="font-dm-sans text-body-base leading-relaxed text-on-surface mb-lg">
                         <ContentBlocks
                           blocks={story.body ?? []}
                           firstDropCap={false}
+                          sectionIndex={-1}
                           highlights={highlights}
                           onHighlightClick={handleHighlightClick}
                           sectionRefs={sectionAnchors.refs}
