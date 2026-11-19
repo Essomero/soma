@@ -609,59 +609,24 @@ export default function InlineHighlights({
     return (
       <div key={comment.id}>
         <div className={`bg-surface-container-low border border-border-default rounded-lg p-md ${indent}`}>
-          <div className="flex items-center justify-between gap-xs mb-sm">
-            <div className="flex items-center gap-xs">
-              {comment.isAi ? (
-                <span className="flex items-center gap-xs">
-                  <span className="font-sora text-[10px] text-brand uppercase tracking-widest">{inlineModels.find(m => m.id === comment.aiModel)?.label || "AI"}</span>
-                  {(comment.aiAction || comment.mode) && (
-                    <span className={`font-sora text-[9px] uppercase tracking-wider px-xs py-px rounded ${modeColor(comment.aiAction || comment.mode)}`}>
-                      {TUTOR_MODES.find((m) => m.id === (comment.aiAction || comment.mode))?.label || "AI"}
-                    </span>
-                  )}
-                </span>
-              ) : (
-                <span className="font-sora text-[10px] text-on-surface-muted uppercase tracking-widest">You</span>
-              )}
-              {comment.id >= 0 && (
-                <span className="font-sora text-[10px] text-on-surface-muted">{new Date(comment.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
-              )}
-            </div>
-            {comment.id < 0 ? (
-              <div className="flex items-center gap-xs">
-                <span className="font-sora text-[10px] text-amber-400 uppercase tracking-widest">Draft</span>
-                {comment.body.trim() && (
-                  <Tooltip label={copiedId === comment.id ? "Copied" : "Copy"}>
-                  <button onClick={() => handleCopyComment(comment)}
-                    className={`p-xs rounded-md transition-colors ${copiedId === comment.id ? "text-brand" : "text-on-surface-muted hover:text-brand"}`}>
-                    {copiedId === comment.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}</button>
-                  </Tooltip>
+          <div className="flex items-center gap-xs mb-sm">
+            {comment.isAi ? (
+              <span className="flex items-center gap-xs">
+                <span className="font-sora text-[10px] text-brand uppercase tracking-widest">{inlineModels.find(m => m.id === comment.aiModel)?.label || "AI"}</span>
+                {(comment.aiAction || comment.mode) && (
+                  <span className={`font-sora text-[9px] uppercase tracking-wider px-xs py-px rounded ${modeColor(comment.aiAction || comment.mode)}`}>
+                    {TUTOR_MODES.find((m) => m.id === (comment.aiAction || comment.mode))?.label || "AI"}
+                  </span>
                 )}
-              </div>
+              </span>
             ) : (
-              <div className="flex items-center gap-xs">
-                <Tooltip label={copiedId === comment.id ? "Copied" : "Copy"}>
-                <button onClick={() => handleCopyComment(comment)}
-                  className={`p-xs rounded-md transition-colors ${copiedId === comment.id ? "text-brand" : "text-on-surface-muted hover:text-brand"}`}>
-                  {copiedId === comment.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}</button>
-                </Tooltip>
-                <Tooltip label="Reply">
-                <button onClick={() => { setInlineReplyToId(inlineReplyToId === comment.id ? null : comment.id); setInlineReplyBody(""); }}
-                  className={`p-xs rounded-md transition-colors ${inlineReplyToId === comment.id ? "text-brand" : "text-on-surface-muted hover:text-brand"}`}><Reply className="w-3 h-3" /></button>
-                </Tooltip>
-                {isOwner && (<>
-                <Tooltip label={aiUnavailable ? "Add an AI provider key to enable" : "AI Reply"}>
-                  <button onClick={() => handleInlineAiReply(comment)} disabled={inlineAiLoading !== null || aiUnavailable}
-                    className="p-xs rounded-md text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
-                    {inlineAiLoading === comment.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bot className="w-3 h-3" />}</button>
-                </Tooltip>
-                  <Tooltip label="Delete comment">
-                  <button onClick={() => setDeleteTarget({ kind: "comment", id: comment.id })} disabled={inlineDeleting !== null}
-                    className="p-xs rounded-md text-on-surface-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-50">
-                    {inlineDeleting === comment.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}</button>
-                  </Tooltip>
-                </>)}
-              </div>
+              <span className="font-sora text-[10px] text-on-surface-muted uppercase tracking-widest">You</span>
+            )}
+            {comment.id >= 0 && (
+              <span className="font-sora text-[10px] text-on-surface-muted">{new Date(comment.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+            )}
+            {comment.id < 0 && (
+              <span className="font-sora text-[10px] text-amber-400 uppercase tracking-widest">Draft</span>
             )}
           </div>
           {thinkingDrafts.has(comment.id) && (
@@ -675,6 +640,34 @@ export default function InlineHighlights({
           ) : (
             <MarkdownHtml html={mdBlock(comment.body)} className="font-dm-sans text-sm text-on-surface leading-relaxed" />
           )}
+          {/* Actions at bottom of card */}
+          <div className="flex items-center justify-end gap-xs mt-sm pt-sm border-t border-border-default">
+            {(!comment.body.trim() && comment.id < 0) ? null : (
+              <Tooltip label={copiedId === comment.id ? "Copied" : "Copy"}>
+              <button onClick={() => handleCopyComment(comment)}
+                className={`p-xs rounded-md transition-colors ${copiedId === comment.id ? "text-brand" : "text-on-surface-muted hover:text-brand"}`}>
+                {copiedId === comment.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}</button>
+              </Tooltip>
+            )}
+            {comment.id >= 0 && (<>
+              <Tooltip label="Reply">
+              <button onClick={() => { setInlineReplyToId(inlineReplyToId === comment.id ? null : comment.id); setInlineReplyBody(""); }}
+                className={`p-xs rounded-md transition-colors ${inlineReplyToId === comment.id ? "text-brand" : "text-on-surface-muted hover:text-brand"}`}><Reply className="w-3 h-3" /></button>
+              </Tooltip>
+              {isOwner && (<>
+              <Tooltip label={aiUnavailable ? "Add an AI provider key to enable" : "AI Reply"}>
+                <button onClick={() => handleInlineAiReply(comment)} disabled={inlineAiLoading !== null || aiUnavailable}
+                  className="p-xs rounded-md text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                  {inlineAiLoading === comment.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bot className="w-3 h-3" />}</button>
+              </Tooltip>
+                <Tooltip label="Delete comment">
+                <button onClick={() => setDeleteTarget({ kind: "comment", id: comment.id })} disabled={inlineDeleting !== null}
+                  className="p-xs rounded-md text-on-surface-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-50">
+                  {inlineDeleting === comment.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}</button>
+                </Tooltip>
+              </>)}
+            </>)}
+          </div>
           {comment.id < 0 && (
             <div className="flex items-center gap-xs mt-sm pt-sm border-t border-border-default">
               {draftPosting === comment.id ? (

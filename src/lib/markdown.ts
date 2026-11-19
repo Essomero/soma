@@ -106,7 +106,7 @@ function renderMathDelimiters(text: string): string {
   // Anything else stays literal. Inline math without a command belongs in
   // \(...\), which is unambiguous.
   text = text.replace(
-    /(^|[^\\])\$(?![\s${])(?=[^$\n]*\\)[^$\n]*?[^\s$]\$(?!\d)/g,
+    /(^|[^\\])\$(?![\s${])(?=[^$\n]*\\)([^$\n]*?[^\s$])\$(?!\d)/g,
     (match, lead: string, expr: string) => {
       try {
         const html = katex.renderToString(expr.trim(), {
