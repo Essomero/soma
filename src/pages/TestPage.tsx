@@ -1787,7 +1787,7 @@ export default function TestPage() {
                             )}
                             {straitlyModels.length > 0 && (
                               <>
-                                <SectionHeader label="Straightly" dotColor="#06B6D4" />
+                                <SectionHeader label="Straitly" dotColor="#06B6D4" />
                                 {straitlyModels.map((m) => (
                                   <button
                                     key={`${m.provider}-${m.id}`}

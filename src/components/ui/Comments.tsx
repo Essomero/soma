@@ -852,7 +852,7 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
                       )}
                       {straitlyModels.length > 0 && (
                         <>
-                          <SectionHeader label="Straightly" dotColor="#06B6D4" />
+                          <SectionHeader label="Straitly" dotColor="#06B6D4" />
                           {straitlyModels.map(m => (
                             <button key={`${m.provider}-${m.id}`} type="button" onClick={() => { setAiModel(m.id); setAiProvider(m.provider); setModelMenuOpen(false); }}
                               className={`w-full text-left px-md py-sm font-sora text-xs hover:bg-surface-container transition-colors ${m.id === aiModel && m.provider === aiProvider ? "text-brand font-medium" : "text-on-surface"}`}>
