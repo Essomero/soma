@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { Star, User, PenLine, ChevronLeft, ChevronRight, Printer, Edit3, Loader2, Trash2 } from "lucide-react";
+import { Star, User, PenLine, ChevronLeft, ChevronRight, Printer, Edit3, Trash2 } from "lucide-react";
 import { SkeletonPodcastEpisodeLayout } from "@/components/ui/Skeleton";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import AccentBar from "@/components/ui/AccentBar";
@@ -75,7 +75,7 @@ export default function PodcastEpisodePage() {
     setContentBusy(true);
     setContentError("");
     try {
-      const r = await fetch(`/api/content?slug=${encodeURIComponent(slug!)}`, {
+      const r = await fetch(`/api/content?slug=${encodeURIComponent(slug!)}&type=podcast`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
       });
@@ -408,14 +408,21 @@ export default function PodcastEpisodePage() {
         </aside>
 
         {deleteOpen && episode && (
-          <ConfirmModal
-            title="Delete episode?"
-            message={`"${episode.title}" (/podcast/${slug}) will be permanently removed from the database.`}
-            confirmText="DELETE"
-            onConfirm={deleteContent}
-            onCancel={() => setDeleteOpen(false)}
-            loading={contentBusy}
-          />
+          <>
+            <ConfirmModal
+              title="Delete episode?"
+              message={`"${episode.title}" (/podcast/${slug}) will be permanently removed from the database.`}
+              confirmText="DELETE"
+              onConfirm={deleteContent}
+              onCancel={() => setDeleteOpen(false)}
+              loading={contentBusy}
+            />
+            {contentError && (
+              <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] bg-error/10 border border-error/30 text-error text-xs font-dm-sans px-md py-sm rounded-lg shadow-lg">
+                {contentError}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

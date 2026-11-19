@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { formatDate } from "@/lib/format-date";
-import { ArrowRight, Clock, BookOpen, Check, ExternalLink, Sparkles, Printer, Edit3, Loader2, Trash2 } from "lucide-react";
+import { ArrowRight, Clock, BookOpen, Check, ExternalLink, Sparkles, Printer, Edit3, Trash2 } from "lucide-react";
 import { SkeletonCollectionDetail } from "@/components/ui/Skeleton";
 import Tooltip from "@/components/ui/Tooltip";
 import AccentBar from "@/components/ui/AccentBar";
@@ -58,7 +58,7 @@ const { isCompleted, toggle, progress } = useProgress(slug ?? "", lessonSlugs);
     setContentBusy(true);
     setContentError("");
     try {
-      const r = await fetch(`/api/content?slug=${encodeURIComponent(slug!)}`, {
+      const r = await fetch(`/api/content?slug=${encodeURIComponent(slug!)}&type=course`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
       });
@@ -265,14 +265,21 @@ const { isCompleted, toggle, progress } = useProgress(slug ?? "", lessonSlugs);
       </section>
 
       {deleteOpen && course && (
-        <ConfirmModal
-          title="Delete course?"
-          message={`"${course.title}" (/courses/${slug}) will be permanently removed from the database.`}
-          confirmText="DELETE"
-          onConfirm={deleteContent}
-          onCancel={() => setDeleteOpen(false)}
-          loading={contentBusy}
-        />
+        <>
+          <ConfirmModal
+            title="Delete course?"
+            message={`"${course.title}" (/courses/${slug}) will be permanently removed from the database.`}
+            confirmText="DELETE"
+            onConfirm={deleteContent}
+            onCancel={() => setDeleteOpen(false)}
+            loading={contentBusy}
+          />
+          {contentError && (
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] bg-error/10 border border-error/30 text-error text-xs font-dm-sans px-md py-sm rounded-lg shadow-lg">
+              {contentError}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

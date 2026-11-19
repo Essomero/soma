@@ -18,7 +18,7 @@ import PrintButton from "@/components/ui/PrintButton";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import SourceNoteBanner from "@/components/admin/SourceNoteBanner";
 import SafeImage from "@/components/ui/SafeImage";
-import { Edit3, Loader2, Trash2 } from "lucide-react";
+import { Edit3, Trash2 } from "lucide-react";
 import { invalidateContentCache, useContentItem, useContentList } from "@/lib/content";
 import type { GuideContent, TestContent } from "@/types";
 import { useAuth } from "@/lib/AuthContext";
@@ -128,7 +128,7 @@ export default function GuideContentPage() {
     setContentBusy(true);
     setContentError("");
     try {
-      const r = await fetch(`/api/content?slug=${encodeURIComponent(slug!)}`, {
+      const r = await fetch(`/api/content?slug=${encodeURIComponent(slug!)}&type=guide`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
       });
@@ -491,14 +491,21 @@ export default function GuideContentPage() {
         />
       )}
       {deleteOpen && guide && (
-        <ConfirmModal
-          title="Delete guide?"
-          message={`"${guide.title}" (/guides/${slug}) will be permanently removed from the database.`}
-          confirmText="DELETE"
-          onConfirm={deleteContent}
-          onCancel={() => setDeleteOpen(false)}
-          loading={contentBusy}
-        />
+        <>
+          <ConfirmModal
+            title="Delete guide?"
+            message={`"${guide.title}" (/guides/${slug}) will be permanently removed from the database.`}
+            confirmText="DELETE"
+            onConfirm={deleteContent}
+            onCancel={() => setDeleteOpen(false)}
+            loading={contentBusy}
+          />
+          {contentError && (
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] bg-error/10 border border-error/30 text-error text-xs font-dm-sans px-md py-sm rounded-lg shadow-lg">
+              {contentError}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
