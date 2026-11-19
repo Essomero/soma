@@ -290,7 +290,7 @@ export async function prefetchQuestionAudio(
     return activeFetches.get(key)!;
   }
 
-  const script = title ? `${title}. ${text}` : text;
+  const script = title ? `${text}. ${title}` : text;
   const cleaned = cleanForSpeech(script);
   if (!cleaned) return null;
 

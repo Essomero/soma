@@ -66,6 +66,7 @@ import {
   setSonBackendUrl,
   synthesizeSpeechWithSon,
   prefetchQuestionAudio,
+  clearAudioCache,
   DEFAULT_VOICE_ID,
   KOKORO_VOICES,
   getSelectedKokoroVoice,
@@ -287,6 +288,11 @@ export default function TestPage() {
   useEffect(() => {
     refreshSonStatus();
   }, [refreshSonStatus]);
+
+  // Clear audio cache when navigating between tests to prevent cross-test question ID collisions
+  useEffect(() => {
+    clearAudioCache();
+  }, [test?.slug]);
 
   // Prefetch Question 1 audio on the overview page and HOLD the exam until it is ready.
   // Entering Question 1 without cached audio means the candidate sits in a silent question
@@ -1574,7 +1580,7 @@ export default function TestPage() {
                     <Button
                       variant="primary"
                       onClick={handleNextQuestion}
-                      disabled={isNextAudioPreparing}
+                      disabled={isNextAudioPreparing || oral.isListeningPhase}
                       className="gap-2"
                     >
                       {isNextAudioPreparing ? (
