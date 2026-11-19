@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useParams, Navigate } from "react-router-dom";
+import { Link, useNavigate, useParams, Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { Star, User, PenLine, ChevronLeft, ChevronRight, Printer, Edit3 } from "lucide-react";
+import { Star, User, PenLine, ChevronLeft, ChevronRight, Printer, Edit3, Trash2 } from "lucide-react";
 import { SkeletonPodcastEpisodeLayout } from "@/components/ui/Skeleton";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import AccentBar from "@/components/ui/AccentBar";
 import AudioPlayer from "@/components/ui/AudioPlayer";
 import ShareButtons from "@/components/ui/ShareButtons";
 import PrintButton from "@/components/ui/PrintButton";
 import Comments from "@/components/ui/Comments";
 import { contentToMarkdown, md } from "@/lib/markdown";
-import { useContentItem, useContentList } from "@/lib/content";
+import { invalidateContentCache, useContentItem, useContentList } from "@/lib/content";
 import type { PodcastEpisodeFull } from "@/types";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import SafeImage from "@/components/ui/SafeImage";
@@ -35,6 +36,9 @@ export default function PodcastEpisodePage() {
   const [seekReq, setSeekReq] = useState<{ time: number; req: number } | null>(null);
   const synced = episode?.transcript?.some((l) => l.start != null) ?? false;
   const turnRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [contentBusy, setContentBusy] = useState(false);
+  const [contentError, setContentError] = useState("");
 
   const toSeconds = (s: string) => {
     const p = s.split(":").map(Number);
@@ -64,6 +68,28 @@ export default function PodcastEpisodePage() {
     ? episode.transcript.map((l) => `${l.speaker}: ${l.text}`).join("\n")
     : episode?.summary || "";
 
+  const navigate = useNavigate();
+
+  const deleteContent = async () => {
+    if (!episode || contentBusy) return;
+    setContentBusy(true);
+    setContentError("");
+    try {
+      const r = await fetch(`/api/content?slug=${encodeURIComponent(slug!)}&type=podcast`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      invalidateContentCache();
+      setDeleteOpen(false);
+      navigate("/podcast");
+    } catch (err) {
+      setContentError(`Delete failed: ${err instanceof Error ? err.message : "unknown"}`);
+    } finally {
+      setContentBusy(false);
+    }
+  };
+
   if (loading) {
     return (
       <SkeletonPodcastEpisodeLayout />
@@ -92,13 +118,24 @@ export default function PodcastEpisodePage() {
             <div className="mt-md flex items-center gap-sm">
               <PrintButton to={`/podcast/${slug}/print`} compact />
               {isOwner && (
-                <Link to={`/admin/podcast/${slug}/edit`}
-                  className="inline-flex items-center gap-sm font-sora bg-primary text-on-primary border-primary hover:bg-primary-hover transition-all shadow-sm rounded-lg font-semibold px-md py-sm text-xs"
-                  title="Edit episode"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span>Edit</span>
-                </Link>
+                <>
+                  <Link to={`/admin/podcast/${slug}/edit`}
+                    className="inline-flex items-center gap-sm font-sora bg-primary text-on-primary border-primary hover:bg-primary-hover transition-all shadow-sm rounded-lg font-semibold px-md py-sm text-xs"
+                    title="Edit episode"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Edit</span>
+                  </Link>
+                  <button
+                    onClick={() => setDeleteOpen(true)}
+                    disabled={contentBusy}
+                    className="print:hidden inline-flex items-center gap-sm font-sora bg-surface-container-low border border-border-default hover:border-error hover:text-error transition-all rounded-lg font-semibold px-md py-sm text-xs text-on-surface-muted disabled:opacity-50"
+                    title="Permanently delete this episode"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -369,6 +406,24 @@ export default function PodcastEpisodePage() {
             </a>
           </section>
         </aside>
+
+        {deleteOpen && episode && (
+          <>
+            <ConfirmModal
+              title="Delete episode?"
+              message={`"${episode.title}" (/podcast/${slug}) will be permanently removed from the database.`}
+              confirmText="DELETE"
+              onConfirm={deleteContent}
+              onCancel={() => setDeleteOpen(false)}
+              loading={contentBusy}
+            />
+            {contentError && (
+              <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] bg-error/10 border border-error/30 text-error text-xs font-dm-sans px-md py-sm rounded-lg shadow-lg">
+                {contentError}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

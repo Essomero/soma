@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Minus, Terminal, UserCheck, AlertTriangle, Lightbulb, Shield, Zap } from "lucide-react";
 import { SkeletonDocLayout } from "@/components/ui/Skeleton";
@@ -15,10 +15,11 @@ import Comments from "@/components/ui/Comments";
 import ContentBlocks from "@/components/ui/ContentBlocks";
 import InlineHighlights from "@/components/ui/InlineHighlights";
 import PrintButton from "@/components/ui/PrintButton";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import SourceNoteBanner from "@/components/admin/SourceNoteBanner";
 import SafeImage from "@/components/ui/SafeImage";
-import { Edit3 } from "lucide-react";
-import { useContentItem, useContentList } from "@/lib/content";
+import { Edit3, Trash2 } from "lucide-react";
+import { invalidateContentCache, useContentItem, useContentList } from "@/lib/content";
 import type { GuideContent, TestContent } from "@/types";
 import { useAuth } from "@/lib/AuthContext";
 import { md, mdBlock, contentToMarkdown } from "@/lib/markdown";
@@ -55,6 +56,9 @@ export default function GuideContentPage() {
   const articleRef = useRef<HTMLElement>(null);
   const [highlights, setHighlights] = useState<HighlightData[]>([]);
   const highlightClickRef = useRef<(id: number) => void>(() => {});
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [contentBusy, setContentBusy] = useState(false);
+  const [contentError, setContentError] = useState("");
   const content = guide ?? null;
   const otherGuides = (guides ?? []).filter((g) => g.id !== guide?.id).slice(0, 3);
   const contentText = [
@@ -117,6 +121,28 @@ export default function GuideContentPage() {
   }));
   const tocItems = [...tocSections, ...tocBody];
 
+  const navigate = useNavigate();
+
+  const deleteContent = async () => {
+    if (!guide || contentBusy) return;
+    setContentBusy(true);
+    setContentError("");
+    try {
+      const r = await fetch(`/api/content?slug=${encodeURIComponent(slug!)}&type=guide`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      invalidateContentCache();
+      setDeleteOpen(false);
+      navigate("/guides");
+    } catch (err) {
+      setContentError(`Delete failed: ${err instanceof Error ? err.message : "unknown"}`);
+    } finally {
+      setContentBusy(false);
+    }
+  };
+
   if (loading) {
     return (
       <SkeletonDocLayout />
@@ -164,14 +190,25 @@ export default function GuideContentPage() {
               <div className="mt-sm flex items-center gap-sm">
                 <PrintButton to={`/guides/${slug}/print`} compact />
                 {isOwner && (
-                  <Link
-                    to={`/admin/guide/${slug}/edit`}
-                    className="print:hidden inline-flex items-center gap-sm font-sora bg-primary text-on-primary border-primary hover:bg-primary-hover transition-all shadow-sm rounded-lg font-semibold px-md py-sm text-xs"
-                    title="Edit guide"
-                  >
-                    <Edit3 className="w-3.5 h-3.5" />
-                    Edit
-                  </Link>
+                  <>
+                    <Link
+                      to={`/admin/guide/${slug}/edit`}
+                      className="print:hidden inline-flex items-center gap-sm font-sora bg-primary text-on-primary border-primary hover:bg-primary-hover transition-all shadow-sm rounded-lg font-semibold px-md py-sm text-xs"
+                      title="Edit guide"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      Edit
+                    </Link>
+                    <button
+                      onClick={() => setDeleteOpen(true)}
+                      disabled={contentBusy}
+                      className="print:hidden inline-flex items-center gap-sm font-sora bg-surface-container-low border border-border-default hover:border-error hover:text-error transition-all rounded-lg font-semibold px-md py-sm text-xs text-on-surface-muted disabled:opacity-50"
+                      title="Permanently delete this guide"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete</span>
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -452,6 +489,23 @@ export default function GuideContentPage() {
           onHighlightsChange={setHighlights}
           highlightClickRef={highlightClickRef}
         />
+      )}
+      {deleteOpen && guide && (
+        <>
+          <ConfirmModal
+            title="Delete guide?"
+            message={`"${guide.title}" (/guides/${slug}) will be permanently removed from the database.`}
+            confirmText="DELETE"
+            onConfirm={deleteContent}
+            onCancel={() => setDeleteOpen(false)}
+            loading={contentBusy}
+          />
+          {contentError && (
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] bg-error/10 border border-error/30 text-error text-xs font-dm-sans px-md py-sm rounded-lg shadow-lg">
+              {contentError}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
