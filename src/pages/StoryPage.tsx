@@ -267,6 +267,7 @@ export default function StoryPage() {
           startOffset: Number(h.startOffset),
           endOffset: Number(h.endOffset),
           color: h.color,
+          selectedText: h.selectedText || "",
           comments: buildCommentTree(h.comments || []),
         })));
       }
@@ -315,6 +316,7 @@ export default function StoryPage() {
           startOffset: Number(created.startOffset),
           endOffset: Number(created.endOffset),
           color: created.color,
+          selectedText: offsets.text || "",
           comments: [],
         }]);
       }
@@ -351,6 +353,7 @@ export default function StoryPage() {
   const [inlineReplyBody, setInlineReplyBody] = useState("");
   const [inlineExpanded, setInlineExpanded] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [copiedTextId, setCopiedTextId] = useState(false);
 
   // Lock page scroll while the expanded modal is open
   useScrollLock(inlineExpanded);
@@ -445,6 +448,7 @@ export default function StoryPage() {
           startOffset: Number(created.startOffset),
           endOffset: Number(created.endOffset),
           color: created.color,
+          selectedText: offsets.text || "",
           comments: [],
         }]);
         setActiveHighlight({ id: created.id, x: popoverX, y: popoverY });
@@ -502,6 +506,7 @@ export default function StoryPage() {
         return;
       }
 
+      setPostError(null);
       const TEMP_ID = -(Date.now());
       const tempComment: ThreadedComment = {
         id: TEMP_ID,
@@ -570,10 +575,12 @@ export default function StoryPage() {
 
   // ── Post / cancel AI draft ──────────────────────────
   const [draftPosting, setDraftPosting] = useState<number | null>(null);
+  const [postError, setPostError] = useState<string | null>(null);
 
   const handlePostDraft = useCallback(async (highlightId: number, tempId: number, body: string, mode: TutorMode) => {
     if (!slug || draftPosting !== null) return;
     setDraftPosting(tempId);
+    setPostError(null);
     const source = highlights.find((h) => h.id === highlightId);
     try {
       const r = await fetch("/api/comments", {
@@ -614,20 +621,41 @@ export default function StoryPage() {
             : hl,
         ));
         setCommentsRefresh((n: number) => n + 1);
+        // Success — clean up draft state
+        setThinkingDrafts((prev) => { const n = new Map(prev); n.delete(tempId); return n; });
+        setPostError(null);
+      } else {
+        const errorBody = await r.text().catch(() => "");
+        console.error("handlePostDraft failed:", r.status, errorBody);
+        setPostError("Failed to post. Check your connection and try again.");
       }
-    } catch {}
+    } catch (err) {
+      console.error("handlePostDraft exception:", err);
+      setPostError("Failed to post. Check your connection and try again.");
+    }
     setDraftPosting(null);
-    setThinkingDrafts((prev) => { const n = new Map(prev); n.delete(tempId); return n; });
   }, [slug, draftPosting, inlineAiModel, highlights]);
 
   const handleCancelDraft = useCallback((highlightId: number, tempId: number) => {
-    setHighlights((prev) => prev.map((hl) =>
-      hl.id === highlightId
-        ? { ...hl, comments: (hl.comments || []).filter((c) => (c as ThreadedComment).id !== tempId) }
-        : hl,
+    // Check if the highlight is orphan (only the temp comment, no pre-existing ones)
+    const hl = highlights.find((h) => h.id === highlightId);
+    const comments = (hl?.comments || []) as ThreadedComment[];
+    const isOrphan = comments.length === 1 && comments[0]?.id === tempId;
+    if (isOrphan) {
+      fetch("/api/highlights", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: highlightId }),
+      }).catch(() => {});
+    }
+    setPostError(null);
+    setHighlights((prev) => prev.map((h) =>
+      h.id === highlightId
+        ? { ...h, comments: (h.comments || []).filter((c) => (c as ThreadedComment).id !== tempId) }
+        : h,
     ));
     setThinkingDrafts((prev) => { const n = new Map(prev); n.delete(tempId); return n; });
-  }, []);
+  }, [highlights]);
 
   const handleHighlightClick = useCallback((highlightId: number) => {
     const mark = document.querySelector(`mark[data-highlight-id="${highlightId}"]`);
@@ -872,6 +900,31 @@ export default function StoryPage() {
     const onSuccess = () => {
       setCopiedId(c.id);
       setTimeout(() => setCopiedId((prev) => (prev === c.id ? null : prev)), 1500);
+    };
+    const fallback = () => {
+      try {
+        const el = document.createElement("textarea");
+        el.value = text;
+        el.style.position = "fixed";
+        el.style.opacity = "0";
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+        onSuccess();
+      } catch {}
+    };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(onSuccess).catch(fallback);
+    } else {
+      fallback();
+    }
+  }, []);
+
+  const handleCopySelectedText = useCallback((text: string) => {
+    const onSuccess = () => {
+      setCopiedTextId(true);
+      setTimeout(() => setCopiedTextId(false), 1500);
     };
     const fallback = () => {
       try {
@@ -1144,12 +1197,14 @@ export default function StoryPage() {
 
             {(story.intro || (story.body?.length ?? 0) > 0) ? (
               <>
-                {/* Intro (shown in both layouts) */}
+                {/* Intro (shown in both layouts) — use a unique sectionIndex so its
+                    paragraph indices don't collide with section 0's. */}
                 {story.intro && (
                   <div className="font-dm-sans text-body-base leading-relaxed text-on-surface mb-lg">
                     <ContentBlocks
                       blocks={[story.intro]}
                       firstDropCap={true}
+                      sectionIndex={-2}
                       highlights={highlights}
                       onHighlightClick={handleHighlightClick}
                       sectionRefs={sectionAnchors.refs}
@@ -1161,12 +1216,14 @@ export default function StoryPage() {
                 {/* Rich layout: sections + bento + multi pull quotes */}
                 {hasRichContent ? (
                   <>
-                    {/* Body (shown before bento in rich layout, merged as a single ContentBlocks block) */}
+                    {/* Body (shown before bento in rich layout, merged as a single ContentBlocks block)
+                        — use a unique sectionIndex so paragraph indices don't collide with section 0's. */}
                     {(story.body?.length ?? 0) > 0 && (
                       <div className="font-dm-sans text-body-base leading-relaxed text-on-surface mb-lg">
                         <ContentBlocks
                           blocks={story.body ?? []}
                           firstDropCap={false}
+                          sectionIndex={-1}
                           highlights={highlights}
                           onHighlightClick={handleHighlightClick}
                           sectionRefs={sectionAnchors.refs}
@@ -1485,18 +1542,35 @@ export default function StoryPage() {
 
       {/* Highlight popover: comments + delete */}
       {activeHighlight && !inlineExpanded && (
-        <div className="fixed inset-0 z-modal-above-r3f" onClick={() => setActiveHighlight(null)}>
+        <div className="fixed inset-0 z-modal-above-r3f" onClick={() => { setActiveHighlight(null); setPostError(null); }}>
           <div
             className="absolute bg-surface border border-border-default rounded-xl shadow-2xl w-80 max-h-96 flex flex-col"
             style={{ left: Math.max(8, Math.min(activeHighlight.x - 160, window.innerWidth - 340)), top: Math.min(activeHighlight.y + 8, window.innerHeight - 400) }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-lg py-md border-b border-border-default">
-              <span className="font-sora text-xs text-on-surface-muted uppercase tracking-widest">
-                {activeHighlightData?.color === "underline" ? "Comment" : "Highlight"}
-              </span>
-              <div className="flex items-center gap-sm">
+            <div className="flex items-center justify-between px-lg py-md border-b border-border-default gap-sm">
+              <div className="flex items-center gap-sm min-w-0">
+                <span className="font-sora text-xs text-on-surface-muted uppercase tracking-widest flex-shrink-0">
+                  {activeHighlightData?.color === "underline" ? "Comment" : "Highlight"}
+                </span>
+                {activeHighlightData?.selectedText && (
+                  <div className="flex items-center gap-xs min-w-0">
+                    <span className="font-sora text-[10px] text-on-surface-muted truncate max-w-[120px]">
+                      {activeHighlightData.selectedText.length > 60
+                        ? activeHighlightData.selectedText.slice(0, 60) + "..."
+                        : activeHighlightData.selectedText}
+                    </span>
+                    <button
+                      onClick={() => handleCopySelectedText(activeHighlightData.selectedText!)}
+                      className="p-xs rounded-md text-on-surface-muted hover:text-brand transition-colors flex-shrink-0"
+                    >
+                      {copiedTextId ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-sm flex-shrink-0">
                 {isOwner && (
                   <div className="relative" ref={inlineModelMenuRef}>
                     <Tooltip label={aiUnavailable ? "Add an AI provider key to enable" : "AI model"}>
@@ -1698,6 +1772,11 @@ export default function StoryPage() {
                               </>)}
                             </>)}
                           </div>
+                          {postError && (
+                            <div className="mt-sm px-md py-sm bg-error/5 border border-error/20 rounded-lg">
+                              <span className="font-sora text-[10px] text-error">{postError}</span>
+                            </div>
+                          )}
                           {comment.id < 0 && (
                             <div className="flex items-center gap-xs mt-sm pt-sm border-t border-border-default">
                               {draftPosting === comment.id ? (
@@ -1853,14 +1932,31 @@ export default function StoryPage() {
 
       {/* Expanded modal */}
       {activeHighlight && inlineExpanded && (
-        <div className="fixed inset-0 z-modal-above-r3f bg-background/95 backdrop-blur-sm flex items-center justify-center p-xl" onClick={() => { setInlineExpanded(false); setActiveHighlight(null); }}>
+        <div className="fixed inset-0 z-modal-above-r3f bg-background/95 backdrop-blur-sm flex items-center justify-center p-xl" onClick={() => { setInlineExpanded(false); setActiveHighlight(null); setPostError(null); }}>
           <div className="bg-surface border border-border-default rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div className="flex items-center justify-between px-lg py-md border-b border-border-default">
-              <span className="font-sora text-xs text-on-surface-muted uppercase tracking-widest">
-                {activeHighlightData?.color === "underline" ? "Comment" : "Highlight"}
-              </span>
-              <div className="flex items-center gap-sm">
+            <div className="flex items-center justify-between px-lg py-md border-b border-border-default gap-sm">
+              <div className="flex items-center gap-sm min-w-0">
+                <span className="font-sora text-xs text-on-surface-muted uppercase tracking-widest flex-shrink-0">
+                  {activeHighlightData?.color === "underline" ? "Comment" : "Highlight"}
+                </span>
+                {activeHighlightData?.selectedText && (
+                  <div className="flex items-center gap-xs min-w-0">
+                    <span className="font-sora text-[10px] text-on-surface-muted truncate max-w-[120px]">
+                      {activeHighlightData.selectedText.length > 60
+                        ? activeHighlightData.selectedText.slice(0, 60) + "..."
+                        : activeHighlightData.selectedText}
+                    </span>
+                    <button
+                      onClick={() => handleCopySelectedText(activeHighlightData.selectedText!)}
+                      className="p-xs rounded-md text-on-surface-muted hover:text-brand transition-colors flex-shrink-0"
+                    >
+                      {copiedTextId ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-sm flex-shrink-0">
                 {isOwner && (
                   <div className="relative" ref={inlineModelMenuRef}>
                     <Tooltip label={aiUnavailable ? "Add an AI provider key to enable" : "AI model"}>
@@ -1898,7 +1994,7 @@ export default function StoryPage() {
                 </button>
                 </Tooltip>
                 <Tooltip label="Close">
-                <button onClick={() => { setInlineExpanded(false); setActiveHighlight(null); }} className="p-xs rounded-md text-on-surface-muted hover:text-on-surface transition-colors">
+                <button onClick={() => { setInlineExpanded(false); setActiveHighlight(null); setPostError(null); }} className="p-xs rounded-md text-on-surface-muted hover:text-on-surface transition-colors">
                   <X className="w-3.5 h-3.5" />
                 </button>
                 </Tooltip>
@@ -1976,6 +2072,11 @@ export default function StoryPage() {
                               </>)}
                             </>)}
                           </div>
+                          {postError && (
+                            <div className="mt-sm px-md py-sm bg-error/5 border border-error/20 rounded-lg">
+                              <span className="font-sora text-[10px] text-error">{postError}</span>
+                            </div>
+                          )}
                           {comment.id < 0 && (
                             <div className="flex items-center gap-xs mt-sm pt-sm border-t border-border-default">
                               {draftPosting === comment.id ? (
