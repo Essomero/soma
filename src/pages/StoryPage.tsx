@@ -41,6 +41,7 @@ import { useScrollLock } from "@/lib/useScrollLock";
 import { buildLessonIndex, resolveSectionAnchors, storyCodePrefix } from "@/lib/storyLinks";
 import SafeImage from "@/components/ui/SafeImage";
 import ContentTestButton from "@/components/ui/ContentTestButton";
+import { readModelPref, resolveDefaultModel, DEFAULT_MODEL_ID } from "@/lib/modelPref";
 
 interface ModelInfo {
   id: string;
@@ -335,7 +336,7 @@ export default function StoryPage() {
   const [inlineAiError, setInlineAiError] = useState<{id: number, message: string} | null>(null);
   const [inlineModels, setInlineModels] = useState<ModelInfo[]>(DEFAULT_MODELS);
   const [inlineAiReady, setInlineAiReady] = useState(false);
-  const [inlineAiModel, setInlineAiModel] = useState<string>("deepseek-flash");
+  const [inlineAiModel, setInlineAiModel] = useState<string>(() => readModelPref() || DEFAULT_MODEL_ID);
   const [inlineAiProvider, setInlineAiProvider] = useState<string>("deepseek");
   /** Accumulated reasoning/thinking content for draft comments (map: tempId → text). */
   const [thinkingDrafts, setThinkingDrafts] = useState<Map<number, string>>(new Map());
@@ -385,10 +386,11 @@ export default function StoryPage() {
         setInlineModels(data.models ?? []);
         setInlineAiReady(true);
         if (data.models?.length) {
-          const current = data.models.find((m: ModelInfo) => m.id === inlineAiModel && m.provider === inlineAiProvider);
-          if (!current) {
-            setInlineAiModel(data.models[0].id);
-            setInlineAiProvider(data.models[0].provider);
+          const defaultModel = resolveDefaultModel(data.models, inlineAiModel);
+          if (defaultModel) {
+            const m = data.models.find((x: ModelInfo) => x.id === defaultModel)!;
+            setInlineAiModel(m.id);
+            setInlineAiProvider(m.provider);
           }
         }
       })

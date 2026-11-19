@@ -11,6 +11,7 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import { streamChat } from "@/lib/tutor/client";
 import { TUTOR_MODES } from "../../../shared/tutor/modes.js";
 import { modeColor } from "@/lib/tutor/modeStyles";
+import { readModelPref, resolveDefaultModel, DEFAULT_MODEL_ID } from "@/lib/modelPref";
 
 interface Comment {
   id: number;
@@ -97,7 +98,7 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
   const [aiError, setAiError] = useState<{id: number, message: string} | null>(null);
   const [models, setModels] = useState<ModelInfo[]>(DEFAULT_MODELS);
   const [modelsReady, setModelsReady] = useState(false);
-  const [aiModel, setAiModel] = useState<string>("deepseek-flash");
+  const [aiModel, setAiModel] = useState<string>(() => readModelPref() || DEFAULT_MODEL_ID);
   const [aiProvider, setAiProvider] = useState<string>("deepseek");
 
   // Fetch available models. Until this resolves with a non-empty list,
@@ -109,11 +110,11 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
         setModels(data.models ?? []);
         setModelsReady(true);
         if (data.models?.length) {
-          // Keep current selection if still valid
-          const current = data.models.find((m: ModelInfo) => m.id === aiModel && m.provider === aiProvider);
-          if (!current) {
-            setAiModel(data.models[0].id);
-            setAiProvider(data.models[0].provider);
+          const defaultModel = resolveDefaultModel(data.models, aiModel);
+          if (defaultModel) {
+            const m = data.models.find((x: ModelInfo) => x.id === defaultModel)!;
+            setAiModel(m.id);
+            setAiProvider(m.provider);
           }
         }
       })

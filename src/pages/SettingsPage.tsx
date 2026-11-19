@@ -5,6 +5,7 @@ import AccentBar from "@/components/ui/AccentBar";
 import { ModelPicker, type ModelInfo } from "@/components/ui/ModelPicker";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { useAuth } from "@/lib/AuthContext";
+import { writeModelPref } from "@/lib/modelPref";
 
 const PROVIDERS = [
   { id: "openrouter", label: "OpenRouter", docUrl: "https://openrouter.ai/keys" },
@@ -126,6 +127,7 @@ export default function SettingsPage() {
           if (match) setDefaultModelProvider(match.provider);
         }
       }
+      if (currentDefaultModel) writeModelPref(currentDefaultModel);
       setKeyInputs({});
       setStatus({ ok: true, msg: "Settings saved." });
     } catch (e: unknown) {

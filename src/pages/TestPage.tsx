@@ -85,6 +85,7 @@ import type {
   GuideContent,
   DocContent,
 } from "@/types";
+import { readModelPref, DEFAULT_MODEL_ID } from "@/lib/modelPref";
 
 interface ModelInfo {
   id: string;
@@ -168,7 +169,7 @@ export default function TestPage() {
   // LLM Evaluation state
   const [models, setModels] = useState<ModelInfo[]>(DEFAULT_MODELS);
   const [modelsReady, setModelsReady] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<string>("deepseek-flash");
+  const [selectedModel, setSelectedModel] = useState<string>(() => readModelPref() || DEFAULT_MODEL_ID);
   const [selectedProvider, setSelectedProvider] = useState<string>("deepseek");
   const [isCustomAiModalOpen, setIsCustomAiModalOpen] = useState<boolean>(false);
   const [customAiConfig, setCustomAiConfig] = useState<CustomAiConfig>({});
@@ -377,7 +378,9 @@ export default function TestPage() {
         setModelsReady(true);
         if (data.models?.length) {
           if (!customConfig?.model) {
+            const saved = readModelPref();
             const preferred =
+              (saved && data.models.find((m: ModelInfo) => m.id === saved)) ||
               data.models.find((m: ModelInfo) => m.id === "deepseek-flash") ||
               data.models.find((m: ModelInfo) => m.id.includes("deepseek-flash")) ||
               data.models.find((m: ModelInfo) => m.id.includes("deepseek")) ||

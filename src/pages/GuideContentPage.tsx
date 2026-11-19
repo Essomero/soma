@@ -20,6 +20,7 @@ import SourceNoteBanner from "@/components/admin/SourceNoteBanner";
 import SafeImage from "@/components/ui/SafeImage";
 import { Edit3, Trash2 } from "lucide-react";
 import { invalidateContentCache, useContentItem, useContentList } from "@/lib/content";
+import { readModelPref, resolveDefaultModel, DEFAULT_MODEL_ID } from "@/lib/modelPref";
 import type { GuideContent, TestContent } from "@/types";
 import { useAuth } from "@/lib/AuthContext";
 import { md, mdBlock, contentToMarkdown } from "@/lib/markdown";
@@ -79,7 +80,7 @@ export default function GuideContentPage() {
   // ── AI model state (for quiz generation) ──────────────
   const [inlineModels, setInlineModels] = useState<ModelInfo[]>(DEFAULT_MODELS);
   const [inlineAiReady, setInlineAiReady] = useState(false);
-  const [inlineAiModel, setInlineAiModel] = useState<string>("deepseek-flash");
+  const [inlineAiModel, setInlineAiModel] = useState<string>(() => readModelPref() || DEFAULT_MODEL_ID);
   const [inlineAiProvider, setInlineAiProvider] = useState<string>("deepseek");
 
   useEffect(() => {
@@ -89,10 +90,11 @@ export default function GuideContentPage() {
         setInlineModels(data.models ?? []);
         setInlineAiReady(true);
         if (data.models?.length) {
-          const current = data.models.find((m: ModelInfo) => m.id === inlineAiModel && m.provider === inlineAiProvider);
-          if (!current) {
-            setInlineAiModel(data.models[0].id);
-            setInlineAiProvider(data.models[0].provider);
+          const defaultModel = resolveDefaultModel(data.models, inlineAiModel);
+          if (defaultModel) {
+            const m = data.models.find((x: ModelInfo) => x.id === defaultModel)!;
+            setInlineAiModel(m.id);
+            setInlineAiProvider(m.provider);
           }
         }
       })
