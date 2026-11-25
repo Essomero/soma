@@ -1779,25 +1779,25 @@ export default function StoryPage() {
                           )}
                           {comment.id < 0 && (
                             <div className="flex items-center gap-xs mt-sm pt-sm border-t border-border-default">
-                              {draftPosting === comment.id ? (
-                                <Loader2 className="w-3 h-3 animate-spin text-brand" />
-                              ) : (
-                                <>
-                                  <button
-                                    onClick={() => handlePostDraft(activeHighlight!.id, comment.id, comment.body, comment.aiAction!)}
-                                    disabled={!comment.body.trim()}
-                                    className="inline-flex items-center gap-xs text-xs bg-primary text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50 font-sora"
-                                  >
-                                    <Send className="w-3 h-3" /> Post
-                                  </button>
-                                  <button
-                                    onClick={() => handleCancelDraft(activeHighlight!.id, comment.id)}
-                                    className="inline-flex items-center gap-xs text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container font-sora"
-                                  >
-                                    <X className="w-3 h-3" /> Cancel
-                                  </button>
-                                </>
-                              )}
+                              <button
+                                onClick={() => handlePostDraft(activeHighlight!.id, comment.id, comment.body, comment.aiAction!)}
+                                disabled={draftPosting === comment.id || !comment.body.trim()}
+                                className="inline-flex items-center gap-xs text-xs bg-primary text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50 font-sora"
+                              >
+                                {draftPosting === comment.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Send className="w-3 h-3" />
+                                )}
+                                Post
+                              </button>
+                              <button
+                                onClick={() => handleCancelDraft(activeHighlight!.id, comment.id)}
+                                disabled={draftPosting === comment.id}
+                                className="inline-flex items-center gap-xs text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container font-sora"
+                              >
+                                <X className="w-3 h-3" /> Cancel
+                              </button>
                             </div>
                           )}
                         </div>
@@ -2079,25 +2079,25 @@ export default function StoryPage() {
                           )}
                           {comment.id < 0 && (
                             <div className="flex items-center gap-xs mt-sm pt-sm border-t border-border-default">
-                              {draftPosting === comment.id ? (
-                                <Loader2 className="w-3 h-3 animate-spin text-brand" />
-                              ) : (
-                                <>
-                                  <button
-                                    onClick={() => handlePostDraft(activeHighlight!.id, comment.id, comment.body, comment.aiAction!)}
-                                    disabled={!comment.body.trim()}
-                                    className="inline-flex items-center gap-xs text-xs bg-primary text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50 font-sora"
-                                  >
-                                    <Send className="w-3 h-3" /> Post
-                                  </button>
-                                  <button
-                                    onClick={() => handleCancelDraft(activeHighlight!.id, comment.id)}
-                                    className="inline-flex items-center gap-xs text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container font-sora"
-                                  >
-                                    <X className="w-3 h-3" /> Cancel
-                                  </button>
-                                </>
-                              )}
+                              <button
+                                onClick={() => handlePostDraft(activeHighlight!.id, comment.id, comment.body, comment.aiAction!)}
+                                disabled={draftPosting === comment.id || !comment.body.trim()}
+                                className="inline-flex items-center gap-xs text-xs bg-primary text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50 font-sora"
+                              >
+                                {draftPosting === comment.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Send className="w-3 h-3" />
+                                )}
+                                Post
+                              </button>
+                              <button
+                                onClick={() => handleCancelDraft(activeHighlight!.id, comment.id)}
+                                disabled={draftPosting === comment.id}
+                                className="inline-flex items-center gap-xs text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container font-sora"
+                              >
+                                <X className="w-3 h-3" /> Cancel
+                              </button>
                             </div>
                           )}
 
