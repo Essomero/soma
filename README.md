@@ -8,6 +8,8 @@
 
 New here? [**Fork the repo**](https://github.com/Essomero/soma/fork), [import it into Vercel](https://vercel.com/new), add one password, deploy. 60 seconds, done. [Full walkthrough below](#step-0-fork-soma).
 
+[![Soma Demo](https://img.youtube.com/vi/B8XjCjG_aPo/maxresdefault.jpg)](https://youtu.be/B8XjCjG_aPo)
+
 ---
 
 I love to learn. I wanted one centralized place to learn. I'm a visual learner. I love markdown, graphs, illustrations, and maths laid out beautifully.
