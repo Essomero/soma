@@ -311,6 +311,9 @@ const InlineCommentCard = memo(function InlineCommentCard({
           <textarea
             value={localReplyBody}
             onChange={(e) => setLocalReplyBody(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); (e.target as HTMLTextAreaElement).form?.requestSubmit(); }
+            }}
             placeholder="Write a reply..."
             rows={2}
             className="w-full bg-transparent border-0 p-0 font-dm-sans text-xs text-on-surface placeholder:text-on-surface-muted focus:ring-0 outline-none resize-y thin-scrollbar"
@@ -489,7 +492,7 @@ interface InlineCommentTreeProps {
   onSetPostError: (error: string | null) => void;
 }
 
-export default function InlineCommentTree({
+const InlineCommentTree = memo(function InlineCommentTree({
   comments,
   isOwner,
   activeHighlightId,
@@ -567,4 +570,6 @@ export default function InlineCommentTree({
       ))}
     </>
   );
-}
+});
+
+export default InlineCommentTree;

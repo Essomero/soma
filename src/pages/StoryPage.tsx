@@ -18,6 +18,7 @@ import SourceNoteBanner from "@/components/admin/SourceNoteBanner";
 import { useContentItem, useContentList, invalidateContentCache } from "@/lib/content";
 import type { StoryContent, CourseContent, BookContent, SeriesContent, TestContent } from "@/types";
 import { ArrowLeft, ArrowRight, ExternalLink, Check, Copy, Bookmark, Loader2, Trash2, Bot, X, ChevronDown, Maximize2, Sparkles, Edit3, Archive } from "lucide-react";
+import { toast } from "sonner";
 import { SkeletonStoryLayout } from "@/components/ui/Skeleton";
 import { contentToMarkdown, md } from "@/lib/markdown";
 
@@ -867,8 +868,12 @@ export default function StoryPage() {
             : hl,
         ));
         setInlineReplyToId(null);
+      } else {
+        toast.error(`Reply failed (HTTP ${r.status})`);
       }
-    } catch {}
+    } catch {
+      toast.error("Network error — check your connection and try again.");
+    }
     setPosting(false);
   }, [slug, activeHighlight, posting]);
 
