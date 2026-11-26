@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useAutoResize } from "@/hooks/useAutoResize";
 import { MessageSquare, Send, Edit3, Trash2, X, Check, Copy, Eye, PenLine, Bot, Loader2, ChevronDown, Reply, Brain } from "lucide-react";
 import { mdBlock } from "@/lib/markdown";
 import { useAuth } from "@/lib/AuthContext";
@@ -91,6 +92,10 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
 
   // Copy state
   const [copiedId, setCopiedId] = useState<number | null>(null);
+
+  // Auto-resize reply textarea
+  const { ref: replyTextareaRef, resize: resizeReply } = useAutoResize();
+  useEffect(() => { resizeReply(); }, [replyBody, resizeReply]);
 
   // AI reply state
   const [aiLoading, setAiLoading] = useState<number | null>(null);
@@ -655,14 +660,15 @@ const postComment = async (text: string, parentId?: number | null) => {
 
               {/* Inline manual reply form */}
               {replyToId === comment.id && (
-                <form onSubmit={(e) => handleReplySubmit(e, comment.id)} className="mt-md p-lg bg-surface border border-border-default rounded-lg space-y-md">
+                <form onSubmit={(e) => handleReplySubmit(e, comment.id)} className="mt-md px-lg py-md bg-surface border border-border-default rounded-lg space-y-md">
                   <textarea
+                    ref={replyTextareaRef}
                     value={replyBody}
                     onChange={(e) => setReplyBody(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); (e.target as HTMLTextAreaElement).form?.requestSubmit(); } }}
                     placeholder="Write a reply... (⌘+Enter to send)"
                     rows={3}
-                    className="w-full bg-transparent border-0 p-0 font-dm-sans text-sm text-on-surface placeholder:text-on-surface-muted focus:ring-0 outline-none resize-y"
+                    className="w-full bg-transparent border-0 p-0 font-dm-sans text-sm text-on-surface placeholder:text-on-surface-muted focus:ring-0 outline-none resize-none overflow-hidden"
                   />
                   <div className="flex gap-sm">
                     <button type="submit" disabled={loading || !replyBody.trim()} className="inline-flex items-center gap-xs font-sora text-xs bg-primary text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50">
