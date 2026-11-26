@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useAutoResize } from "@/hooks/useAutoResize";
+import { useState, useEffect, useCallback, useRef, memo, useMemo } from "react";
 import { MessageSquare, Send, Edit3, Trash2, X, Check, Copy, Eye, PenLine, Bot, Loader2, ChevronDown, Reply, Brain } from "lucide-react";
 import { mdBlock } from "@/lib/markdown";
 import { useAuth } from "@/lib/AuthContext";
@@ -14,6 +13,8 @@ import { streamChat } from "@/lib/tutor/client";
 import { TUTOR_MODES } from "../../../shared/tutor/modes.js";
 import { modeColor } from "@/lib/tutor/modeStyles";
 import { readModelPref, resolveDefaultModel, DEFAULT_MODEL_ID } from "@/lib/modelPref";
+
+// ── Types ──────────────────────────────────────────
 
 interface Comment {
   id: number;
@@ -73,6 +74,455 @@ function fmtDate(raw: any) {
   }
 }
 
+// ── Memoized Comment Card ─────────────────────────
+
+interface CommentCardProps {
+  comment: Comment;
+  depth: number;
+  isOwner: boolean;
+  // Raw state — each card computes its own derived values (so recursive
+  // children get correct values instead of inheriting the parent's).
+  editingId: number | null;
+  editBody: string;
+  replyToId: number | null;
+  aiLoading: number | null;
+  aiDrafts: Map<number, string>;
+  aiDraftTabs: Map<number, "write" | "preview">;
+  aiError: { id: number; message: string } | null;
+  loading: boolean;
+  deleting: boolean;
+  copiedId: number | null;
+  modelLabels: Record<string, string>;
+  modeLabels: Record<string, string>;
+  // Callbacks
+  onStartEdit: (id: number, body: string) => void;
+  onCancelEdit: () => void;
+  onSaveEdit: (id: number, body: string) => void;
+  onSetEditBody: (body: string) => void;
+  onSetReplyToId: (id: number | null) => void;
+  onInlineAiReply: (comment: Comment) => void;
+  onDeleteTarget: (id: number) => void;
+  /** Called with (parentId, body) on reply submit */
+  onPostReply: (parentId: number, body: string) => void;
+  onCancelAiReply: (id: number) => void;
+  onPostAiReply: (id: number) => void;
+  onSetAiDraftTab: (id: number, tab: "write" | "preview") => void;
+  onSetAiDraft: (id: number, text: string) => void;
+  onCopy: (comment: Comment) => void;
+}
+
+const CommentCard = memo(function CommentCard({
+  comment,
+  depth,
+  isOwner,
+  editingId,
+  editBody,
+  replyToId,
+  aiLoading,
+  aiDrafts,
+  aiDraftTabs,
+  aiError,
+  loading,
+  deleting,
+  copiedId,
+  modelLabels,
+  modeLabels,
+  onStartEdit,
+  onCancelEdit,
+  onSaveEdit,
+  onSetEditBody,
+  onSetReplyToId,
+  onInlineAiReply,
+  onDeleteTarget,
+  onPostReply,
+  onCancelAiReply,
+  onPostAiReply,
+  onSetAiDraftTab,
+  onSetAiDraft,
+  onCopy,
+}: CommentCardProps) {
+  // Local reply body state — typing does not propagate to parent
+  const [localReplyBody, setLocalReplyBody] = useState("");
+
+  // Compute per-card values from raw state — each recursive call computes
+  // values for its own comment, not the parent's.
+  const isReply = depth > 0;
+  const maxDepth = COMMENT_MAX_DEPTH;
+  const isEditing = editingId === comment.id;
+  const isReplying = replyToId === comment.id;
+  const isAiLoading = aiLoading === comment.id;
+  const aiDraftText = aiDrafts.get(comment.id) ?? "";
+  const aiDraftTab = aiDraftTabs.get(comment.id) ?? "write";
+  const hasAiError = aiError?.id === comment.id;
+  const aiErrorMessage = hasAiError ? aiError!.message : "";
+  const isCopied = copiedId === comment.id;
+  const isDeleting = deleting;
+  const isAiDraftWrite = aiDraftTab === "write";
+  const hasAiDraft = isAiLoading || aiDraftText.length > 0;
+
+  // Compute body HTML once per comment body change
+  const bodyHtml = useMemo(() => mdBlock(comment.body), [comment.body]);
+
+  // Pre-computed AI draft preview HTML
+  const aiDraftPreviewHtml = useMemo(
+    () => (aiDraftText ? mdBlock(aiDraftText) : ""),
+    [aiDraftText],
+  );
+
+  const modelLabel = modelLabels[comment.ai_model ?? ""] || "AI";
+  const modeLabel = comment.mode ? modeLabels[comment.mode] || "AI" : null;
+  const modeClr = comment.mode ? modeColor(comment.mode) : "";
+
+  // ── Handlers ──
+
+  const handleReplyClick = () => {
+    onSetReplyToId(isReplying ? null : comment.id);
+    setLocalReplyBody("");
+  };
+
+  const handleCancelReply = () => {
+    onSetReplyToId(null);
+    setLocalReplyBody("");
+  };
+
+  const handleSubmitReply = (e: React.FormEvent) => {
+    e.preventDefault();
+    onPostReply(comment.id, localReplyBody);
+  };
+
+  const handleEditClick = () => onStartEdit(comment.id, comment.body);
+  const handleSaveEdit = () => onSaveEdit(comment.id, editBody);
+  const handleCancelEdit = () => onCancelEdit();
+  const handleCopyClick = () => onCopy(comment);
+  const handleAiReplyClick = () => onInlineAiReply(comment);
+  const handleDeleteClick = () => onDeleteTarget(comment.id);
+  const handleCancelAiClick = () => onCancelAiReply(comment.id);
+  const handlePostAiClick = () => onPostAiReply(comment.id);
+  const handleSetWrite = () => onSetAiDraftTab(comment.id, "write");
+  const handleSetPreview = () => onSetAiDraftTab(comment.id, "preview");
+  const handleAiDraftChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
+    onSetAiDraft(comment.id, e.target.value);
+
+  const hasReplies = comment.replies && comment.replies.length > 0 && depth < maxDepth;
+
+  return (
+    <div>
+      <div className={`p-xl bg-surface-container-low border border-border-default rounded-xl ${isReply ? "ml-xl border-l-2 border-l-brand/40" : ""}`}>
+        {isEditing ? (
+          <div className="space-y-md">
+            <textarea
+              value={editBody}
+              onChange={(e) => onSetEditBody(e.target.value)}
+              rows={3}
+              className="w-full bg-surface border border-border-default rounded-lg px-lg py-md font-dm-sans text-sm text-on-surface focus:border-primary outline-none resize-y"
+            />
+            <div className="flex gap-sm">
+              <button onClick={handleSaveEdit} className="inline-flex items-center gap-xs font-sora text-xs bg-primary text-on-primary px-md py-sm rounded-md hover:opacity-90">
+                <Check className="w-3 h-3" /> Save
+              </button>
+              <button onClick={handleCancelEdit} className="inline-flex items-center gap-xs font-sora text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container">
+                <X className="w-3 h-3" /> Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Author badge */}
+            <div className="flex items-center gap-sm mb-sm">
+              {comment.is_ai == 1 ? (
+                <>
+                  <Bot className="w-3.5 h-3.5 text-brand" />
+                  <span className="font-sora text-[10px] text-brand uppercase tracking-widest">
+                    {modelLabel}
+                  </span>
+                  {modeLabel && (
+                    <span className={`font-sora text-[9px] uppercase tracking-wider px-xs py-px rounded ${modeClr}`}>
+                      {modeLabel}
+                    </span>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="w-3.5 h-3.5 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
+                    <span className="text-[7px] text-primary font-bold">Y</span>
+                  </div>
+                  <span className="font-sora text-[10px] text-on-surface-muted uppercase tracking-widest">{isOwner ? "You" : "Anonymous"}</span>
+                </>
+              )}
+            </div>
+
+            {/* Body */}
+            <MarkdownHtml html={bodyHtml} className="prose font-dm-sans text-body-base text-on-surface leading-relaxed" />
+
+            {/* Actions */}
+            <div className="flex items-center justify-between mt-lg pt-md border-t border-border-default">
+              <span className="font-sora text-xs text-on-surface-muted uppercase tracking-widest">
+                {fmtDate(comment.created_at)}{comment.updated_at && comment.updated_at !== comment.created_at ? " (edited)" : ""}
+              </span>
+              <div className="flex items-center gap-sm">
+                <Tooltip label={isCopied ? "Copied" : "Copy"}>
+                  <button onClick={handleCopyClick} className={`transition-colors ${isCopied ? "text-primary" : "text-on-surface-muted hover:text-primary"}`}>
+                    {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </Tooltip>
+                {comment.is_ai != 1 && (
+                  <Tooltip label="Edit">
+                    <button onClick={handleEditClick} className="text-on-surface-muted hover:text-primary transition-colors">
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+                  </Tooltip>
+                )}
+                <Tooltip label="Reply">
+                  <button onClick={handleReplyClick} className={`transition-colors ${isReplying ? "text-brand" : "text-on-surface-muted hover:text-brand"}`}>
+                    <Reply className="w-3.5 h-3.5" />
+                  </button>
+                </Tooltip>
+                {isOwner && (
+                  <Tooltip label="AI Reply">
+                    <button onClick={handleAiReplyClick} disabled={isAiLoading} className="text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                      {isAiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />}
+                    </button>
+                  </Tooltip>
+                )}
+                <Tooltip label="Delete">
+                  <button onClick={handleDeleteClick} className="text-on-surface-muted hover:text-error transition-colors">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </Tooltip>
+              </div>
+            </div>
+
+            {/* Inline manual reply form */}
+            {isReplying && (
+              <form onSubmit={handleSubmitReply} className="mt-md px-lg py-md bg-surface border border-border-default rounded-lg space-y-md">
+                <textarea
+                  value={localReplyBody}
+                  onChange={(e) => setLocalReplyBody(e.target.value)}
+                  placeholder="Write a reply..."
+                  rows={3}
+                  className="w-full bg-transparent border-0 p-0 font-dm-sans text-sm text-on-surface placeholder:text-on-surface-muted focus:ring-0 outline-none resize-none overflow-hidden"
+                />
+                <div className="flex gap-sm">
+                  <button type="submit" disabled={loading || !localReplyBody.trim()} className="inline-flex items-center gap-xs font-sora text-xs bg-primary text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50">
+                    <Send className="w-3 h-3" /> {loading ? "Posting..." : "Reply"}
+                  </button>
+                  <button type="button" onClick={handleCancelReply} className="inline-flex items-center gap-xs font-sora text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container">
+                    <X className="w-3 h-3" /> Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* AI error */}
+            {hasAiError && (
+              <div className="mt-md p-lg bg-error/5 border border-error/20 rounded-lg">
+                <div className="flex items-start justify-between gap-md">
+                  <span className="font-sora text-xs text-error leading-relaxed">{aiErrorMessage}</span>
+                  <button onClick={handleCancelAiClick} className="text-on-surface-muted hover:text-on-surface flex-shrink-0 mt-0.5">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* AI draft */}
+            {hasAiDraft && (
+              <div className="mt-md bg-brand/5 border border-brand/20 rounded-xl overflow-hidden">
+                <div className="flex items-center justify-between border-b border-brand/10 bg-brand/[0.03] px-md">
+                  <div className="flex">
+                    <button type="button" onClick={handleSetWrite} className={`inline-flex items-center gap-sm px-lg py-sm font-sora text-xs uppercase tracking-widest border-b-2 transition-colors ${isAiDraftWrite ? "border-brand text-brand" : "border-transparent text-on-surface-muted hover:text-on-surface"}`}>
+                      <PenLine className="w-3 h-3" /> Write
+                    </button>
+                    <button type="button" onClick={handleSetPreview} className={`inline-flex items-center gap-sm px-lg py-sm font-sora text-xs uppercase tracking-widest border-b-2 transition-colors ${!isAiDraftWrite ? "border-brand text-brand" : "border-transparent text-on-surface-muted hover:text-on-surface"}`}>
+                      <Eye className="w-3 h-3" /> Preview
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-sm">
+                    <Bot className="w-3.5 h-3.5 text-brand" />
+                    <span className="font-sora text-[10px] text-brand uppercase tracking-widest">
+                      {isAiLoading ? "Generating..." : "AI Draft"}
+                    </span>
+                  </div>
+                </div>
+
+                {isAiDraftWrite ? (
+                  <textarea
+                    value={aiDraftText}
+                    onChange={handleAiDraftChange}
+                    rows={5}
+                    className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-sm text-on-surface focus:ring-0 outline-none resize-y"
+                    placeholder={isAiLoading ? "Waiting for response..." : "⌘+Enter to post"}
+                  />
+                ) : (
+                  <div className="px-xl py-md min-h-[120px]">
+                    {aiDraftText.trim()
+                      ? <MarkdownHtml html={aiDraftPreviewHtml} className="prose font-dm-sans text-body-base text-on-surface" />
+                      : <p className="font-dm-sans text-on-surface-muted italic">Waiting for response...</p>
+                    }
+                  </div>
+                )}
+
+                {!isAiLoading && (
+                  <div className="flex gap-sm px-xl pb-lg pt-sm">
+                    <button onClick={handlePostAiClick} disabled={loading} className="inline-flex items-center gap-xs font-sora text-xs bg-brand text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50">
+                      <Send className="w-3 h-3" /> {loading ? "Posting..." : "Post Reply"}
+                    </button>
+                    <button onClick={handleCancelAiClick} className="inline-flex items-center gap-xs font-sora text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container">
+                      <X className="w-3 h-3" /> Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Threaded replies */}
+      {hasReplies && (
+        <div className="mt-lg space-y-lg">
+          {comment.replies.map((reply) => (
+            <CommentCard
+              key={reply.id}
+              comment={reply}
+              depth={depth + 1}
+              isOwner={isOwner}
+              editingId={editingId}
+              editBody={editBody}
+              replyToId={replyToId}
+              aiLoading={aiLoading}
+              aiDrafts={aiDrafts}
+              aiDraftTabs={aiDraftTabs}
+              aiError={aiError}
+              loading={loading}
+              deleting={deleting}
+              copiedId={copiedId}
+              modelLabels={modelLabels}
+              modeLabels={modeLabels}
+              onStartEdit={onStartEdit}
+              onCancelEdit={onCancelEdit}
+              onSaveEdit={onSaveEdit}
+              onSetEditBody={onSetEditBody}
+              onSetReplyToId={onSetReplyToId}
+              onInlineAiReply={onInlineAiReply}
+              onDeleteTarget={onDeleteTarget}
+              onPostReply={onPostReply}
+              onCancelAiReply={onCancelAiReply}
+              onPostAiReply={onPostAiReply}
+              onSetAiDraftTab={onSetAiDraftTab}
+              onSetAiDraft={onSetAiDraft}
+              onCopy={onCopy}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
+
+// ── Comment Tree (pre-computes per-card values) ───
+
+interface CommentTreeProps {
+  comments: Comment[];
+  isOwner: boolean;
+  editingId: number | null;
+  editBody: string;
+  replyToId: number | null;
+  aiLoading: number | null;
+  aiDrafts: Map<number, string>;
+  aiDraftTabs: Map<number, "write" | "preview">;
+  aiError: { id: number; message: string } | null;
+  loading: boolean;
+  deleting: boolean;
+  copiedId: number | null;
+  modelLabels: Record<string, string>;
+  modeLabels: Record<string, string>;
+  onStartEdit: (id: number, body: string) => void;
+  onCancelEdit: () => void;
+  onSaveEdit: (id: number, body: string) => void;
+  onSetEditBody: (body: string) => void;
+  onSetReplyToId: (id: number | null) => void;
+  onInlineAiReply: (comment: Comment) => void;
+  onDeleteTarget: (id: number) => void;
+  onPostReply: (parentId: number, body: string) => void;
+  onCancelAiReply: (id: number) => void;
+  onPostAiReply: (id: number) => void;
+  onSetAiDraftTab: (id: number, tab: "write" | "preview") => void;
+  onSetAiDraft: (id: number, text: string) => void;
+  onCopy: (comment: Comment) => void;
+}
+
+function CommentTree({
+  comments,
+  isOwner,
+  editingId,
+  editBody,
+  replyToId,
+  aiLoading,
+  aiDrafts,
+  aiDraftTabs,
+  aiError,
+  loading,
+  deleting,
+  copiedId,
+  modelLabels,
+  modeLabels,
+  onStartEdit,
+  onCancelEdit,
+  onSaveEdit,
+  onSetEditBody,
+  onSetReplyToId,
+  onInlineAiReply,
+  onDeleteTarget,
+  onPostReply,
+  onCancelAiReply,
+  onPostAiReply,
+  onSetAiDraftTab,
+  onSetAiDraft,
+  onCopy,
+}: CommentTreeProps) {
+  if (!comments || comments.length === 0) return null;
+
+  return (
+    <>
+      {comments.map((comment) => (
+        <CommentCard
+          key={comment.id}
+          comment={comment}
+          depth={0}
+          isOwner={isOwner}
+          editingId={editingId}
+          editBody={editBody}
+          replyToId={replyToId}
+          aiLoading={aiLoading}
+          aiDrafts={aiDrafts}
+          aiDraftTabs={aiDraftTabs}
+          aiError={aiError}
+          loading={loading}
+          deleting={deleting}
+          copiedId={copiedId}
+          modelLabels={modelLabels}
+          modeLabels={modeLabels}
+          onStartEdit={onStartEdit}
+          onCancelEdit={onCancelEdit}
+          onSaveEdit={onSaveEdit}
+          onSetEditBody={onSetEditBody}
+          onSetReplyToId={onSetReplyToId}
+          onInlineAiReply={onInlineAiReply}
+          onDeleteTarget={onDeleteTarget}
+          onPostReply={onPostReply}
+          onCancelAiReply={onCancelAiReply}
+          onPostAiReply={onPostAiReply}
+          onSetAiDraftTab={onSetAiDraftTab}
+          onSetAiDraft={onSetAiDraft}
+          onCopy={onCopy}
+        />
+      ))}
+    </>
+  );
+}
+
+// ── Main Comments Component ────────────────────────
 
 export default function Comments({ storySlug, storyContext, refreshSignal = 0 }: CommentsProps) {
   const { isOwner } = useAuth();
@@ -88,14 +538,9 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
 
   // Inline reply state
   const [replyToId, setReplyToId] = useState<number | null>(null);
-  const [replyBody, setReplyBody] = useState("");
 
   // Copy state
   const [copiedId, setCopiedId] = useState<number | null>(null);
-
-  // Auto-resize reply textarea
-  const { ref: replyTextareaRef, resize: resizeReply } = useAutoResize();
-  useEffect(() => { resizeReply(); }, [replyBody, resizeReply]);
 
   // AI reply state
   const [aiLoading, setAiLoading] = useState<number | null>(null);
@@ -107,8 +552,7 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
   const [aiModel, setAiModel] = useState<string>(() => readModelPref() || DEFAULT_MODEL_ID);
   const [aiProvider, setAiProvider] = useState<string>("deepseek");
 
-  // Fetch available models. Until this resolves with a non-empty list,
-  // AI actions render disabled: no keys must never look like a working model.
+  // Fetch available models.
   useEffect(() => {
     fetch("/api/models")
       .then(r => r.json())
@@ -146,7 +590,6 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
 
   useEffect(() => {
     if (!modelMenuOpen) return;
-    // Pick alignment based on available space
     if (modelBtnRef.current) {
       const rect = modelBtnRef.current.getBoundingClientRect();
       const menuWidth = 260;
@@ -169,8 +612,18 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
     return () => document.removeEventListener("mousedown", handler);
   }, [modelMenuOpen]);
 
-  // Turso returns integers as strings; normalize once on the way in so
-  // identity checks below (containsId, reply attach) compare numbers.
+  // Pre-computed lookup maps for comment rendering
+  const modelLabels = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const model of models) m[model.id] = model.label;
+    return m;
+  }, [models]);
+  const modeLabels = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const mode of TUTOR_MODES) m[mode.id] = mode.label;
+    return m;
+  }, []);
+
   const normalize = (nodes: any[]): Comment[] => nodes.map(n => ({
     ...n,
     id: Number(n.id),
@@ -186,9 +639,6 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
     } catch {}
   }, [storySlug]);
 
-  // Refetch on mount, on story change, and whenever a sibling highlight
-  // interaction bumps refreshSignal (new highlight comments appear below
-  // in real time, no refresh needed).
   useEffect(() => { fetchComments(); }, [fetchComments, refreshSignal]);
 
   const containsId = (nodes: Comment[], id: number): boolean => {
@@ -209,8 +659,6 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
       replies: [],
     };
     setComments(prev => {
-      // No-op when the node is already listed (e.g. reconciling after a
-      // refetch that already included it). Keeps re-insert safe.
       if (containsId(prev, node.id)) return prev;
       if (node.parent_id == null) return [node, ...prev];
       let attached = false;
@@ -235,7 +683,7 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
     "Not found": "This story wasn't found.",
   };
 
-const postComment = async (text: string, parentId?: number | null) => {
+  const postComment = async (text: string, parentId?: number | null) => {
     if (!text.trim()) return;
     setLoading(true);
     try {
@@ -247,7 +695,6 @@ const postComment = async (text: string, parentId?: number | null) => {
       if (r.ok) {
         try { insertCreated(await r.json()); } catch {}
         setBody("");
-        setReplyBody("");
         setReplyToId(null);
       } else {
         let msg = `Post failed (HTTP ${r.status})`;
@@ -265,10 +712,10 @@ const postComment = async (text: string, parentId?: number | null) => {
     postComment(body, null);
   };
 
-  const handleReplySubmit = (e: React.FormEvent, parentId: number) => {
-    e.preventDefault();
+  // Reply handler now accepts body from the card's local state
+  const handlePostReply = useCallback((parentId: number, replyBody: string) => {
     postComment(replyBody, parentId);
-  };
+  }, []);
 
   const handleEdit = async (id: number) => {
     if (!editBody.trim()) return;
@@ -295,7 +742,6 @@ const postComment = async (text: string, parentId?: number | null) => {
     setDeleteTarget(null);
   };
 
-  // Find a comment by ID in the tree and return the path from root to it
   const findThreadChain = (commentId: number, nodes: Comment[], path: Comment[] = []): Comment[] | null => {
     for (const node of nodes) {
       if (node.id === commentId) return [...path, node];
@@ -325,7 +771,6 @@ const postComment = async (text: string, parentId?: number | null) => {
     });
 
     try {
-      // Build thread context: walk up the parent chain
       const chain = findThreadChain(comment.id, comments);
       let threadContext = "";
       if (chain && chain.length > 1) {
@@ -339,7 +784,6 @@ const postComment = async (text: string, parentId?: number | null) => {
         threadContext += "--- END THREAD ---\n\n";
       }
 
-      // Truncate article body to avoid huge context
       const articleExcerpt = storyContext?.body
         ? storyContext.body.slice(0, 8000) + (storyContext.body.length > 8000 ? "..." : "")
         : "";
@@ -570,200 +1014,6 @@ const postComment = async (text: string, parentId?: number | null) => {
     }
   };
 
-  // Recursive comment renderer
-  const renderComment = (comment: Comment, depth: number) => {
-    const isReply = depth > 0;
-    const maxDepth = COMMENT_MAX_DEPTH;
-
-    return (
-      <div key={comment.id}>
-        <div className={`p-xl bg-surface-container-low border border-border-default rounded-xl ${isReply ? "ml-xl border-l-2 border-l-brand/40" : ""}`}>
-          {editingId === comment.id ? (
-            <div className="space-y-md">
-              <textarea value={editBody} onChange={(e) => setEditBody(e.target.value)} rows={3} className="w-full bg-surface border border-border-default rounded-lg px-lg py-md font-dm-sans text-sm text-on-surface focus:border-primary outline-none resize-y" />
-              <div className="flex gap-sm">
-                <button onClick={() => handleEdit(comment.id)} className="inline-flex items-center gap-xs font-sora text-xs bg-primary text-on-primary px-md py-sm rounded-md hover:opacity-90"><Check className="w-3 h-3" /> Save</button>
-                <button onClick={() => setEditingId(null)} className="inline-flex items-center gap-xs font-sora text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container"><X className="w-3 h-3" /> Cancel</button>
-              </div>
-            </div>
-          ) : (
-            <>
-              {/* Author badge */}
-              <div className="flex items-center gap-sm mb-sm">
-                {comment.is_ai == 1 ? (
-                  <>
-                    <Bot className="w-3.5 h-3.5 text-brand" />
-                    <span className="font-sora text-[10px] text-brand uppercase tracking-widest">
-                      {models.find(m => m.id === comment.ai_model)?.label || "AI"}
-                    </span>
-                    {comment.mode && (
-                      <span className={`font-sora text-[9px] uppercase tracking-wider px-xs py-px rounded ${modeColor(comment.mode)}`}>
-                        {TUTOR_MODES.find((m) => m.id === comment.mode)?.label || "AI"}
-                      </span>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <div className="w-3.5 h-3.5 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
-                      <span className="text-[7px] text-primary font-bold">Y</span>
-                    </div>
-                    <span className="font-sora text-[10px] text-on-surface-muted uppercase tracking-widest">{isOwner ? "You" : "Anonymous"}</span>
-                  </>
-                )}
-              </div>
-              <MarkdownHtml html={mdBlock(comment.body)} className="prose font-dm-sans text-body-base text-on-surface leading-relaxed" />
-              <div className="flex items-center justify-between mt-lg pt-md border-t border-border-default">
-                <span className="font-sora text-xs text-on-surface-muted uppercase tracking-widest">
-                  {fmtDate(comment.created_at)}{comment.updated_at && comment.updated_at !== comment.created_at ? " (edited)" : ""}
-                </span>
-                <div className="flex items-center gap-sm">
-                  <Tooltip label={copiedId === comment.id ? "Copied" : "Copy"}>
-                  <button
-                    onClick={() => handleCopy(comment)}
-                    className={`transition-colors ${copiedId === comment.id ? "text-primary" : "text-on-surface-muted hover:text-primary"}`}
-                  >
-                    {copiedId === comment.id ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  </button>
-                  </Tooltip>
-                  {comment.is_ai != 1 && (
-                    <Tooltip label="Edit">
-                    <button onClick={() => { setEditingId(comment.id); setEditBody(comment.body); }} className="text-on-surface-muted hover:text-primary transition-colors"><Edit3 className="w-3.5 h-3.5" /></button>
-                    </Tooltip>
-                  )}
-                  <Tooltip label="Reply">
-                  <button
-                    onClick={() => {
-                      setReplyToId(replyToId === comment.id ? null : comment.id);
-                      setReplyBody("");
-                    }}
-                    className={`transition-colors ${replyToId === comment.id ? "text-brand" : "text-on-surface-muted hover:text-brand"}`}
-                  >
-                    <Reply className="w-3.5 h-3.5" />
-                  </button>
-                  </Tooltip>
-                  {isOwner && (
-                  <Tooltip label={aiUnavailable ? "Add an AI provider key to enable" : "AI Reply"}>
-                  <button
-                    onClick={() => handleAiReply(comment)}
-                    disabled={aiLoading !== null || aiUnavailable}
-                    className="text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    {aiLoading === comment.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />}
-                  </button>
-                  </Tooltip>
-                  )}
-                  <Tooltip label="Delete">
-                  <button onClick={() => setDeleteTarget(comment.id)} className="text-on-surface-muted hover:text-error transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
-                  </Tooltip>
-                </div>
-              </div>
-
-              {/* Inline manual reply form */}
-              {replyToId === comment.id && (
-                <form onSubmit={(e) => handleReplySubmit(e, comment.id)} className="mt-md px-lg py-md bg-surface border border-border-default rounded-lg space-y-md">
-                  <textarea
-                    ref={replyTextareaRef}
-                    value={replyBody}
-                    onChange={(e) => setReplyBody(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); (e.target as HTMLTextAreaElement).form?.requestSubmit(); } }}
-                    placeholder="Write a reply... (⌘+Enter to send)"
-                    rows={3}
-                    className="w-full bg-transparent border-0 p-0 font-dm-sans text-sm text-on-surface placeholder:text-on-surface-muted focus:ring-0 outline-none resize-none overflow-hidden"
-                  />
-                  <div className="flex gap-sm">
-                    <button type="submit" disabled={loading || !replyBody.trim()} className="inline-flex items-center gap-xs font-sora text-xs bg-primary text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50">
-                      <Send className="w-3 h-3" /> {loading ? "Posting..." : "Reply"}
-                    </button>
-                    <button type="button" onClick={() => { setReplyToId(null); setReplyBody(""); }} className="inline-flex items-center gap-xs font-sora text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container">
-                      <X className="w-3 h-3" /> Cancel
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {/* AI error */}
-              {aiError?.id === comment.id && (
-                <div className="mt-md p-lg bg-error/5 border border-error/20 rounded-lg">
-                  <div className="flex items-start justify-between gap-md">
-                    <span className="font-sora text-xs text-error leading-relaxed">{aiError.message}</span>
-                    <button onClick={() => cancelAiReply(comment.id)} className="text-on-surface-muted hover:text-on-surface flex-shrink-0 mt-0.5"><X className="w-3.5 h-3.5" /></button>
-                  </div>
-                </div>
-              )}
-
-              {/* AI draft */}
-              {(aiLoading === comment.id || aiDrafts.has(comment.id)) && (
-                <div className="mt-md bg-brand/5 border border-brand/20 rounded-xl overflow-hidden">
-                  <div className="flex items-center justify-between border-b border-brand/10 bg-brand/[0.03] px-md">
-                    <div className="flex">
-                      <button type="button" onClick={() => setAiDraftTab(comment.id, "write")} className={`inline-flex items-center gap-sm px-lg py-sm font-sora text-xs uppercase tracking-widest border-b-2 transition-colors ${(aiDraftTabs.get(comment.id) || "write") === "write" ? "border-brand text-brand" : "border-transparent text-on-surface-muted hover:text-on-surface"}`}>
-                        <PenLine className="w-3 h-3" /> Write
-                      </button>
-                      <button type="button" onClick={() => setAiDraftTab(comment.id, "preview")} className={`inline-flex items-center gap-sm px-lg py-sm font-sora text-xs uppercase tracking-widest border-b-2 transition-colors ${aiDraftTabs.get(comment.id) === "preview" ? "border-brand text-brand" : "border-transparent text-on-surface-muted hover:text-on-surface"}`}>
-                        <Eye className="w-3 h-3" /> Preview
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-sm">
-                      <Bot className="w-3.5 h-3.5 text-brand" />
-                      <span className="font-sora text-[10px] text-brand uppercase tracking-widest">
-                        {aiLoading === comment.id ? "Generating..." : "AI Draft"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {(aiDraftTabs.get(comment.id) || "write") === "write" ? (
-                    <textarea
-                      value={aiDrafts.get(comment.id) || ""}
-                      onChange={(e) => {
-                        setAiDrafts(prev => {
-                          const next = new Map(prev);
-                          next.set(comment.id, e.target.value);
-                          return next;
-                        });
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Tab" && e.shiftKey) { e.preventDefault(); setAiDraftTab(comment.id, "preview"); return; }
-                        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); postAiReply(comment.id); }
-                      }}
-                      rows={5}
-                      className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-sm text-on-surface focus:ring-0 outline-none resize-y"
-                      placeholder={aiLoading === comment.id ? "Waiting for response..." : "⌘+Enter to post"}
-                    />
-                  ) : (
-                    <div className="px-xl py-md min-h-[120px]">
-                      {aiDrafts.get(comment.id)?.trim()
-                        ? <MarkdownHtml html={mdBlock(aiDrafts.get(comment.id) || "")} className="prose font-dm-sans text-body-base text-on-surface" />
-                        : <p className="font-dm-sans text-on-surface-muted italic">Waiting for response...</p>
-                      }
-                    </div>
-                  )}
-
-                  {aiLoading !== comment.id && (
-                    <div className="flex gap-sm px-xl pb-lg pt-sm">
-                      <button onClick={() => postAiReply(comment.id)} disabled={loading} className="inline-flex items-center gap-xs font-sora text-xs bg-brand text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50">
-                        <Send className="w-3 h-3" /> {loading ? "Posting..." : "Post Reply"}
-                      </button>
-                      <button onClick={() => cancelAiReply(comment.id)} className="inline-flex items-center gap-xs font-sora text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container">
-                        <X className="w-3 h-3" /> Cancel
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* Render child replies recursively */}
-        {comment.replies && comment.replies.length > 0 && depth < maxDepth && (
-          <div className="mt-lg space-y-lg">
-            {comment.replies.map(reply => renderComment(reply, depth + 1))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant border-t border-border-default">
       {deleteTarget && <ConfirmModal title="Delete Comment" message="This action cannot be undone." onConfirm={handleDelete} onCancel={() => setDeleteTarget(null)} loading={deleting} />}
@@ -952,10 +1202,6 @@ const postComment = async (text: string, parentId?: number | null) => {
             <textarea
               value={summaryDraft}
               onChange={(e) => setSummaryDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Tab" && e.shiftKey) { e.preventDefault(); setSummaryTab("preview"); return; }
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); postSummary(); }
-              }}
               rows={8}
               className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-sm text-on-surface focus:ring-0 outline-none resize-y"
               placeholder={summarizing ? "Generating summary..." : "⌘+Enter to post"}
@@ -1016,10 +1262,6 @@ const postComment = async (text: string, parentId?: number | null) => {
             <textarea
               value={explainDraft}
               onChange={(e) => setExplainDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Tab" && e.shiftKey) { e.preventDefault(); setExplainTab("preview"); return; }
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); postExplain(); }
-              }}
               rows={8}
               className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-sm text-on-surface focus:ring-0 outline-none resize-y"
               placeholder={explaining ? "Generating explanation..." : "⌘+Enter to post"}
@@ -1056,10 +1298,7 @@ const postComment = async (text: string, parentId?: number | null) => {
             <button type="button" onClick={() => setTab("preview")} className={`inline-flex items-center gap-sm px-lg py-sm font-sora text-xs uppercase tracking-widest border-b-2 transition-colors ${tab === "preview" ? "border-primary text-primary" : "border-transparent text-on-surface-muted hover:text-on-surface"}`}><Eye className="w-3 h-3" /> Preview</button>
           </div>
           {tab === "write" ? (
-            <textarea value={body} onChange={(e) => setBody(e.target.value)} onKeyDown={(e) => {
-              if (e.key === "Tab" && e.shiftKey) { e.preventDefault(); setTab("preview"); return; }
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); (e.currentTarget as HTMLTextAreaElement).form?.requestSubmit(); }
-            }} placeholder="Write a comment... (markdown supported) — ⌘+Enter to post" rows={5} className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-on-surface placeholder:text-on-surface-muted focus:ring-0 outline-none resize-y" />
+            <textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Write a comment... (markdown supported) — ⌘+Enter to post" rows={5} className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-on-surface placeholder:text-on-surface-muted focus:ring-0 outline-none resize-y" />
           ) : (
             <div className="px-xl py-md min-h-[120px]">
               {body.trim()
@@ -1079,7 +1318,35 @@ const postComment = async (text: string, parentId?: number | null) => {
         <p className="font-dm-sans text-body-base text-on-surface-muted italic">No comments yet. Be the first.</p>
       ) : (
         <div className="space-y-lg max-w-3xl">
-          {comments.map(comment => renderComment(comment, 0))}
+          <CommentTree
+            comments={comments}
+            isOwner={isOwner}
+            editingId={editingId}
+            editBody={editBody}
+            replyToId={replyToId}
+            aiLoading={aiLoading}
+            aiDrafts={aiDrafts}
+            aiDraftTabs={aiDraftTabs}
+            aiError={aiError}
+            loading={loading}
+            deleting={deleting}
+            copiedId={copiedId}
+            modelLabels={modelLabels}
+            modeLabels={modeLabels}
+            onStartEdit={(id, body) => { setEditingId(id); setEditBody(body); }}
+            onCancelEdit={() => setEditingId(null)}
+            onSaveEdit={handleEdit}
+            onSetEditBody={setEditBody}
+            onSetReplyToId={setReplyToId}
+            onInlineAiReply={handleAiReply}
+            onDeleteTarget={setDeleteTarget}
+            onPostReply={handlePostReply}
+            onCancelAiReply={cancelAiReply}
+            onPostAiReply={postAiReply}
+            onSetAiDraftTab={setAiDraftTab}
+            onSetAiDraft={(id, text) => setAiDrafts(prev => { const n = new Map(prev); n.set(id, text); return n; })}
+            onCopy={handleCopy}
+          />
         </div>
       )}
     </section>
