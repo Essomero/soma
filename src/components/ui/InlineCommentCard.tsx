@@ -28,34 +28,19 @@ interface InlineCommentCardProps {
   depth: number;
   isOwner: boolean;
   activeHighlightId: number;
-  /** Whether this specific card's reply form is open */
-  isReplying: boolean;
-  /** Whether AI is loading for this card */
-  isAiLoading: boolean;
-  /** The AI draft text for this card (empty string if none) */
-  aiDraftText: string;
-  /** The AI draft tab for this card */
-  aiDraftTab: "write" | "preview";
-  /** Whether this card has an AI error */
-  hasAiError: boolean;
-  /** The AI error message (only meaningful when hasAiError is true) */
-  aiErrorMessage: string;
+  // Raw state — each card computes its own derived values
+  inlineReplyToId: number | null;
+  inlineAiLoading: number | null;
+  inlineAiDrafts: Map<number, string>;
+  inlineAiDraftTabs: Map<number, "write" | "preview">;
+  inlineAiError: { id: number; message: string } | null;
   aiUnavailable: boolean;
   posting: boolean;
-  /** Whether this card is being deleted */
-  isDeleting: boolean;
-  /** Whether this card's text is in "copied" state */
-  isCopied: boolean;
-  /** Whether this card's draft is being posted */
-  isDraftPosting: boolean;
-  /** Whether this card has a post error */
-  hasPostError: boolean;
-  /** The post error message */
-  postErrorMessage: string;
-  /** Whether this card has thinking/reasoning content */
-  hasThinking: boolean;
-  /** The thinking/reasoning text */
-  thinkingText: string;
+  inlineDeleting: number | null;
+  copiedId: number | null;
+  draftPosting: number | null;
+  postError: string | null;
+  thinkingDrafts: Map<number, string>;
   // Pre-computed lookups
   modelLabels: Record<string, string>;
   modeLabels: Record<string, string>;
@@ -64,7 +49,6 @@ interface InlineCommentCardProps {
   onSetReplyToId: (id: number | null) => void;
   onInlineAiReply: (comment: ThreadedComment) => void;
   onDeleteInlineComment: (id: number) => void;
-  /** Called with (parentId, body) when a manual reply is submitted */
   onPostInlineReply: (parentId: number, body: string) => void;
   onCancelInlineAiReply: (id: number) => void;
   onPostInlineAiReply: (id: number) => void;
@@ -92,21 +76,18 @@ const InlineCommentCard = memo(function InlineCommentCard({
   depth,
   isOwner,
   activeHighlightId,
-  isReplying,
-  isAiLoading,
-  aiDraftText,
-  aiDraftTab,
-  hasAiError,
-  aiErrorMessage,
+  inlineReplyToId,
+  inlineAiLoading,
+  inlineAiDrafts,
+  inlineAiDraftTabs,
+  inlineAiError,
   aiUnavailable,
   posting,
-  isDeleting,
-  isCopied,
-  isDraftPosting,
-  hasPostError,
-  postErrorMessage,
-  hasThinking,
-  thinkingText,
+  inlineDeleting,
+  copiedId,
+  draftPosting,
+  postError,
+  thinkingDrafts,
   modelLabels,
   modeLabels,
   onCopyComment,
@@ -125,8 +106,37 @@ const InlineCommentCard = memo(function InlineCommentCard({
   // Local reply body state — typing does not propagate to parent
   const [localReplyBody, setLocalReplyBody] = useState("");
 
-  // Pre-compute expensive derivations once per body/id change
+  // Compute per-card values from raw state
+  const isReplying = inlineReplyToId === comment.id;
+  const isAiLoading = inlineAiLoading === comment.id;
+  const aiDraftText = inlineAiDrafts.get(comment.id) ?? "";
+  const aiDraftTab = inlineAiDraftTabs.get(comment.id) ?? "write";
+  const hasAiError = inlineAiError?.id === comment.id;
+  const aiErrorMessage = hasAiError ? inlineAiError!.message : "";
+  const isDeleting = inlineDeleting === comment.id;
+  const isCopied = copiedId === comment.id;
+  const isDraftPosting = draftPosting === comment.id;
+  const hasPostError = postError !== null;
+  const postErrorMessage = postError ?? "";
+  const hasThinking = thinkingDrafts.has(comment.id);
+  const thinkingText = thinkingDrafts.get(comment.id) ?? "";
+
+  const isAiDraftWrite = aiDraftTab === "write";
+  const hasAiDraft = isAiLoading || aiDraftText.length > 0;
+  const isDraft = comment.id < 0;
+  const isEmptyDraft = isDraft && !comment.body.trim();
+  const indent = depth > 0 ? "ml-md border-l-2 border-l-brand/30 pl-md" : "";
+
+  // Compute body HTML once per comment body change
   const bodyHtml = useMemo(() => mdBlock(comment.body), [comment.body]);
+
+  // Pre-compute AI draft preview HTML
+  const aiDraftPreviewHtml = useMemo(
+    () => (aiDraftText ? mdBlock(aiDraftText) : ""),
+    [aiDraftText],
+  );
+
+  // Pre-compute model/mode values
   const modelLabel = modelLabels[comment.aiModel ?? ""] || "AI";
   const modeLabel = comment.aiAction || comment.mode
     ? modeLabels[comment.aiAction || comment.mode || ""] || "AI"
@@ -134,22 +144,10 @@ const InlineCommentCard = memo(function InlineCommentCard({
   const modeClr = comment.aiAction || comment.mode
     ? modeColor(comment.aiAction || comment.mode)
     : "";
-  const indent = depth > 0 ? "ml-md border-l-2 border-l-brand/30 pl-md" : "";
-
-  const isAiDraftWrite = aiDraftTab === "write";
-  const hasAiDraft = isAiLoading || aiDraftText.length > 0;
-  const isDraft = comment.id < 0;
-  const isEmptyDraft = isDraft && !comment.body.trim();
-
-  // Derived AI draft preview HTML
-  const aiDraftPreviewHtml = useMemo(
-    () => (aiDraftText ? mdBlock(aiDraftText) : ""),
-    [aiDraftText],
-  );
 
   const hasReplies = comment.replies.length > 0 && depth < COMMENT_MAX_DEPTH;
 
-  // ── Event handlers (stable per render, no inline arrow deps on parent) ──
+  // ── Handlers (stable, no inline arrow deps on parent) ──
 
   const handleReplyClick = () => {
     onSetReplyToId(isReplying ? null : comment.id);
@@ -167,25 +165,16 @@ const InlineCommentCard = memo(function InlineCommentCard({
   };
 
   const handleCopy = () => onCopyComment(comment);
-
   const handleAiReply = () => onInlineAiReply(comment);
-
   const handleDelete = () => onDeleteInlineComment(comment.id);
-
   const handleCancelAi = () => onCancelInlineAiReply(comment.id);
-
   const handlePostAiReply = () => onPostInlineAiReply(comment.id);
-
   const handleSetAiDraftWrite = () => onSetAiDraftTab(comment.id, "write");
-
   const handleSetAiDraftPreview = () => onSetAiDraftTab(comment.id, "preview");
-
   const handleAiDraftChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
     onSetAiDraft(comment.id, e.target.value);
-
   const handlePostDraftClick = () =>
     onPostDraft(activeHighlightId, comment.id, comment.body, comment.aiAction ?? "");
-
   const handleCancelDraftClick = () =>
     onCancelDraft(activeHighlightId, comment.id);
 
@@ -429,21 +418,18 @@ const InlineCommentCard = memo(function InlineCommentCard({
               depth={depth + 1}
               isOwner={isOwner}
               activeHighlightId={activeHighlightId}
-              isReplying={isReplying}
-              isAiLoading={isAiLoading}
-              aiDraftText={aiDraftText}
-              aiDraftTab={aiDraftTab}
-              hasAiError={hasAiError}
-              aiErrorMessage={aiErrorMessage}
+              inlineReplyToId={inlineReplyToId}
+              inlineAiLoading={inlineAiLoading}
+              inlineAiDrafts={inlineAiDrafts}
+              inlineAiDraftTabs={inlineAiDraftTabs}
+              inlineAiError={inlineAiError}
               aiUnavailable={aiUnavailable}
               posting={posting}
-              isDeleting={isDeleting}
-              isCopied={isCopied}
-              isDraftPosting={isDraftPosting}
-              hasPostError={hasPostError}
-              postErrorMessage={postErrorMessage}
-              hasThinking={hasThinking}
-              thinkingText={thinkingText}
+              inlineDeleting={inlineDeleting}
+              copiedId={copiedId}
+              draftPosting={draftPosting}
+              postError={postError}
+              thinkingDrafts={thinkingDrafts}
               modelLabels={modelLabels}
               modeLabels={modeLabels}
               onCopyComment={onCopyComment}
@@ -466,13 +452,13 @@ const InlineCommentCard = memo(function InlineCommentCard({
   );
 });
 
-// ── Recursive Tree (pre-computes per-card values) ──
+// ── Recursive Tree (passes raw state through) ──────
 
 interface InlineCommentTreeProps {
   comments: ThreadedComment[];
   isOwner: boolean;
   activeHighlightId: number;
-  // Raw state (derived to per-card values before passing to card)
+  // Raw state
   inlineReplyToId: number | null;
   inlineAiLoading: number | null;
   inlineAiDrafts: Map<number, string>;
@@ -503,8 +489,37 @@ interface InlineCommentTreeProps {
   onSetPostError: (error: string | null) => void;
 }
 
-export default function InlineCommentTree(props: InlineCommentTreeProps) {
-  const { comments } = props;
+export default function InlineCommentTree({
+  comments,
+  isOwner,
+  activeHighlightId,
+  inlineReplyToId,
+  inlineAiLoading,
+  inlineAiDrafts,
+  inlineAiDraftTabs,
+  inlineAiError,
+  aiUnavailable,
+  posting,
+  inlineDeleting,
+  copiedId,
+  draftPosting,
+  postError,
+  thinkingDrafts,
+  modelLabels,
+  modeLabels,
+  onCopyComment,
+  onSetReplyToId,
+  onInlineAiReply,
+  onDeleteInlineComment,
+  onPostInlineReply,
+  onCancelInlineAiReply,
+  onPostInlineAiReply,
+  onSetAiDraftTab,
+  onSetAiDraft,
+  onPostDraft,
+  onCancelDraft,
+  onSetPostError,
+}: InlineCommentTreeProps) {
   if (!comments || comments.length === 0) {
     return (
       <p className="font-dm-sans text-sm text-on-surface-muted italic text-center py-md">
@@ -515,62 +530,41 @@ export default function InlineCommentTree(props: InlineCommentTreeProps) {
 
   return (
     <>
-      {comments.map((comment) => {
-        // Compute per-card scalar values so React.memo on InlineCommentCard
-        // only sees changed props for the affected card.
-        const isReplying = props.inlineReplyToId === comment.id;
-        const isAiLoading = props.inlineAiLoading === comment.id;
-        const aiDraftText = props.inlineAiDrafts.get(comment.id) ?? "";
-        const aiDraftTab = props.inlineAiDraftTabs.get(comment.id) ?? "write";
-        const hasAiError = props.inlineAiError?.id === comment.id;
-        const aiErrorMessage = hasAiError ? props.inlineAiError!.message : "";
-        const isDeleting = props.inlineDeleting === comment.id;
-        const isCopied = props.copiedId === comment.id;
-        const isDraftPosting = props.draftPosting === comment.id;
-        const hasPostError = props.postError !== null;
-        const postErrorMessage = props.postError ?? "";
-        const hasThinking = props.thinkingDrafts.has(comment.id);
-        const thinkingText = props.thinkingDrafts.get(comment.id) ?? "";
-
-        return (
-          <InlineCommentCard
-            key={comment.id}
-            comment={comment}
-            depth={0}
-            isOwner={props.isOwner}
-            activeHighlightId={props.activeHighlightId}
-            isReplying={isReplying}
-            isAiLoading={isAiLoading}
-            aiDraftText={aiDraftText}
-            aiDraftTab={aiDraftTab}
-            hasAiError={hasAiError}
-            aiErrorMessage={aiErrorMessage}
-            aiUnavailable={props.aiUnavailable}
-            posting={props.posting}
-            isDeleting={isDeleting}
-            isCopied={isCopied}
-            isDraftPosting={isDraftPosting}
-            hasPostError={hasPostError}
-            postErrorMessage={postErrorMessage}
-            hasThinking={hasThinking}
-            thinkingText={thinkingText}
-            modelLabels={props.modelLabels}
-            modeLabels={props.modeLabels}
-            onCopyComment={props.onCopyComment}
-            onSetReplyToId={props.onSetReplyToId}
-            onInlineAiReply={props.onInlineAiReply}
-            onDeleteInlineComment={props.onDeleteInlineComment}
-            onPostInlineReply={props.onPostInlineReply}
-            onCancelInlineAiReply={props.onCancelInlineAiReply}
-            onPostInlineAiReply={props.onPostInlineAiReply}
-            onSetAiDraftTab={props.onSetAiDraftTab}
-            onSetAiDraft={props.onSetAiDraft}
-            onPostDraft={props.onPostDraft}
-            onCancelDraft={props.onCancelDraft}
-            onSetPostError={props.onSetPostError}
-          />
-        );
-      })}
+      {comments.map((comment) => (
+        <InlineCommentCard
+          key={comment.id}
+          comment={comment}
+          depth={0}
+          isOwner={isOwner}
+          activeHighlightId={activeHighlightId}
+          inlineReplyToId={inlineReplyToId}
+          inlineAiLoading={inlineAiLoading}
+          inlineAiDrafts={inlineAiDrafts}
+          inlineAiDraftTabs={inlineAiDraftTabs}
+          inlineAiError={inlineAiError}
+          aiUnavailable={aiUnavailable}
+          posting={posting}
+          inlineDeleting={inlineDeleting}
+          copiedId={copiedId}
+          draftPosting={draftPosting}
+          postError={postError}
+          thinkingDrafts={thinkingDrafts}
+          modelLabels={modelLabels}
+          modeLabels={modeLabels}
+          onCopyComment={onCopyComment}
+          onSetReplyToId={onSetReplyToId}
+          onInlineAiReply={onInlineAiReply}
+          onDeleteInlineComment={onDeleteInlineComment}
+          onPostInlineReply={onPostInlineReply}
+          onCancelInlineAiReply={onCancelInlineAiReply}
+          onPostInlineAiReply={onPostInlineAiReply}
+          onSetAiDraftTab={onSetAiDraftTab}
+          onSetAiDraft={onSetAiDraft}
+          onPostDraft={onPostDraft}
+          onCancelDraft={onCancelDraft}
+          onSetPostError={onSetPostError}
+        />
+      ))}
     </>
   );
 }

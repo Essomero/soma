@@ -329,7 +329,7 @@ export default function StoryPage() {
   const [deleteHighlightTarget, setDeleteHighlightTarget] = useState<number | null>(null);
   const [deleteCommentTarget, setDeleteCommentTarget] = useState<number | null>(null);
   const [inlineDeleting, setInlineDeleting] = useState<number | null>(null);
-  const [commentBody, setCommentBody] = useState("");
+  
   const [posting, setPosting] = useState(false);
 
   // ── AI reply state for inline comments ──────────────
@@ -465,7 +465,6 @@ export default function StoryPage() {
           comments: [],
         }]);
         setActiveHighlight({ id: created.id, x: popoverX, y: popoverY });
-        setCommentBody("");
       }
     } catch {}
   }, [selection, slug, clearSelection]);
@@ -675,7 +674,6 @@ export default function StoryPage() {
     if (mark) {
       const rect = mark.getBoundingClientRect();
       setActiveHighlight({ id: highlightId, x: rect.left + rect.width / 2, y: rect.bottom });
-      setCommentBody("");
     }
   }, []);
 
@@ -706,38 +704,7 @@ export default function StoryPage() {
     ? highlights.find((h) => h.id === activeHighlight.id)
     : null;
 
-  const handlePostComment = useCallback(async () => {
-    if (!commentBody.trim() || !activeHighlight || posting || !slug) return;
-    setPosting(true);
-    try {
-      const h = activeHighlightData;
-      const r = await fetch("/api/comments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          storySlug: slug,
-          body: commentBody.trim(),
-          highlightId: activeHighlight.id,
-          sectionIndex: h?.sectionIndex ?? null,
-          paragraphIndex: h?.paragraphIndex ?? null,
-          startOffset: h?.startOffset ?? null,
-          endOffset: h?.endOffset ?? null,
-        }),
-      });
-      if (r.ok) {
-        setCommentsRefresh((n: number) => n + 1);
-        const newComment = await r.json();
-        // Add comment to local state
-        setHighlights((prev) => prev.map((hl) =>
-          hl.id === activeHighlight.id
-            ? { ...hl, comments: addReplyToTree((hl.comments || []) as ThreadedComment[], null, { id: newComment.id, body: commentBody.trim(), parentId: null, isAi: false, aiModel: null, createdAt: new Date().toISOString(), updatedAt: null, replies: [] }) }
-            : hl,
-        ));
-        setCommentBody("");
-      }
-    } catch {}
-    setPosting(false);
-  }, [commentBody, activeHighlight, posting, slug, activeHighlightData]);
+  
 
 
   const handleDeleteHighlight = useCallback(() => {

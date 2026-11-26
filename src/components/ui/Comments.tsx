@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, memo, useMemo } from "react";
+import { useAutoResize } from "@/hooks/useAutoResize";
 import { MessageSquare, Send, Edit3, Trash2, X, Check, Copy, Eye, PenLine, Bot, Loader2, ChevronDown, Reply, Brain } from "lucide-react";
 import { mdBlock } from "@/lib/markdown";
 import { useAuth } from "@/lib/AuthContext";
@@ -74,6 +75,17 @@ function fmtDate(raw: any) {
   }
 }
 
+const COMMENT_ERROR_LABELS: Record<string, string> = {
+  "body too long": "Comment is too long — keep it under 5,000 characters.",
+  "storySlug and body required": "Comment body can't be empty.",
+  "too many requests": "You're posting too fast — wait a moment and try again.",
+  "invalid storySlug": "Something went wrong — try reloading the page.",
+  "field too long": "One of the fields is too long.",
+  "invalid mode": "Invalid comment mode.",
+  "Unauthorized": "You need to sign in to post comments.",
+  "Not found": "This story wasn't found.",
+};
+
 // ── Memoized Comment Card ─────────────────────────
 
 interface CommentCardProps {
@@ -143,6 +155,10 @@ const CommentCard = memo(function CommentCard({
 }: CommentCardProps) {
   // Local reply body state — typing does not propagate to parent
   const [localReplyBody, setLocalReplyBody] = useState("");
+
+  // Auto-resize reply textarea
+  const { ref: replyTextareaRef, resize: resizeReply } = useAutoResize();
+  useEffect(() => { resizeReply(); }, [localReplyBody, resizeReply]);
 
   // Compute per-card values from raw state — each recursive call computes
   // values for its own comment, not the parent's.
@@ -296,8 +312,12 @@ const CommentCard = memo(function CommentCard({
             {isReplying && (
               <form onSubmit={handleSubmitReply} className="mt-md px-lg py-md bg-surface border border-border-default rounded-lg space-y-md">
                 <textarea
+                  ref={replyTextareaRef}
                   value={localReplyBody}
                   onChange={(e) => setLocalReplyBody(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); (e.target as HTMLTextAreaElement).form?.requestSubmit(); }
+                  }}
                   placeholder="Write a reply..."
                   rows={3}
                   className="w-full bg-transparent border-0 p-0 font-dm-sans text-sm text-on-surface placeholder:text-on-surface-muted focus:ring-0 outline-none resize-none overflow-hidden"
@@ -349,6 +369,10 @@ const CommentCard = memo(function CommentCard({
                   <textarea
                     value={aiDraftText}
                     onChange={handleAiDraftChange}
+                    onKeyDown={(e) => {
+                      if (e.key === "Tab" && e.shiftKey) { e.preventDefault(); onSetAiDraftTab(comment.id, "preview"); return; }
+                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); onPostAiReply(comment.id); }
+                    }}
                     rows={5}
                     className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-sm text-on-surface focus:ring-0 outline-none resize-y"
                     placeholder={isAiLoading ? "Waiting for response..." : "⌘+Enter to post"}
@@ -452,7 +476,7 @@ interface CommentTreeProps {
   onCopy: (comment: Comment) => void;
 }
 
-function CommentTree({
+const CommentTree = memo(function CommentTree({
   comments,
   isOwner,
   editingId,
@@ -520,7 +544,7 @@ function CommentTree({
       ))}
     </>
   );
-}
+});
 
 // ── Main Comments Component ────────────────────────
 
@@ -672,17 +696,6 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
     });
   };
 
-  const COMMENT_ERROR_LABELS: Record<string, string> = {
-    "body too long": "Comment is too long — keep it under 5,000 characters.",
-    "storySlug and body required": "Comment body can't be empty.",
-    "too many requests": "You're posting too fast — wait a moment and try again.",
-    "invalid storySlug": "Something went wrong — try reloading the page.",
-    "field too long": "One of the fields is too long.",
-    "invalid mode": "Invalid comment mode.",
-    "Unauthorized": "You need to sign in to post comments.",
-    "Not found": "This story wasn't found.",
-  };
-
   const postComment = async (text: string, parentId?: number | null) => {
     if (!text.trim()) return;
     setLoading(true);
@@ -711,6 +724,20 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
     e.preventDefault();
     postComment(body, null);
   };
+
+  // Stable wrappers for CommentTree callbacks (enable React.memo to work)
+  const handleStartEdit = useCallback((id: number, body: string) => {
+    setEditingId(id);
+    setEditBody(body);
+  }, []);
+  const handleCancelEdit = useCallback(() => setEditingId(null), []);
+  const handleSetAiDraft = useCallback((id: number, text: string) => {
+    setAiDrafts(prev => {
+      const n = new Map(prev);
+      n.set(id, text);
+      return n;
+    });
+  }, []);
 
   // Reply handler now accepts body from the card's local state
   const handlePostReply = useCallback((parentId: number, replyBody: string) => {
@@ -966,7 +993,7 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
     setLoading(false);
   };
 
-  const cancelAiReply = (commentId: number) => {
+  const cancelAiReply = useCallback((commentId: number) => {
     setAiDrafts(prev => {
       const next = new Map(prev);
       next.delete(commentId);
@@ -978,17 +1005,17 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
       return next;
     });
     setAiError(null);
-  };
+  }, []);
 
-  const setAiDraftTab = (commentId: number, tab: "write" | "preview") => {
+  const setAiDraftTab = useCallback((commentId: number, tab: "write" | "preview") => {
     setAiDraftTabs(prev => {
       const next = new Map(prev);
       next.set(commentId, tab);
       return next;
     });
-  };
+  }, []);
 
-  const handleCopy = (comment: Comment) => {
+  const handleCopy = useCallback((comment: Comment) => {
     const text = comment.body;
     const onSuccess = () => {
       setCopiedId(comment.id);
@@ -1012,7 +1039,7 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
     } else {
       fallback();
     }
-  };
+  }, []);
 
   return (
     <section className="max-w-readme mx-auto px-gutter md:px-margin-desktop py-giant border-t border-border-default">
@@ -1202,6 +1229,10 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
             <textarea
               value={summaryDraft}
               onChange={(e) => setSummaryDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Tab" && e.shiftKey) { e.preventDefault(); setSummaryTab("preview"); return; }
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); postSummary(); }
+              }}
               rows={8}
               className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-sm text-on-surface focus:ring-0 outline-none resize-y"
               placeholder={summarizing ? "Generating summary..." : "⌘+Enter to post"}
@@ -1262,6 +1293,10 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
             <textarea
               value={explainDraft}
               onChange={(e) => setExplainDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Tab" && e.shiftKey) { e.preventDefault(); setExplainTab("preview"); return; }
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); postExplain(); }
+              }}
               rows={8}
               className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-sm text-on-surface focus:ring-0 outline-none resize-y"
               placeholder={explaining ? "Generating explanation..." : "⌘+Enter to post"}
@@ -1298,7 +1333,10 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
             <button type="button" onClick={() => setTab("preview")} className={`inline-flex items-center gap-sm px-lg py-sm font-sora text-xs uppercase tracking-widest border-b-2 transition-colors ${tab === "preview" ? "border-primary text-primary" : "border-transparent text-on-surface-muted hover:text-on-surface"}`}><Eye className="w-3 h-3" /> Preview</button>
           </div>
           {tab === "write" ? (
-            <textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Write a comment... (markdown supported) — ⌘+Enter to post" rows={5} className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-on-surface placeholder:text-on-surface-muted focus:ring-0 outline-none resize-y" />
+            <textarea value={body} onChange={(e) => setBody(e.target.value)} onKeyDown={(e) => {
+              if (e.key === "Tab" && e.shiftKey) { e.preventDefault(); setTab("preview"); return; }
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); (e.currentTarget as HTMLTextAreaElement).form?.requestSubmit(); }
+            }} placeholder="Write a comment... (markdown supported) — ⌘+Enter to post" rows={5} className="w-full bg-transparent border-0 px-xl py-md font-dm-sans text-on-surface placeholder:text-on-surface-muted focus:ring-0 outline-none resize-y" />
           ) : (
             <div className="px-xl py-md min-h-[120px]">
               {body.trim()
@@ -1333,8 +1371,8 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
             copiedId={copiedId}
             modelLabels={modelLabels}
             modeLabels={modeLabels}
-            onStartEdit={(id, body) => { setEditingId(id); setEditBody(body); }}
-            onCancelEdit={() => setEditingId(null)}
+            onStartEdit={handleStartEdit}
+            onCancelEdit={handleCancelEdit}
             onSaveEdit={handleEdit}
             onSetEditBody={setEditBody}
             onSetReplyToId={setReplyToId}
@@ -1344,7 +1382,7 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
             onCancelAiReply={cancelAiReply}
             onPostAiReply={postAiReply}
             onSetAiDraftTab={setAiDraftTab}
-            onSetAiDraft={(id, text) => setAiDrafts(prev => { const n = new Map(prev); n.set(id, text); return n; })}
+            onSetAiDraft={handleSetAiDraft}
             onCopy={handleCopy}
           />
         </div>
