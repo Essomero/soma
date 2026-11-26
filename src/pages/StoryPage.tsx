@@ -17,10 +17,11 @@ import PrintButton from "@/components/ui/PrintButton";
 import SourceNoteBanner from "@/components/admin/SourceNoteBanner";
 import { useContentItem, useContentList, invalidateContentCache } from "@/lib/content";
 import type { StoryContent, CourseContent, BookContent, SeriesContent, TestContent } from "@/types";
-import { ArrowLeft, ArrowRight, ExternalLink, Check, Copy, Bookmark, Loader2, Trash2, Bot, PenLine, Eye, Send, X, ChevronDown, Reply, Maximize2, Sparkles, Edit3, Archive } from "lucide-react";
+import { ArrowLeft, ArrowRight, ExternalLink, Check, Copy, Bookmark, Loader2, Trash2, Bot, X, ChevronDown, Maximize2, Sparkles, Edit3, Archive } from "lucide-react";
+import { toast } from "sonner";
 import { SkeletonStoryLayout } from "@/components/ui/Skeleton";
-import { mdBlock, contentToMarkdown, md } from "@/lib/markdown";
-import MarkdownHtml from "@/components/ui/MarkdownHtml";
+import { contentToMarkdown, md } from "@/lib/markdown";
+
 import { useProgress } from "@/lib/useProgress";
 import { getReadingTime } from "@/lib/readingTime";
 import StarRating from "@/components/ui/StarRating";
@@ -30,11 +31,12 @@ import Comments from "@/components/ui/Comments";
 import { useAuth } from "@/lib/AuthContext";
 import { useTextSelection } from "@/lib/useTextSelection";
 import { formatDate } from "@/lib/format-date";
-import { getSelectionOffsets, type HighlightData, COMMENT_MAX_DEPTH } from "@/lib/highlights";
+import { getSelectionOffsets, type HighlightData } from "@/lib/highlights";
 import { streamChat } from "@/lib/tutor/client";
 import { TUTOR_MODES } from "../../shared/tutor/modes.js";
-import { modeColor } from "@/lib/tutor/modeStyles";
-import { ThinkingSection } from "@/components/ui/ThinkingSection";
+
+
+import InlineCommentTree from "@/components/ui/InlineCommentCard";
 import type { TutorMode } from "../../shared/tutor/modes.js";
 import { collectPriorTurns } from "../../shared/tutor/memory.js";
 import { useScrollLock } from "@/lib/useScrollLock";
@@ -328,7 +330,7 @@ export default function StoryPage() {
   const [deleteHighlightTarget, setDeleteHighlightTarget] = useState<number | null>(null);
   const [deleteCommentTarget, setDeleteCommentTarget] = useState<number | null>(null);
   const [inlineDeleting, setInlineDeleting] = useState<number | null>(null);
-  const [commentBody, setCommentBody] = useState("");
+  
   const [posting, setPosting] = useState(false);
 
   // ── AI reply state for inline comments ──────────────
@@ -348,9 +350,21 @@ export default function StoryPage() {
   // so readers learn the feature exists instead of wondering where it went.
   const aiUnavailable = !inlineAiReady || inlineModels.length === 0;
 
+  // Pre-computed lookup maps for comment rendering (avoid .find() on every render)
+  const modelLabels = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const model of inlineModels) m[model.id] = model.label;
+    return m;
+  }, [inlineModels]);
+  const modeLabels = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const mode of TUTOR_MODES) m[mode.id] = mode.label;
+    return m;
+  }, []);
+
   // Manual reply state
   const [inlineReplyToId, setInlineReplyToId] = useState<number | null>(null);
-  const [inlineReplyBody, setInlineReplyBody] = useState("");
+  
   const [inlineExpanded, setInlineExpanded] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [copiedTextId, setCopiedTextId] = useState(false);
@@ -452,7 +466,6 @@ export default function StoryPage() {
           comments: [],
         }]);
         setActiveHighlight({ id: created.id, x: popoverX, y: popoverY });
-        setCommentBody("");
       }
     } catch {}
   }, [selection, slug, clearSelection]);
@@ -662,7 +675,6 @@ export default function StoryPage() {
     if (mark) {
       const rect = mark.getBoundingClientRect();
       setActiveHighlight({ id: highlightId, x: rect.left + rect.width / 2, y: rect.bottom });
-      setCommentBody("");
     }
   }, []);
 
@@ -693,38 +705,7 @@ export default function StoryPage() {
     ? highlights.find((h) => h.id === activeHighlight.id)
     : null;
 
-  const handlePostComment = useCallback(async () => {
-    if (!commentBody.trim() || !activeHighlight || posting || !slug) return;
-    setPosting(true);
-    try {
-      const h = activeHighlightData;
-      const r = await fetch("/api/comments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          storySlug: slug,
-          body: commentBody.trim(),
-          highlightId: activeHighlight.id,
-          sectionIndex: h?.sectionIndex ?? null,
-          paragraphIndex: h?.paragraphIndex ?? null,
-          startOffset: h?.startOffset ?? null,
-          endOffset: h?.endOffset ?? null,
-        }),
-      });
-      if (r.ok) {
-        setCommentsRefresh((n: number) => n + 1);
-        const newComment = await r.json();
-        // Add comment to local state
-        setHighlights((prev) => prev.map((hl) =>
-          hl.id === activeHighlight.id
-            ? { ...hl, comments: addReplyToTree((hl.comments || []) as ThreadedComment[], null, { id: newComment.id, body: commentBody.trim(), parentId: null, isAi: false, aiModel: null, createdAt: new Date().toISOString(), updatedAt: null, replies: [] }) }
-            : hl,
-        ));
-        setCommentBody("");
-      }
-    } catch {}
-    setPosting(false);
-  }, [commentBody, activeHighlight, posting, slug, activeHighlightData]);
+  
 
 
   const handleDeleteHighlight = useCallback(() => {
@@ -863,9 +844,9 @@ export default function StoryPage() {
     setInlineAiError(null);
   }, []);
 
-  // Manual reply to an inline comment
-  const handlePostInlineReply = useCallback(async (parentId: number) => {
-    if (!inlineReplyBody.trim() || !slug || !activeHighlight || posting) return;
+  // Manual reply to an inline comment (body comes from card-local state)
+  const handlePostInlineReply = useCallback(async (parentId: number, replyBody: string) => {
+    if (!replyBody.trim() || !slug || !activeHighlight || posting) return;
     setPosting(true);
     try {
       const r = await fetch("/api/comments", {
@@ -873,7 +854,7 @@ export default function StoryPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           storySlug: slug,
-          body: inlineReplyBody.trim(),
+          body: replyBody.trim(),
           highlightId: activeHighlight.id,
           parentId,
         }),
@@ -883,15 +864,18 @@ export default function StoryPage() {
         const newComment = await r.json();
         setHighlights((prev) => prev.map((hl) =>
           hl.id === activeHighlight.id
-            ? { ...hl, comments: addReplyToTree((hl.comments || []) as ThreadedComment[], parentId, { id: newComment.id, body: inlineReplyBody.trim(), parentId, isAi: false, aiModel: null, createdAt: new Date().toISOString(), updatedAt: null, replies: [] }) }
+            ? { ...hl, comments: addReplyToTree((hl.comments || []) as ThreadedComment[], parentId, { id: newComment.id, body: replyBody.trim(), parentId, isAi: false, aiModel: null, createdAt: new Date().toISOString(), updatedAt: null, replies: [] }) }
             : hl,
         ));
         setInlineReplyToId(null);
-        setInlineReplyBody("");
+      } else {
+        toast.error(`Reply failed (HTTP ${r.status})`);
       }
-    } catch {}
+    } catch {
+      toast.error("Network error — check your connection and try again.");
+    }
     setPosting(false);
-  }, [inlineReplyBody, slug, activeHighlight, posting]);
+  }, [slug, activeHighlight, posting]);
 
   // Delete individual inline comment
 
@@ -1701,230 +1685,38 @@ export default function StoryPage() {
               </div>
             </div>
 
-            {/* Comments */}
             <div className="flex-1 overflow-y-auto thin-scrollbar px-lg py-md space-y-md">
-              {activeHighlightData?.comments && (activeHighlightData.comments as ThreadedComment[]).length > 0 ? (
-                (activeHighlightData.comments as ThreadedComment[]).map((c) => {
-                  const maxDepth = COMMENT_MAX_DEPTH;
-                  const renderCommentTree = (comment: ThreadedComment, depth: number): React.ReactNode => {
-                    const indent = depth > 0 ? "ml-md border-l-2 border-l-brand/30 pl-md" : "";
-                    return (
-                      <div key={comment.id}>
-                        <div className={`bg-surface-container-low border border-border-default rounded-lg p-md ${indent}`}>
-                          <div className="flex items-center gap-xs mb-sm">
-                            {comment.isAi ? (
-                              <div className="flex items-center gap-xs">
-                                <span className="font-sora text-[10px] text-brand uppercase tracking-widest">
-                                  {inlineModels.find(m => m.id === comment.aiModel)?.label || "AI"}
-                                </span>
-                                {(comment.aiAction || comment.mode) && (
-                                  <span className={`font-sora text-[9px] uppercase tracking-wider px-xs py-px rounded ${modeColor(comment.aiAction || comment.mode)}`}>
-                                    {TUTOR_MODES.find((m) => m.id === (comment.aiAction || comment.mode))?.label || "AI"}
-                                  </span>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="font-sora text-[10px] text-on-surface-muted uppercase tracking-widest">You</span>
-                            )}
-                            {comment.id >= 0 && (
-                              <span className="font-sora text-[10px] text-on-surface-muted">
-                                {new Date(comment.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                              </span>
-                            )}
-                            {comment.id < 0 && (
-                              <span className="font-sora text-[10px] text-amber-400 uppercase tracking-widest">Draft</span>
-                            )}
-                          </div>
-                          {thinkingDrafts.has(comment.id) && <ThinkingSection reasoning={thinkingDrafts.get(comment.id) ?? ""} />}
-                          {comment.id < 0 && !comment.body.trim() ? (
-                            <div className="flex items-center gap-sm py-sm">
-                              <Loader2 className="w-3 h-3 animate-spin text-brand" />
-                              <span className="font-sora text-[10px] text-brand animate-pulse">Generating...</span>
-                            </div>
-                          ) : (
-                            <MarkdownHtml html={mdBlock(comment.body)} className="prose prose-sm font-dm-sans text-sm text-on-surface leading-relaxed" />
-                          )}
-                          {/* Actions at bottom of card */}
-                          <div className="flex items-center justify-end gap-xs mt-sm pt-sm border-t border-border-default">
-                            {(!comment.body.trim() && comment.id < 0) ? null : (
-                              <Tooltip label={copiedId === comment.id ? "Copied" : "Copy"}>
-                              <button onClick={() => handleCopyComment(comment)}
-                                className={`p-xs rounded-md transition-colors ${copiedId === comment.id ? "text-brand" : "text-on-surface-muted hover:text-brand"}`}>
-                                {copiedId === comment.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}</button>
-                              </Tooltip>
-                            )}
-                            {comment.id >= 0 && (<>
-                              <Tooltip label="Reply">
-                              <button onClick={() => { setInlineReplyToId(inlineReplyToId === comment.id ? null : comment.id); setInlineReplyBody(""); }}
-                                className={`p-xs rounded-md transition-colors ${inlineReplyToId === comment.id ? "text-brand" : "text-on-surface-muted hover:text-brand"}`}><Reply className="w-3 h-3" /></button>
-                              </Tooltip>
-                              {isOwner && (<>
-                              <Tooltip label={aiUnavailable ? "Add an AI provider key to enable" : "AI Reply"}>
-                                <button onClick={() => handleInlineAiReply(comment)} disabled={inlineAiLoading !== null || aiUnavailable}
-                                  className="p-xs rounded-md text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
-                                  {inlineAiLoading === comment.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bot className="w-3 h-3" />}</button>
-                              </Tooltip>
-                                <Tooltip label="Delete comment">
-                                <button onClick={() => handleDeleteInlineComment(comment.id)} disabled={inlineDeleting !== null}
-                                  className="p-xs rounded-md text-on-surface-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-50">
-                                  {inlineDeleting === comment.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}</button>
-                                </Tooltip>
-                              </>)}
-                            </>)}
-                          </div>
-                          {postError && (
-                            <div className="mt-sm px-md py-sm bg-error/5 border border-error/20 rounded-lg">
-                              <span className="font-sora text-[10px] text-error">{postError}</span>
-                            </div>
-                          )}
-                          {comment.id < 0 && (
-                            <div className="flex items-center gap-xs mt-sm pt-sm border-t border-border-default">
-                              <button
-                                onClick={() => handlePostDraft(activeHighlight!.id, comment.id, comment.body, comment.aiAction!)}
-                                disabled={draftPosting === comment.id || !comment.body.trim()}
-                                className="inline-flex items-center gap-xs text-xs bg-primary text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50 font-sora"
-                              >
-                                {draftPosting === comment.id ? (
-                                  <Loader2 className="w-3 h-3 animate-spin" />
-                                ) : (
-                                  <Send className="w-3 h-3" />
-                                )}
-                                Post
-                              </button>
-                              <button
-                                onClick={() => handleCancelDraft(activeHighlight!.id, comment.id)}
-                                disabled={draftPosting === comment.id}
-                                className="inline-flex items-center gap-xs text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container font-sora"
-                              >
-                                <X className="w-3 h-3" /> Cancel
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Manual reply form */}
-                        {inlineReplyToId === comment.id && (
-                          <form onSubmit={(e) => { e.preventDefault(); handlePostInlineReply(comment.id); }} className="mt-sm p-md bg-surface border border-border-default rounded-lg space-y-sm">
-                            <textarea
-                              value={inlineReplyBody}
-                              onChange={(e) => setInlineReplyBody(e.target.value)}
-                              placeholder="Write a reply..."
-                              rows={2}
-                              className="w-full bg-transparent border-0 p-0 font-dm-sans text-xs text-on-surface placeholder:text-on-surface-muted focus:ring-0 outline-none resize-y thin-scrollbar"
-                            />
-                            <div className="flex gap-sm">
-                              <button type="submit" disabled={posting || !inlineReplyBody.trim()} className="inline-flex items-center gap-xs text-xs bg-primary text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50">
-                                <Send className="w-3 h-3" /> {posting ? "Posting..." : "Reply"}
-                              </button>
-                              <button type="button" onClick={() => { setInlineReplyToId(null); setInlineReplyBody(""); }} className="inline-flex items-center gap-xs text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container">
-                                <X className="w-3 h-3" /> Cancel
-                              </button>
-                            </div>
-                          </form>
-                        )}
-
-                        {/* AI error */}
-                        {inlineAiError?.id === comment.id && (
-                          <div className="mt-sm p-md bg-error/5 border border-error/20 rounded-lg">
-                            <div className="flex items-start justify-between gap-md">
-                              <span className="font-sora text-[10px] text-error leading-relaxed">{inlineAiError.message}</span>
-                              <button onClick={() => cancelInlineAiReply(comment.id)} className="text-on-surface-muted hover:text-on-surface flex-shrink-0"><X className="w-3 h-3" /></button>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* AI draft */}
-                        {(inlineAiLoading === comment.id || inlineAiDrafts.has(comment.id)) && (
-                          <div className="mt-sm bg-brand/5 border border-brand/20 rounded-lg overflow-hidden">
-                            <div className="flex items-center justify-between border-b border-brand/10 bg-brand/[0.03] px-sm">
-                              <div className="flex">
-                                <button type="button" onClick={() => setInlineAiDraftTabs(prev => { const next = new Map(prev); next.set(comment.id, "write"); return next; })}
-                                  className={`inline-flex items-center gap-xs px-md py-sm font-sora text-[10px] uppercase tracking-widest border-b-2 transition-colors ${(inlineAiDraftTabs.get(comment.id) || "write") === "write" ? "border-brand text-brand" : "border-transparent text-on-surface-muted hover:text-on-surface"}`}>
-                                  <PenLine className="w-3 h-3" /> Write
-                                </button>
-                                <button type="button" onClick={() => setInlineAiDraftTabs(prev => { const next = new Map(prev); next.set(comment.id, "preview"); return next; })}
-                                  className={`inline-flex items-center gap-xs px-md py-sm font-sora text-[10px] uppercase tracking-widest border-b-2 transition-colors ${inlineAiDraftTabs.get(comment.id) === "preview" ? "border-brand text-brand" : "border-transparent text-on-surface-muted hover:text-on-surface"}`}>
-                                  <Eye className="w-3 h-3" /> Preview
-                                </button>
-                              </div>
-                              <span className="font-sora text-[10px] text-brand uppercase tracking-widest pr-sm">
-                                {inlineAiLoading === comment.id ? "Generating..." : "AI Draft"}
-                              </span>
-                            </div>
-
-                            {(inlineAiDraftTabs.get(comment.id) || "write") === "write" ? (
-                              <textarea
-                                value={inlineAiDrafts.get(comment.id) || ""}
-                                onChange={(e) => {
-                                  setInlineAiDrafts(prev => { const next = new Map(prev); next.set(comment.id, e.target.value); return next; });
-                                }}
-                                rows={4}
-                                className="w-full bg-transparent border-0 px-md py-sm font-dm-sans text-xs text-on-surface focus:ring-0 outline-none resize-y thin-scrollbar"
-                                placeholder={inlineAiLoading === comment.id ? "Waiting for response..." : ""}
-                              />
-                            ) : (
-                              <div className="px-md py-sm min-h-[80px]">
-                                {inlineAiDrafts.get(comment.id)?.trim()
-                                  ? <MarkdownHtml html={mdBlock(inlineAiDrafts.get(comment.id) || "")} className="prose font-dm-sans text-xs text-on-surface" />
-                                  : <p className="font-dm-sans text-xs text-on-surface-muted italic">Waiting for response...</p>
-                                }
-                              </div>
-                            )}
-
-                            {inlineAiLoading !== comment.id && (
-                              <div className="flex gap-sm px-md pb-md pt-sm">
-                                <button onClick={() => postInlineAiReply(comment.id)} disabled={posting}
-                                  className="inline-flex items-center gap-xs text-xs bg-brand text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50">
-                                  <Send className="w-3 h-3" /> {posting ? "Posting..." : "Post Reply"}
-                                </button>
-                                <button onClick={() => cancelInlineAiReply(comment.id)}
-                                  className="inline-flex items-center gap-xs text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container">
-                                  <X className="w-3 h-3" /> Cancel
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Threaded replies */}
-                        {comment.replies.length > 0 && depth < maxDepth && (
-                          <div className="mt-sm space-y-sm">
-                            {comment.replies.map((reply) => renderCommentTree(reply, depth + 1))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  };
-                  return renderCommentTree(c, 0);
-                })
-              ) : (
-                <p className="font-dm-sans text-sm text-on-surface-muted italic text-center py-md">No comments yet</p>
-              )}
-            </div>
-
-            {/* Comment input */}
-            <div className="border-t border-border-default p-md">
-              <textarea
-                value={commentBody}
-                onChange={(e) => setCommentBody(e.target.value)}
-                placeholder="Add a comment..."
-                rows={2}
-                className="w-full bg-surface-container-low border border-border-default rounded-lg px-md py-sm font-dm-sans text-sm text-on-surface placeholder:text-on-surface-muted resize-y thin-scrollbar focus:border-primary/50 outline-none"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handlePostComment(); }
-                }}
+              <InlineCommentTree
+                comments={(activeHighlightData?.comments || []) as ThreadedComment[]}
+                isOwner={isOwner}
+                activeHighlightId={activeHighlight!.id}
+                inlineReplyToId={inlineReplyToId}
+                inlineAiLoading={inlineAiLoading}
+                inlineAiDrafts={inlineAiDrafts}
+                inlineAiDraftTabs={inlineAiDraftTabs}
+                inlineAiError={inlineAiError}
+                aiUnavailable={aiUnavailable}
+                posting={posting}
+                inlineDeleting={inlineDeleting}
+                copiedId={copiedId}
+                draftPosting={draftPosting}
+                postError={postError}
+                thinkingDrafts={thinkingDrafts}
+                modelLabels={modelLabels}
+                modeLabels={modeLabels}
+                onCopyComment={handleCopyComment}
+                onSetReplyToId={setInlineReplyToId}
+                onInlineAiReply={handleInlineAiReply}
+                onDeleteInlineComment={handleDeleteInlineComment}
+                onPostInlineReply={(parentId, body) => handlePostInlineReply(parentId, body)}
+                onCancelInlineAiReply={cancelInlineAiReply}
+                onPostInlineAiReply={postInlineAiReply}
+                onSetAiDraftTab={(id, tab) => setInlineAiDraftTabs(prev => { const n = new Map(prev); n.set(id, tab); return n; })}
+                onSetAiDraft={(id, text) => setInlineAiDrafts(prev => { const n = new Map(prev); n.set(id, text); return n; })}
+                onPostDraft={(highlightId, tempId, body, mode) => handlePostDraft(highlightId, tempId, body, mode as TutorMode)}
+                onCancelDraft={handleCancelDraft}
+                onSetPostError={setPostError}
               />
-              <div className="flex justify-between items-center mt-sm">
-                <span className="font-sora text-[10px] text-on-surface-muted">Enter to post</span>
-                <button
-                  onClick={handlePostComment}
-                  disabled={!commentBody.trim() || posting}
-                  className="px-md py-sm rounded-md font-sora text-xs bg-primary text-on-primary hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-xs"
-                >
-                  {posting ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                  {posting ? "Posting..." : "Post"}
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -2001,218 +1793,38 @@ export default function StoryPage() {
               </div>
             </div>
 
-            {/* Comments */}
             <div className="flex-1 overflow-y-auto thin-scrollbar px-lg py-md space-y-md">
-              {activeHighlightData?.comments && (activeHighlightData.comments as ThreadedComment[]).length > 0 ? (
-                (activeHighlightData.comments as ThreadedComment[]).map((c) => {
-                  const maxDepth = COMMENT_MAX_DEPTH;
-                  const renderCommentTree = (comment: ThreadedComment, depth: number): React.ReactNode => {
-                    const indent = depth > 0 ? "ml-md border-l-2 border-l-brand/30 pl-md" : "";
-                    return (
-                      <div key={comment.id}>
-                        <div className={`bg-surface-container-low border border-border-default rounded-lg p-md ${indent}`}>
-                          <div className="flex items-center gap-xs mb-sm">
-                            {comment.isAi ? (
-                              <div className="flex items-center gap-xs">
-                                <span className="font-sora text-[10px] text-brand uppercase tracking-widest">
-                                  {inlineModels.find(m => m.id === comment.aiModel)?.label || "AI"}
-                                </span>
-                                {(comment.aiAction || comment.mode) && (
-                                  <span className={`font-sora text-[9px] uppercase tracking-wider px-xs py-px rounded ${modeColor(comment.aiAction || comment.mode)}`}>
-                                    {TUTOR_MODES.find((m) => m.id === (comment.aiAction || comment.mode))?.label || "AI"}
-                                  </span>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="font-sora text-[10px] text-on-surface-muted uppercase tracking-widest">You</span>
-                            )}
-                            {comment.id >= 0 && (
-                              <span className="font-sora text-[10px] text-on-surface-muted">
-                                {new Date(comment.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                              </span>
-                            )}
-                            {comment.id < 0 && (
-                              <span className="font-sora text-[10px] text-amber-400 uppercase tracking-widest">Draft</span>
-                            )}
-                          </div>
-                          {thinkingDrafts.has(comment.id) && <ThinkingSection reasoning={thinkingDrafts.get(comment.id) ?? ""} />}
-                          {comment.id < 0 && !comment.body.trim() ? (
-                            <div className="flex items-center gap-sm py-sm">
-                              <Loader2 className="w-3 h-3 animate-spin text-brand" />
-                              <span className="font-sora text-[10px] text-brand animate-pulse">Generating...</span>
-                            </div>
-                          ) : (
-                            <MarkdownHtml html={mdBlock(comment.body)} className="prose prose-sm font-dm-sans text-sm text-on-surface leading-relaxed" />
-                          )}
-                          {/* Actions at bottom of card */}
-                          <div className="flex items-center justify-end gap-xs mt-sm pt-sm border-t border-border-default">
-                            {(!comment.body.trim() && comment.id < 0) ? null : (
-                              <Tooltip label={copiedId === comment.id ? "Copied" : "Copy"}>
-                              <button onClick={() => handleCopyComment(comment)}
-                                className={`p-xs rounded-md transition-colors ${copiedId === comment.id ? "text-brand" : "text-on-surface-muted hover:text-brand"}`}>
-                                {copiedId === comment.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}</button>
-                              </Tooltip>
-                            )}
-                            {comment.id >= 0 && (<>
-                              <Tooltip label="Reply">
-                              <button onClick={() => { setInlineReplyToId(inlineReplyToId === comment.id ? null : comment.id); setInlineReplyBody(""); }}
-                                className={`p-xs rounded-md transition-colors ${inlineReplyToId === comment.id ? "text-brand" : "text-on-surface-muted hover:text-brand"}`}><Reply className="w-3 h-3" /></button>
-                              </Tooltip>
-                              {isOwner && (<>
-                              <Tooltip label={aiUnavailable ? "Add an AI provider key to enable" : "AI Reply"}>
-                                <button onClick={() => handleInlineAiReply(comment)} disabled={inlineAiLoading !== null || aiUnavailable}
-                                  className="p-xs rounded-md text-on-surface-muted hover:text-brand transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
-                                  {inlineAiLoading === comment.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bot className="w-3 h-3" />}</button>
-                              </Tooltip>
-                                <Tooltip label="Delete comment">
-                                <button onClick={() => handleDeleteInlineComment(comment.id)} disabled={inlineDeleting !== null}
-                                  className="p-xs rounded-md text-on-surface-muted hover:text-error hover:bg-error/10 transition-colors disabled:opacity-50">
-                                  {inlineDeleting === comment.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}</button>
-                                </Tooltip>
-                              </>)}
-                            </>)}
-                          </div>
-                          {postError && (
-                            <div className="mt-sm px-md py-sm bg-error/5 border border-error/20 rounded-lg">
-                              <span className="font-sora text-[10px] text-error">{postError}</span>
-                            </div>
-                          )}
-                          {comment.id < 0 && (
-                            <div className="flex items-center gap-xs mt-sm pt-sm border-t border-border-default">
-                              <button
-                                onClick={() => handlePostDraft(activeHighlight!.id, comment.id, comment.body, comment.aiAction!)}
-                                disabled={draftPosting === comment.id || !comment.body.trim()}
-                                className="inline-flex items-center gap-xs text-xs bg-primary text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50 font-sora"
-                              >
-                                {draftPosting === comment.id ? (
-                                  <Loader2 className="w-3 h-3 animate-spin" />
-                                ) : (
-                                  <Send className="w-3 h-3" />
-                                )}
-                                Post
-                              </button>
-                              <button
-                                onClick={() => handleCancelDraft(activeHighlight!.id, comment.id)}
-                                disabled={draftPosting === comment.id}
-                                className="inline-flex items-center gap-xs text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container font-sora"
-                              >
-                                <X className="w-3 h-3" /> Cancel
-                              </button>
-                            </div>
-                          )}
-
-                        {/* Manual reply form */}
-                        {inlineReplyToId === comment.id && (
-                          <form onSubmit={(e) => { e.preventDefault(); handlePostInlineReply(comment.id); }} className="mt-sm p-md bg-surface border border-border-default rounded-lg space-y-sm">
-                            <textarea
-                              value={inlineReplyBody}
-                              onChange={(e) => setInlineReplyBody(e.target.value)}
-                              placeholder="Write a reply..."
-                              rows={2}
-                              className="w-full bg-transparent border-0 p-0 font-dm-sans text-xs text-on-surface placeholder:text-on-surface-muted focus:ring-0 outline-none resize-y thin-scrollbar"
-                            />
-                            <div className="flex gap-sm">
-                              <button type="submit" disabled={posting || !inlineReplyBody.trim()} className="inline-flex items-center gap-xs text-xs bg-primary text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50">
-                                <Send className="w-3 h-3" /> {posting ? "Posting..." : "Reply"}
-                              </button>
-                              <button type="button" onClick={() => { setInlineReplyToId(null); setInlineReplyBody(""); }} className="inline-flex items-center gap-xs text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container">
-                                <X className="w-3 h-3" /> Cancel
-                              </button>
-                            </div>
-                          </form>
-                        )}
-
-                        {/* AI error */}
-                        {inlineAiError?.id === comment.id && (
-                          <div className="mt-sm p-md bg-error/5 border border-error/20 rounded-lg">
-                            <div className="flex items-start justify-between gap-md">
-                              <span className="font-sora text-[10px] text-error leading-relaxed">{inlineAiError.message}</span>
-                              <button onClick={() => cancelInlineAiReply(comment.id)} className="text-on-surface-muted hover:text-on-surface flex-shrink-0"><X className="w-3 h-3" /></button>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* AI draft */}
-                        {(inlineAiLoading === comment.id || inlineAiDrafts.has(comment.id)) && (
-                          <div className="mt-sm bg-brand/5 border border-brand/20 rounded-lg overflow-hidden">
-                            <div className="flex items-center justify-between border-b border-brand/10 bg-brand/[0.03] px-sm">
-                              <div className="flex">
-                                <button type="button" onClick={() => setInlineAiDraftTabs(prev => { const next = new Map(prev); next.set(comment.id, "write"); return next; })}
-                                  className={`inline-flex items-center gap-xs px-md py-sm font-sora text-[10px] uppercase tracking-widest border-b-2 transition-colors ${(inlineAiDraftTabs.get(comment.id) || "write") === "write" ? "border-brand text-brand" : "border-transparent text-on-surface-muted hover:text-on-surface"}`}>
-                                  <PenLine className="w-3 h-3" /> Write
-                                </button>
-                                <button type="button" onClick={() => setInlineAiDraftTabs(prev => { const next = new Map(prev); next.set(comment.id, "preview"); return next; })}
-                                  className={`inline-flex items-center gap-xs px-md py-sm font-sora text-[10px] uppercase tracking-widest border-b-2 transition-colors ${inlineAiDraftTabs.get(comment.id) === "preview" ? "border-brand text-brand" : "border-transparent text-on-surface-muted hover:text-on-surface"}`}>
-                                  <Eye className="w-3 h-3" /> Preview
-                                </button>
-                              </div>
-                              <span className="font-sora text-[10px] text-brand uppercase tracking-widest pr-sm">
-                                {inlineAiLoading === comment.id ? "Generating..." : "AI Draft"}
-                              </span>
-                            </div>
-
-                            {(inlineAiDraftTabs.get(comment.id) || "write") === "write" ? (
-                              <textarea
-                                value={inlineAiDrafts.get(comment.id) || ""}
-                                onChange={(e) => {
-                                  setInlineAiDrafts(prev => { const next = new Map(prev); next.set(comment.id, e.target.value); return next; });
-                                }}
-                                rows={4}
-                                className="w-full bg-transparent border-0 px-md py-sm font-dm-sans text-xs text-on-surface focus:ring-0 outline-none resize-y thin-scrollbar"
-                                placeholder={inlineAiLoading === comment.id ? "Waiting for response..." : ""}
-                              />
-                            ) : (
-                              <div className="px-md py-sm min-h-[80px]">
-                                {inlineAiDrafts.get(comment.id)?.trim()
-                                  ? <MarkdownHtml html={mdBlock(inlineAiDrafts.get(comment.id) || "")} className="prose font-dm-sans text-xs text-on-surface" />
-                                  : <p className="font-dm-sans text-xs text-on-surface-muted italic">Waiting for response...</p>
-                                }
-                              </div>
-                            )}
-
-                            {inlineAiLoading !== comment.id && (
-                              <div className="flex gap-sm px-md pb-md pt-sm">
-                                <button onClick={() => postInlineAiReply(comment.id)} disabled={posting}
-                                  className="inline-flex items-center gap-xs text-xs bg-brand text-on-primary px-md py-sm rounded-md hover:opacity-90 disabled:opacity-50">
-                                  <Send className="w-3 h-3" /> {posting ? "Posting..." : "Post Reply"}
-                                </button>
-                                <button onClick={() => cancelInlineAiReply(comment.id)}
-                                  className="inline-flex items-center gap-xs text-xs bg-surface border border-border-default text-on-surface-muted px-md py-sm rounded-md hover:bg-surface-container">
-                                  <X className="w-3 h-3" /> Cancel
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        </div>
-                        {comment.replies.length > 0 && depth < maxDepth && (
-                          <div className="mt-sm space-y-sm">
-                            {comment.replies.map((reply) => renderCommentTree(reply, depth + 1))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  };
-                  return renderCommentTree(c, 0);
-                })
-              ) : (
-                <p className="font-dm-sans text-sm text-on-surface-muted italic text-center py-md">No comments yet</p>
-              )}
-            </div>
-
-            {/* Comment input */}
-            <div className="border-t border-border-default p-md">
-              <textarea value={commentBody} onChange={(e) => setCommentBody(e.target.value)} placeholder="Add a comment..." rows={3}
-                className="w-full bg-surface-container-low border border-border-default rounded-lg px-md py-sm font-dm-sans text-sm text-on-surface placeholder:text-on-surface-muted resize-y thin-scrollbar focus:border-primary/50 outline-none"
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handlePostComment(); } }} />
-              <div className="flex justify-between items-center mt-sm">
-                <span className="font-sora text-[10px] text-on-surface-muted">Enter to post</span>
-                <button onClick={handlePostComment} disabled={!commentBody.trim() || posting}
-                  className="px-md py-sm rounded-md font-sora text-xs bg-primary text-on-primary hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-xs">
-                  {posting ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                  {posting ? "Posting..." : "Post"}
-                </button>
-              </div>
+              <InlineCommentTree
+                comments={(activeHighlightData?.comments || []) as ThreadedComment[]}
+                isOwner={isOwner}
+                activeHighlightId={activeHighlight!.id}
+                inlineReplyToId={inlineReplyToId}
+                inlineAiLoading={inlineAiLoading}
+                inlineAiDrafts={inlineAiDrafts}
+                inlineAiDraftTabs={inlineAiDraftTabs}
+                inlineAiError={inlineAiError}
+                aiUnavailable={aiUnavailable}
+                posting={posting}
+                inlineDeleting={inlineDeleting}
+                copiedId={copiedId}
+                draftPosting={draftPosting}
+                postError={postError}
+                thinkingDrafts={thinkingDrafts}
+                modelLabels={modelLabels}
+                modeLabels={modeLabels}
+                onCopyComment={handleCopyComment}
+                onSetReplyToId={setInlineReplyToId}
+                onInlineAiReply={handleInlineAiReply}
+                onDeleteInlineComment={handleDeleteInlineComment}
+                onPostInlineReply={(parentId, body) => handlePostInlineReply(parentId, body)}
+                onCancelInlineAiReply={cancelInlineAiReply}
+                onPostInlineAiReply={postInlineAiReply}
+                onSetAiDraftTab={(id, tab) => setInlineAiDraftTabs(prev => { const n = new Map(prev); n.set(id, tab); return n; })}
+                onSetAiDraft={(id, text) => setInlineAiDrafts(prev => { const n = new Map(prev); n.set(id, text); return n; })}
+                onPostDraft={(highlightId, tempId, body, mode) => handlePostDraft(highlightId, tempId, body, mode as TutorMode)}
+                onCancelDraft={handleCancelDraft}
+                onSetPostError={setPostError}
+              />
             </div>
           </div>
         </div>
