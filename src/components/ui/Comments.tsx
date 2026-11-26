@@ -8,6 +8,7 @@ import Tooltip from "@/components/ui/Tooltip";
 import { COMMENT_MAX_DEPTH } from "@/lib/highlights";
 import { useShiftTabToggle } from "@/hooks/useShiftTabToggle";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import { toast } from "sonner";
 import { streamChat } from "@/lib/tutor/client";
 import { TUTOR_MODES } from "../../../shared/tutor/modes.js";
 import { modeColor } from "@/lib/tutor/modeStyles";
@@ -218,7 +219,18 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
     });
   };
 
-  const postComment = async (text: string, parentId?: number | null) => {
+  const COMMENT_ERROR_LABELS: Record<string, string> = {
+    "body too long": "Comment is too long — keep it under 5,000 characters.",
+    "storySlug and body required": "Comment body can't be empty.",
+    "too many requests": "You're posting too fast — wait a moment and try again.",
+    "invalid storySlug": "Something went wrong — try reloading the page.",
+    "field too long": "One of the fields is too long.",
+    "invalid mode": "Invalid comment mode.",
+    "Unauthorized": "You need to sign in to post comments.",
+    "Not found": "This story wasn't found.",
+  };
+
+const postComment = async (text: string, parentId?: number | null) => {
     if (!text.trim()) return;
     setLoading(true);
     try {
@@ -232,8 +244,14 @@ export default function Comments({ storySlug, storyContext, refreshSignal = 0 }:
         setBody("");
         setReplyBody("");
         setReplyToId(null);
+      } else {
+        let msg = `Post failed (HTTP ${r.status})`;
+        try { const err = await r.json(); if (err?.error) msg = err.error; } catch {}
+        toast.error(COMMENT_ERROR_LABELS[msg] || msg);
       }
-    } catch {}
+    } catch {
+      toast.error("Network error — check your connection and try again.");
+    }
     setLoading(false);
   };
 
